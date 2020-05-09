@@ -461,7 +461,7 @@ function eventHandler(event)
 	         {
 		  event.preventDefault();
 		  break;
-			}
+		 }
 	      //--------------Is any element content editable? Apply changes in case of no event.target match--------------
 	      if (focusElement.td && focusElement.td.contentEditable === 'true')
 	         {
