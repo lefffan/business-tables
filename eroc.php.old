@@ -1,0 +1,340 @@
+<?php
+
+const MAXOBJECTS = 100000;
+
+error_reporting(E_ALL);
+$db = new PDO('mysql:host=localhost;dbname=OE3', 'root', '123'); 
+$db->exec("SET NAMES UTF8");
+$db->exec("ALTER DATABASE OE3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
+$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
+{
+ return str_replace(';', '', str_replace('"', '', str_replace("'", '', str_replace("%", '', $str))));
+}
+
+function loog($arg) // Function outout incoming var to error.log
+{
+ file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
+ file_put_contents('error.log', "\n-------------------------------END LOG-------------------------------\n", FILE_APPEND);
+}
+
+function deleteObject($db, $OD, $id) // Function deletes object with identificator $id
+{
+ global $globalElementIds, $backupGlobalObjectId, $globalObjectId;
+ 
+ if (!($id > 0)) return 'Undefined object cannot be deleted!';
+
+ if (!isset($globalElementIds)) getGlobalElementIds($db); // Define $globalElementIds in case undefined state
+ if (count($globalElementIds) > 0 && isset($backupGlobalObjectId) && $id == $globalObjectId)
+    {
+     // Creating global element ids field list
+     $setQuery = '';
+     foreach ($globalElementIds as $key => $value) $setQuery .= 'id'.$key.', sid'.$key.',';
+     $setQuery = substr($setQuery, 0, -1);
+     // Fetching this field list data
+     $query = $db->prepare("SELECT $setQuery FROM `$OD` WHERE id2=$globalObjectId");
+     $query->execute();
+     // Creating global element ids field list with its data for set query and copying data to $backupGllobalObjectId
+     $setQuery = '';
+     foreach ($query->fetchAll(PDO::FETCH_ASSOC)[0] as $key => $value) $setQuery .= $key."='".$value."',";
+     $setQuery = substr($setQuery, 0, -1);
+     $query = $db->prepare("UPDATE `$OD` SET $setQuery WHERE id2=$backupGlobalObjectId");
+     $query->execute();
+    }
+ 
+ try { 
+      // Mark object to be deleted by zero version
+      $query = $db->prepare("BEGIN; INSERT INTO `$OD\$` (id2, version) VALUES ($id, 0)");
+      $query->execute();
+      // Deleting object with identificator $id from main data table
+      $query = $db->prepare("DELETE FROM `$OD` WHERE id2=$id; COMMIT");
+      $query->execute();
+     }
+ catch (Exception $e)
+     {
+      $query = $db->prepare('ROLLBACK');                      
+      $query->execute();                                      
+      return 'Failed to delete object: '.$e->getMessage();
+     }
+ 
+ return true;
+}
+
+function writeNewObject($db, $OD, $data)
+{
+ global $DOD, $globalElementIds, $globalObjectId;
+ $uniqColumns = $uniqValues = $standartColumns = $standartValues = $globalQuery = NULL;
+ 
+ // Define global elements if they not set
+ if (!isset($globalElementIds)) getGlobalElementIds($db);
+ 
+ // Going through all $data array elements to build $columnQuery (column list for insert), $valueQuery (value list for insert) and $setQuery (global element columns and values set list).
+ if (is_array($data)) foreach ($data as $value)
+ if (isset($value[0]) && isset($value[1]))
+ if (count($globalElementIds) > 0 && isset($globalElementIds[$value[0]]) === true && isset($globalObjectId))
+    {
+     $uniqColumns = 'id'
+    }
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ $columnQuery = $valueQuery = $setQuery = '';
+ if (!isset($globalElementIds)) getGlobalElementIds($db);
+ 
+ // Going through all $data array elements to build $columnQuery (column list for insert), $valueQuery (value list for insert) and $setQuery (global element columns and values set list).
+ if (is_array($data)) foreach ($data as $value)
+ if (count($globalElementIds) > 0 && isset($globalElementIds[$value[0]]) === true && isset($globalObjectId))
+    {
+     if (isset($value[1])) $setQuery .= "id$value[eId]='$value[data]',";
+     if (isset($value['service'])) $setQuery .= "sid$value[eId]='$value[service]',";
+    }
+  else
+    {
+     if (isset($value['data'])) { $columnQuery .= "id$value[eId],"; $valueQuery .= "'$value[data]',"; }
+     if (isset($value['service'])) { $columnQuery .= "sid$value[eId],"; $valueQuery .= "'$value[service]',"; }
+    }
+ if ($setQuery != '') $setQuery = substr($setQuery, 0, -1);       
+
+ try {
+      $columnQuery .= "version";
+      $valueQuery .= "'1'";
+      // Inserting new object to the main data sql table
+      $query = $db->prepare("BEGIN; INSERT INTO `$OD` ($columnQuery) VALUES ($valueQuery)");
+      $query->execute();
+      $query = $db->prepare("SELECT LAST_INSERT_ID()");
+      $query->execute();
+      // Generate new exception in case of non correct last insert id value
+      if (!(($oId = intval($query->fetch(PDO::FETCH_NUM)[0])) > 0)) throw new Exception();
+      // Inserting new object to the service data sql table
+      if ($OD != '+' && $OD != '$+')
+	 {
+	  $columnQuery .= ",id2";
+	  $valueQuery .= ",'$oId'";
+	  $query = $db->prepare("INSERT INTO `$OD\$` ($columnQuery) VALUES ($valueQuery)");
+	  $query->execute();
+	 }
+      // Global elements set
+      if ($setQuery != '')
+	 {
+	  $query = $db->prepare("UPDATE `$OD` SET $setQuery WHERE id2=$globalObjectId");
+	  $query->execute();
+	 }
+      // Commit the transaction
+      $query = $db->prepare("COMMIT");
+      $query->execute();
+      return $oId;
+     }
+ catch (Exception $e)
+     {
+      $query = $db->prepare('ROLLBACK');
+      $query->execute();
+      return 'Failed to create new object: '.$e->getMessage();
+     }
+     
+ return 'Failed to create new object: invalid input data!';
+}
+
+function writeExistingObject($db, $OD, $oId, $startTransaction = true, $commitTransaction = true, $version = NULL)
+{
+ global $globalElementIds, $globalObjectId, $output;
+ 
+ // Return a error in case of invalid input array
+ if (!is_array($output['data'])) return 'Failed to write object: invalid input data!';
+ 
+ if (!isset($globalElementIds)) getGlobalElementIds($db);
+ 
+ // Start transaction and lock object id $oId for non comitted operations
+ if ($startTransaction === true)
+    {
+     $query = $db->prepare("BEGIN; SELECT * FROM `$OD` WHERE id2=$oId FOR UPDATE");
+     $query->execute();
+    }
+
+ // Update all elements one by one
+ foreach ($output['data'] as $key => $value)
+         {
+          try {
+	       // Create query for main and service data columns
+	       $columnQuery = '';
+	       if (isset($value['data'])) $columnQuery = "id$value[eId]='$value[data]',";
+	       if (isset($value['service'])) $columnQuery .= "sid$value[eId]='$value[service]'";
+	        else if ($columnQuery !== '') $columnQuery = substr($columnQuery, 0, -1);
+	       
+	       if (isset($globalElementIds[$value['eId']]))
+		  {
+		   // Updating $OD with $columnQuery for global element
+		   $query = $db->prepare("UPDATE `$OD` SET $columnQuery WHERE id2=$globalObjectId");
+		   $query->execute();
+		  }
+		else
+		  {
+		   // Updating $OD with $columnQuery for non global element
+		   $query = $db->prepare("UPDATE `$OD` SET $columnQuery WHERE id2=$oId");
+		   $query->execute();
+	          }
+		  
+	       // In case of first element update success and new object version $OD$ insert success - calculate version
+	       if (!isset($version))
+	          {
+		   $query = $db->prepare("UPDATE `$OD` SET version=version+1 WHERE id2=$oId");
+		   $query->execute();
+		   $query = $db->prepare("SELECT version FROM `$OD` WHERE id2=$oId");
+		   $query->execute();
+		   $version = intval($query->fetch(PDO::FETCH_NUM)[0]);
+		   $query = $db->prepare("INSERT INTO `$OD\$` (id2, version) VALUES ($oId, $version)");
+		   $query->execute();
+		  }
+	       
+	       // $OD$ sql table new object version update with $columnQuery for non global element
+	       $query = $db->prepare("UPDATE `$OD\$` SET $columnQuery WHERE id2=$oId AND version=$version");
+	       $query->execute();
+	      }
+	  catch (Exception $e)
+    	      {
+	       if ($startTransaction === true)
+	          {
+    		   $query = $db->prepare('ROLLBACK');
+    		   $query->execute();
+    		   return 'Failed to write object: '.$e->getMessage();
+		  }
+	       unset($output['data'][$key]);
+    	      }
+         }
+
+ // Return error message in case of undefined object version
+ if (!isset($version))
+    {
+     $query = $db->prepare('ROLLBACK');
+     $query->execute();
+     return 'Failed to write object: unknown error!';
+    }  
+    
+ // Execute 'COMMIT' for comitted operations
+ if ($commitTransaction === true)
+    {
+     $query = $db->prepare("COMMIT"); 
+     $query->execute();
+    }
+    
+ return $version;
+}
+
+function createDefaultTbl($db)
+{
+ /* 
+ Object database (OD) sql table names example for OD 'abc':
+ - identificators as a primary key and uniq elements:					abc
+ - actual data and its versions:							abc$
+ - object element description table (identificators as a primary key):			$abc
+ - object element description table (actual data and its versions):			$abc$
+ - object element description table (identificators as a primary key) for all DOD:	$
+ - object element description table (actual data and its versions) for all DOD:		$$
+ */
+ 
+ // Creating 'Uniq Description Object Database' (UDOD), consists of primary identificator and uniq elements
+ $query = $db->prepare("create table `$` (version MEDIUMINT, id MEDIUMINT NOT NULL AUTO_INCREMENT,
+		        PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+
+ // Creating 'Description Object Database' (DOD), consists of primary identificator and actual data with its versions
+ $query = $db->prepare("create table `$$` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR,
+		        eid2 text, eid3 text, eid4 text, eid5 text, eid6 text, eid7 text, eid8 text, eid9 text, eid10 text, eid11 text, eid12 text, eid13 text, eid14 text, eid15 text, eid16 text, eid17 text, eid18 text,
+		        PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+
+ // Adding actual data
+ writeNewObject($db, '$', [[3, '{"data'=>'Database'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>''], ['eId'=>'7', 'data'=>''], ['eId'=>'8', 'data'=>''], ['eId'=>'9', 'data'=>''], ['eId'=>'10', 'data'=>''], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+ writeNewObject($db, '$', [['eId'=>'3', 'data'=>'Element\nid.php\nnormal\nId'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>''], ['eId'=>'7', 'data'=>''], ['eId'=>'8', 'data'=>''], ['eId'=>'9', 'data'=>''], ['eId'=>'10', 'data'=>''], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+ writeNewObject($db, '$', [['eId'=>'3', 'data'=>'Element\nnew.php\nnormal\nData class'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>'CONFIRM'], ['eId'=>'7', 'data'=>'F2'], ['eId'=>'8', 'data'=>'DBLCLICK'], ['eId'=>'9', 'data'=>''], ['eId'=>'10', 'data'=>''], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+ writeNewObject($db, '$', [['eId'=>'3', 'data'=>'Element\nedit.php\nnormal\nDescription'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>'CONFIRM'], ['eId'=>'7', 'data'=>'F2'], ['eId'=>'8', 'data'=>'DBLCLICK'], ['eId'=>'9', 'data'=>'KEYPRESS'], ['eId'=>'10', 'data'=>'DEL'], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+ writeNewObject($db, '$', [['eId'=>'3', 'data'=>'Element\nedit.php\nnormal\nBehaviour'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>'CONFIRM'], ['eId'=>'7', 'data'=>'F2'], ['eId'=>'8', 'data'=>'DBLCLICK'], ['eId'=>'9', 'data'=>'KEYPRESS'], ['eId'=>'10', 'data'=>'DEL'], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+ for ($i = 0; $i < 13; $i++)
+     writeNewObject($db, '$', [['eId'=>'3', 'data'=>'Element\nedit.php\nnormal\nData'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>'CONFIRM'], ['eId'=>'7', 'data'=>'F2'], ['eId'=>'8', 'data'=>'DBLCLICK'], ['eId'=>'9', 'data'=>'KEYPRESS'], ['eId'=>'10', 'data'=>'DEL'], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+ writeNewObject($db, '$', [['eId'=>'3', 'data'=>'View\nDefault\n'], ['eId'=>'4', 'data'=>''], ['eId'=>'5', 'data'=>'{ \"eId\": \"2\", \"oId\": \"0\", \"x\": \"0\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"3\", \"oId\": \"0\", \"x\": \"1\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"4\", \"oId\": \"0\", \"x\": \"2\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"5\", \"oId\": \"0\", \"x\": \"3\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"6\", \"oId\": \"0\", \"x\": \"4\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"7\", \"oId\": \"0\", \"x\": \"5\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"8\", \"oId\": \"0\", \"x\": \"6\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"9\", \"oId\": \"0\", \"x\": \"7\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"10\", \"oId\": \"0\", \"x\": \"8\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"11\", \"oId\": \"0\", \"x\": \"9\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"12\", \"oId\": \"0\", \"x\": \"10\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"13\", \"oId\": \"0\", \"x\": \"11\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"14\", \"oId\": \"0\", \"x\": \"12\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"15\", \"oId\": \"0\", \"x\": \"13\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"16\", \"oId\": \"0\", \"x\": \"14\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"17\", \"oId\": \"0\", \"x\": \"15\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"18\", \"oId\": \"0\", \"x\": \"16\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"19\", \"oId\": \"0\", \"x\": \"17\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"20\", \"oId\": \"0\", \"x\": \"18\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"21\", \"oId\": \"0\", \"x\": \"19\", \"y\": \"0\", \"background_color\": \"#DDD\" }\n{ \"eId\": \"2\", \"x\": \"0\", \"y\": \"n+1\" }\n{ \"eId\": \"3\", \"x\": \"1\", \"y\": \"n+1\" }\n{ \"eId\": \"4\", \"x\": \"2\", \"y\": \"n+1\" }\n{ \"eId\": \"3\", \"oId\": \"1\", \"command\": \"DBLCLICK\" }\n{ \"eId\": \"5\", \"x\": \"3\", \"y\": \"n+1\" }\n{ \"eId\": \"6\", \"x\": \"4\", \"y\": \"n+1\" }\n{ \"eId\": \"7\", \"x\": \"5\", \"y\": \"n+1\" }\n{ \"eId\": \"8\", \"x\": \"6\", \"y\": \"n+1\" }\n{ \"eId\": \"9\", \"x\": \"7\", \"y\": \"n+1\" }\n{ \"eId\": \"10\", \"x\": \"8\", \"y\": \"n+1\" }\n{ \"eId\": \"11\", \"x\": \"9\", \"y\": \"n+1\" }\n{ \"eId\": \"12\", \"x\": \"10\", \"y\": \"n+1\" }\n{ \"eId\": \"13\", \"x\": \"11\", \"y\": \"n+1\" }\n{ \"eId\": \"14\", \"x\": \"12\", \"y\": \"n+1\" }\n{ \"eId\": \"15\", \"x\": \"13\", \"y\": \"n+1\" }\n{ \"eId\": \"16\", \"x\": \"14\", \"y\": \"n+1\" }\n{ \"eId\": \"17\", \"x\": \"15\", \"y\": \"n+1\" }\n{ \"eId\": \"18\", \"x\": \"16\", \"y\": \"n+1\" }'], ['eId'=>'6', 'data'=>''], ['eId'=>'7', 'data'=>''], ['eId'=>'8', 'data'=>''], ['eId'=>'9', 'data'=>''], ['eId'=>'10', 'data'=>''], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+}
+
+function createODTbl($db, $OD)
+{
+ // Creating 'Uniq Description Object Database' (UDOD), consists of primary identificator and uniq elements
+ $query = $db->prepare("create table `\$$OD` (version MEDIUMINT, id MEDIUMINT NOT NULL AUTO_INCREMENT,
+		        PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+
+ // Creating 'Description Object Database' (DOD), consists of primary identificator and actual data with its versions
+ $query = $db->prepare("create table `\$$OD\$` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR,
+		        eid2 text, eid3 text, eid4 text, eid5 text, eid6 text, eid7 text, eid8 text, eid9 text, eid10 text, eid11 text, eid12 text, eid13 text, eid14 text, eid15 text, eid16 text, eid17 text, eid18 text,
+		        PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+
+ // Adding actual data
+ writeNewObject($db, "$".$OD, [[3, 'Database\n'.$OD], [4, ''], [5, ''], [6, ''], [7, ''], [8, ''], [9, ''], [10, ''], [11, ''], [12, ''], [13, ''], [14, ''], [15, ''], [16, ''], [17, ''], [18, '']]);
+ //writeNewObject($db, "$".$OD, [['eId'=>'3', 'data'=>'Element\nid.php\nnormal\nId'], ['eId'=>'4', 'data'=>'Object identificator'], ['eId'=>'5', 'data'=>''], ['eId'=>'6', 'data'=>''], ['eId'=>'7', 'data'=>''], ['eId'=>'8', 'data'=>''], ['eId'=>'9', 'data'=>''], ['eId'=>'10', 'data'=>''], ['eId'=>'11', 'data'=>''], ['eId'=>'12', 'data'=>''], ['eId'=>'13', 'data'=>''], ['eId'=>'14', 'data'=>''], ['eId'=>'15', 'data'=>''], ['eId'=>'16', 'data'=>''], ['eId'=>'17', 'data'=>''], ['eId'=>'18', 'data'=>'']]);
+  
+ // Creating 'Uniq Object Database' (UOD), consists of primary identificator and uniq elements
+ $query = $db->prepare("create table `$OD` (version MEDIUMINT, id MEDIUMINT NOT NULL AUTO_INCREMENT,
+		        PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+ // Creating 'Object Database' (OD), consists of primary identificator and actual data with its versions
+ $query = $db->prepare("create table `$OD\$` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR,
+		        PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();        
+}
+
+function initGlobals()
+{
+ global $DOD, $UOD, $OD, $OV, $input, $globalElementIds;
+ $globalElementIds = NULL;
+
+ $input['OD'] = rmSQLinjectionChars($input['OD']);
+ $input['OV'] = rmSQLinjectionChars($input['OV']);
+ if (isset($input['oId']))
+    {
+     $input['oId'] = rmSQLinjectionChars($input['oId']);
+     $input['eId'] = rmSQLinjectionChars($input['eId']);
+    }
+  
+ if ($input['OV'] == '') // Object database desciption selected?    
+    {                                 
+     $DOD = '$$';                     
+     $UOD = '$'.$input['OD'];
+     $OD  = $UOD.'$';
+     $OV  = 'Default';                 
+    }                                 
+  else                                
+    {                                 
+     $DOD = '$'.$input['OD'].'$';
+     $UOD = $input['OD'];     
+     $OD  = $UOD.'$';
+     $OV  = $input['OV'];     
+    }
+ $DOD = rmSQLinjectionChars($DOD);
+ $OD = rmSQLinjectionChars($OD);
+ $OV = rmSQLinjectionChars($OV);
+}
+
+function getGlobalElementIds($db)
+{
+ global $DOD, $UOD, $backupGlobalObjectId, $globalObjectId, $globalElementIds;
+ $globalElementIds = [];
+ $backupGlobalObjectId = $globalObjectId = NULL;
+ 
+ // Selecting global elements identificators
+ $query = $db->prepare("SELECT id2 FROM `$DOD` WHERE id3 LIKE 'Element\n%\nglobal\n%'");
+ $query->execute();
+ 
+ // Fetching global elements identificators and set them as an array elements
+ foreach ($query->fetchAll(PDO::FETCH_NUM) as $value) $globalElementIds[$value[0]] = '';
+ 
+ // Calcualting global object id                                                
+ $query = $db->prepare("SELECT id2 FROM `$UOD` ORDER BY id2 LIMIT 2 FOR UPDATE");
+ $query->execute();
+ $globalObjectId = $query->fetchAll(PDO::FETCH_NUM);
+ if (isset($globalObjectId[1])) $backupGlobalObjectId = intval($globalObjectId[1][0]);
+ if (isset($globalObjectId[0])) $globalObjectId = intval($globalObjectId[0][0]);
+}

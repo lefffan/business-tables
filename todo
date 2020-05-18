@@ -1,0 +1,158 @@
+April 2020:
+- create new uiProfile (standart and classic)? bootstrap grey modal with shadow https://itchief.ru/bootstrap/modal
+- generate content for new object database (old: make help hints in OD headers from mishka-new.xls)
+- Look up all code and may be set some var constable? And comment all code
+
+May 2020:
+- New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..} What if that format is wrong?
+- OD View Scheme (activate by context menu) - full grafic (fonts, colors, background, scroll-bar, padding, etc.. in service element data via service data pass to the browser)
+- OD users and all user access by token (don't forget to not pass elements that are not alloewed for the user) 
+- https access only
+- remove hint handlers from table cells in order to one handler to main table
+
+June 2020:
+- Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
+- Object_selection (expression_filter) as a context menu item
+- Object_selection (expression_filter) as a version show
+- Object_selection (expression_filter) as an object restriction
+- pages on the bottom of the main block; object page number (0 or undefinded - one page for all object), next page redirect bottom scroll
+
+July 2020:
+- System calls and its object views: LINK
+- Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
+  then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
+  If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
+  Every element execution should be marked by some 'id_execution' to decide whever display the server responce result or not: for example the result of execution 
+  is "OV change" after 10 sec, so the user don't want to wait the process execution and execute another element - in that case old "OV change" won't be applied.
+  This mechanism is controlled by that 'id_execution'. Or, for example, user can call element (by pressing F2 for example) many times, so to prevent 
+  multiple execution call 'id_execution' also will be useful.
+  Experiment1: create handler width "sleep(100sec)+set text" and execute it. Then reload the page and check for errors and for success of element data set.
+  Experiment2: start transaction with insert, then drop table from another session, so it hangs up until the insert will commit.
+  Problems:
+  - should i use timeout if `insert` session will never ends?
+  - should the object element process be locked during execution to prevent another session to execute the same element?
+- Todo from Mishka dir ois.xlsx file and think to make Boss edit opeations comfortable 
+- Deploy the product to the first real expluatation
+
+Augast 2020	: System calls and its object views: LOCATION.
+Augast 2020	: System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four call can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
+Augast 2020	: System call NEWOBJECT (to create object by user handlers)
+September 2020	: Object view PIECHART and GRAPH
+October 2020	: Object process SCHEDULER
+November 2020	: Other estimated "todo" from Mishka directory ois.xlsx file
+December 2020	: Feedback and finish
+
+
+2021:
+- React/Redux, Node js/NPM, Webpack
+- Git https://habr.com/ru/post/174467/    https://proglib.io/p/git-for-half-an-hour/   https://git-scm.com/book/en/v2 https://proglib.io/p/git-github-gitflow
+
+Client, controller and element-handler interaction:
+------Client (browser) input event------	-------Controller------							------Element handler------
+
+REFRESHMAIN					data..
+{cmd,OD,OV,sId}					<=
+-----------------------------------------------------------------------------------------------------------
+REFRESHMENU					data..
+{cmd,OD,OV,sId}					<=
+-----------------------------------------------------------------------------------------------------------
+NEWOBJECT					=>									{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert" }
+{cmd,["data": array[id]=element],OD,OV,sId}	{ "cmd": "INFO", "log", "error", "alert" }				<=
+						{ "cmd": "REFRESH", "OD", "OV" }
+-----------------------------------------------------------------------------------------------------------
+DELETEOBJECT					=>
+{cmd,OD,OV,oId,sId}				{ "cmd": "INFO", "log", "error", "alert" }				<=
+						{ "cmd": "REFRESH", "OD", "OV" }
+-----------------------------------------------------------------------------------------------------------
+DBLCLICK,F2,F12,INS,DEL				=>									{ "cmd": "EDIT", "oId", "eId", "data", "lines" }
+{cmd,OD,OV,oId,eId,sId}													{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert", "log" }
+															{ "cmd": "NEWOD|NEWOV|NEWELEMENT", "data" }
+CONFIRM,KEYPRESS,OBJCHANGE			{ "cmd": "INFO", "log", "error", "alert" }				<=
+{cmd,data,OD,OV,oId,eId,sId}			{ "cmd": "REFRESH", "OD", "OV" }					
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+Browser commands to the controller (fixed):
+    { "cmd":	"GETMENU|GETMAIN|GETUI|NEWOBJECT|DELETEOBJECT|DBLCLICK|F2|F12|INS|DEL|KEYPRESS|CONFIRM|CONFIRMDIALOG"
+      "OD":	"<OD name>"
+      "OV":	"<OV name>"
+      "data":	"[eId=>data, eId=>data..] for NEWOBJECT|<key code> for KEYPRESS|<cell data> or <dialog json data> for CONFIRM"
+      "oId":	"<object id>"
+      "eId":	"<element id>"
+      "sId":	"<session id>" }
+
+
+Controller commands to the browser:
+    { "cmd":		"REFRESHMAIN|REFRESHMENU|EDIT<LINES_NUM>|DIALOG|SET|RESET"
+      "OD":		"<OD name>"
+      "OV":		"<OV name>"
+      "data":		"<json>|<text>"
+      "oId":		"<object id>"
+      "eId":		"<element id>"
+      "alert":		"<alert message>"
+      "log":		"<browser console log message>"
+      "error":		"<main view error message>"
+      "callbackcmd":	"REFRESHMENU" }
+
+Element handler commands to the controller (fixed):
+    { "cmd":		"NEWOD|NEWOV|NEWELEMENT" // System commands
+      "data":		"<OD|OV|ELEMENT name"
+---------------------------------------      
+      "cmd":		"EDIT[<LINES_NUM>]|DIALOG" // Callback data commands
+      "data":		"<text data for EDIT>|<json data for DIALOG>"
+      "alert":		"<alert message>"
+      "log":		"<browser console log message>"
+---------------------------------------      
+      "cmd":		"SET|RESET|INFO"  // Other commands
+      "alert":		"<alert message>"
+      "log":		"<browser console log message>"
+      "callbackcmd":	"REFRESHMENU" 
+      "value":		"view cell data" 
+      "image":		"image to display instead of value text"
+      "link":		"" 
+      "location":	"" 
+      "hint":		"" 
+      "fonts":		"" 
+      "color":		"" 
+      "background":	"" 
+      "<other css>":	"" 
+      "<any property>":	"<any value>" }
+
+Controller to the element handler:
+    { "cmd":		"NEWOBJECT|DBLCLICK|F2|F12|INS|DEL|KEYPRESS|CONFIRM|OBJCHANGE"
+      "user":		"<username initiated the process>"
+      "title":		"element title"
+      "data":		"<key code for KEYPRESS>|<element value for CONFIRM or NEWOBJECT>|<dialog json data for CONFIRM>"
+      "<any property>":	'<json {"OD": "", "oId": "", "eId": "", "property": ""}|<string>'
+
+
+
+
+
+{"eId":"2", "oId":"0", "x":"0", "y":"0"}
+{"eId":"19", "oId":"0", "x":"1", "y":"0"}
+{"eId":"2", "x":"0", "y":"n+1"}
+{"eId":"19", "x":"1", "y":"n+1"}
+
+
+
+global element type:
+- write new object: global elements write to the first object in OD and OD$
+- write existing object: global elements write to the first object in OD and OD$
+- delete object: in case of the first object - global elements data moves to 'another' first object
+- getOD: for all global elements its data has a single instance in output array
+- object elements var pass ()
+
+interface examples:
+- https://qna.habr.com/q/281940
+- https://htmlacademy.ru/blog/video/shorts/short-4
+
+SVG:
+- https://habr.com/ru/sandbox/122675/
+- https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
+- https://css-tricks.com/lodge/svg/09-svg-data-uris/
+
+Input style:
+- http://jsfiddle.net/js5x06nL/
