@@ -20,7 +20,7 @@ try {
 	          initNewODDialogElements();
 			  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'Create']]];
 		  break;
-		  case 'Object Database Properties':
+	    case 'Object Database Properties':
 			if (isset($input['data']))
 				{
 				 initNewODDialogElements();
@@ -31,12 +31,19 @@ try {
 				 $output = ['cmd' => 'DIALOG', 'data' => $odprops];
 				}
 		break;
-		case 'NEWOD':
-			if (is_array($input['data']))
+	    case 'NEWOD':
+		if (is_array($input['data']))
 		   {
-			initNewODDialogElements();
+		    $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'];
+		    // Creating instance of Object Database (OD) for , consists of primary identificator and uniq elements                                                        
+		    $query = $db->prepare("create table `$odname` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+		    $query->execute();                                                                                                                                   
+		    // Creating 'Object Database' (OD), consists of primary identificator and actual data with its versions                                              
+		    $query = $db->prepare("create table `$odname\$` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+		    $query->execute();                                                                                                                                   
+		initNewODDialogElements();
 			$query = $db->prepare("INSERT INTO `$` (odname, odprops) VALUES (:odname, :odprops)");
-			$query->execute([':odname' => $input['data']['dialog']['Database']['Properties']['element1']['data'], ':odprops' => json_encode(adjustODProperties($input['data']))]);
+			$query->execute([':odname' => $odname, ':odprops' => json_encode(adjustODProperties($input['data']))]);
 		   }
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
