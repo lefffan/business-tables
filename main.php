@@ -24,7 +24,7 @@ try {
 			if (isset($input['data']))
 				{
 				 initNewODDialogElements();
-				 $query = $db->prepare("SELECT odprops FROM `$` WHERE odname=:odname");
+ 				 $query = $db->prepare("SELECT odprops FROM `$` WHERE odname=:odname");
 				 $query->execute([':odname' => $input['data']]);
 				 $odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true);
 				 $odprops['flags']['callbackData'] = $input['data'];

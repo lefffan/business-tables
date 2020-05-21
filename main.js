@@ -528,7 +528,7 @@ function eventHandler(event)
 		   		   {
 					contextMenuDiv.innerHTML = sidebarOVContext;
 					contextMenu = { 'e': null };
-				   }
+ 				   }
 		   else 
 		   {
 			cellBorderToggleSelect(focusElement.td, event.target);
