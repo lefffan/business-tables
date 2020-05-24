@@ -1,6 +1,8 @@
 <?php
 
 const MAXOBJECTS = 100000;
+const ODSTRINGMAXCHAR = 32;
+const ELEMENTPROFILENAMEMAXHXAR = 16;
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname=OE4', 'root', '123'); 
@@ -32,7 +34,7 @@ function adjustODProperties($data)
  
  // New element section handle
  if (!isset($data['dialog']['Element']['New element'])) return NULL;
- $id = 1;
+ $id = 0;
  $isNew = false;
  foreach ($data['dialog']['Element'] as $key => $value)
       if (!isset($value['element1']['data']) || !isset($value['element2']['data']) || !isset($value['element4']['data'])) // Dialog 'Element' pad corrupted?
@@ -43,13 +45,15 @@ function adjustODProperties($data)
 	 {
 	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '')
 	     unset($data['dialog']['Element'][$key]);		// Element name, description and handler file are empty? Remove element.
-	   else if (intval(substr($key, strlen('element id'))) > $id)
-	     $id = intval(substr($key, strlen('element id')));	// Otherwise get Current element id if it greater than last max value
+	   else if (intval(substr($key, strrpos($key, 'element id') + strlen('element id'))) > $id)
+	     $id = intval(substr($key, strrpos($key, 'element id') + strlen('element id')));	// Otherwise get Current element id if it greater than last max value
 	 }
-       else if ($value['element1']['data'] != '' || $value['element2']['data'] != '' || $value['element4']['data'] === '') $isNew = true;
+       else if ($value['element1']['data'] != '' || $value['element2']['data'] != '' || $value['element4']['data'] != '') $isNew = true;
  if ($isNew) // New element have been set? Create it
     {
-     $data['dialog']['Element']['element id'.strval($id + 1)] = $data['dialog']['Element']['New element'];
+     $name = $data['dialog']['Element']['New element']['element1']['data'];
+     if (strlen($name) > ELEMENTPROFILENAMEMAXHXAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXHXAR - 2).'..';
+     $data['dialog']['Element'][$name.' - element id'.strval($id + 1)] = $data['dialog']['Element']['New element'];
      $data['dialog']['Element']['New element'] = $newElement;
     }
     
@@ -129,7 +133,9 @@ function initNewODDialogElements()
 
 function createDefaultDatabases($db)
 {
- $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (odname CHAR(64) NOT NULL, odprops JSON NOT NULL, PRIMARY KEY (odname)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON NOT NULL, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+ $query = $db->prepare("ALTER TABLE `$` ADD UNIQUE(odname)");
  $query->execute();
 }
 

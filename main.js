@@ -255,23 +255,33 @@ window.onload = function()
 function drawMenu(data)
 {
  let od, ov, ovlist, sidebarHTML = '';
- for (od in data)
-	 {
-	  ovlist = '';
-	  for (ov in data[od]) // Create OV names list with active OV check
-	   if (activeOD === od && activeOV === ov) ovlist += '<tr class="itemactive"><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
-		else ovlist += '<tr><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
+ 
+ if (typeof data === 'object') for (od in data)
+    {
+     ovlist = '';
+     // Create OV names list with active OV check
+     for (ov in data[od])
+	 if (activeOD === od && activeOV === ov) ovlist += '<tr class="itemactive"><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
+	  else ovlist += '<tr><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
 
-	  if (wrappedItems[od] === undefined) wrappedItems[od] = true; // Set wrap status to true for default
+     // Set wrap status to true for default
+     if (wrappedItems[od] === undefined) wrappedItems[od] = true;
 
-	  if (ovlist === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
-	   else if (wrappedItems[od] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
-	    else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
-	  
-	  sidebarHTML += '<td class="sidebar-od">' + od + '</td><td style="display: none;"></td></tr>'; // Insert OD name
-	  if (wrappedItems[od] === false) sidebarHTML += ovlist; // Insert OV names list
-	 }
- if (sidebarHTML != '') menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>'; // Push calculated html text to sidebar div
+     // Draw wrap icon
+     if (ovlist === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
+      else if (wrappedItems[od] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
+       else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
+
+     // Insert OD name
+     sidebarHTML += '<td class="sidebar-od">' + od + '</td><td style="display: none;"></td></tr>';
+     
+     // Insert OV names list
+     if (wrappedItems[od] === false) sidebarHTML += ovlist;
+    }
+    
+ // Push calculated html text to sidebar div
+ if (sidebarHTML != '') menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>';
+  else menuDiv.innerHTML = '';
 }	 
 
 function DrawMain(data, service)
