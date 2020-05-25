@@ -38,8 +38,13 @@ try {
 	    case 'NEWOD':
 		if (is_array($input['data']))
 		   {
-		    // Get dialog OD name
+		    // Get dialog OD name. cut it and check
 		    $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr($input['data']['dialog']['Database']['Properties']['element1']['data'], 0, ODSTRINGMAXCHAR);
+		    if ($odname === '')
+		       {
+		        $output = ['cmd' => 'INFO', 'alert' => 'Please input Object Database name!'];
+		        break;
+		       }
 		    initNewODDialogElements();
 		    //-----------------Begin new transaction - inserting new OD properties-----------------
 		    $query = $db->prepare("BEGIN; INSERT INTO `$` (odname, odprops) VALUES (:odname, :odprops)");
@@ -61,7 +66,7 @@ try {
 		    $query->closeCursor();
 		    //-------------------------------------------------------------------------------------
 		   }
-		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
+		$output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 	    case 'EDITOD':
 		if (is_array($input['data']))

@@ -632,7 +632,7 @@ function eventHandler(event)
 		  break;
 		 }
 	      //--------------Dialog select mouse down event?--------------
-	      if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select'))
+	      if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined)
 	         {
 		  switch (event.target.parentNode.attributes.type.value)
 			 {
@@ -1204,6 +1204,7 @@ function createBox(content, x, y)
  /*		  		      	  	 "help"	     : "<any text>"						*/
  /*		  		      	  	 "line"	     : ""							*/
  /*		  		      	  	 "minheight" : ""							*/
+ /*		  		      	  	 "readonly"  : ""							*/
  /*				     	 	}									*/
  /* content.flags		= object with properties:								*/
  /*				  "esc" - any value cancels the box 							*/
@@ -1384,7 +1385,7 @@ function getInnerDialog(content)
 	      case 'select-one':
 		   if (data != '')
 		      {
-		       let count = 0;
+		       count = 0;
 		       data = element.data = setOptionSelected(data);
 		       for (data of data.split('|'))	// Handle all option divided by '|'
 		    	   {
@@ -1400,19 +1401,25 @@ function getInnerDialog(content)
 	      case 'checkbox':
 	      case 'radio':
 		   if (data != '')
-		      for (data of data.split('|')) if (data != '')
+		      {
+		       let readonly = '';
+		       if (element.readonly != undefined) readonly = ' readonly';
+		       for (data of data.split('|')) if (data != '')
 			  {
 			   const pos = data.search(/[^\+]/);
-			   if (pos > 0) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" checked><label for="' + name + '">' + data.substr(pos) + '</label>';
-			    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '"><label for="' + name + '">' + data + '</label>';
+			   if (pos > 0) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" checked' + readonly + '><label for="' + name + '">' + data.substr(pos) + '</label>';
+			    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '"' + readonly + '><label for="' + name + '">' + data + '</label>';
 			  }
+		      }
 		   break;
 	      case 'password':
 	      case 'text':
-		   inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + data + '">';
+	           if (element.readonly != undefined) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + data + '" readonly>';
+		    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + data + '">';
 		   break;
 	      case 'textarea':
-		   inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '">' + data + '</textarea>';
+		   if (element.readonly != undefined) inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '" readonly>' + data + '</textarea>';
+		    else inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '">' + data + '</textarea>';
 		   break;
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';

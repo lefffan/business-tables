@@ -156,3 +156,9 @@ SVG:
 
 Input style:
 - http://jsfiddle.net/js5x06nL/
+
+Git:
+git commit -a -m "Readonly tag"
+git push -u origin master
+lefffan
+B267tr54
