@@ -108,7 +108,7 @@ function initNewODDialogElements()
 		    
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
-		    'element3' => ['type' => 'radio', 'head' => 'Element type', 'data' => '+standart|static|unique', 'line' => '', 'help' => "Static type implies element value with one single instance for all objects in object database,<br>while unique element type guarantees element value uniqueness among all objects.<br>Normal type doesn't have all these features."],
+		    'element3' => ['type' => 'radio', 'head' => 'Element type', 'data' => '+standart|static|unique', 'line' => '', 'help' => "Static type implies element value with one single instance for all objects in object database,<br>while unique element type guarantees element value uniqueness among all objects.<br>Normal type doesn't have all these features. Element type can be selected only at element creation."],
 		    'element4' => ['type' => 'text', 'head' => 'Server side element event handler file that processes incoming user defined events (see event section below):', 'data' => '', 'line' => ''],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Element sheduler is some strings (one by line), each of them executes its element handler<br>starting at specified date/time with space separated args one by one in next format:<br>'minute hour mday month wday event count'.<br>See crontab file *nix manual page. Any undefined arg - no call. Scheduled call emulates<br>mouse/keyboard events and passes 'system' user as an user initiated specified event."],
 		    'element6' => ['type' => 'select-one', 'head' => 'New element event', 'data' => 'NONE|DBLCLICK|F2|F12|INS|DEL|KEYPRESS|CONFIRM|NEWOBJECT|DELETEOBJECT|CHANGE', 'help' => 'Element event such as keyborad press (F2, F12, INS, DEL, KEYPRESS), mouse (DBLCLICK),<br>callback event (CONFIRM) or object event (NEWOBJECT, DELETEOBJECT, CHANGE)<br>to pass as a part of JSON string below.'],
@@ -133,10 +133,10 @@ function initNewODDialogElements()
 
 function createDefaultDatabases($db)
 {
- $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON NOT NULL, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON NOT NULL, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
- $query = $db->prepare("ALTER TABLE `$` ADD UNIQUE(odname)");
- $query->execute();
+ // $query = $db->prepare("ALTER TABLE `$` ADD UNIQUE(odname)");
+ // $query->execute();
 }
 
 function getODVNamesForSidebar($db)

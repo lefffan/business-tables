@@ -39,7 +39,7 @@ try {
 		if (is_array($input['data']))
 		   {
 		    // Get dialog OD name. cut it and check
-		    $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr($input['data']['dialog']['Database']['Properties']['element1']['data'], 0, ODSTRINGMAXCHAR);
+		    $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr(trim($input['data']['dialog']['Database']['Properties']['element1']['data']), 0, ODSTRINGMAXCHAR);
 		    if ($odname === '')
 		       {
 		        $output = ['cmd' => 'INFO', 'alert' => 'Please input Object Database name!'];
