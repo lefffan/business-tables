@@ -18,7 +18,7 @@ try {
 	    {
 	    case 'New Object Database':
 	          initNewODDialogElements();
-		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'Create']]];
+		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE']]];
 		  break;
 	    case 'Object Database Properties':
 			if (isset($input['data']))
@@ -102,6 +102,9 @@ try {
 		break;
 		case 'GETMENU':
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
+		break;
+		case 'GETMAIN':
+		   $output = ['cmd' => 'INFO', 'error' => 'Please select Object View'];
 		break;
 	 default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Unknown event "'.$input['cmd'].'" received from the browser!'];

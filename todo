@@ -158,7 +158,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "Readonly tag"
+git commit -a -m "ok-cancel-btn"
 git push -u origin master
 lefffan
 B267tr54

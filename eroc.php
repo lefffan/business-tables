@@ -135,8 +135,6 @@ function createDefaultDatabases($db)
 {
  $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON NOT NULL, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
- // $query = $db->prepare("ALTER TABLE `$` ADD UNIQUE(odname)");
- // $query->execute();
 }
 
 function getODVNamesForSidebar($db)

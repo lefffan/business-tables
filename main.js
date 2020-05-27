@@ -72,7 +72,7 @@ const uiProfile = {
 		  "box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Box animation
-		  "box effect": { "hint": "grow", "alert": "fall", "confirm": "slideleft", "dialog": "rise", "context": "rise", "select": "rise", "dialog filter": "grayscale(0.5)", "confirm filter": "blur(3px)", "alert filter": "blur(3px)", "alert ok": "OK", "profile ok": "ACCEPT",  "profile cancel": "CANCEL CHANGES" },
+		  "box effect": { "hint": "grow", "alert": "fall", "confirm": "slideleft", "dialog": "rise", "context": "rise", "select": "rise", "dialog filter": "grayscale(0.5)", "confirm filter": "blur(3px)", "alert filter": "blur(3px)", "Ok button default text": "OK",  "Cancel button default text": "CANCEL" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
 		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
 		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
@@ -163,7 +163,8 @@ window.onload = function()
  
  cmd = 'GETMENU';
  callController();
- //callController("GETMAIN");
+ cmd = 'GETMAIN';
+ callController();
 }
 	    
 function drawMenu(data)
@@ -691,6 +692,7 @@ function eventHandler(event)
 		 }
 	      break;
 	 case 'keydown':
+	      if (event.which == 45) createBox({"title":"Alert", "alert": "The Object Database cannot be deleted!"});
 	      if (modalVisible === 'help')
 	         {
 		  hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
@@ -1148,24 +1150,30 @@ function createBox(content, x, y)
     }
     
  //---------------Check content types to fill corresponding html data---------------
+ let footer1, footer2 = '<div style="display: flex; flex-direction: row; justify-content: space-evenly;">';
+ (content.flags != undefined && content.flags.ok != undefined) ? footer1 = footer2 += '<div class="ok">' + content.flags.ok + '</div>' : footer1 = footer2 += '<div class="ok">' + uiProfile["box effect"]["Ok button default text"] + '</div>';
+ (content.flags != undefined && content.flags.cancel != undefined) ? footer2 += '<div class="cancel">' + content.flags.cancel + '</div>' : footer2 += '<div class="cancel">' + uiProfile["box effect"]["Cancel button default text"] + '</div>';
+ footer1 += '</div>';
+ footer2 += '</div>';
+ 
  if (content.alert != undefined) // Content is an alert box?
     {
-     if (typeof content.alert == 'string') inner += '<pre>' + content.alert + '</pre>'; // Add content
-     inner += '<div style="display: flex; flex-direction: row; justify-content: space-evenly;"><div class="ok">Ok</div></div>'; // Add 'ok' button
+     if (typeof content.alert == 'string') inner += '<pre style="text-align: center;">' + content.alert + '</pre>'; // Add content
+     inner += footer1; // Add 'ok' button
      modalVisible = 'alert'; // Setting _modalVisible_ global var string to current state
      div = alertDiv;
     }
   else if (content.confirm != undefined) // Content is a confirm?
     {
      if (typeof content.confirm == 'string') inner += '<pre>' + content.confirm + '</pre>'; // Add content
-     inner += '<div style="display: flex; flex-direction: row; justify-content: space-evenly;"><div class="ok">' + uiProfile["box effect"]["profile ok"] + '</div><div class="cancel">' + uiProfile["box effect"]["profile cancel"] + '</div></div>'; // Add 'ok' and 'cancel' buttons
+     inner += footer2; // Add 'ok' and 'cancel' buttons
      modalVisible = 'confirm'; // Setting _modalVisible_ global var string to current stat
      div = confirmDiv;
     }
   else if (content.dialog != undefined) // Content is a dialog box?
     {
      inner += getInnerDialog(content); // Add content
-     inner += '<div style="display: flex; flex-direction: row; justify-content: space-evenly;"><div class="ok">' + uiProfile["box effect"]["profile ok"] + '</div><div class="cancel">' + uiProfile["box effect"]["profile cancel"] + '</div></div>'; // Add 'ok' and 'cancel' buttons
+     inner += footer2; // Add 'ok' and 'cancel' buttons
      modalVisible = 'dialog'; // Setting _modalVisible_ global var string to current state
      div = dialogDiv;
     }
