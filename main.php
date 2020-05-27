@@ -20,7 +20,7 @@ try {
 	          initNewODDialogElements();
 		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE']]];
 		  break;
-	    case 'Object Database Properties':
+	    case 'Edit Database Structure':
 			if (isset($input['data']))
 				{
 				 initNewODDialogElements();

@@ -62,7 +62,7 @@ function adjustODProperties($data)
  foreach ($data['dialog']['View'] as $key => $value)
       if (!isset($value['element1']['data']) || !isset($value['element2']['data'])) return NULL; // Dialog 'View' pad corrupted?
        else if ($value['element1']['data'] === '') unset($data['dialog']['View'][$key]);	 // View name is empty? Remove it
-       else if (isset($data['dialog']['View'][$value['element1']['data']])) $value['element1']['data'] = $key; // New view name already exists? Discard changes
+       else if (isset($data['dialog']['View'][$value['element1']['data']])) $data['dialog']['View'][strval($key)]['element1']['data'] = strval($key); // New view name already exists? Discard changes
        else
 	 {
 	  $data['dialog']['View'][$value['element1']['data']] = $data['dialog']['View'][$key];	// Otherwise create new view with new view name
@@ -85,6 +85,8 @@ function adjustODProperties($data)
  
  // Return result data
  $data['title'] = 'Edit Object Database structure';
+ if (!isset($data['flags'])) $data['flags'] = [];
+ $data['flags']['ok'] = 'SAVE';
  return $data;
 }					
 

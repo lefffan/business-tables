@@ -5,8 +5,8 @@ const range = document.createRange();
 const selection = window.getSelection();
 const style = document.createElement('style');
 const mainContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems">Delete Object</div><div class="contextMenuItems">Element info</div>';
-const sidebarOVContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems greyContextMenuItem">Object Database Properties</div>';
-const sidebarODContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems">Object Database Properties</div>';
+const sidebarOVContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems greyContextMenuItem">Edit Database Properties</div>';
+const sidebarODContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems">Edit Database Structure</div>';
 // User interface default profile
 const uiProfile = {
 		  // Body
@@ -36,17 +36,17 @@ const uiProfile = {
 		  // Box types
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
 		  "alert": { "target": ".alert", "background-color": "rgb(115,163,181);", "color": "#000000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;" },
-		  "confirm": { "target": ".confirm", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;" },
+		  "confirm": { "target": ".confirm", "background-color": "#FFF;", "color": "#000;", "border-radius": "5px;", "border": "1px solid #DDD;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;", "box-shadow": "3px 3px 5px 0px #DDD;" },
 		  "dialog": { "target": ".dialog", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;", "box-shadow": "none;" },
 		  // Box interface elements
-		  "box title": { "target": ".title", "background-color": "#404851;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
+/*#404851;*/	  "box title": { "target": ".title", "background-color": "transparent;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
 		  "box pad": { "target": ".pad", "background-color": "#404851;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
 		  "box active pad": { "target": ".activepad", "background-color": "#17262B;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
 		  "box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
 		  "box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #4F4F4F;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
-		  "box ok": { "target": ".ok", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 11px Lato, Helvetica;", "color": "white;" },
+		  "box ok": { "target": ".ok", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
 		  "box ok hover": { "target": ".ok:hover", "cursor": "pointer;", "background": "", "color": "" },
-		  "box cancel": { "target": ".cancel", "background-color": "#FF3516;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 11px Lato, Helvetica;", "color": "white;" },
+		  "box cancel": { "target": ".cancel", "background-color": "#FF3516;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
 		  "box cancel hover": { "target": ".cancel:hover", "cursor": "pointer;", "background": "", "color": "" },
 		  "box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#9A7900;", "text-shadow": "none;" },
 		  "box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "black;", "background": "#BB0;", "border-radius": "40%;" },
@@ -521,7 +521,7 @@ function eventHandler(event)
 	      if (event.target.classList.contains('ok'))
 	         {
 		  if (modalVisible === "dialog") saveDialogProfile(); // Get content data for dialog box
-		  cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Object Database Properties' ? cmd = 'EDITOD' : cmd = 'CONFIRM';
+		  cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Edit Database Structure' ? cmd = 'EDITOD' : cmd = 'CONFIRM';
 		  callController(boxContent);
 		  rmBox();
 		  break;
@@ -692,7 +692,7 @@ function eventHandler(event)
 		 }
 	      break;
 	 case 'keydown':
-	      if (event.which == 45) createBox({"title":"Alert", "alert": "The Object Database cannot be deleted!"});
+	      if (event.which == 45) createBox({"title":"Alert", "confirm": "The Object Database cannot be deleted!", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
 	      if (modalVisible === 'help')
 	         {
 		  hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
@@ -1057,7 +1057,7 @@ function callController(data)
 	 case 'New Object Database':
 	      object = { "cmd": cmd };
 	      break;
-     case 'Object Database Properties':
+     case 'Edit Database Structure':
 			object = { "cmd": cmd };
 			if (data != undefined) object.data = data;
 			break;
@@ -1165,7 +1165,7 @@ function createBox(content, x, y)
     }
   else if (content.confirm != undefined) // Content is a confirm?
     {
-     if (typeof content.confirm == 'string') inner += '<pre>' + content.confirm + '</pre>'; // Add content
+     if (typeof content.confirm == 'string') inner += '<pre style="text-align: center;">' + content.confirm + '</pre>'; // Add content
      inner += footer2; // Add 'ok' and 'cancel' buttons
      modalVisible = 'confirm'; // Setting _modalVisible_ global var string to current stat
      div = confirmDiv;
