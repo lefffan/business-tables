@@ -158,7 +158,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "OD props obj elements handle"
+git commit -a -m "display single pad/profile"
 git push -u origin master
 lefffan
 B267tr54

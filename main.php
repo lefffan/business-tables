@@ -18,7 +18,7 @@ try {
 	    {
 	    case 'New Object Database':
 	          initNewODDialogElements();
-		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE']]];
+		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE', 'display_single_profile' => '']]];
 		  break;
 	    case 'Edit Database Structure':
 			if (isset($input['data']))
@@ -57,30 +57,11 @@ try {
 		    $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();                                                                                                                                   
 		    // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
-		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();
 		    // Insert new OD properties
 		    $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
 		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
-		    
-		    
-		    /*// Inserting new OD properties
-		    $query = $db->prepare("INSERT INTO `$` (odname, odprops) VALUES (:odname, :odprops)");
-		    $query->execute([':odname' => $odname, ':odprops' => json_encode(adjustODProperties($input['data']))]);
-		    // Getting created properties id
-		    $query = $db->prepare("SELECT LAST_INSERT_ID()");
-		    $query->execute();
-		    $id = $query->fetch(PDO::FETCH_NUM)[0];
-		    // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
-		    $element = $input['data']['dialog']['Element']['New element'];
-		    if ($element['element3']['data'] === 'standart|static|+unique|') $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, eid1 TEXT, UNIQUE(eid1(".UNIQKEYCHARLENGTH.")), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-		     else $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-		    $query->execute();                                                                                                                                   
-		    // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
-		    $elementQuery = '';
-		    if ($element['element1']['data'] != '' || $element['element2']['data'] != '' || $element['element4']['data'] != '') $elementQuery = 'eid1 JSON, ';
-		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR, ".$elementQuery."PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-		    $query->execute();*/
 		    //-------------------------------------------------------------------------------------
 		   }
 		$output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
@@ -102,7 +83,7 @@ try {
 		        $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
 			$query->execute();
 			$output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
-		        $query = $db->prepare("DROP TABLE `uniq_$id`; DROP TABLE `data_$id`");
+		        $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$id`; DROP TABLE IF EXISTS `data_$id`");
 			$query->execute();
 			break;
 		       }

@@ -1105,34 +1105,36 @@ function rangeTest(a, b)
 
 function createBox(content, x, y)
 {
- /***********************************************************************************************************************/
- /* content.title		= box title										*/
- /* content.hint		= box text with no button								*/
- /* content.alert		= box text with 'ok' button only							*/
- /* content.confirm		= box text with 'ok' and 'cancel' buttons						*/
- /* content.dialog		= object with properties as tabs, each tab is an object with properties as profiles	*/
- /*				  Each profile property is an interface element with the format below.			*/
- /*		   		  "element_name":									*/
- /*						{									*/
- /*				      	  	 "type"      : select|multiple|checkbox|radio|textarea|password|text	*/
- /*				      	  	 "head"      : "<any text>"						*/
- /*				      	  	 "data"      : "{text1}|text2|text3"					*/
- /*		  		      	  	 "help"	     : "<any text>"						*/
- /*		  		      	  	 "line"	     : ""							*/
- /*		  		      	  	 "minheight" : ""							*/
- /*		  		      	  	 "readonly"  : ""							*/
- /*				     	 	}									*/
- /* content.flags		= object with properties:								*/
- /*				  "esc" - any value cancels the box 							*/
- /*				  "profile_head" - json with profile names as a properties and head text as values	*/
- /*				  "ok" - confirm action button text, default is corresponding uiProfile property	*/
- /*				  "cancel" - cancel action button text, default is corresponding uiProfile property	*/
- /*				  "pad" - active (current) pad (if exist) for dialog box				*/
- /*				  "profile" - active (current) profile (if exist) for dialog box			*/
- /*				  "minwidth" - box min width in px							*/
- /*				  "minheight" - box min height in px							*/
- /*				  <any prop> - any callback data element handler can be used				*/
- /***********************************************************************************************************************/
+ /*******************************************************************************************************************************/
+ /* content.title		= box title											*/
+ /* content.hint		= box text with no button									*/
+ /* content.alert		= box text with 'ok' button only								*/
+ /* content.confirm		= box text with 'ok' and 'cancel' buttons							*/
+ /* content.dialog		= object with properties as tabs, each tab is an object with properties as profiles		*/
+ /*				  Each profile property is an interface element with the format below.				*/
+ /*		   		  "element_name":										*/
+ /*						{										*/
+ /*				      	  	 "type"      : select|multiple|checkbox|radio|textarea|password|text		*/
+ /*				      	  	 "head"      : "<any text>"							*/
+ /*				      	  	 "data"      : "{text1}|text2|text3"						*/
+ /*		  		      	  	 "help"	     : "<any text>"							*/
+ /*		  		      	  	 "line"	     : ""								*/
+ /*		  		      	  	 "minheight" : ""								*/
+ /*		  		      	  	 "readonly"  : ""								*/
+ /*				     	 	}										*/
+ /* content.flags		= object with properties:									*/
+ /*				  "esc" - any value cancels the box 								*/
+ /*				  "profile_head" - json with profile names as a properties and head text as values		*/
+ /*				  "ok" - confirm action button text, default is corresponding uiProfile property		*/
+ /*				  "cancel" - cancel action button text, default is corresponding uiProfile property		*/
+ /*				  "pad" - active (current) pad (if exists) for dialog box					*/
+ /*				  "profile" - active (current) profile (if exist) for dialog box				*/
+ /*				  "minwidth" - box min width in px								*/
+ /*				  "minheight" - box min height in px								*/
+ /*				  "display_single_pad" - set this flag to display pad block in case of single one		*/
+ /*				  "display_single_profile" - set this flag to display profile select in case of single one	*/
+ /*				  <any prop> - any callback data element handler can be used					*/
+ /*******************************************************************************************************************************/
  if (typeof content !== 'object') return;
  let div, inner = "";
  
@@ -1239,7 +1241,7 @@ function getInnerDialog(content)
  // No match - assing first pad for default
  if (typeof data === 'string') content.flags.pad = data;
  // Pads count more than one? Creating pad block DOM element.
- if (count > 1)
+ if (count > 1 || content.flags.display_single_pad != undefined)
     {
      // Creating pad wrapper
      inner = '<div class="padbar" style="display: flex; flex-direction: row; justify-content: flex-start;">';
@@ -1265,7 +1267,7 @@ function getInnerDialog(content)
  // No match - assing first profile for default
  if (typeof data === 'string') content.flags.profile = data;
  // Profiles count more than one? Creating profile select DOM element.
- if (count > 1)
+ if (count > 1 || content.flags.display_single_profile != undefined)
     {
      // Add profile head
      if (content.flags.padprofilehead != undefined && content.flags.padprofilehead[content.flags.pad] != undefined) inner += '<pre class="element-headers">' + content.flags.padprofilehead[content.flags.pad] + '</pre>';
