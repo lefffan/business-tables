@@ -1325,7 +1325,7 @@ function getInnerDialog(content)
 		   if (data != '')
 		      {
 		       let readonly = '';
-		       if (element.readonly != undefined) readonly = ' readonly';
+		       if (element.readonly != undefined) readonly = ' disabled';
 		       for (data of data.split('|')) if (data != '')
 			  {
 			   const pos = data.search(/[^\+]/);
@@ -1409,7 +1409,8 @@ function setOptionSelected(data, value) // Function selects option (by setting '
 	 count ++;
 	}
  if (value === undefined || value !== true) result = '+' + result;		// No selected option at all? Use first option for default
- return result.slice(0, -1);							// Return result string without last divided char '|'
+ //return result.slice(0, -1);							// Return result string without last divided char '|'
+ return result;									// Return result string with last divided char '|'
 }
 		       
 function rmBox()

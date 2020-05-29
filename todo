@@ -158,7 +158,16 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "ok-cancel-btn"
+git commit -a -m "OD props obj elements handle"
 git push -u origin master
 lefffan
 B267tr54
+
+
+drop database OE4; create database OE4; use OE4; show tables;
+create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+CREATE TABLE `$` (id MEDIUMINT NOT NULL) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");                                                            
+insert into `$` (odname, odprops) values ('hui', '{"q":"q"}'); 
+SELECT @@autocommit;
