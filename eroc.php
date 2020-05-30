@@ -1,15 +1,15 @@
 <?php
 
-const MAXOBJECTS = 100000;
-const ODSTRINGMAXCHAR = 32;
-const ELEMENTPROFILENAMEMAXHXAR = 16;
-const UNIQKEYCHARLENGTH = 300;
-//const DATABASE
+const DATABASENAME		= 'OE4';
+const MAXOBJECTS		= 100000;
+const ODSTRINGMAXCHAR		= 32;
+const ELEMENTPROFILENAMEMAXHXAR	= 16;
+const UNIQKEYCHARLENGTH		= 300;
 
 error_reporting(E_ALL);
-$db = new PDO('mysql:host=localhost;dbname=OE4', 'root', '123');
+$db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
 $db->exec("SET NAMES UTF8");
-$db->exec("ALTER DATABASE OE4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
+$db->exec("ALTER DATABASE ".DATABASENAME." CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
@@ -31,7 +31,7 @@ function adjustODProperties($data, $db, $id)
  if (!is_array($data)) return NULL;
 
  // Database section handle
- if (!isset($db) || !isset($id)) return NULL; // No db defined or OD id?
+ if (!isset($db) || !isset($id)) return NULL; // No db defined or OD identificator?
  if (!isset($data['dialog']['Database']['Properties']['element1']['data'])) return NULL; // Database name exists?
  if ($data['dialog']['Database']['Properties']['element1']['data'] == '') return NULL; // Empty database name?
  
@@ -58,6 +58,17 @@ function adjustODProperties($data, $db, $id)
 		  $query->execute();
 		 }
 	      unset($data['dialog']['Element'][$key]);		// Element name, description and handler file are empty? Remove element.
+	     }
+	   else
+	     {
+	      $name = $value['element1']['data'];
+	      if (strlen($name) > ELEMENTPROFILENAMEMAXHXAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXHXAR - 2).'..';
+	      $name .= ' - element id'.$eid;
+	      if ($name != $key)
+	         {
+		  $data['dialog']['Element'][$name] = $data['dialog']['Element'][$key];
+	          unset($data['dialog']['Element'][$key]);
+		 }
 	     }
 	 }
  // New element have been set? Create it
@@ -116,22 +127,23 @@ function adjustODProperties($data, $db, $id)
 
 function initNewODDialogElements()
 {
- global $newProperties, $newElement, $newView, $newRule;
+ global $newProperties, $newPermissions, $newElement, $newView, $newRule;
  
- $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'line' => '', 'help' => 'To remove database without recovery - set empty database name string and its description'],
+ $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'line' => '', 'help' => "To remove database without recovery - set empty database name string and its description.<br>Remove all elements (see 'Element' tab) also."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Emtpy, undefined or zero value - no limit.', 'data' => '', 'line' => ''],
 		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Emtpy, undefined or zero value - no limit.', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.'],
-		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element7' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add new databases or edit its properties:', 'data' => '', 'line' => ''],
-		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element9' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit object element properties:', 'data' => '', 'line' => ''],
-		    'element10' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element11' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit object view properties:', 'data' => '', 'line' => ''],
-		    'element12' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element13' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit database rules:', 'data' => '', 'line' => '']];
+		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
 		    
+ $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element2' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add new databases or edit its properties:', 'data' => '', 'line' => ''],
+		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element4' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit object element properties:', 'data' => '', 'line' => ''],
+		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element6' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit object view properties:', 'data' => '', 'line' => ''],
+		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element8' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit database rules:', 'data' => '', 'line' => '']];
+
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'radio', 'head' => 'Element type', 'data' => '+standart|static|unique', 'line' => '', 'help' => "Static type implies element value with one single instance for all objects in object database,<br>while unique element type guarantees element value uniqueness among all objects.<br>Normal type doesn't have all these features. Element type can be selected only at element creation."],

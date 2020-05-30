@@ -158,7 +158,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "display single pad/profile"
+git commit -a -m "element profile rewrite"
 git push -u origin master
 lefffan
 B267tr54
@@ -171,3 +171,6 @@ create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) E
 CREATE TABLE `$` (id MEDIUMINT NOT NULL) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");                                                            
 insert into `$` (odname, odprops) values ('hui', '{"q":"q"}'); 
 SELECT @@autocommit;
+
+
+one comments

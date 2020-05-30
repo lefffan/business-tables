@@ -18,7 +18,7 @@ try {
 	    {
 	    case 'New Object Database':
 	          initNewODDialogElements();
-		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE', 'display_single_profile' => '']]];
+		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE', 'display_single_profile' => '']]];
 		  break;
 	    case 'Edit Database Structure':
 			if (isset($input['data']))
@@ -78,7 +78,7 @@ try {
 		    $id = $query->fetch(PDO::FETCH_NUM)[0];
 		    // In case of empty OD name string try to remove current OD from the system
 		    if ($newodname === '')
-		    if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '')
+		    if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '' && count($input['data']['dialog']['Element']) === 1)
 		       {
 		        $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
 			$query->execute();
@@ -89,7 +89,7 @@ try {
 		       }
 		     else
 		       {
-		        $output = ['cmd' => 'INFO', 'alert' => 'Both fields (OD name and description) should be empty to remove Object Database!'];
+		        $output = ['cmd' => 'INFO', 'alert' => "To remove Object Database (OD) - empty 'name' and 'description' OD fields and remove all elements (see 'Element' tab)"];
 			break;
 		       }
 			// Writing new properties
@@ -103,7 +103,8 @@ try {
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMAIN':
-		   $output = ['cmd' => 'INFO', 'error' => 'Please select Object View'];
+		   //$output = ['cmd' => 'INFO', 'error' => 'Please select Object View'];
+		   $output = ['cmd' => 'INFO', 'error' => 'Please create Object Database first'];
 		break;
 	 default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Unknown event "'.$input['cmd'].'" received from the browser!'];
