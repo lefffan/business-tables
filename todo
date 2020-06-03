@@ -173,4 +173,6 @@ insert into `$` (odname, odprops) values ('hui', '{"q":"q"}');
 SELECT @@autocommit;
 
 
-one comments
+//SELECT JSON_EXTRACT(eid1, '$.colq'), JSON_EXTRACT(eid1, '$.colz') FROM `data_4`;   
+//$query = $db->prepare("SELECT JSON_EXTRACT(ed1, '$.value') FROM `data_$data[0]`"); 
+//$query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.q', '$.value') FROM `data_4`");

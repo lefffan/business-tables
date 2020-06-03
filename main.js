@@ -166,7 +166,7 @@ window.onload = function()
  cmd = 'GETMAIN';
  callController();
 }
-	    
+
 function drawMenu(data)
 {
  let od, ov, ovlist, sidebarHTML = '';
@@ -195,8 +195,16 @@ function drawMenu(data)
     }
     
  // Push calculated html text to sidebar div
- if (sidebarHTML != '') menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>';
-  else menuDiv.innerHTML = '';
+ if (sidebarHTML != '')
+    {
+     menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>';
+     if (activeOD === '') mainDiv.innerHTML = "<h1>Please select Object View!</h1>";
+    }
+  else
+    {
+     menuDiv.innerHTML = '';
+     mainDiv.innerHTML = "<h1>Please create Object Database first!</h1>";
+    }
 }	 
 
 function DrawMain(data, service)
@@ -634,8 +642,9 @@ function eventHandler(event)
 		 rmContextMenu();
 		 activeOD = event.target.nextSibling.innerHTML;
 		 activeOV = event.target.innerHTML;
-		 //cmd = 'GETMAIN';
 		 cmd = 'GETMENU';
+		 callController();
+		 cmd = 'GETMAIN';
 		 callController();
 		 break;
 		}
@@ -692,7 +701,7 @@ function eventHandler(event)
 		 }
 	      break;
 	 case 'keydown':
-	      if (event.which == 45) createBox({"title":"Alert", "confirm": "The Object Database cannot be deleted!", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
+	      //if (event.which == 45) createBox({"title":"Alert", "confirm": "The Object Database cannot be deleted!", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
 	      if (modalVisible === 'help')
 	         {
 		  hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
@@ -871,7 +880,9 @@ function commandHandler(input)
 		  drawMenu(input.data);
 	      break;
 	 case 'REFRESHMAIN':
-	      DrawMain(input.data, input.service);
+	      //DrawMain(input.data, input.service);
+	      //loog(input.data);
+	      //loog(input.format);
 	      break;
 	 case 'INFO':
 	      if (input.log) loog('Log controller message: ' + input.log);
@@ -1037,7 +1048,7 @@ function callController(data)
 		  object = { "cmd": cmd };
 		  break;
 	 case 'GETMAIN':
-	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
+	      if (activeOD != '') object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      break;
 	 case 'Object Versions':
 	      alert('Object id = ' + String(mainTable[focusElement.y][focusElement.x].oId) + ', Element id = ' + String(mainTable[focusElement.y][focusElement.x].eId));

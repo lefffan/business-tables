@@ -1,10 +1,17 @@
 <?php
 
-const DATABASENAME		= 'OE4';
-const MAXOBJECTS		= 100000;
-const ODSTRINGMAXCHAR		= 32;
-const ELEMENTPROFILENAMEMAXHXAR	= 16;
-const UNIQKEYCHARLENGTH		= 300;
+const DATABASENAME			= 'OE4';
+const MAXOBJECTS			= 100000;
+const ODSTRINGMAXCHAR			= 32;
+const ELEMENTPROFILENAMEMAXCHAR		= 16;
+const ELEMENTPROFILENAMEADDSTRING	= 'element id';
+const UNIQKEYCHARLENGTH			= 300;
+const STANDARTELEMENTTYPE		= '+standart|static|unique|';
+const STATICELEMENTTYPE			= 'standart|+static|unique|';
+const UNIQELEMENTTYPE			= 'standart|static|+unique|';
+const NEWOBJECTID			= 1;
+const TITLEOBJECTID			= 2;
+const STARTOBJECTID			= '3';
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
@@ -25,7 +32,7 @@ function loog($arg) // Function saves input $arg to error.log
 
 function adjustODProperties($data, $db, $id)
 {
- global $newProperties, $newElement, $newView, $newRule;
+ global $newElement, $newView, $newRule;
  
  // Is incoming arg array?
  if (!is_array($data)) return NULL;
@@ -45,7 +52,7 @@ function adjustODProperties($data, $db, $id)
 	 }
        else if ($key != 'New element') // Remove empty elements for non new element profile
 	 {
-	  $eid = intval(substr($key, strrpos($key, 'element id') + strlen('element id')));  // Calculate current element id
+	  $eid = intval(substr($key, strrpos($key, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
 	  if ($eid > $eidmax) $eidmax = $eid; // Calculate max element id
 	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '')
 	     {
@@ -62,8 +69,8 @@ function adjustODProperties($data, $db, $id)
 	   else
 	     {
 	      $name = $value['element1']['data'];
-	      if (strlen($name) > ELEMENTPROFILENAMEMAXHXAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXHXAR - 2).'..';
-	      $name .= ' - element id'.$eid;
+	      if (strlen($name) > ELEMENTPROFILENAMEMAXCHAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
+	      $name .= ' - '.ELEMENTPROFILENAMEADDSTRING.$eid;
 	      if ($name != $key)
 	         {
 		  $data['dialog']['Element'][$name] = $data['dialog']['Element'][$key];
@@ -77,7 +84,7 @@ function adjustODProperties($data, $db, $id)
      $data['dialog']['Element']['New element']['element3']['readonly'] = '';
      $data['dialog']['Element']['New element']['element3']['head'] .= ' (readonly)';
      $name = $data['dialog']['Element']['New element']['element1']['data'];
-     if (strlen($name) > ELEMENTPROFILENAMEMAXHXAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXHXAR - 2).'..';
+     if (strlen($name) > ELEMENTPROFILENAMEMAXCHAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
      $eid = strval($eidmax + 1);
      $id = strval($id);
      // Add object element column to database
@@ -88,7 +95,7 @@ function adjustODProperties($data, $db, $id)
          $query = $db->prepare("ALTER TABLE `uniq_$id` ADD eid$eid TEXT, ADD UNIQUE(eid$eid(".UNIQKEYCHARLENGTH."))");
 	 $query->execute();
 	}
-     $data['dialog']['Element'][$name.' - element id'.$eid] = $data['dialog']['Element']['New element'];
+     $data['dialog']['Element'][$name.' - '.ELEMENTPROFILENAMEADDSTRING.$eid] = $data['dialog']['Element']['New element'];
      $data['dialog']['Element']['New element'] = $newElement;
     }
     
@@ -188,4 +195,9 @@ function getODVNamesForSidebar($db)
 			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], 1) as $key => $v) if ($key != 'New view') $arr[$value['odname']][$key] = '';
 			}
  return $arr;
+}
+
+function getODObjects($elements)
+{
+ return [];
 }
