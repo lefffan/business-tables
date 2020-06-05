@@ -99,7 +99,7 @@ const uiProfile = {
 		  };
 
 /*------------------------------VARIABLES------------------------------------*/
-let tooltipTimerId;
+let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, menuDiv, mainTablediv, contextMenuDiv;
 let hintDiv, alertDiv, confirmDiv, dialogDiv, expandedDiv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
@@ -219,7 +219,7 @@ function mergeStyleRules(...rules)
 
 function drawMain()
 {
- let oid, eid, obj, styleRules = '';
+ let oid, eid, obj, x, y, cell, styleRules = '';
  mainTableWidth = mainTableHeight = 0;
  mainTable = [];
  
@@ -227,37 +227,48 @@ function drawMain()
  mainTableRemoveEventListeners();
 
  // Fill mainTable
- for (oid in objectTable)
-  if (oid != 0) for (eid in oid)
+ for (oid in objectTable) // Iterate object identificators from objectTable
+  if (oid != 0) for (eid in objectTable[oid]) if (eid != 0) // Iterate element identificators from current object
      {
-      try   { obj = JSON.parse(objectTable[oid][eid]['json1']); }
+      cell = objectTable[oid][eid];
+      try   { obj = JSON.parse(cell['json']); }
       catch { continue; }
       
+      x = Number(cell['props']['x']);
+      y = Number(cell['props']['y']);
+      
       if (obj.style != undefined) styleRules += obj.style;
-      if (objectTable[oid][eid]['json2'] != undefined) styleRules += objectTable[oid][eid]['json2']['style']);
-      if (objectTable[oid][eid]['json3'] != undefined) styleRules += objectTable[oid][eid]['json3']['style']);
-      if (objectTable[oid][eid]['json4'] != undefined) styleRules += objectTable[oid][eid]['json4']['style']);
+      if (cell['props']['style'] != undefined) styleRules += cell['props']['style'];
+      if (cell['style1'] != undefined) styleRules += cell['style1'];
+      if (cell['style2'] != undefined) styleRules += cell['style2'];
       
-      mainTable[obj.y][obj.x] = { 'data': toHTMLCharsConvert(obj.value), 'oId': obj.oid, 'eId': obj.eid, 'style': mergeStyleRules(styleRules) }
-      if (obj.collapse != undefined) mainTable[obj.y][obj.x]['collapse'] = '';
+      if (mainTable[y] == undefined) mainTable[y] = [];
+      mainTable[y][x] = { 'data': toHTMLCharsConvert(obj.value), 'oId': oid, 'eId': eid, 'style': mergeStyleRules(styleRules) };
+      if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
       
-      mainTableWidth = Math.max(mainTableWidth, obj.x + 1);
-      mainTableHeight = Math.max(mainTableHeight, obj.y + 1);
+      mainTableWidth = Math.max(mainTableWidth, x + 1);
+      mainTableHeight = Math.max(mainTableHeight, y + 1);
      }
-
+     
  // Drawing html table on main div and query table selector
- let cell, rowHTML = '<table><tbody>'; //if (eList['undef']) undefStyle = eList['undef'].a;, set undef css class
- const undefinedCell = '<td class="undefinedcell"></td>';
- for (oid = 0; oid < mainTableHeight; oid++)
+ let rowHTML = '<table><tbody>';
+ let undefinedCell = '<td></td>';
+ if (objectTable[0] != undefined && objectTable[0][0] != undefined)
+    {
+     if (undefinedcellRuleIndex != undefined) style.sheet.deleteRule(undefinedcellRuleIndex);
+     undefinedcellRuleIndex = style.sheet.insertRule('.undefinedcell {' + objectTable[0][0] + '}');
+     undefinedCell = '<td class="undefinedcell"></td>';
+    }
+ for (y = 0; y < mainTableHeight; y++)
      {
       rowHTML += '<tr>';
-      if (mainTable[oid] == undefined) for (eid = 0; eid < mainTableWidth; eid++)
+      if (mainTable[y] == undefined) for (x = 0; x < mainTableWidth; x++)
 	 {
 	  rowHTML += undefinedCell;
 	 }
-       else for (eid = 0; eid < mainTableWidth; eid++)
+       else for (x = 0; x < mainTableWidth; x++)
 	 {
-	  if (!(cell = mainTable[oid][eid])) rowHTML += undefinedCell;
+	  if (!(cell = mainTable[y][x])) rowHTML += undefinedCell;
 	   else if (cell.style) rowHTML += '<td style="' + cell.style + '">' + cell.data + '</td>';
 	    else rowHTML += '<td>' + cell.data + '</td>';
 	 }

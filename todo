@@ -167,7 +167,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "DRAW MAIN base"
+git commit -a -m "DRAW MAIN undefined cell"
 git push -u origin master
 lefffan
 B267tr54

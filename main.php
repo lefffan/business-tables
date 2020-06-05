@@ -137,25 +137,28 @@ try {
 		     if ($listJSON === '') {}
 		     
 		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array. Array structure:
-		     //  -----------------------------------------------
-		     // |  \eid|       0           |         1..        | 
-		     // |oid\  |     styles        | x,y,style,startev..|
-		     //  -----------------------------------------------
-		     // |  0   | for undef oid/eid | for default object |
-		     //  ----- -----------------------------------------
-		     // |  1   | for new object    | for new object     |
-		     //  -----------------------------------------------
-		     // |  2   | for title object  | for title object   |
-		     //  -----------------------------------------------
-		     // |  3.. | for real object   | for real objects   |
-		     //  -----------------------------------------------
+		     //  ----------------------------------------------------------------
+		     // |  \eid|       Element #0        |        Element #1..        	 | 
+		     // |oid\  |         styles        	 | x,y,style,startevent..	 |
+		     //  ----------------------------------------------------------------
+		     // |  0   | for any oid/eid   	 | for default object element #1 |
+		     //  ----- ----------------------------------------------------------
+		     // |  1   | for whole new object    | for new object element #1     |
+		     //  ----------------------------------------------------------------
+		     // |  2   | for whole title object  | for title object element #1   |
+		     //  ----------------------------------------------------------------
+		     // |  3.. | for whole real object   | for real objects element #1   |
+		     //  ----------------------------------------------------------------
 		     $arrayEIdOId = [];
 		     $elements[0] = $sqlElementList = '';
 		     foreach (preg_split("/\n/", $listJSON) as $value) if ($j = json_decode($value, true, 2))
 			     {
 			      $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
-			      if (!key_exists('eid', $j)) $j['eid'] = '0'; // Check eid key existance
-			      if (!key_exists('oid', $j)) $j['oid'] = '0'; // Check oid key existance
+			      if (!key_exists('eid', $j) || !key_exists('oid', $j)) 
+			         {
+				  if (key_exists('style', $j) && !key_exists('eid', $j) && !key_exists('oid', $j)) $undefinedCellStyle = $j['style'];
+				  continue;
+				 }
 			      if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
 			      if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
 			      
@@ -173,7 +176,7 @@ try {
 				     }
 				   else
 				     {
-				      $arrayEIdOId[$eid][$oid] = cutKeys($j, ['style']); // Fill eidoid array with style property
+				      $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
 				     }
 				 }
 			     }
@@ -195,27 +198,30 @@ try {
 		     $query->execute();
 		     
 		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
-		     //  -------------------------------------------------------------------------------------------------------------------
-		     // |  \ eid|               |                                             |                                             |
-		     // |   \   |       0       |           5 (was 'eid5' column)             |           8.. (was 'eid8' column)           |
-		     // |oid \  |               |                                             |                                             |
-		     //  -------------------------------------------------------------------------------------------------------------------
-		     // |       |style rules    |                                             |                                             |
-		     // |   0   |for undefined  |                                             |                                             |
-		     // |       |cells          |                                             |                                             |
-		     //  -------------------------------------------------------------------------------------------------------------------
-		     // |       |               |"json1": JSON element data                   |"json1": JSON element data                   |
-		     // |   1   |               |"json2": var style-pos for new obj (eid>0)   |"json2": var  style-pos for new obj (eid>0)  | NEWOBJECTID
-		     // |       |               |"json3": var style-pos for new obj (eid=0)   |"json3": var  style-pos for new obj (eid=0)  |
-		     //  -------------------------------------------------------------------------------------------------------------------
-		     // |       |               |"json1": JSON element data                   |"json1": JSON element data                   |
-		     // |   2   |               |"json2": var  style-pos for title obj (eid>0)|"json2": var  style-pos for title obj (eid>0)| TITLEOBJECTID
-		     // |       |               |"json3": var  style-pos for title obj (eid=0)|"json3": var  style-pos for title obj (eid=0)|
-		     //  -------------------------------------------------------------------------------------------------------------------
-		     // |       |               |"json1": JSON element data                   |"json1": JSON element data                   |
-		     // |  3..  |               |"json2": var  style-pos for user obj (eid>0) |"json2": var  style-pos for user obj (eid>0) | STARTOBJECTID
-		     // |       |               |"json3": var  style-pos for user obj (eid=0) |"json3": var  style-pos for user obj (eid=0) |
-		     //  -------------------------------------------------------------------------------------------------------------------
+		     //  -----------------------------------------------------------------------------------
+		     // |  \ eid|               |                                             		    |
+		     // |   \   |       0       |           5.. (was 'eid5' column)             	    |
+		     // |oid \  |               |                                             		    |
+		     //  -----------------------------------------------------------------------------------
+		     // |       |style rules    |                                             		    |
+		     // |   0   |for undefined  |Apply object element props for all objects with element #5 |                                        		 |
+		     // |       |cells          |                                             		    |
+		     //  -----------------------------------------------------------------------------------
+		     // |       |Apply styles   |"json": JSON element data                   		    |
+		     // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
+		     // |       |new object     |"style1": style rules for new object (eid=0,oid=1)	    |
+		     // |       |               |"style2": style rules for new object (eid=0,oid=0)	    |
+		     //  -----------------------------------------------------------------------------------
+		     // |       |Apply styles   |"json": JSON element data                   		    |
+		     // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
+		     // |       |title object   |"style1": style rules for title object (eid=0,oid=3)	    |
+		     // |       |               |"style2": style rules for title object (eid=0,oid=0)	    |
+		     //  -----------------------------------------------------------------------------------
+		     // |       |Apply styles   |"json": JSON element data                   		    |
+		     // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
+		     // |       |real object    |"style1": style rules for real object (eid=0,oid=3)	    |
+		     // |       |               |"style2": style rules for real object (eid=0,oid=0)	    |
+		     //  -----------------------------------------------------------------------------------
 		     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 		    	     {
 			      $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
@@ -230,40 +236,45 @@ try {
 			      $eidstr = 'eid'.strval($eid);
 			      $static = false;
 			      if ($elements[$eid]['element3']['data'] === STATICELEMENTTYPE && isset($firstOId)) $static = true;
-			      // Iterate all objects identificators for current eid to fill $objectTable. First for all object when oid=0:
-			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $key => $v)
+			      
+			      // Iterate all objects identificators for current eid to fill $objectTable. First - for all object when oid=0:
+			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $oid => $valeu)
 				 {
-				  if (!key_exists($key, $objectTable)) $objectTable[$key] = [];
-				  $objectTable[$key][$eid] = ['json2' => $json];
-				  if (!$static) $objectTable[$key][$eid]['json1'] = $objectTableSrc[$key][$eidstr];
-				  if (isset($arrayEIdOId[0][$key])) $objectTable[$key][$eid]['json3'] = $arrayEIdOId[0][$key]; // Style rules merge
+				  if (!key_exists($oid, $objectTable)) $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
+				  if (!$static) $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data for non static element types
+				  $objectTable[$oid][$eid] = ['props' => $arrayEIdOId[$eid][0]]; // Set current object element props data
+				  if (isset($arrayEIdOId[0][$oid])) $objectTable[$oid][$eid]['style1'] = $arrayEIdOId[0][$oid]; // Style rules merge
+				  if (isset($arrayEIdOId[0][0])) $objectTable[$oid][$eid]['style2'] = $arrayEIdOId[0][0]; // Style rules merge
 				 }
+				 
 			      // Second - for other exact object oids:
-		    	      foreach ($value as $oid => $json) if ($oid != 0)
+		    	      foreach ($value as $oid => $props) if ($oid != 0)
 				      {
-				       $json1 = NULL;
-				       if ($oid === NEWOBJECTID) $json1 = '{"value": ""}';
-				       if ($oid === TITLEOBJECTID) $json1 = '{"value": "'.$elements[$eid]['element1']['data'].'"}';
+				       $json = NULL;
+				       if ($oid === NEWOBJECTID) $json = '{"value": ""}';
+				       if ($oid === TITLEOBJECTID) $json = '{"value": "'.$elements[$eid]['element1']['data'].'"}';
 				       if (key_exists($oid, $objectTableSrc))
-				       if ($static) $json1 = '';
-				        else $json1 = $objectTableSrc[$oid][$eidstr];
-				       if (isset($json1))
+				       if ($static) $json = '';
+				        else $json = $objectTableSrc[$oid][$eidstr];
+				       if (isset($json))
 				          {
 					   if (!key_exists($oid, $objectTable)) $objectTable[$oid] = [];
-					   $objectTable[$oid][$eid] = ['json1' => $json1, 'json2' => $json];
-				           if (isset($arrayEIdOId[0][$oid])) $objectTable[$oid][$eid]['json3'] = $arrayEIdOId[0][$oid]; // Style rules merge
+					   $objectTable[$oid][$eid] = ['json' => $json, 'props' => $props];
+				           if (isset($arrayEIdOId[0][$oid])) $objectTable[$oid][$eid]['style1'] = $arrayEIdOId[0][$oid]; // Style rules merge
+					   if (isset($arrayEIdOId[0][0])) $objectTable[$oid][$eid]['style2'] = $arrayEIdOId[0][0]; // Style rules merge
 					  }
 				      }
+				      
 			      // Iterate all objects identificators for current eid to fill $objectTable with static element
-			      if ($static) foreach ($objectTable as $key => $v)
-			      if ($key >= STARTOBJECTID && $key != $firstOId && isset($objectTable[$key][$eid]))
-				 $objectTable[$key][$eid]['json1'] = $objectTableSrc[$firstOId][$eidstr];
+			      if ($static) foreach ($objectTable as $oid => $value)
+			      if ($oid >= STARTOBJECTID && $oid != $firstOId && isset($objectTable[$oid][$eid]))
+				 $objectTable[$oid][$eid]['json'] = $objectTableSrc[$firstOId][$eidstr];
 			     }
 			     
 		     // Check the result data to be sent to client part
 		     if (count($objectTable) > 0)
 		        {
-			 if (isset($arrayEIdOId[0][0]['style'])) $objectTable[0][0] = $arrayEIdOId[0][0]['style'];
+			 if (isset($undefinedCellStyle)) $objectTable[0][0] = $undefinedCellStyle;
 			 $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 			}
 		      else
