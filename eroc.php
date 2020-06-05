@@ -161,9 +161,9 @@ function initNewODDialogElements()
 	
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Object View name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Object View description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'textarea', 'head' => 'Object View expression (selects objects for the specified view). Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
+		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
 		    'element4' => ['type' => 'radio', 'head' => 'Object view type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays object statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
-		    'element5' => ['type' => 'textarea', 'head' => 'Object view element expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
+		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element7' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to have this OV on the sidebar list, so able to select it:', 'data' => '', 'line' => ''],
 		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
@@ -200,4 +200,21 @@ function getODVNamesForSidebar($db)
 function getODObjects($elements)
 {
  return [];
+}
+
+function getFirstOId($db, $id)
+{
+ $query = $db->prepare("SELECT id FROM `data_$id` ORDER BY id LIMIT 1");
+ $query->execute();
+ $firstOId = $query->fetchAll(PDO::FETCH_NUM);
+ if (isset($firstId[0][0])) return $firstOId;
+ return NULL;
+}
+
+function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys defined in $keys array element values
+{
+ $result = [];
+ foreach ($keys as $value)
+	 if (key_exists($value, $arr)) $result[$value] = $arr[$value];
+ return $result;
 }

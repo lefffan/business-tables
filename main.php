@@ -103,182 +103,174 @@ try {
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMAIN':
-		     // Get OV and Element sections from OD props (first row of fetchAll result)
-			 $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View')  FROM $ WHERE odname='$input[OD]'");
-			 $query->execute();
-			 $data = $query->fetchAll(PDO::FETCH_NUM)[0];
-			 // Get element array form OD props and remove 'New element' section
-			 $elements = json_decode($data[1], true);
-			 unset($elements['New element']);
-			 // Convert element assoc array to num array with element identificators as array elements
-			 foreach ($elements as $profile => $value)
-				 {
-				  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
-				  $elements[$eid] = $elements[$profile];
-				  unset($elements[$profile]);
-				 }
-			 if (!is_array($elements) || !count($elements))
-			    {
-			     $output = ['cmd' => 'INFO', 'error' => 'Object Database has no elements exist!'];
-			     break;
-			    }
-			 // *JSON string format, one by line:
-			 // {"eid":	 	"0..",
-			 //  "oid":	 	"0..",
-			 //  "x":	 	"0..",
-			 //  "y":	 	"0..",
-			 //  "style":     	"css style rules",
-			 //  "collapse":	"true|false",
-			 //  "startevent":	"DBLCLICK|KEYPRESS<char1><char2>..<charN>"}
-			 //
-			 // Description:
-			 // 
-			 // eid,oid	- selects object with id <oid> and its element with id <eid>.
-			 //		  Zero or absent 'eid' and 'oid' together selects table cells with no object elements attached to.
-			 //		  Zero or absent 'oid' selects all object with specified 'eid'
-			 // eid	     	- element id, starts from one. However zero or absent 'eid' can be used together with 'style' property -
-			 //		  for unused table cells (cells with no object elements) to style them by this properrty value (see below).
-			 // oid      	- object id, starts from one. However zero id defines virtual object as a header for each element,
-			 //	          '-1' id is new object id - table cells with that id is used to create new object.
-			 //	          JSON string properties with absent 'oid' applied to all other ('oid 'undefined) objects.
-			 // x,y	     	- defined with <eid>/<oid> object element table coordinates for the specified view.
-			 //		  Coordinates may can be in the form of expression, that consists of variable <n>
-			 //		  (current object number in the list, starts from one - 1st object on the page)
-			 //		  and/or <q> - page object quantity (see view scheme properties). Absent property - no 
-			 // style	- style css attribute rules for defined by x,y table cell coordinates
-			 // startevent	- emulate mouse/keyboard event at OV refresh/draw
-			 // collapse	- Object elements with that property set in a whole row/column empty data on table view will be collapsed.
-			 //	          Default is false.
-			 // 
-			 // * - Empty JSON description selects example 1 table type for all elements in OD, error JSON displays nothing.
-			 // * - In case of duplicate 'eid'/'oid' combination - last instance is used.
-			 //
-			 // Example 1:
-			 // We have Object Database (OD) consists of some persons. Each person has some 'element', for a example name, age and phone.
-			 // In context of a system - persons are objects; name, age and phone - are object elements. To display name and age information
-			 // in a classic table we need a simple Object View (OV) with next JSON lines:
-			 // { "eid": "1", "oid": "0", "x": "0", "y": "0" }*
-			 // { "eid": "1", "x": "0", "y": "n" }
-			 // { "eid": "2", "oid": "0", "x": "1", "y": "0" }**
-			 // { "eid": "2", "x": "1", "y": "n" }
-			 //
-			 // *  - header for element id 1 with 0,0 coordinates at the left-upper corner of the table
-			 // ** - header for element id 1 with 1,0 coordinates ath the table 1st row and 2nd column, all headers should be defined explicitly 
-			 //
-			 // So the table will look like a simple table with two headers (name and age) and person list:
-			 // ---------------
-			 //| Name  |  Age  |	- object id 0 (header)
-			 // ---------------
-			 //| Mary  |  23   |	- object id 1
-			 // ---------------
-			 //| John  |  32   |	- object id 2  
-			 // ---------------
-			 //|  ...  |  ...  |  
-			 // ---------------
-			 //	
-			 // element element
-			 //  id 1    id 2
-			 //
-			 //
-			 // Example 2:
-			 // ---------------
-			 //| Mary  |  23   |	
-			 // ---------------
-			 //| John  |  32   |
-			 // ---------------
-			 //|  ...  |  ...  |  
-			 // ----------------
-			 //
-			 // Same table with no header. JSON description:
-			 // { "eid": "1", "x": "0", "y": "n-1" }
-			 // { "eid": "2", "x": "1", "y": "n-1" }
-			 //
-			 // Example 3:
-			 // 	    --------- --------
-			 //   ...  | newname | newage |		y = 0 (line 1)
-			 //         --------- --------
-			 //   ...      ...	...		y = 1 (line 2)
-			 //        
-			 //   ...      ...	...    		y = 2 (line 3)
-			 //        
-			 //   ...      ...	...   		y = 3 (line 4)
-			 //        
-			 //   ...      ...	...   		y = 4 (line 5)
-			 //            
-			 //   ...      ...	...   		y = 5 (line 6)
-			 // -------
-			 //| John  |   ...	...		y = 6 (line 7)
-			 // -------
-			 //|  32   |   ...	...		y = 7 (line 8)
-			 // -------
-			 //| Mary  |   ...	...		y = 8 (line 9)
-			 // -------
-			 //|  23   |   ...	...		y = 9 (line 10)
-			 // -------
-			 //
-			 //  x=0       x=1	x=2
-			 //
-			 // Same database, but all object data starts from the bottom of the page (q=10), with one element by line and
-			 // new name/age input at the top of the table. Also set no border with red background for unused cells. JSON description:
-			 // { "eid": "1", "x": "0", "y": "q-2*n" }
-			 // { "eid": "2", "x": "0", "y": "q-2*n+1" }
-			 // { "eid": "1", "oid": "-1", "x": "1", "y": "0" }*
-			 // { "eid": "2", "oid": "-1", "x": "2", "y": "0" }**
-			 // { "style": "border: none; background: red;" }
-			 //
-			 // * - Name element input for a new object
-			 // * - Age element input for a new object
+		     // Get Id, Element and OV sections from OD props
+		     $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View')  FROM $ WHERE odname='$input[OD]'");
+		     $query->execute();
+		     
+		     // Get 1st row where to data array: 1-id, 2-element profiles, 3-view profiles
+		     $data = $query->fetchAll(PDO::FETCH_NUM)[0];
+		     
+		     // Decode element profiles array form OD props and remove 'New element' section
+		     $elements = json_decode($data[1], true);
+		     unset($elements['New element']);
+		     
+		     // Convert element assoc array to num array with element identificators as array elements instead of profile names
+		     foreach ($elements as $profile => $value)
+			     {
+			      $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
+			      $elements[$eid] = $elements[$profile];
+			      unset($elements[$profile]);
+			     }
+			
+		     // OD consists of no elements?
+		     if (!is_array($elements) || !count($elements))
+			{
+			 $output = ['cmd' => 'INFO', 'error' => 'Object Database has no elements exist!'];
+			 break;
+			}
 			 
-			 // Get specified View format (what elements should be displayed and how)
-			 $format = json_decode($data[2], true);
-			 $format = trim($format[$input['OV']]['element5']['data']);
-			 if ($format === '')
-			    {
-			     //use default format by foreach ($elements as $id => $value)
-			    }
-			 // Split format data by lines to parse defined element identificators and to build eid-oid two dimension array
-			 $arrayOIdEId = [];
-			 $elements[0] = $elementList = '';
-			 foreach (preg_split("/\n/", $format) as $value) if ($j = json_decode($value, true))
+		     // Move on. Get specified siew JSON element selection (what elements should be displayed and how)
+		     $listJSON = json_decode($data[2], true);
+		     $listJSON = trim($listJSON[$input['OV']]['element5']['data']);
+		     
+		     // List is empty? Set up default list for all elements
+		     if ($listJSON === '') {}
+		     
+		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array. Array structure:
+		     //  -----------------------------------------------
+		     // |  \eid|       0           |         1..        | 
+		     // |oid\  |     styles        | x,y,style,startev..|
+		     //  -----------------------------------------------
+		     // |  0   | for undef oid/eid | for default object |
+		     //  ----- -----------------------------------------
+		     // |  1   | for new object    | for new object     |
+		     //  -----------------------------------------------
+		     // |  2   | for title object  | for title object   |
+		     //  -----------------------------------------------
+		     // |  3.. | for real object   | for real objects   |
+		     //  -----------------------------------------------
+		     $arrayEIdOId = [];
+		     $elements[0] = $sqlElementList = '';
+		     foreach (preg_split("/\n/", $listJSON) as $value) if ($j = json_decode($value, true, 2))
+			     {
+			      $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
+			      if (!key_exists('eid', $j)) $j['eid'] = '0'; // Check eid key existance
+			      if (!key_exists('oid', $j)) $j['oid'] = '0'; // Check oid key existance
+			      if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
+			      if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
+			      
+			      $eid = intval($j['eid']);
+			      $oid = intval($j['oid']);
+			      
+			      if (key_exists($eid, $elements) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
+			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string' && ctype_digit($j['x']) && ctype_digit($j['y']))) // JSON properties 'x' and 'y' are numerical?
 				 {
-				  if (!isset($j['eid'])) $j['eid'] = '0';
-				  if (!isset($j['oid'])) $j['oid'] = '0';
-				  $eid = abs(intval($j['eid']));
-				  $oid = abs(intval($j['oid']));
-				  if (isset($elements[$eid]) && ($eid != 0 || isset($j['style'])))
+				  if (!key_exists($eid, $arrayEIdOId)) $arrayEIdOId[$eid] = [];
+				  if ($eid != 0)
 				     {
-				      if (!isset($arrayOIdEId[$eid])) $arrayOIdEId[$eid] = [];
-				      $arrayOIdEId[$eid][$oid] = $j;
-				      if ($eid != 0) $elementList .= ',eid'.$j['eid'];
+				      $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
+				      $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
+				     }
+				   else
+				     {
+				      $arrayEIdOId[$eid][$oid] = cutKeys($j, ['style']); // Fill eidoid array with style property
 				     }
 				 }
-			 // Is any element defined?	
-			 if ($elementList != '')
-			    {
-			     // Object list (should depends on JSOn 'oid' property plus specified view page range in the future)
-			     // should consists of zero (empty) row, 1st row (new object), 2nd row (title object)
-			     // and other user inserted objects starting with <STARTOBJECTID> id.
-			     // Plus this list should match specified view expression, don't forget it.
-			     // While it is not released, get all object and reindex result array to fit numeric indexes as object identificators
-			     $query = $db->prepare("SELECT id$elementList FROM `data_$data[0]` WHERE last=1");
-			     $query->execute();
-			     $data = [];
-			     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value) $data[intval($value['id'])] = $value;
-			     // Insert element titles row with index <TITLEOBJECTID> to the result array
-			     $data[TITLEOBJECTID] = [];
-			     foreach ($arrayOIdEId as $key => $value) if ($key > 0) $data[TITLEOBJECTID]['eid'.strval($key)] = $elements[$eid]['element1']['data'];
-			     // Reset result array depending on object elements global status
-			     // ...
-			     // Check the result data to be sent to client part
-			     //loog($data);
-			     if (count($data) > 0) $output = ['cmd' => 'REFRESHMAIN', 'data' => $data, 'format' => $arrayOIdEId];
-			      else $output = ['cmd' => 'INFO', 'error' => 'Specified view has no objects defined!'];
-			    }
-			  else 
-			    {
-			     $output = ['cmd' => 'INFO', 'error' => 'Specified view has no elements defined!'];
-			    }
+			     }
+			     
+		     // No any element defined?	
+		     if ($sqlElementList == '')
+			{
+			 $output = ['cmd' => 'INFO', 'error' => 'Specified view has no elements defined!'];
 			 break;
+			}
+			
+		     // Create result $objectTable array section. First step - init vars
+		     $objectTable = $objectTableSrc = [];
+		     $firstOId = getFirstOId($db, $data[0]); // Get first object id to use it as a static object that has one instance value for all objects in OD (for static elements only)
+
+		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
+		     // While this features are not released, get all objects:
+		     $query = $db->prepare("SELECT id$elementList FROM `data_$data[0]` WHERE last=1");
+		     $query->execute();
+		     
+		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
+		     //  -------------------------------------------------------------------------------------------------------------------
+		     // |  \ eid|               |                                             |                                             |
+		     // |   \   |       0       |           5 (was 'eid5' column)             |           8.. (was 'eid8' column)           |
+		     // |oid \  |               |                                             |                                             |
+		     //  -------------------------------------------------------------------------------------------------------------------
+		     // |       |style rules    |                                             |                                             |
+		     // |   0   |for undefined  |                                             |                                             |
+		     // |       |cells          |                                             |                                             |
+		     //  -------------------------------------------------------------------------------------------------------------------
+		     // |       |               |"json1": JSON element data                   |"json1": JSON element data                   |
+		     // |   1   |               |"json2": var style-pos for new obj (eid>0)   |"json2": var  style-pos for new obj (eid>0)  | NEWOBJECTID
+		     // |       |               |"json3": var style-pos for new obj (eid=0)   |"json3": var  style-pos for new obj (eid=0)  |
+		     //  -------------------------------------------------------------------------------------------------------------------
+		     // |       |               |"json1": JSON element data                   |"json1": JSON element data                   |
+		     // |   2   |               |"json2": var  style-pos for title obj (eid>0)|"json2": var  style-pos for title obj (eid>0)| TITLEOBJECTID
+		     // |       |               |"json3": var  style-pos for title obj (eid=0)|"json3": var  style-pos for title obj (eid=0)|
+		     //  -------------------------------------------------------------------------------------------------------------------
+		     // |       |               |"json1": JSON element data                   |"json1": JSON element data                   |
+		     // |  3..  |               |"json2": var  style-pos for user obj (eid>0) |"json2": var  style-pos for user obj (eid>0) | STARTOBJECTID
+		     // |       |               |"json3": var  style-pos for user obj (eid=0) |"json3": var  style-pos for user obj (eid=0) |
+		     //  -------------------------------------------------------------------------------------------------------------------
+		     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
+		    	     {
+			      $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
+			      $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
+			     }
+			     
+		     // Rewrite $objectTableSrc array (to the table above) on eidoid array to $objectTable, not forgeting about static element status.
+		     // In the future release create first object (static) flag whether it is on the object list or not, then remove it at the end or not.
+		     // So - iterate all elements with non zero identificators (real elements)
+		     foreach ($arrayEIdOId as $eid => $value) if ($eid != 0)
+		    	     {
+			      $eidstr = 'eid'.strval($eid);
+			      $static = false;
+			      if ($elements[$eid]['element3']['data'] === STATICELEMENTTYPE && isset($firstOId)) $static = true;
+			      // Iterate all objects identificators for current eid to fill $objectTable. First for all object when oid=0:
+			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $key => $v)
+				 {
+				  if (!key_exists($key, $objectTable)) $objectTable[$key] = [];
+				  $objectTable[$key][$eid] = ['json2' => $json];
+				  if (!$static) $objectTable[$key][$eid]['json1'] = $objectTableSrc[$key][$eidstr];
+				  if (isset($arrayEIdOId[0][$key])) $objectTable[$key][$eid]['json3'] = $arrayEIdOId[0][$key]; // Style rules merge
+				 }
+			      // Second - for other exact object oids:
+		    	      foreach ($value as $oid => $json) if ($oid != 0)
+				      {
+				       $json1 = NULL;
+				       if ($oid === NEWOBJECTID) $json1 = '{"value": ""}';
+				       if ($oid === TITLEOBJECTID) $json1 = '{"value": "'.$elements[$eid]['element1']['data'].'"}';
+				       if (key_exists($oid, $objectTableSrc))
+				       if ($static) $json1 = '';
+				        else $json1 = $objectTableSrc[$oid][$eidstr];
+				       if (isset($json1))
+				          {
+					   if (!key_exists($oid, $objectTable)) $objectTable[$oid] = [];
+					   $objectTable[$oid][$eid] = ['json1' => $json1, 'json2' => $json];
+				           if (isset($arrayEIdOId[0][$oid])) $objectTable[$oid][$eid]['json3'] = $arrayEIdOId[0][$oid]; // Style rules merge
+					  }
+				      }
+			      // Iterate all objects identificators for current eid to fill $objectTable with static element
+			      if ($static) foreach ($objectTable as $key => $v)
+			      if ($key >= STARTOBJECTID && $key != $firstOId && isset($objectTable[$key][$eid]))
+				 $objectTable[$key][$eid]['json1'] = $objectTableSrc[$firstOId][$eidstr];
+			     }
+			     
+		     // Check the result data to be sent to client part
+		     if (count($objectTable) > 0)
+		        {
+			 if (isset($arrayEIdOId[0][0]['style'])) $objectTable[0][0] = $arrayEIdOId[0][0]['style'];
+			 $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+			}
+		      else
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Specified view has no objects defined!'];
+			}
+		     break;
 		default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Unknown event "'.$input['cmd'].'" received from the browser!'];
 		}

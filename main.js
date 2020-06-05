@@ -1,6 +1,9 @@
 /*------------------------------CONSTANTS------------------------------------*/
 const TABLE_MAX_ROWS = 20000;
 const TABLE_MAX_COLUMNS = 20000;
+const NEWOBJECTID = 1;  
+const TITLEOBJECTID = 2;
+const STARTOBJECTID = 3;
 const range = document.createRange();
 const selection = window.getSelection();
 const style = document.createElement('style');
@@ -207,155 +210,67 @@ function drawMenu(data)
     }
 }	 
 
-function DrawMain(data, service)
+function mergeStyleRules(...rules)
 {
- let r, i, rowHTML, cell, undefStyle = '';
+ let result = '';
+ rules.forEach((rule) => {});
+ return result;
+}
+
+function drawMain()
+{
+ let oid, eid, obj, styleRules = '';
+ mainTableWidth = mainTableHeight = 0;
+ mainTable = [];
  
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
- 
- // Parse behaviour selected view format
- parseFormat(data, service);
- if (!mainTableHeight)
-    {
-     mainDiv.innerHTML = "<h1>Specified view has no object defined!</h1>";
-     return;
-    }
-    
- // Collapse empty and flag tagged main table rows and columns
- collapseMainTable();
- 
+
+ // Fill mainTable
+ for (oid in objectTable)
+  if (oid != 0) for (eid in oid)
+     {
+      try   { obj = JSON.parse(objectTable[oid][eid]['json1']); }
+      catch { continue; }
+      
+      if (obj.style != undefined) styleRules += obj.style;
+      if (objectTable[oid][eid]['json2'] != undefined) styleRules += objectTable[oid][eid]['json2']['style']);
+      if (objectTable[oid][eid]['json3'] != undefined) styleRules += objectTable[oid][eid]['json3']['style']);
+      if (objectTable[oid][eid]['json4'] != undefined) styleRules += objectTable[oid][eid]['json4']['style']);
+      
+      mainTable[obj.y][obj.x] = { 'data': toHTMLCharsConvert(obj.value), 'oId': obj.oid, 'eId': obj.eid, 'style': mergeStyleRules(styleRules) }
+      if (obj.collapse != undefined) mainTable[obj.y][obj.x]['collapse'] = '';
+      
+      mainTableWidth = Math.max(mainTableWidth, obj.x + 1);
+      mainTableHeight = Math.max(mainTableHeight, obj.y + 1);
+     }
+
  // Drawing html table on main div and query table selector
- rowHTML = '<table><tbody>';
- if (eList['undef']) undefStyle = eList['undef'].a;
- for (r = 0; r < mainTableHeight; r++)
+ let cell, rowHTML = '<table><tbody>'; //if (eList['undef']) undefStyle = eList['undef'].a;, set undef css class
+ const undefinedCell = '<td class="undefinedcell"></td>';
+ for (oid = 0; oid < mainTableHeight; oid++)
      {
       rowHTML += '<tr>';
-      if (mainTable[r] == undefined)
-	 for (i = 0; i < mainTableWidth; i++)
-	     {
-	      rowHTML += '<td' + undefStyle + '></td>';
-	     }
-       else
-	 for (i = 0; i < mainTableWidth; i++)
-	     {
-	      if (!(cell = mainTable[r][i]))
-		rowHTML += '<td' + undefStyle + '></td>';
-	      else
-		rowHTML += '<td' + cell.attribute + '>' + cell.data + '</td>';
-	     }
+      if (mainTable[oid] == undefined) for (eid = 0; eid < mainTableWidth; eid++)
+	 {
+	  rowHTML += undefinedCell;
+	 }
+       else for (eid = 0; eid < mainTableWidth; eid++)
+	 {
+	  if (!(cell = mainTable[oid][eid])) rowHTML += undefinedCell;
+	   else if (cell.style) rowHTML += '<td style="' + cell.style + '">' + cell.data + '</td>';
+	    else rowHTML += '<td>' + cell.data + '</td>';
+	 }
       rowHTML += '</tr>';
      }
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
+
+ // Collapse empty and collapse flag set 'main table rows and columns'
+ // collapseMainTable();
  
- // Parse auto exec element command
- focusElement = {};
- if (eList['fixed']) mainTablediv.style = 'table-layout: fixed' + '\; ' + 'width: 0px' + '\;';
- if (i = eList['command'])
- if (activeOD == "+" || activeOV != "")
- if (i.command == 'DBLCLICK' || i.command == 'F2' || i.command == 'F12' || i.command == 'INS' || i.command == 'DEL')
-    {
-     focusElement = { "x": objectTable[i.oId][i.eId].x, "y": objectTable[i.oId][i.eId].y, "td": "poh" };
-     cellBorderToggleSelect(null, focusElement.td = mainTablediv.rows[focusElement.y].cells[focusElement.x]);
-     focusElement.td.focus();
-     cmd = i.command;
-     callController();
-    }
-    
  // Add current view event listeners    
  mainTableAddEventListeners();
-}
-
-function parseFormat(data, service)
-{
- let o, e, x, y, a, obj;
- let i, n, q = data.length - 2, d = false;
- let reg = new RegExp('^\\*|^\\/|\\*$|\\/$|\\+$|-$|[nq]\\d|\\d[nq]|\\*\\*|\\*\\/|\\*\\+|\\*-|\\/\\*|\\/\\/|\\/\\+|\\/-|\\+\\*|\\+\\/|\\+\\+|\\+-|-\\*|-\\/|-\\+|--');
- mainTableWidth = mainTableHeight = 0;
- mainTable = [];
- objectTable = [];
- eList = [];
- 
- /*******************************************************************************************************************************/
- /* Table format objects array:              																					*/
- /* eList[2,3..]['default','new',0,1,..] = { "x": "x", "y": "y", "a" : "a" }							*/
- /* eList[2,3..]['collapse'] = true|false											*/
- /* eList[undef] = { "x": "", "y": "", "a" : "style="background-color: #FFF; border: 1px solid black"" }			*/
- /* eList[command] = { "eId": "eId", "oId": "oId", "command" : "" }								*/
- /*******************************************************************************************************************************/
- for (let line of data[0][0].split('\n'))
-     {
-      try { obj = JSON.parse(line); }
-      catch { continue; }
-      
-      if (obj.oId == 'undef') eList['undef'] = { 'x': '', 'y': '', 'a': parseAttributeObjectKeys(obj, ['background-color', 'border'], "style") };
-      
-      if (obj.oId == undefined) obj.oId = 'default';
-      
-      if (obj.oId == 'new' || obj.oId == 'default' || (!isNaN(obj.oId = parseInt(obj.oId)) && (obj.oId = Math.trunc(obj.oId)) >= 0))
-      if (obj.eId != undefined && (!isNaN(obj.eId = parseInt(obj.eId)) && (obj.eId = Math.trunc(obj.eId)) > 1))
-         {
-	  if (obj.oId != 'default' && (obj.command == 'F2' || obj.command == 'F12' || obj.command == 'INS' || obj.command == 'DEL' || obj.command == 'DBLCLICK'))
-	     eList['command'] = { "eId": obj.eId, "oId": obj.oId, "command" : obj.command };
-          if (obj.x != undefined && obj.y != undefined && obj.x != '' && obj.y != '' &&  reg.test(obj.x) == false &&  reg.test(obj.y) == false)
-             {
-	      if (!eList[obj.eId]) eList[obj.eId] = new Array();
-	      eList[obj.eId][obj.oId] = { 'x': obj.x, 'y': obj.y, 'a': parseAttributeObjectKeys(obj, ['color', 'background-color', 'border', 'vertical-align', 'font-family', 'font-style', 'font-weight', 'font-size', 'padding', 'white-space', 'width', 'text-overflow'], "style") + parseAttributeObjectKeys(obj, ['blink'], "class", false) };
-	      if (obj.width != undefined) eList['fixed'] = true;
-	      if (obj.collapse != undefined) eList[obj.eId]["collapse"] = true;
-	       else eList[obj.eId]["collapse"] = false;
-	     }
-	 }
-     }
-    
- /*******************************************************************************************************************************/
- /* Server data array:              												*/
- /*  format  2       3       4   												*/
- /*  0       Id      Data_cl Name												*/
- /*  1       1       Obj_dat ..     												*/
- /*  2       2       Obj_ele ..     												*/
- /*******************************************************************************************************************************/
- if ((eList['undef'] != undefined && eList.length > 1) || (eList['undef'] == undefined && eList.length > 0))
-    {
-     for (n = -1; n < q; n++) objectTable[data[n+2][0]] = new Array();
-     
-     for (i = 0; i < data[1].length - 1; i++)
-     if  (eList[e = data[0][i+1]])
-     for (n = -1; n <= q; n++)
-	 {
-	  if (n == q)
-	     {
-	      if (!eList[e][o = 'new']) break; 
-	       else if (objectTable['new'] == undefined) objectTable['new'] = new Array();
-	     }
-	   else o = data[n+2][0];
-	  if (!eList[e][o]) o = 'default';
-	  if (eList[e][o])
-	  if ((x = Math.trunc(eval(eList[e][o].x))) >= 0 && (y = Math.trunc(eval(eList[e][o].y))) >= 0 && y < TABLE_MAX_ROWS && x < TABLE_MAX_COLUMNS)
-	     {
-	      a = eList[e][o].a;
-	      if (o == 'default') o = data[n+2][0];
-	      objectTable[o][e] = { 'x': x, 'y': y };
-	      if (!mainTable[y]) mainTable[y] = new Array();
-	      if (o == 'new')
-	         {
-		  d ='';
-		  o = -1;
-		 }
-	       else
-	         {
-		  if (d = data[n+2][i+1]) d = toHTMLCharsConvert(d);
-		   else d ='';
-		 }
-	      mainTable[y][x] = { 'data': d, 'oId': o, 'eId': e, 'attribute': a, 'collapse': eList[e]["collapse"] };
-	      if (service[n+2] != undefined && service[n+2][i+1] != undefined) mainTable[y][x].hint = service[n+2][i+1];
-	      /**/if (eList[e]["collapse"] && d != '' && o != 0) mainTable[y][x].collapse = false;
-	      mainTableWidth = Math.max(mainTableWidth, x + 1);
-	      mainTableHeight = Math.max(mainTableHeight, y + 1);
-	     }
-	 }
-    }
 }
 
 function eventHandler(event)
@@ -880,9 +795,8 @@ function commandHandler(input)
 		  drawMenu(input.data);
 	      break;
 	 case 'REFRESHMAIN':
-	      //DrawMain(input.data, input.service);
-	      //loog(input.data);
-	      //loog(input.format);
+	      loog(objectTable = input.data);
+	      drawMain();
 	      break;
 	 case 'INFO':
 	      if (input.log) loog('Log controller message: ' + input.log);
@@ -892,7 +806,7 @@ function commandHandler(input)
 	 case '':
 	      break;
 	 default:
-	      alert('Unknown controller message ' + input.cmd);
+	      alert('Browser report: unknown controller message ' + input.cmd);
 	}
 }
 
@@ -1573,16 +1487,4 @@ function collapseMainTable() // Function deletes collapse flag tagged rows and c
 	 col++;
 	}
     }
-}
-
-function parseAttributeObjectKeys(obj, key, attrName, values = true)
-{
- let v, o, s = '';
- 
- for (v of key)
- if  ((o = eval("obj." + v.replace(/-/g, '_'))) != undefined)
- if  (values) s += v + ': ' + o.replace(/(&gt;)|(&lt;)|[=<>'"]/g, '') + '\; ';
-  else s += v + ' ';
- if (s != '') s = ' ' + attrName + '="' + s.replace(/ $/g, '') + '"';
- return s;
 }

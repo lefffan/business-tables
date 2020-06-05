@@ -1,23 +1,28 @@
-April 2020:
+June 2020:
+- draw main (collapse, default json element selection, eid=oid=0 default style for all cells (plus undef style for undef cells), start event, lookup all code)
+- td cell decription output alert with oid/eid (if 'description' property doesnot exist output only oid/eid)
+- context menu on all main field
 - create new uiProfile (standart and classic)? bootstrap grey modal with shadow https://itchief.ru/bootstrap/modal
 - generate content for new object database (old: make help hints in OD headers from mishka-new.xls)
-- Look up all code and may be set some var constable? And comment all code
-
-May 2020:
+- remove f2,f12.. instead of KEYPRESS
+- Look up all code and may be set some var constable? And comment all code (change menu->sidebar)
 - New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..} What if that format is wrong?
-- OD View Scheme (activate by context menu) - full grafic (fonts, colors, background, scroll-bar, padding, etc.. in service element data via service data pass to the browser)
-- OD users and all user access by token (don't forget to not pass elements that are not alloewed for the user) 
-- https access only
 - remove hint handlers from table cells in order to one handler to main table
 
-June 2020:
+July 2020:
+- OD View Scheme (activate by context menu) - full grafic (fonts, colors, background, scroll-bar, padding, etc.. in service element data via service data pass to the browser), new dialog background and font color to be different from unifi controller
+- OD users and all user access by token (don't forget to not pass elements that are not alloewed for the user) 
+- https access only
+- Logs in one DB, system user/groups in another
+
+August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item
 - Object_selection (expression_filter) as a version show
 - Object_selection (expression_filter) as an object restriction
 - pages on the bottom of the main block; object page number (0 or undefinded - one page for all object), next page redirect bottom scroll
 
-July 2020:
+December 2020:
 - System calls and its object views: LINK
 - Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
   then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
@@ -34,18 +39,22 @@ July 2020:
 - Todo from Mishka dir ois.xlsx file and think to make Boss edit opeations comfortable 
 - Deploy the product to the first real expluatation
 
-Augast 2020	: System calls and its object views: LOCATION.
-Augast 2020	: System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four call can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
-Augast 2020	: System call NEWOBJECT (to create object by user handlers)
-September 2020	: Object view PIECHART and GRAPH
-October 2020	: Object process SCHEDULER
-November 2020	: Other estimated "todo" from Mishka directory ois.xlsx file
-December 2020	: Feedback and finish
-
-
 2021:
-- React/Redux, Node js/NPM, Webpack
+- System calls and its object views: LOCATION.
+- System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four call can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
+- System call NEWOBJECT (to create object by user handlers)
+- Object view PIECHART and GRAPH
+- Object process SCHEDULER
+- Other estimated "todo" from Mishka directory ois.xlsx file
+- Feedback and finish
+
+
+2022:
+- React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
 - Git https://habr.com/ru/post/174467/    https://proglib.io/p/git-for-half-an-hour/   https://git-scm.com/book/en/v2 https://proglib.io/p/git-github-gitflow
+
+
+
 
 Client, controller and element-handler interaction:
 ------Client (browser) input event------	-------Controller------							------Element handler------
@@ -158,7 +167,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "element profile rewrite"
+git commit -a -m "DRAW MAIN base"
 git push -u origin master
 lefffan
 B267tr54
