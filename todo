@@ -1,8 +1,7 @@
 June 2020:
-- draw main (collapse, default json element selection, eid=oid=0 default style for all cells (plus undef style for undef cells), start event, lookup all code)
+- draw main (collapse, default json element selection, start event, lookup all code), test eval(n++) in x,y props
 - td cell decription output alert with oid/eid (if 'description' property doesnot exist output only oid/eid)
 - context menu on all main field
-- create new uiProfile (standart and classic)? bootstrap grey modal with shadow https://itchief.ru/bootstrap/modal
 - generate content for new object database (old: make help hints in OD headers from mishka-new.xls)
 - remove f2,f12.. instead of KEYPRESS
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar)
@@ -167,7 +166,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "DRAW MAIN undefined cell"
+git commit -a -m "DRAW MAIN eval(x|y)"
 git push -u origin master
 lefffan
 B267tr54

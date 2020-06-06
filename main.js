@@ -1,6 +1,5 @@
 /*------------------------------CONSTANTS------------------------------------*/
-const TABLE_MAX_ROWS = 20000;
-const TABLE_MAX_COLUMNS = 20000;
+const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
@@ -219,7 +218,9 @@ function mergeStyleRules(...rules)
 
 function drawMain()
 {
- let oid, eid, obj, x, y, cell, styleRules = '';
+ let oid, eid, obj, cell, styleRules = '';
+ let x, y, error, n = 1, q = 55;
+ let reg = new RegExp('^\\*|^\\/|\\*$|\\/$|\\+$|-$|[nq]\\d|\\d[nq]|\\*\\*|\\*\\/|\\*\\+|\\*-|\\/\\*|\\/\\/|\\/\\+|\\/-|\\+\\*|\\+\\/|\\+\\+|\\+-|-\\*|-\\/|-\\+|--');
  mainTableWidth = mainTableHeight = 0;
  mainTable = [];
  
@@ -227,45 +228,69 @@ function drawMain()
  mainTableRemoveEventListeners();
 
  // Fill mainTable
- for (oid in objectTable) // Iterate object identificators from objectTable
-  if (oid != 0) for (eid in objectTable[oid]) if (eid != 0) // Iterate element identificators from current object
+ for (oid in objectTable) if (oid != 0) // Iterate object identificators from objectTable
      {
-      cell = objectTable[oid][eid];
-      try   { obj = JSON.parse(cell['json']); }
-      catch { continue; }
+      for (eid in objectTable[oid]) if (eid != 0) // Iterate element identificators from current object
+          {
+           cell = objectTable[oid][eid];
+           try   { obj = JSON.parse(cell['json']); }
+           catch { continue; }
+    	   if (reg.test(cell['props']['x']) != false || reg.test(cell['props']['y']) != false)
+              {
+	       error = false;
+	       continue;
+	      }
+           
+           x = Math.trunc(eval(cell['props']['x']));
+           y = Math.trunc(eval(cell['props']['y']));
+           if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS)
+              {
+	       error = true;
+	       continue;
+	      }
       
-      x = Number(cell['props']['x']);
-      y = Number(cell['props']['y']);
+           if (obj.style != undefined) styleRules += obj.style;
+           if (cell['props']['style'] != undefined) styleRules += cell['props']['style'];
+           if (cell['style1'] != undefined) styleRules += cell['style1'];
+           if (cell['style2'] != undefined) styleRules += cell['style2'];
       
-      if (obj.style != undefined) styleRules += obj.style;
-      if (cell['props']['style'] != undefined) styleRules += cell['props']['style'];
-      if (cell['style1'] != undefined) styleRules += cell['style1'];
-      if (cell['style2'] != undefined) styleRules += cell['style2'];
-      
-      if (mainTable[y] == undefined) mainTable[y] = [];
-      mainTable[y][x] = { 'data': toHTMLCharsConvert(obj.value), 'oId': oid, 'eId': eid, 'style': mergeStyleRules(styleRules) };
-      if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
-      
-      mainTableWidth = Math.max(mainTableWidth, x + 1);
-      mainTableHeight = Math.max(mainTableHeight, y + 1);
+           if (mainTable[y] == undefined) mainTable[y] = [];
+           mainTable[y][x] = { 'data': toHTMLCharsConvert(obj.value), 'oId': oid, 'eId': eid, 'style': mergeStyleRules(styleRules) };
+           if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
+
+           mainTableWidth = Math.max(mainTableWidth, x + 1);
+           mainTableHeight = Math.max(mainTableHeight, y + 1);
+	  }
+      n++;
      }
-     
+ if (!mainTableHeight)
+    {
+     mainDiv.innerHTML = "<h1>Specified view has some x,y definition errors!<br>See element selection expression</h1>";
+     return;
+    }
+ if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.');
+  else if (error === false) alert('Specified view has some x,y definition errors!<br>See element selection expression');
+ 
  // Drawing html table on main div and query table selector
  let rowHTML = '<table><tbody>';
  let undefinedCell = '<td></td>';
+ let undefinedRow = '';
+ 
+ // Create 'undefined' html td cell
  if (objectTable[0] != undefined && objectTable[0][0] != undefined)
     {
      if (undefinedcellRuleIndex != undefined) style.sheet.deleteRule(undefinedcellRuleIndex);
      undefinedcellRuleIndex = style.sheet.insertRule('.undefinedcell {' + objectTable[0][0] + '}');
      undefinedCell = '<td class="undefinedcell"></td>';
     }
+    
+ // Create 'undefined' html tr row
+ for (x = 0; x < mainTableWidth; x++) undefinedRow += undefinedCell;
+ 
  for (y = 0; y < mainTableHeight; y++)
      {
       rowHTML += '<tr>';
-      if (mainTable[y] == undefined) for (x = 0; x < mainTableWidth; x++)
-	 {
-	  rowHTML += undefinedCell;
-	 }
+      if (mainTable[y] == undefined) rowHTML += undefinedRow;
        else for (x = 0; x < mainTableWidth; x++)
 	 {
 	  if (!(cell = mainTable[y][x])) rowHTML += undefinedCell;
@@ -274,6 +299,7 @@ function drawMain()
 	 }
       rowHTML += '</tr>';
      }
+
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
 

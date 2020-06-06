@@ -134,7 +134,10 @@ try {
 		     $listJSON = trim($listJSON[$input['OV']]['element5']['data']);
 		     
 		     // List is empty? Set up default list for all elements
-		     if ($listJSON === '') {}
+		     if ($listJSON === '')
+		        {
+			 //{"eid": "for every", "oid": "title", "x": "0", "y": "n-1"}
+			}
 		     
 		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array. Array structure:
 		     //  ----------------------------------------------------------------
@@ -166,7 +169,7 @@ try {
 			      $oid = intval($j['oid']);
 			      
 			      if (key_exists($eid, $elements) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
-			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string' && ctype_digit($j['x']) && ctype_digit($j['y']))) // JSON properties 'x' and 'y' are numerical?
+			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
 				 {
 				  if (!key_exists($eid, $arrayEIdOId)) $arrayEIdOId[$eid] = [];
 				  if ($eid != 0)
