@@ -1,5 +1,5 @@
 /*------------------------------CONSTANTS------------------------------------*/
-const TABLE_MAX_CELLS = 200000;
+const TABLE_MAX_CELLS = 250000;
 const NEWOBJECTID = 1;  
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
@@ -13,6 +13,7 @@ const sidebarODContext = '<div class="contextMenuItems">New Object Database</div
 const uiProfile = {
 		  // Body
 		  "body": { "target": "body", "background-color": "#343E54;" },
+		  //"wait cursor": { "target": ".waitcursor", "cursor": "wait" },
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
@@ -29,7 +30,7 @@ const uiProfile = {
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Sidebar
     		  "sidebar": { "target": ".menu", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
-		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }
+		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
 		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
 		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
 		  "sidebar item hover": { "target": ".menu tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
@@ -212,13 +213,13 @@ function drawMenu(data)
 function mergeStyleRules(...rules)
 {
  let result = '';
- rules.forEach((rule) => {});
+ rules.forEach((rule) => { result += rule; });
  return result;
 }
 
 function drawMain()
 {
- let oid, eid, obj, cell, styleRules = '';
+ let oid, eid, obj, cell, styleRules;
  let x, y, error, n = 1, q = 55;
  let reg = new RegExp('^\\*|^\\/|\\*$|\\/$|\\+$|-$|[nq]\\d|\\d[nq]|\\*\\*|\\*\\/|\\*\\+|\\*-|\\/\\*|\\/\\/|\\/\\+|\\/-|\\+\\*|\\+\\/|\\+\\+|\\+-|-\\*|-\\/|-\\+|--');
  mainTableWidth = mainTableHeight = 0;
@@ -248,14 +249,16 @@ function drawMain()
 	       error = true;
 	       continue;
 	      }
-      
+	      
+	   styleRules = '';
            if (obj.style != undefined) styleRules += obj.style;
            if (cell['props']['style'] != undefined) styleRules += cell['props']['style'];
            if (cell['style1'] != undefined) styleRules += cell['style1'];
            if (cell['style2'] != undefined) styleRules += cell['style2'];
       
            if (mainTable[y] == undefined) mainTable[y] = [];
-           mainTable[y][x] = { 'data': toHTMLCharsConvert(obj.value), 'oId': oid, 'eId': eid, 'style': mergeStyleRules(styleRules) };
+           mainTable[y][x] = { 'oId': oid, 'eId': eid, 'style': mergeStyleRules(styleRules) };
+	   if (obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 
            mainTableWidth = Math.max(mainTableWidth, x + 1);
@@ -268,19 +271,22 @@ function drawMain()
      mainDiv.innerHTML = "<h1>Specified view has some x,y definition errors!<br>See element selection expression</h1>";
      return;
     }
- if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.');
-  else if (error === false) alert('Specified view has some x,y definition errors!<br>See element selection expression');
+ if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
+  else if (error === false) alert('Specified view has some x,y definition errors! See element selection expression'); // Set string 'warning' as box title
+ 
+ // Remove undefined (and 'collapse' property set) main table rows and columns
+ collapseMainTable();
  
  // Drawing html table on main div and query table selector
  let rowHTML = '<table><tbody>';
  let undefinedCell = '<td></td>';
  let undefinedRow = '';
  
- // Create 'undefined' html td cell
- if (objectTable[0] != undefined && objectTable[0][0] != undefined)
+ // Create 'undefined' html td cell template
+ if (objectTable[0] != undefined && objectTable[0][0] != undefined && objectTable[0][0]['style'])
     {
      if (undefinedcellRuleIndex != undefined) style.sheet.deleteRule(undefinedcellRuleIndex);
-     undefinedcellRuleIndex = style.sheet.insertRule('.undefinedcell {' + objectTable[0][0] + '}');
+     undefinedcellRuleIndex = style.sheet.insertRule('.undefinedcell {' + objectTable[0][0]['style'] + '}');
      undefinedCell = '<td class="undefinedcell"></td>';
     }
     
@@ -303,10 +309,7 @@ function drawMain()
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
 
- // Collapse empty and collapse flag set 'main table rows and columns'
- // collapseMainTable();
- 
- // Add current view event listeners    
+ // Add current view event listeners and set default cursor  
  mainTableAddEventListeners();
 }
 
@@ -829,10 +832,10 @@ function commandHandler(input)
 	      callController();
 	      break;
 	 case 'REFRESHMENU':
-		  drawMenu(input.data);
+	      drawMenu(input.data);
 	      break;
 	 case 'REFRESHMAIN':
-	      loog(objectTable = input.data);
+	      objectTable = input.data;
 	      drawMain();
 	      break;
 	 case 'INFO':
@@ -1455,73 +1458,78 @@ function mainTableRemoveEventListeners()
 			   });
 }
 
-function collapseMainTable() // Function deletes collapse flag tagged rows and columns from main object table
+function collapseMainTable() // Function removes collapse flag tagged rows and columns from main object table
 {
- let row = 0, col, disp = 0, flagCollapse;
+ let row, col, disp, collapse;
  
- while (row < mainTableHeight) // Parsing main table rows one by one
- if (mainTable[row])
-    {
-     flagCollapse = false;
-     for (col = 0; col < mainTableWidth; col++)   // Parsing main table columns one by one 
-      if (mainTable[row][col])  		  // Table cell exist? Analyze collapse status
-      if (mainTable[row][col].collapse === false) // Skip row (do not collapse) if at least one cell with unset collapse flag
-         {
-	  flagCollapse = false;
-	  break;
-	 }
-      else
-         {
-	  flagCollapse = true;
-	 }
-     // Collapse (delete) the row by splice in case of true collapse flag, otherwise displace object table `y` coordinate on disp value, if disp > 0
-     if (flagCollapse)
-        {
-	 mainTable.splice(row, 1);
-	 mainTableHeight--;
-	 disp++;
-	}
-      else
-        {
-	 if (disp) 
-	    for (col = 0; col < mainTableWidth; col++)
-		if (mainTable[row][col] != undefined)
-	    	   objectTable[mainTable[row][col].oId][mainTable[row][col].eId].y -= disp;
-	 row++;
-	}
-    }
-  else row++;
-
+ // Fisrt step - main table rows collpase status check 
+ row = disp = 0;
+ while (row < mainTableHeight) // Parse main table rows one by one
+       {
+        // Set row default collapse status to false
+        collapse = false;
+	
+	// Current row exist? Check all its columns (except undefined and titles) to be collapsible
+        if (mainTable[row])
+	   {
+	    for (col = 0; col < mainTableWidth; col++) if (mainTable[row][col] && mainTable[row][col].oid != TITLEOBJECTID)
+		if (mainTable[row][col].collapse != undefined) collapse = true;
+		 else { collapse = false; break; }
+	   }
+	 else if (objectTable[0] != undefined && objectTable[0][0] != undefined && objectTable[0][0]['collapse'] != undefined)
+	   {
+	    // Set collapse status to true if undefined row and collapse property for undefined cell (objectTable[0][0]['collaspe']) is true
+	    collapse = true;
+	   }
+	   
+	// Collapse main table row (remove it by splice), increase displacement and decrease main table height
+	if (collapse === true)
+	   {
+	    mainTable.splice(row, 1);
+	    disp++;
+	    mainTableHeight--;
+	   }
+	 else // Otherwise (in case of no collpase) correct current row 'y' coordinate on displacement value and go to next row
+	   {
+	    if (disp > 0 && mainTable[row] != undefined) for (col = 0; col < mainTableWidth; col++)
+	       if (mainTable[row][col] != undefined) objectTable[mainTable[row][col].oId][mainTable[row][col].eId].y -= disp;
+	    row++;
+	   }
+       }
+ 
+ // Second step - main table columns collpase status check
  col = disp = 0;
- while (col < mainTableWidth) // Parsing main table columns one by one
-    {
-     flagCollapse = false;
-     for (row = 0; row < mainTableHeight; row++)  // Parsing main table rows one by one
-      if (mainTable[row] && mainTable[row][col])  // Table cell exist? Analyze collapse status
-      if (mainTable[row][col].collapse === false) // Skip column (do not collapse) if at least one cell with unset collapse flag
-         {
-	  flagCollapse = false;
-	  break;
-	 }
-      else
-         {
-	  flagCollapse = true;
-	 }
-     // Collapse (delete) the column by splice in case of true collapse flag, otherwise displace object table `x` coordinate on disp value, if disp > 0
-     if (flagCollapse)
-        {
-	 for (row = 0; row < mainTableHeight; row++) 
-	     if (mainTable[row] != undefined) mainTable[row].splice(row, 1);
-	 mainTableWidth--;
-	 disp++;
-	}
-      else
-        {
-	 if (disp)
+ while (col < mainTableWidth) // Parse main table columns one by one
+       {
+        // Set row default collapse status to false
+	collapse = false;
+	
+	// If collapse property for undefined cell (objectTable[0][0]['collaspe']) is true, then check the whole column on undefined cells
+	if (objectTable[0][0]['collapse'] != undefined)
+	   {
+	    collapse = true;
 	    for (row = 0; row < mainTableHeight; row++)
-		if (mainTable[row] != undefined && mainTable[row][col] != undefined)
-	    	   objectTable[mainTable[row][col].oId][mainTable[row][col].eId].x -= disp;
-	 col++;
-	}
-    }
+		if (mainTable[row] != undefined && mainTable[row][col] != undefined) { collapse = false; break; }
+	   }
+	
+	// Check the whole column (except undefined and titles) cell to be all collapsible
+	if (collapse === false) for (row = 0; row < mainTableHeight; row++)
+	if (mainTable[row] && mainTable[row][col] && mainTable[row][col].oid != TITLEOBJECTID)
+	if (mainTable[row][col].collapse != undefined) collapse = true;
+	 else { collapse = false; break; }
+	 
+	// Collapse main table column (remove it by splice), increase displacement and decrease main table width
+	if (collapse === true)
+	   {
+	    for (row = 0; row < mainTableHeight; row++) if (mainTable[row] != undefined) mainTable[row].splice(col, 1);
+	    disp++;
+	    mainTableWidth--;
+	   }
+	 else // Otherwise (in case of no collpase) correct current column 'x' coordinate on displacement value and go to next column
+	   {
+	    if (disp > 0) for (row = 0; row < mainTableHeight; row++)
+	       if (mainTable[row] != undefined && mainTable[row][col] != undefined) objectTable[mainTable[row][col].oId][mainTable[row][col].eId].x -= disp;
+	    col++;
+	   }
+       }
 }

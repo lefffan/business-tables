@@ -133,13 +133,22 @@ try {
 		     $listJSON = json_decode($data[2], true);
 		     $listJSON = trim($listJSON[$input['OV']]['element5']['data']);
 		     
-		     // List is empty? Set up default list for all elements
+		     // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
 		     if ($listJSON === '')
 		        {
-			 //{"eid": "for every", "oid": "title", "x": "0", "y": "n-1"}
+			 $x = 0;
+			 foreach ($elements as $eid => $value)
+				 {
+				  $listJSON .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
+				  $listJSON .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
+				  $listJSON .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
+				  $x++;
+				 }
 			}
 		     
-		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array. Array structure:
+		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
+		     // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
+		     // are parsed for undefined cells css style and collapse capability. Array structure:
 		     //  ----------------------------------------------------------------
 		     // |  \eid|       Element #0        |        Element #1..        	 | 
 		     // |oid\  |         styles        	 | x,y,style,startevent..	 |
@@ -159,7 +168,12 @@ try {
 			      $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
 			      if (!key_exists('eid', $j) || !key_exists('oid', $j)) 
 			         {
-				  if (key_exists('style', $j) && !key_exists('eid', $j) && !key_exists('oid', $j)) $undefinedCellStyle = $j['style'];
+				  if (!key_exists('eid', $j) && !key_exists('oid', $j))
+				     {
+				      $undefinedProps = [];
+				      if (key_exists('style', $j)) $undefinedProps['style'] = $j['style'];
+				      if (key_exists('collapse', $j)) $undefinedProps['collapse'] = $j['collapse'];
+				     }
 				  continue;
 				 }
 			      if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
@@ -277,7 +291,7 @@ try {
 		     // Check the result data to be sent to client part
 		     if (count($objectTable) > 0)
 		        {
-			 if (isset($undefinedCellStyle)) $objectTable[0][0] = $undefinedCellStyle;
+			 if (isset($undefinedProps)) $objectTable[0][0] = $undefinedProps;
 			 $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 			}
 		      else

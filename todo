@@ -1,18 +1,26 @@
 June 2020:
-- draw main (collapse, default json element selection, start event, lookup all code), test eval(n++) in x,y props
-- td cell decription output alert with oid/eid (if 'description' property doesnot exist output only oid/eid)
-- context menu on all main field
-- generate content for new object database (old: make help hints in OD headers from mishka-new.xls)
+- collapse, collapse undefined rows
+  mergeStyleRules
+  cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");
+  lookup all code
+  format all code from vs code
+  
+- context menu on all main field, cursor cell krest
+- generate content for new object database (old: make help hints in OD headers from mishka-new.xls) posmotret v xls file shto esche mojno
 - remove f2,f12.. instead of KEYPRESS
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar)
-- New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..} What if that format is wrong?
+- New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
+  What if that format is wrong? I think do nothing
+- td cell decription output alert with oid/eid (if 'description' property doesnot exist output only oid/eid)
 - remove hint handlers from table cells in order to one handler to main table
+- change alert function to createBox
 
 July 2020:
-- OD View Scheme (activate by context menu) - full grafic (fonts, colors, background, scroll-bar, padding, etc.. in service element data via service data pass to the browser), new dialog background and font color to be different from unifi controller
+- OD View Scheme (activate by context menu) - full grafic (fonts, colors, background, scroll-bar, padding, etc..
+  in service element data via service data pass to the browser), new dialog background and font color to be different from unifi controller
 - OD users and all user access by token (don't forget to not pass elements that are not alloewed for the user) 
 - https access only
-- Logs in one DB, system user/groups in another
+- Logs in one DB, system user/groups in another, view scheme in third?
 
 August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
@@ -21,8 +29,19 @@ August 2020:
 - Object_selection (expression_filter) as an object restriction
 - pages on the bottom of the main block; object page number (0 or undefinded - one page for all object), next page redirect bottom scroll
 
-December 2020:
+September:
+- mishka-new.xls front-end/back-end features
+- Deploy the product to the first real expluatation
+
+October 2020:
 - System calls and its object views: LINK
+
+November 2020:
+- telnet function
+- snmp function
+- diagnostic function
+
+-December 2020:
 - Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
   then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
   If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
@@ -36,7 +55,7 @@ December 2020:
   - should i use timeout if `insert` session will never ends?
   - should the object element process be locked during execution to prevent another session to execute the same element?
 - Todo from Mishka dir ois.xlsx file and think to make Boss edit opeations comfortable 
-- Deploy the product to the first real expluatation
+- Production. Deploy the system to the first real expluatation
 
 2021:
 - System calls and its object views: LOCATION.
@@ -46,7 +65,6 @@ December 2020:
 - Object process SCHEDULER
 - Other estimated "todo" from Mishka directory ois.xlsx file
 - Feedback and finish
-
 
 2022:
 - React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
@@ -166,7 +184,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "DRAW MAIN eval(x|y)"
+git commit -a -m "DRAW MAIN collapse feature"
 git push -u origin master
 lefffan
 B267tr54
