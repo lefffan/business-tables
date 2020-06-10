@@ -224,20 +224,17 @@ try {
 		     // |   0   |for undefined  |Apply object element props for all objects with element #5 |                                        		 |
 		     // |       |cells          |                                             		    |
 		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json": JSON element data                   		    |
+		     // |       |Apply styles   |"json" : JSON element data                   		    |
 		     // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
-		     // |       |new object     |"style1": style rules for new object (eid=0,oid=1)	    |
-		     // |       |               |"style2": style rules for new object (eid=0,oid=0)	    |
+		     // |       |new object     |                                                    	    |
 		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json": JSON element data                   		    |
+		     // |       |Apply styles   |"json" : JSON element data                   		    |
 		     // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
-		     // |       |title object   |"style1": style rules for title object (eid=0,oid=3)	    |
-		     // |       |               |"style2": style rules for title object (eid=0,oid=0)	    |
+		     // |       |title object   |                                                           |
 		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json": JSON element data                   		    |
+		     // |       |Apply styles   |"json" : JSON element data                   		    |
 		     // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
-		     // |       |real object    |"style1": style rules for real object (eid=0,oid=3)	    |
-		     // |       |               |"style2": style rules for real object (eid=0,oid=0)	    |
+		     // |       |real object    |                                                   	    |
 		     //  -----------------------------------------------------------------------------------
 		     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 		    	     {
@@ -260,8 +257,14 @@ try {
 				  if (!key_exists($oid, $objectTable)) $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
 				  if (!$static) $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data for non static element types
 				  $objectTable[$oid][$eid] = ['props' => $arrayEIdOId[$eid][0]]; // Set current object element props data
-				  if (isset($arrayEIdOId[0][$oid])) $objectTable[$oid][$eid]['style1'] = $arrayEIdOId[0][$oid]; // Style rules merge
-				  if (isset($arrayEIdOId[0][0])) $objectTable[$oid][$eid]['style2'] = $arrayEIdOId[0][0]; // Style rules merge
+				  //--------------------------Merge style rules start-----------------------
+				  $styles = []; // CSS style rules in order of priority
+				  if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
+				  if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
+				  if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
+				  if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
+				  $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
+				  //---------------------------Merhe style rules end------------------------ 
 				 }
 				 
 			      // Second - for other exact object oids:
@@ -277,8 +280,14 @@ try {
 				          {
 					   if (!key_exists($oid, $objectTable)) $objectTable[$oid] = [];
 					   $objectTable[$oid][$eid] = ['json' => $json, 'props' => $props];
-				           if (isset($arrayEIdOId[0][$oid])) $objectTable[$oid][$eid]['style1'] = $arrayEIdOId[0][$oid]; // Style rules merge
-					   if (isset($arrayEIdOId[0][0])) $objectTable[$oid][$eid]['style2'] = $arrayEIdOId[0][0]; // Style rules merge
+					   //--------------------------Merge style rules start-----------------------
+					   $styles = []; // CSS style rules in order of priority
+					   if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
+					   if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
+					   if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
+					   if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
+					   $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
+					   //---------------------------Merhe style rules end------------------------ 
 					  }
 				      }
 				      

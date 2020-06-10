@@ -228,7 +228,7 @@ function mergeStyleRules(...rules)
 
 function drawMain()
 {
- let oid, eid, obj, cell, styleRules;
+ let oid, eid, obj, cell;
  let x, y, error, n = 1, q = 55;
  let reg = new RegExp('^\\*|^\\/|\\*$|\\/$|\\+$|-$|[nq]\\d|\\d[nq]|\\*\\*|\\*\\/|\\*\\+|\\*-|\\/\\*|\\/\\/|\\/\\+|\\/-|\\+\\*|\\+\\/|\\+\\+|\\+-|-\\*|-\\/|-\\+|--');
  mainTableWidth = mainTableHeight = 0;
@@ -260,14 +260,8 @@ function drawMain()
 	       continue;
 	      }
 	      
-	   styleRules = '';
-           if (obj.style != undefined) styleRules += obj.style;
-           if (cell['props']['style'] != undefined) styleRules += cell['props']['style'];
-           if (cell['style1'] != undefined) styleRules += cell['style1'];
-           if (cell['style2'] != undefined) styleRules += cell['style2'];
-      
            if (mainTable[y] == undefined) mainTable[y] = [];
-           mainTable[y][x] = { 'oId': oid, 'eId': eid, 'style': mergeStyleRules(styleRules) };
+           mainTable[y][x] = { 'oId': oid, 'eId': eid, 'style': cell['props']['style'] };
 	   if (obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 

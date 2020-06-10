@@ -219,7 +219,7 @@ function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys
  return $result;
 }
 
-function mergeStyleRules(...$rules)
+function mergeStyleRules($rules)
 {
  $resultArray = [];
  $resultStyle = '';

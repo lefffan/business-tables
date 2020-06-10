@@ -183,7 +183,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "DRAW MAIN cursor cell and context menu fix"
+git commit -a -m "Back merge css style rules ver1"
 git push -u origin master
 lefffan
 B267tr54
