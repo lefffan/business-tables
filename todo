@@ -1,26 +1,25 @@
 June 2020:
-- collapse, collapse undefined rows
-  mergeStyleRules
-  cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");
-  lookup all code
-  format all code from vs code
-  
-- context menu on all main field, cursor cell krest
+- firefox up/down and left/right arrows scroll
+- mergeStyleRules should be released in backend
+- rebuild element events (DBLCLICK, KEYPRESS..) in dialog box
+
+
+- cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");
 - generate content for new object database (old: make help hints in OD headers from mishka-new.xls) posmotret v xls file shto esche mojno
-- remove f2,f12.. instead of KEYPRESS
-- Look up all code and may be set some var constable? And comment all code (change menu->sidebar)
+- Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
 - New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
-  What if that format is wrong? I think do nothing
-- td cell decription output alert with oid/eid (if 'description' property doesnot exist output only oid/eid)
-- remove hint handlers from table cells in order to one handler to main table
+  What if that format is wrong? I think do nothing, or log it to the system OD?
+- td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
+- remove hint handlers from table cells in order to one handler of main table
 - change alert function to createBox
+- lookup all code
+- format all code from vs code
+- https access only
 
 July 2020:
-- OD View Scheme (activate by context menu) - full grafic (fonts, colors, background, scroll-bar, padding, etc..
-  in service element data via service data pass to the browser), new dialog background and font color to be different from unifi controller
-- OD users and all user access by token (don't forget to not pass elements that are not alloewed for the user) 
-- https access only
-- Logs in one DB, system user/groups in another, view scheme in third?
+- OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
+- OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
+- Logs should be in one OD, system user/groups in another, view scheme in third to manage access by approporiate OD/OV.
 
 August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
@@ -31,17 +30,17 @@ August 2020:
 
 September:
 - mishka-new.xls front-end/back-end features
-- Deploy the product to the first real expluatation
 
 October 2020:
 - System calls and its object views: LINK
+- Deploy the product to the first real expluatation
 
 November 2020:
 - telnet function
 - snmp function
 - diagnostic function
 
--December 2020:
+- December 2020:
 - Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
   then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
   If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
@@ -184,7 +183,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "DRAW MAIN collapse feature"
+git commit -a -m "DRAW MAIN cursor cell and context menu fix"
 git push -u origin master
 lefffan
 B267tr54
