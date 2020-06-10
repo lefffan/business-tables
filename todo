@@ -1,7 +1,7 @@
 June 2020:
 - firefox up/down and left/right arrows scroll
 - mergeStyleRules should be released in backend
-- rebuild element events (DBLCLICK, KEYPRESS..) in dialog box
+- rebuild element events (DBLCLICK, KEYPRESS..) in dialog box - checkbox with text area with json list to pass to the handler
 
 
 - cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");

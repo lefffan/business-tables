@@ -218,3 +218,20 @@ function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys
 	 if (key_exists($value, $arr)) $result[$value] = $arr[$value];
  return $result;
 }
+
+function mergeStyleRules(...$rules)
+{
+ $resultArray = [];
+ $resultStyle = '';
+
+ foreach($rules as $value) // Iterate all args
+	if (isset($value) && gettype($value) === 'string') // Value is set and is string?
+	   foreach (preg_split('/;/', $value) as $rule) // Split current rule collection by ';' char
+		   if (($pos = strpos($rule, ':')) > 0 && strlen($rule) > $pos + 1) // Some chars before and after ':'?
+		      $resultArray[trim(substr($rule, 0, $pos))] = substr($rule, $pos + 1); // Record rule to $resultArray
+
+ foreach ($resultArray as $key => $values) $resultStyle .= $key.':'.$resultArray[$key].'; '; // Convert $resultArray to css style string
+
+ if ($resultStyle != '') $resultStyle = substr($resultStyle, 0, -1);
+ return $resultStyle;
+}
