@@ -1,5 +1,5 @@
 /*------------------------------CONSTANTS------------------------------------*/
-const TABLE_MAX_CELLS = 250000;
+const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
@@ -107,7 +107,7 @@ let mainDiv, menuDiv, mainTablediv, contextMenuDiv;
 let hintDiv, alertDiv, confirmDiv, dialogDiv, expandedDiv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
 let cmd = activeOD = activeOV = '';
-let eList, focusElement = wrappedItems = {};
+let sidebar = focusElement = {};
 let selectExpandedDiv = contextMenu = boxContent = null, modalVisible = "";
 let tdhintDiv = [];
 /*---------------------------------------------------------------------------*/
@@ -175,56 +175,41 @@ window.onload = function()
 
 function drawMenu(data)
 {
- let od, ov, ovlist, sidebarHTML = '';
+ if (typeof data != 'object') return;
+ let ovlistHTML, sidebarHTML = '';
  
- if (typeof data === 'object') for (od in data)
-    {
-     ovlist = '';
-     // Create OV names list with active OV check
-     for (ov in data[od])
-	 if (activeOD === od && activeOV === ov) ovlist += '<tr class="itemactive"><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
-	  else ovlist += '<tr><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
-
-     // Set wrap status to true for default
-     if (wrappedItems[od] === undefined) wrappedItems[od] = true;
+ for (let od in data)
+     {
+     // Set wrap status (empty string key) to true for default or to old instance of sidebar OD wrap status
+     if (sidebar[od] === undefined || sidebar[od][''] === undefined) data[od][''] = true;
+      else data[od][''] = sidebar[od][''];
+      
+     // Create OV names list with active OV check 
+     ovlistHTML = '';
+     for (let ov in data[od]) if (ov != '')
+	 {
+	  if (activeOD === od && activeOV === ov) ovlistHTML += '<tr class="itemactive"><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
+	   else ovlistHTML += '<tr><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
+	 }
 
      // Draw wrap icon
-     if (ovlist === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
-      else if (wrappedItems[od] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
+     if (ovlistHTML === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
+      else if (data[od][''] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
        else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
 
      // Insert OD name
      sidebarHTML += '<td class="sidebar-od">' + od + '</td><td style="display: none;"></td></tr>';
      
-     // Insert OV names list
-     if (wrappedItems[od] === false) sidebarHTML += ovlist;
+     // Insert OV names list if OD is unwrapped
+     if (data[od][''] === false) sidebarHTML += ovlistHTML;
     }
-    
- // Push calculated html text to sidebar div
- if (sidebarHTML != '')
-    {
-     menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>';
-     if (activeOD === '') mainDiv.innerHTML = "<h1>Please select Object View!</h1>";
-    }
-  else
-    {
-     menuDiv.innerHTML = '';
-     mainDiv.innerHTML = "<h1>Please create Object Database first!</h1>";
-    }
-}	 
 
-function mergeStyleRules(...rules)
-{
- let pos, data, resultObject = {}, resultStyle = '';
- rules.forEach((rule) => {
-			  for (data of rule.split(';')) // Split current rule collection by ';' char
-			      if ((pos = data.indexOf(':')) > 0 && (data.length > pos + 1)) // Some chars before and after ':'?
-			         resultObject[data.substr(0, pos)] = data.substr(pos + 1);
-			 });
-			 
- for (data in resultObject) resultStyle += data + ':' + resultObject[data] + ';';
- return resultStyle;
-}
+ // Push calculated html text to sidebar div
+ sidebarHTML != '' ? menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>' : menuDiv.innerHTML = '';
+  
+ // Reset sidebar with new data
+ sidebar = data;
+}	 
 
 function drawMain()
 {
@@ -596,34 +581,53 @@ function eventHandler(event)
 		 }
 		//--------------OD item mouse click? Wrap/unwrap OV list--------------
 	      if (event.target.classList.contains('sidebar-od'))
-		{
-		 rmContextMenu();
-		 wrappedItems[event.target.innerHTML] = !wrappedItems[event.target.innerHTML];
-		 cmd = 'GETMENU';
-		 callController();
-		 break;
+		 {
+		  rmContextMenu();
+		  if (Object.keys(sidebar[event.target.innerHTML]).length > 1)
+		     {
+		      sidebar[cmd = event.target.innerHTML][''] = !sidebar[cmd][''];
+		      cmd = 'GETMENU';
+		      callController();
+		     }
+		  break;
 		}
 		//--------------OV item mouse click? Open OV in main field--------------
 	      if (event.target.classList.contains('sidebar-ov'))
 		{
 		 rmContextMenu();
-		 activeOD = event.target.nextSibling.innerHTML;
-		 activeOV = event.target.innerHTML;
-		 cmd = 'GETMENU';
-		 callController();
+		 if (activeOD != event.target.nextSibling.innerHTML || activeOV != event.target.innerHTML)
+		    {
+		     activeOD = event.target.nextSibling.innerHTML;
+		     activeOV = event.target.innerHTML;
+		     drawMenu(sidebar);
+		    }
 		 cmd = 'GETMAIN';
 		 callController();
 		 break;
 		}
 		//--------------Mouse click on wrap icon? OD item sidebar line wraps/unwraps ov list, OV item sidebar line opens OV in main field--------------
 	     if (event.target.classList.contains('wrap'))
-			{
-			 if (event.target.nextSibling.classList.contains('sidebar-od')) { wrappedItems[cmd = event.target.nextSibling.innerHTML] = !wrappedItems[cmd]; cmd = 'GETMENU'; }
-			  else { activeOD = event.target.nextSibling.nextSibling.innerHTML; activeOV = event.target.nextSibling.innerHTML; cmd = 'GETMENU'; /*cmd = 'GETMAIN';*/ }
-		     rmContextMenu();
+		{
+		 rmContextMenu();
+		 if (event.target.nextSibling.classList.contains('sidebar-od') && Object.keys(sidebar[event.target.nextSibling.innerHTML]).length > 1)
+		    { 
+		     sidebar[cmd = event.target.nextSibling.innerHTML][''] = !sidebar[cmd][''];
+		     cmd = 'GETMENU';
 		     callController();
-		     break;
 		    }
+		 if (event.target.nextSibling.classList.contains('sidebar-ov'))
+		    {
+		     if (activeOD != event.target.nextSibling.nextSibling.innerHTML || activeOV != event.target.nextSibling.innerHTML)
+		        {
+			 activeOD = event.target.nextSibling.nextSibling.innerHTML;
+		         activeOV = event.target.nextSibling.innerHTML;
+		         drawMenu(sidebar);
+			}
+		     cmd = 'GETMAIN';
+		     callController();
+		    }
+		 break;
+		}
 	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
 	     if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
 	     if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
@@ -801,6 +805,11 @@ function commandHandler(input)
 	      if (input.log) loog('Log controller message: ' + input.log);
 	      if (input.alert) alert(input.alert);
 	      break;
+	 case 'REFRESH':
+	      drawMenu(input.data);
+	      cmd = 'GETMAIN'
+	      callController();
+	      break;
 	 case 'REFRESHMENU':
 	      drawMenu(input.data);
 	      break;
@@ -810,7 +819,7 @@ function commandHandler(input)
 	      break;
 	 case 'INFO':
 	      if (input.log) loog('Log controller message: ' + input.log);
-	      if (input.error) mainDiv.innerHTML = "<h1>" + input.error + "</h1>";
+	      if (input.error) mainDiv.innerHTML = '<h1>' + input.error + '</h1>';
 	      if (input.alert) alert(input.alert);
 	      break;
 	 case '':
@@ -980,7 +989,7 @@ function callController(data)
 	      object = { "cmd": cmd };
 	      break;
 	 case 'GETMAIN':
-	      if (activeOD != '') object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
+	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      break;
 	 case 'Object Versions':
 	      alert('Object id = ' + String(mainTable[focusElement.y][focusElement.x].oId) + ', Element id = ' + String(mainTable[focusElement.y][focusElement.x].eId));
@@ -1007,7 +1016,7 @@ function callController(data)
 	 case 'CONFIRM':
 	 case 'NEWOD':
  	 case 'EDITOD':
-	      object = { "cmd": cmd };
+	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'DBLCLICK':

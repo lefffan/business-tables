@@ -64,7 +64,7 @@ try {
 		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
 		    //-------------------------------------------------------------------------------------
 		   }
-		$output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
+		$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		break;
 	    case 'EDITOD':
 		if (is_array($input['data']))
@@ -82,7 +82,7 @@ try {
 		       {
 		        $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
 			$query->execute();
-			$output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
+			$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		        $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$id`; DROP TABLE IF EXISTS `data_$id`");
 			$query->execute();
 			break;
@@ -93,26 +93,57 @@ try {
 			break;
 		       }
 			// Writing new properties
-			initNewODDialogElements();
-			$query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$id");
-			$query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
+		    initNewODDialogElements();
+		    $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$id");
+		    $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
 		   }
-		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
+		   $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMENU':
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMAIN':
-		     // Get Id, Element and OV sections from OD props
-		     $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View')  FROM $ WHERE odname='$input[OD]'");
+		     // Check input args to be correct
+		     if (!isset($input['OD']) || !isset($input['OV']))
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Incorrect Object Database/View!'];
+			 break;
+			}
+			
+		     // Zero OD count?
+		     $query = $db->prepare("SELECT odname FROM $ LIMIT 1");
 		     $query->execute();
+		     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Please create Object Database first!'];
+			 break;
+			}
 		     
-		     // Get 1st row where to data array: 1-id, 2-element profiles, 3-view profiles
-		     $data = $query->fetchAll(PDO::FETCH_NUM)[0];
+		     // Empty OD/OV?
+		     if ($input['OD'] === '' || $input['OV'] === '')
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Please create/select Object View!'];
+			 break;
+			}
+			
+		     // Get odname OD props with elements: 1-id, 2-element profiles, 3-view profiles
+		     $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$input[OD]'");
+		     $query->execute();
+		     if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0)
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Please create/select Object View!'];
+			 break;
+			}
 		     
-		     // Decode element profiles array form OD props and remove 'New element' section
+		     // Decode element profiles array form OD props, remove 'New element' section and check elements existence
+		     $data = $data[0];
 		     $elements = json_decode($data[1], true);
 		     unset($elements['New element']);
+		     if (!is_array($elements) || !count($elements))
+			{
+			 $output = ['cmd' => 'INFO', 'error' => 'Object Database has no elements exist!'];
+			 break;
+			}
 		     
 		     // Convert element assoc array to num array with element identificators as array elements instead of profile names
 		     foreach ($elements as $profile => $value)
@@ -122,15 +153,13 @@ try {
 			      unset($elements[$profile]);
 			     }
 			
-		     // OD consists of no elements?
-		     if (!is_array($elements) || !count($elements))
-			{
-			 $output = ['cmd' => 'INFO', 'error' => 'Object Database has no elements exist!'];
+		     // Move on. Get specified view JSON element selection (what elements should be displayed and how)
+		     $listJSON = json_decode($data[2], true);
+		     if (!isset($listJSON[$input['OV']]['element5']['data']))
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Please select Object View!'];
 			 break;
 			}
-			 
-		     // Move on. Get specified siew JSON element selection (what elements should be displayed and how)
-		     $listJSON = json_decode($data[2], true);
 		     $listJSON = trim($listJSON[$input['OV']]['element5']['data']);
 		     
 		     // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
@@ -211,7 +240,7 @@ try {
 
 		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
 		     // While this features are not released, get all objects:
-		     $query = $db->prepare("SELECT id$elementList FROM `data_$data[0]` WHERE last=1");
+		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$data[0]` WHERE last=1");
 		     $query->execute();
 		     
 		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:

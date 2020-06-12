@@ -1,10 +1,7 @@
 June 2020:
 - firefox up/down and left/right arrows scroll
-- mergeStyleRules should be released in backend
 - rebuild element events (DBLCLICK, KEYPRESS..) in dialog box - checkbox with text area with json list to pass to the handler
 
-
-- cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");
 - generate content for new object database (old: make help hints in OD headers from mishka-new.xls) posmotret v xls file shto esche mojno
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
 - New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
@@ -12,7 +9,6 @@ June 2020:
 - td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
 - remove hint handlers from table cells in order to one handler of main table
 - change alert function to createBox
-- lookup all code
 - format all code from vs code
 - https access only
 
@@ -27,6 +23,8 @@ August 2020:
 - Object_selection (expression_filter) as a version show
 - Object_selection (expression_filter) as an object restriction
 - pages on the bottom of the main block; object page number (0 or undefinded - one page for all object), next page redirect bottom scroll
+- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }, status 'Loading..' should be displayed page block footer div
+- cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");
 
 September:
 - mishka-new.xls front-end/back-end features
@@ -183,7 +181,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "Back merge css style rules ver1"
+git commit -a -m "Draw main REFRESH"
 git push -u origin master
 lefffan
 B267tr54
