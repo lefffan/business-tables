@@ -12,8 +12,7 @@ catch (PDOException $e)
     }
 
 try {
-     $input = json_decode(file_get_contents("php://input"), true);
-     
+     if (is_array($input = json_decode(file_get_contents("php://input"), true)))
      switch ($input['cmd'])
 	    {
 	    case 'New Object Database':
@@ -54,7 +53,7 @@ try {
 		    $query->execute();
 		    $id = $query->fetch(PDO::FETCH_NUM)[0];
 		    // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
-		    $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".STARTOBJECTID." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+		    $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();                                                                                                                                   
 		    // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
 		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -103,77 +102,14 @@ try {
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMAIN':
-		     // Check input args to be correct
-		     if (!isset($input['OD']) || !isset($input['OV']))
-		        {
-			 $output = ['cmd' => 'INFO', 'error' => 'Incorrect Object Database/View!'];
-			 break;
-			}
-			
-		     // Zero OD count?
-		     $query = $db->prepare("SELECT odname FROM $ LIMIT 1");
-		     $query->execute();
-		     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
-		        {
-			 $output = ['cmd' => 'INFO', 'error' => 'Please create Object Database first!'];
-			 break;
-			}
+		     // Check OD/OV and props to be valid
+		     $odprops = checkODOV($db, $input)
+		     if (gettype($odprops) != 'string') $odprops = getODProps($db, $input);
+		     if (gettype($odprops) === 'string') { $output = ['cmd' => 'INFO', 'error' => $odprops]; break; }
 		     
-		     // Empty OD/OV?
-		     if ($input['OD'] === '' || $input['OV'] === '')
-		        {
-			 $output = ['cmd' => 'INFO', 'error' => 'Please create/select Object View!'];
-			 break;
-			}
-			
-		     // Get odname OD props with elements: 1-id, 2-element profiles, 3-view profiles
-		     $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$input[OD]'");
-		     $query->execute();
-		     if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0)
-		        {
-			 $output = ['cmd' => 'INFO', 'error' => 'Please create/select Object View!'];
-			 break;
-			}
-		     
-		     // Decode element profiles array form OD props, remove 'New element' section and check elements existence
-		     $data = $data[0];
-		     $elements = json_decode($data[1], true);
-		     unset($elements['New element']);
-		     if (!is_array($elements) || !count($elements))
-			{
-			 $output = ['cmd' => 'INFO', 'error' => 'Object Database has no elements exist!'];
-			 break;
-			}
-		     
-		     // Convert element assoc array to num array with element identificators as array elements instead of profile names
-		     foreach ($elements as $profile => $value)
-			     {
-			      $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
-			      $elements[$eid] = $elements[$profile];
-			      unset($elements[$profile]);
-			     }
-			
-		     // Move on. Get specified view JSON element selection (what elements should be displayed and how)
-		     $listJSON = json_decode($data[2], true);
-		     if (!isset($listJSON[$input['OV']]['element5']['data']))
-		        {
-			 $output = ['cmd' => 'INFO', 'error' => 'Please select Object View!'];
-			 break;
-			}
-		     $listJSON = trim($listJSON[$input['OV']]['element5']['data']);
-		     
-		     // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-		     if ($listJSON === '')
-		        {
-			 $x = 0;
-			 foreach ($elements as $eid => $value)
-				 {
-				  $listJSON .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
-				  $listJSON .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
-				  $listJSON .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
-				  $x++;
-				 }
-			}
+		     $odid = $odprops['id'];
+		     $elements = $odprops['elements'];
+		     $listJSON = $odprops['view'];
 		     
 		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
 		     // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
@@ -236,11 +172,11 @@ try {
 			
 		     // Create result $objectTable array section. First step - init vars
 		     $objectTable = $objectTableSrc = [];
-		     $firstOId = getFirstOId($db, $data[0]); // Get first object id to use it as a static object that has one instance value for all objects in OD (for static elements only)
+		     $firstOId = getFirstOId($db, $odprops['id']); // Get first object id to use it as a static object that has one instance value for all objects in OD (for static elements only)
 
 		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
 		     // While this features are not released, get all objects:
-		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$data[0]` WHERE last=1");
+		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odprops[id]` WHERE last=1");
 		     $query->execute();
 		     
 		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
@@ -336,6 +272,45 @@ try {
 		        {
 			 $output = ['cmd' => 'INFO', 'error' => 'Specified view has no objects defined!'];
 			}
+		     break;
+		case 'KEYPRESS':
+		case 'DBLCLICK':
+		case 'CONFIRM':
+		case 'INIT':
+		case 'CHANGE':
+		     // Check OD/OV and props to be valid
+		     $odprops = checkODOV($db, $input, true)
+		     if (gettype($odprops) != 'string') $odprops = getODProps($db, $input);
+		     if (gettype($odprops) === 'string') { $output = ['cmd' => 'INFO', 'error' => $odprops]; break; }
+			
+		     
+		     
+		     $odid = $odprops['id'];
+		     $elements = $odprops['elements'];
+		     if ($input['cmd'] === 'INIT')
+		        {
+			}
+
+/*
+
+		     // Check for eid/oid existence. Add oid object selection check procedure in future release
+		     if (!isset($input['eId']) || !isset($elements[$input['eId']]) || !isset($input['oId']) || $input['oId'] < STARTOBJECTID)
+		        {
+			 $output = ['cmd' => 'INFO', 'error' => 'Incorrect Object/Element Id received fom the browser!'];
+			 break;
+			}
+		     // Fetch JSON list handler events and search for the input event registered from browser
+		     $listJSON = $elements[$input['eId']]['element5']['data'];
+		     foreach (preg_split("/\n/", $listJSON) as $value)
+		    	     if ($j = json_decode($value, true, 2) && $j['event'] === $input['cmd']) break;
+		     // No event specified, but input event is 'CONFIRM'? Push it automatically
+		     if (!isset($j) && $input['cmd'] === 'CONFIRM') $j = ['event' => 'CONFIRM'];
+		     // Still no events? Do nothing
+		     if (!isset($j)
+		        {
+			 $output = ['cmd' => 'INFO', 'log' => json_encode($input)];
+			 break;
+			}*/
 		     break;
 		default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Unknown event "'.$input['cmd'].'" received from the browser!'];

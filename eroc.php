@@ -11,7 +11,7 @@ const STATICELEMENTTYPE			= 'standart|+static|unique|';
 const UNIQELEMENTTYPE			= 'standart|static|+unique|';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
-const STARTOBJECTID			= '3';
+const STARTOBJECTID			= 3;
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
@@ -155,9 +155,8 @@ function initNewODDialogElements()
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'radio', 'head' => 'Element type', 'data' => '+standart|static|unique', 'line' => '', 'help' => "Static type implies element value with one single instance for all objects in object database,<br>while unique element type guarantees element value uniqueness among all objects.<br>Normal type doesn't have all these features. Element type can be selected only at element creation."],
 		    'element4' => ['type' => 'text', 'head' => 'Server side element event handler file that processes incoming user defined events (see event section below):', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Element sheduler is some strings (one by line), each of them executes its element handler<br>starting at specified date/time with space separated args one by one in next format:<br>'minute hour mday month wday event count'.<br>See crontab file *nix manual page. Any undefined arg - no call. Scheduled call emulates<br>mouse/keyboard events and passes 'system' user as an user initiated specified event."],
-		    'element6' => ['type' => 'checkbox', 'head' => 'Element events to be handled', 'data' => 'DBLCLICK|KEYPRESS|CONFIRM|CHANGE|INIT|KILL', 'help' => 'Element event such as keyborad press (KEYPRESS), mouse (DBLCLICK),<br>callback event (CONFIRM) or object event (INIT, KILL, CHANGE)<br>to pass as a part of JSON string below.'],
-		    'element7' => ['type' => 'textarea', 'head' => 'JSON format event args', 'data' => '', 'line' => '', 'help' => "JSON string to pass to element handler when specified event above occurs. Some properties <br>of that JSON are reserved to pass some service data. They are 'event', 'user' initiated<br>event, element 'id' and its 'header'. User defined properties can be set to string or<br>another JSON with Object Database 'OD', Object View 'OV', Object Id 'oId',<br>Element Id 'eId' and element property. In case of 'OD', 'OV', 'oId' or 'eId' omitted -<br>current object database/view and object/element id values are used.<br>To remove element event handle set event to 'NONE' and handler args to empty string."]];
+		    'element5' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Element sheduler is some strings (one by line), each of them executes its element handler &lt;count><br>times starting at specified date/time with space separated args one by one in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;data> &lt;count><br>See crontab file *nix manual page. Any undefined arg - no call. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse or keyboard &lt;event> (DBLCLICK/KEYPRESS) with specified &lt;data><br>and passes 'system' user as an user initiated specified event."],
+		    'element6' => ['type' => 'textarea', 'head' => 'JSON format event args', 'data' => '', 'line' => '', 'help' => "JSON string to pass to element handler when specified event above occurs. Some properties <br>of that JSON are reserved to pass some service data. They are 'event', 'user' initiated<br>event, element 'id' and its 'header'. User defined properties can be set to string or<br>another JSON with Object Database 'OD', Object View 'OV', Object Id 'oId',<br>Element Id 'eId' and element property. In case of 'OD', 'OV', 'oId' or 'eId' omitted -<br>current object database/view and object/element id values are used.<br>To remove element event handle set event to 'NONE' and handler args to empty string."]];
 	
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Object View name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Object View description', 'data' => '', 'line' => ''],
@@ -234,4 +233,65 @@ function mergeStyleRules($rules)
 
  if ($resultStyle != '') $resultStyle = substr($resultStyle, 0, -1);
  return $resultStyle;
+}
+
+function getODProps($db, $input)
+{			
+ // Get odname $OD props with array elements: 1-id, 2-element profiles, 3-view profiles
+ $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$input[OD]'");
+ $query->execute();
+ if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
+ $data = $data[0];
+ 		     
+ // Decode element profiles array form OD props, remove 'New element' section and check elements existence
+ $elements = json_decode($data[1], true);
+ unset($elements['New element']);
+ if (!is_array($elements) || !count($elements)) return 'Object Database has no elements exist!';
+		     
+ // Convert element assoc array to num array with element identificators as array elements instead of profile names
+ foreach ($elements as $profile => $value)
+	 {
+	  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
+	  $elements[$eid] = $elements[$profile];
+	  unset($elements[$profile]);
+	 }
+ $odprops['elements'] = $elements;
+			
+ // Move on. Get specified view JSON element selection (what elements should be displayed and how)
+ $odprops['view'] = json_decode($data[2], true);
+ if (!isset($odprops['view'][$input['OV']]['element5']['data'])) return 'Please select Object View!';
+ $odprops['view'] = trim($odprops['view'][$input['OV']]['element5']['data']);
+ 
+ // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+ if ($odprops['view'] === '')
+    {
+     $x = 0;
+     foreach ($elements as $eid => $value)
+    	     {
+	      $odprops['view'] .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
+	      $odprops['view'] .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
+	      $odprops['view'] .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
+	      $x++;
+	     }
+    }
+        
+ $odprops['id'] = $data[0];
+ return $odprops;
+}
+
+function checkODOV($db, $input, $cmdcheck)
+{
+ // Check OD/OV existence
+ if (!isset($input['OD']) || !isset($input['OV'])) return 'Incorrect Object Database/View!';
+ 
+ // Check any OD sql database existence
+ $query = $db->prepare("SELECT odname FROM $ LIMIT 1");
+ $query->execute();
+ if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create Object Database first!';
+
+ // Empty value OD/OV check
+ if ($input['OD'] === '' || $input['OV'] === '') return 'Please create/select Object View!'; 
+ 
+ // Check browser event (cmd) data to be valid, so return an error in case of undefined data for KEYPRESS, CONFIRM and INIT events
+ if ($cmdcheck && !isset($input['data']) && $input['cmd'] != 'DBLCLICK' && $input['cmd'] != 'CHANGE') return 'Undefined browser event data!';
 }

@@ -995,16 +995,16 @@ function callController(data)
 	      alert('Object id = ' + String(mainTable[focusElement.y][focusElement.x].oId) + ', Element id = ' + String(mainTable[focusElement.y][focusElement.x].eId));
 	      break;
 	 case 'New Object':
-	      object = { "cmd": 'NEWOBJECT', "OD": activeOD, "OV": activeOV };
-	      if (objectTable["new"] !== undefined && objectTable["new"].length > 0)
-		 {
-		  object.data = [];
-		  for (let key in objectTable["new"])
-		      object.data[key] = mainTable[objectTable["new"][key].y][objectTable["new"][key].x].data;
+	      object = { "cmd": 'INIT', "OD": activeOD, "OV": activeOV, "data": [] };
+	      if (objectTable[NEWOBJECTID] !== undefined) for (let key in objectTable[NEWOBJECTID])
+	         {
+		  let cell = mainTable[objectTable[NEWOBJECTID][key].y][objectTable[NEWOBJECTID][key].x];
+	          if (cell.data) object.data[key] = cell.data;
+		   else object.data[key] = '';
 		 }
 	      break;
 	 case 'Delete Object':
-	      object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId, "eId": mainTable[focusElement.y][focusElement.x].eId };
+	      object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId };
 	      break;
 	 case 'New Object Database':
 	      object = { "cmd": cmd };
@@ -1039,7 +1039,7 @@ function callController(data)
 	      loog("Undefined browser message: " + cmd + "!");
 	}
 	
- if (object && object.oId != 0) Hujax("main.php", commandHandler, object);
+ if (object) Hujax("main.php", commandHandler, object);
 }
 
 function createBox(content, x, y)

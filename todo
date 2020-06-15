@@ -1,16 +1,13 @@
 June 2020:
-- firefox up/down and left/right arrows scroll
 - rebuild element events (DBLCLICK, KEYPRESS..) in dialog box - checkbox with text area with json list to pass to the handler
-
-- generate content for new object database (old: make help hints in OD headers from mishka-new.xls) posmotret v xls file shto esche mojno
-- Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
 - New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
   What if that format is wrong? I think do nothing, or log it to the system OD?
+- Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
 - td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
 - remove hint handlers from table cells in order to one handler of main table
-- change alert function to createBox
+- change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - format all code from vs code
-- https access only
+- https access only, register domain tabels.app and certificate
 
 July 2020:
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
@@ -19,26 +16,27 @@ July 2020:
 
 August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
-- Object_selection (expression_filter) as a context menu item
-- Object_selection (expression_filter) as a version show
-- Object_selection (expression_filter) as an object restriction
+- Object_selection (expression_filter) as a context menu item and object restriction
 - pages on the bottom of the main block; object page number (0 or undefinded - one page for all object), next page redirect bottom scroll
-- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }, status 'Loading..' should be displayed page block footer div
-- cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}");
+- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
+- status 'Loading..' should be displayed page block footer div or/and cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}"); ???
 
 September:
 - mishka-new.xls front-end/back-end features
+- help context menu for all help (conception, handler, keyboard/mouse..)
 
 October 2020:
 - System calls and its object views: LINK
-- Deploy the product to the first real expluatation
 
 November 2020:
 - telnet function
 - snmp function
 - diagnostic function
+- Deploy the product to the first real expluatation
+-------------------------------------------------------------------------------------------
 
-- December 2020:
+
+December 2020:
 - Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
   then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
   If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
@@ -51,12 +49,12 @@ November 2020:
   Problems:
   - should i use timeout if `insert` session will never ends?
   - should the object element process be locked during execution to prevent another session to execute the same element?
+  - what if no server responce occurs?
 - Todo from Mishka dir ois.xlsx file and think to make Boss edit opeations comfortable 
-- Production. Deploy the system to the first real expluatation
 
 2021:
 - System calls and its object views: LOCATION.
-- System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four call can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
+- System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four calls can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
 - System call NEWOBJECT (to create object by user handlers)
 - Object view PIECHART and GRAPH
 - Object process SCHEDULER
@@ -181,7 +179,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "Draw main REFRESH"
+git commit -a -m "event handle check"
 git push -u origin master
 lefffan
 B267tr54
