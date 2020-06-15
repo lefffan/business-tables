@@ -103,7 +103,7 @@ try {
 		break;
 		case 'GETMAIN':
 		     // Check OD/OV and props to be valid
-		     $odprops = checkODOV($db, $input)
+		     $odprops = checkODOV($db, $input);
 		     if (gettype($odprops) != 'string') $odprops = getODProps($db, $input);
 		     if (gettype($odprops) === 'string') { $output = ['cmd' => 'INFO', 'error' => $odprops]; break; }
 		     
@@ -181,23 +181,23 @@ try {
 		     
 		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
 		     //  -----------------------------------------------------------------------------------
-		     // |  \ eid|               |                                             		    |
-		     // |   \   |       0       |           5.. (was 'eid5' column)             	    |
-		     // |oid \  |               |                                             		    |
+		     // |  \ eid|               |                                             		    	|
+		     // |   \   |       0       |           5.. (was 'eid5' column)             	    	|
+		     // |oid \  |               |                                             		    	|
 		     //  -----------------------------------------------------------------------------------
-		     // |       |style rules    |                                             		    |
+		     // |       |style rules    |                                             		    	|
 		     // |   0   |for undefined  |Apply object element props for all objects with element #5 |                                        		 |
-		     // |       |cells          |                                             		    |
+		     // |       |cells          |                                             		    	|
 		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json" : JSON element data                   		    |
+		     // |       |Apply styles   |"json" : JSON element data                   		   	 	|
 		     // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
 		     // |       |new object     |                                                    	    |
 		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json" : JSON element data                   		    |
+		     // |       |Apply styles   |"json" : JSON element data                   		    	|
 		     // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
 		     // |       |title object   |                                                           |
 		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json" : JSON element data                   		    |
+		     // |       |Apply styles   |"json" : JSON element data                   		    	|
 		     // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
 		     // |       |real object    |                                                   	    |
 		     //  -----------------------------------------------------------------------------------
@@ -279,17 +279,19 @@ try {
 		case 'INIT':
 		case 'CHANGE':
 		     // Check OD/OV and props to be valid
-		     $odprops = checkODOV($db, $input, true)
+		     $odprops = checkODOV($db, $input, true);
 		     if (gettype($odprops) != 'string') $odprops = getODProps($db, $input);
 		     if (gettype($odprops) === 'string') { $output = ['cmd' => 'INFO', 'error' => $odprops]; break; }
-			
-		     
-		     
 		     $odid = $odprops['id'];
-		     $elements = $odprops['elements'];
+			 $elements = $odprops['elements'];
+			 
+			 // Handle 'INIT' event
 		     if ($input['cmd'] === 'INIT')
 		        {
-			}
+				 $output = ['cmd' => ''];
+				 //loog($input);
+				 foreach($input['data'] as $k => $v) {loog ( $k);loog ( $v);}
+				}
 
 /*
 

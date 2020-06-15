@@ -279,7 +279,7 @@ function getODProps($db, $input)
  return $odprops;
 }
 
-function checkODOV($db, $input, $cmdcheck)
+function checkODOV($db, $input, $cmdcheck = false)
 {
  // Check OD/OV existence
  if (!isset($input['OD']) || !isset($input['OV'])) return 'Incorrect Object Database/View!';
