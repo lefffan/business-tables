@@ -354,14 +354,26 @@ function parseJSONEventData($listJSON, $event)
 
 function InsertObject($db, $output)
 {
- /*$db->beginTransaction();
+ global $OD, $OV, $odid, $allElementsArray, $standartElementsArray, $staticElementsArray, $uniqElementsArray, $elementSelectionJSONList;
+ $query = $values = ''; 
+ foreach ($uniqElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.json_decode($output[$id], true)['value']; }
+ if (query != '') { $query = substr($query, 1); $values = substr($values, 1); }
+
+ $db->beginTransaction();
+ $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
+ $query->execute();                                                                  
+
+ $query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
+ $query->execute();                                                                  
+ // Generate new exception in case of non correct last insert id value               
+ if (!(($newId = intval($query->fetch(PDO::FETCH_NUM)[0])) >= STARTOBJECTID)) throw new Exception();
+ $query = 'id,';
+ $values = strval($newId).',';
+ foreach ($allElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.$output[$id]; }
  
-$query = $db->prepare("BEGIN; INSERT INTO `$OD` ($columnQuery) VALUES ($valueQuery)"
-$query->execute();                                                                  
-$query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
-$query->execute();                                                                  
-// Generate new exception in case of non correct last insert id value               
-if (!(($oId = intval($query->fetch(PDO::FETCH_NUM)[0])) > 0)) throw new Exception();*/
+ $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
+ $query->execute();                                                                  
+ $db->commit();
 }
 
 function DeleteObject()

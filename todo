@@ -163,7 +163,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "INIT command ver1"
+git commit -a -m "INIT command ver2"
 git push -u origin master
 lefffan
 B267tr54
