@@ -223,7 +223,8 @@ function drawMain()
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
 
- // Fill mainTable
+ // Fill mainTable tw dimension array with next format - mainTable[y][x]: { oid, eid, data, style, collapse}
+ // Format of objectTable[oid][eid]: ['json': 'any element json data', 'props': 'oid, eid, eval(x), eval(y), style, collapse, startevent']
  for (oid in objectTable) if (oid != 0) // Iterate object identificators from objectTable
      {
       for (eid in objectTable[oid]) if (eid != 0) // Iterate element identificators from current object
@@ -246,14 +247,14 @@ function drawMain()
 	      }
 	      
            if (mainTable[y] == undefined) mainTable[y] = [];
-           mainTable[y][x] = { 'oId': oid, 'eId': eid, 'style': cell['props']['style'] };
+           mainTable[y][x] = { 'oId': oid, 'eId': eid, 'data': '', 'style': cell['props']['style'] };
 	   if (obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 
            mainTableWidth = Math.max(mainTableWidth, x + 1);
-		   mainTableHeight = Math.max(mainTableHeight, y + 1);
-		   cell['props']['x'] = x;
-		   cell['props']['y'] = y;
+	   mainTableHeight = Math.max(mainTableHeight, y + 1);
+	   cell['props']['x'] = x;
+	   cell['props']['y'] = y;
 	  }
       n++;
      }
@@ -283,7 +284,7 @@ function drawMain()
     
  // Create 'undefined' html tr row
  for (x = 0; x < mainTableWidth; x++) undefinedRow += undefinedCell;
- 
+ // Create html table of mainTable array
  for (y = 0; y < mainTableHeight; y++)
      {
       rowHTML += '<tr>';
@@ -997,15 +998,10 @@ function callController(data)
 	      alert('Object id = ' + String(mainTable[focusElement.y][focusElement.x].oId) + ', Element id = ' + String(mainTable[focusElement.y][focusElement.x].eId));
 	      break;
 	 case 'New Object':
-			if (objectTable === undefined) break;
-		  object = { "cmd": 'INIT', "OD": activeOD, "OV": activeOV, "data": {} };
-		  if (objectTable[NEWOBJECTID] != undefined) for (let key in objectTable[NEWOBJECTID])
-	         {
-		  let cell = mainTable[objectTable[NEWOBJECTID][key]['props']['y']][objectTable[NEWOBJECTID][key]['props']['x']];
-	          if (cell.data) object['data'][String(key)] = cell.data;
-		   else object['data'][key] = '';
-		 }
-		 loog(object['data']);
+	      if (objectTable === undefined) break;
+	      object = { "cmd": 'INIT', "OD": activeOD, "OV": activeOV, "data": {} };
+	      if (objectTable[NEWOBJECTID] != undefined) for (let key in objectTable[NEWOBJECTID])
+		 object['data'][key] = mainTable[objectTable[NEWOBJECTID][key]['props']['y']][objectTable[NEWOBJECTID][key]['props']['x']]['data'];
 	      break;
 	 case 'Delete Object':
 	      object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId };

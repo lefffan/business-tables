@@ -27,11 +27,9 @@ September:
 
 October 2020:
 - System calls and its object views: LINK
-
-November 2020:
-- telnet function
-- snmp function
-- diagnostic function
+- telnet function by SLAVA
+- snmp function by SLAVA
+- diagnostic function by SLAVA
 - Deploy the product to the first real expluatation
 -------------------------------------------------------------------------------------------
 
@@ -96,7 +94,7 @@ CONFIRM,KEYPRESS,OBJCHANGE			{ "cmd": "INFO", "log", "error", "alert" }				<=
 
 
 Browser commands to the controller (fixed):
-    { "cmd":	"GETMENU|GETMAIN|GETUI|NEWOBJECT|DELETEOBJECT|DBLCLICK|F2|F12|INS|DEL|KEYPRESS|CONFIRM|CONFIRMDIALOG"
+    { "cmd":	"GETMENU|GETMAIN|GETUI|INIT|DELETEOBJECT|DBLCLICK|KEYPRESS|CONFIRM"
       "OD":	"<OD name>"
       "OV":	"<OV name>"
       "data":	"[eId=>data, eId=>data..] for NEWOBJECT|<key code> for KEYPRESS|<cell data> or <dialog json data> for CONFIRM"
@@ -106,7 +104,7 @@ Browser commands to the controller (fixed):
 
 
 Controller commands to the browser:
-    { "cmd":		"REFRESHMAIN|REFRESHMENU|EDIT<LINES_NUM>|DIALOG|SET|RESET"
+    { "cmd":		"REFRESH|REFRESHMAIN|REFRESHMENU|EDIT<LINES_NUM>|DIALOG|SET|RESET"
       "OD":		"<OD name>"
       "OV":		"<OV name>"
       "data":		"<json>|<text>"
@@ -117,19 +115,11 @@ Controller commands to the browser:
       "error":		"<main view error message>"
       "callbackcmd":	"REFRESHMENU" }
 
-Element handler commands to the controller (fixed):
-    { "cmd":		"NEWOD|NEWOV|NEWELEMENT" // System commands
-      "data":		"<OD|OV|ELEMENT name"
----------------------------------------      
-      "cmd":		"EDIT[<LINES_NUM>]|DIALOG" // Callback data commands
-      "data":		"<text data for EDIT>|<json data for DIALOG>"
+Element handler commands to the controller:
+    { "cmd":		"EDIT[<LINES_NUM>]|DIALOG|ALERT"
+      "data":		"<text data for EDIT|ALERT>|<json data for DIALOG>" }
+    { "cmd":		"SET|RESET"
       "alert":		"<alert message>"
-      "log":		"<browser console log message>"
----------------------------------------      
-      "cmd":		"SET|RESET|INFO"  // Other commands
-      "alert":		"<alert message>"
-      "log":		"<browser console log message>"
-      "callbackcmd":	"REFRESHMENU" 
       "value":		"view cell data" 
       "image":		"image to display instead of value text"
       "link":		"" 
@@ -142,20 +132,14 @@ Element handler commands to the controller (fixed):
       "<any property>":	"<any value>" }
 
 Controller to the element handler:
-    { "cmd":		"NEWOBJECT|DBLCLICK|F2|F12|INS|DEL|KEYPRESS|CONFIRM|OBJCHANGE"
+    { "cmd":		"INIT|DBLCLICK|KEYPRESS|CONFIRM|ONCHANGE"
       "user":		"<username initiated the process>"
       "title":		"element title"
       "data":		"<key code for KEYPRESS>|<element value for CONFIRM or NEWOBJECT>|<dialog json data for CONFIRM>"
-      "<any property>":	'<json {"OD": "", "oId": "", "eId": "", "property": ""}|<string>'
+      "<any property>":	'<json {"OD": "", "oId": "", "eId": "", "property": ""}|<string>' }
 
 
 
-
-
-{"eId":"2", "oId":"0", "x":"0", "y":"0"}
-{"eId":"19", "oId":"0", "x":"1", "y":"0"}
-{"eId":"2", "x":"0", "y":"n+1"}
-{"eId":"19", "x":"1", "y":"n+1"}
 
 
 
@@ -179,13 +163,16 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "event handle check"
+git commit -a -m "INIT command ver1"
 git push -u origin master
 lefffan
 B267tr54
 
+# Nakatit v local repositary lasr code version before work
+git pull origin
 
 drop database OE4; create database OE4; use OE4; show tables;
+drop database OE6; create database OE6; use OE6; show tables;
 create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 

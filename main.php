@@ -102,14 +102,12 @@ try {
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMAIN':
-		     // Check OD/OV and props to be valid
-		     $odprops = checkODOV($db, $input);
-		     if (gettype($odprops) != 'string') $odprops = getODProps($db, $input);
-		     if (gettype($odprops) === 'string') { $output = ['cmd' => 'INFO', 'error' => $odprops]; break; }
-		     
-		     $odid = $odprops['id'];
-		     $elements = $odprops['elements'];
-		     $listJSON = $odprops['view'];
+		     // Check input OD/OV to be valid and OD/OV/elements database existence
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string')
+			{
+			 $output = ['cmd' => 'INFO', 'error' => $error];
+			 break;
+			}
 		     
 		     // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
 		     // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
@@ -127,8 +125,8 @@ try {
 		     // |  3.. | for whole real object   | for real objects element #1   |
 		     //  ----------------------------------------------------------------
 		     $arrayEIdOId = [];
-		     $elements[0] = $sqlElementList = '';
-		     foreach (preg_split("/\n/", $listJSON) as $value) if ($j = json_decode($value, true, 2))
+		     $allElementsArray[0] = $sqlElementList = '';
+		     foreach (preg_split("/\n/", $elementSelectionJSONList) as $value) if ($j = json_decode($value, true, 2))
 			     {
 			      $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
 			      if (!key_exists('eid', $j) || !key_exists('oid', $j)) 
@@ -147,7 +145,7 @@ try {
 			      $eid = intval($j['eid']);
 			      $oid = intval($j['oid']);
 			      
-			      if (key_exists($eid, $elements) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
+			      if (key_exists($eid, $allElementsArray) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
 			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
 				 {
 				  if (!key_exists($eid, $arrayEIdOId)) $arrayEIdOId[$eid] = [];
@@ -172,11 +170,11 @@ try {
 			
 		     // Create result $objectTable array section. First step - init vars
 		     $objectTable = $objectTableSrc = [];
-		     $firstOId = getFirstOId($db, $odprops['id']); // Get first object id to use it as a static object that has one instance value for all objects in OD (for static elements only)
+		     $firstOId = getFirstOId($db, $odid); // Get first object id to use it as a static object that has one instance value for all objects in OD (for static elements only)
 
 		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
 		     // While this features are not released, get all objects:
-		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odprops[id]` WHERE last=1");
+		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1");
 		     $query->execute();
 		     
 		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
@@ -214,7 +212,7 @@ try {
 		    	     {
 			      $eidstr = 'eid'.strval($eid);
 			      $static = false;
-			      if ($elements[$eid]['element3']['data'] === STATICELEMENTTYPE && isset($firstOId)) $static = true;
+			      if ($allElementsArray[$eid]['element3']['data'] === STATICELEMENTTYPE && isset($firstOId)) $static = true;
 			      
 			      // Iterate all objects identificators for current eid to fill $objectTable. First - for all object when oid=0:
 			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $oid => $valeu)
@@ -237,7 +235,7 @@ try {
 				      {
 				       $json = NULL;
 				       if ($oid === NEWOBJECTID) $json = '{"value": ""}';
-				       if ($oid === TITLEOBJECTID) $json = '{"value": "'.$elements[$eid]['element1']['data'].'"}';
+				       if ($oid === TITLEOBJECTID) $json = '{"value": "'.$allElementsArray[$eid]['element1']['data'].'"}';
 				       if (key_exists($oid, $objectTableSrc))
 				       if ($static) $json = '';
 				        else $json = $objectTableSrc[$oid][$eidstr];
@@ -273,52 +271,53 @@ try {
 			 $output = ['cmd' => 'INFO', 'error' => 'Specified view has no objects defined!'];
 			}
 		     break;
+		case 'DELETEOBJECT':
+		     DeleteObject();
+		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
 		case 'INIT':
-		case 'CHANGE':
-		     // Check OD/OV and props to be valid
-		     $odprops = checkODOV($db, $input, true);
-		     if (gettype($odprops) != 'string') $odprops = getODProps($db, $input);
-		     if (gettype($odprops) === 'string') { $output = ['cmd' => 'INFO', 'error' => $odprops]; break; }
-		     $odid = $odprops['id'];
-			 $elements = $odprops['elements'];
-			 
-			 // Handle 'INIT' event
-		     if ($input['cmd'] === 'INIT')
-		        {
-				 $output = ['cmd' => ''];
-				 //loog($input);
-				 foreach($input['data'] as $k => $v) {loog ( $k);loog ( $v);}
-				}
-
-/*
-
-		     // Check for eid/oid existence. Add oid object selection check procedure in future release
-		     if (!isset($input['eId']) || !isset($elements[$input['eId']]) || !isset($input['oId']) || $input['oId'] < STARTOBJECTID)
-		        {
-			 $output = ['cmd' => 'INFO', 'error' => 'Incorrect Object/Element Id received fom the browser!'];
+		     // Check input OD/OV to be valid, OD/OV/elements database existence and input object/elemnt id existence/correctness check
+		     if (gettype($error = checkODOV($db, $input, true)) === 'string' || gettype($error = getODProps($db)) === 'string'  || gettype($error = checkObjectElementID($input, $allElementsArray)) === 'string')
+			{
+			 $output = ['cmd' => 'INFO', 'error' => $error];
 			 break;
 			}
-		     // Fetch JSON list handler events and search for the input event registered from browser
-		     $listJSON = $elements[$input['eId']]['element5']['data'];
-		     foreach (preg_split("/\n/", $listJSON) as $value)
-		    	     if ($j = json_decode($value, true, 2) && $j['event'] === $input['cmd']) break;
-		     // No event specified, but input event is 'CONFIRM'? Push it automatically
-		     if (!isset($j) && $input['cmd'] === 'CONFIRM') $j = ['event' => 'CONFIRM'];
-		     // Still no events? Do nothing
-		     if (!isset($j)
+		     // For 'INIT' event handle all elements of new object, otherwise handle only current element 
+		     if ($cmd === 'INIT') $elements = $allElementsArray;
+		      else $elements = [$eid => $allElementsArray[$eid]];
+		     $output = [];
+
+		     foreach ($elements as $element => $elementProfile)
+		             if ($handlerName = $elementProfile['element4']['data'] != '')
+		                if ($eventArray = parseJSONEventData($elementProfile['element5']['data'], $cmd))
+		    		   {
+			            $eventArray['event data'] = isset($data[$element]) ? $data[$element] : '';
+			            $output[$element] = Handler($handlerName, json_encode($eventArray));
+				    if ($output[$element]['cmd'] != 'SET' && $output[$element]['cmd'] != 'RESET')
+				    if ($cmd === 'INIT' || ($output[$element]['cmd'] != 'EDIT' && $output[$element]['cmd'] != 'DIALOG' && $output[$element]['cmd'] != 'ALERT'))
+				       unset($output[$element]);
+				   }
+		     if ($cmd === 'INIT')
 		        {
-			 $output = ['cmd' => 'INFO', 'log' => json_encode($input)];
-			 break;
-			}*/
+			 InsertObject();
+			 $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+			}
+		      else
+		        {
+			 //UpdateObject();
+		         //Handle ONCHANGE if no INIT
+			 //UpdateObject(); 
+			 $output = ['cmd' => ''];
+			}
 		     break;
 		default:
-	          $output = ['cmd' => 'INFO', 'alert' => 'Unknown event "'.$input['cmd'].'" received from the browser!'];
+	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the browser!'];
 		}
 		
-     if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Undefined controller message!'];
+     if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: undefined controller message!'];
      echo json_encode($output);
     }
      
