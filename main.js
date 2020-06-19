@@ -248,7 +248,7 @@ function drawMain()
 	      
            if (mainTable[y] == undefined) mainTable[y] = [];
            mainTable[y][x] = { 'oId': oid, 'eId': eid, 'data': '', 'style': cell['props']['style'] };
-	   if (obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
+	   if (obj && obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 
            mainTableWidth = Math.max(mainTableWidth, x + 1);

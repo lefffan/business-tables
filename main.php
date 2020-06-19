@@ -130,10 +130,11 @@ try {
 		     //  ----------------------------------------------------------------
 		     $arrayEIdOId = [];
 		     $allElementsArray[0] = $sqlElementList = '';
+		     
 		     foreach (preg_split("/\n/", $elementSelectionJSONList) as $value) if ($j = json_decode($value, true, 2))
 			     {
 			      $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
-			      if (!key_exists('eid', $j) || !key_exists('oid', $j)) 
+			      if (!key_exists('eid', $j) || !key_exists('oid', $j))
 			         {
 				  if (!key_exists('eid', $j) && !key_exists('oid', $j))
 				     {
@@ -153,19 +154,16 @@ try {
 			      if (key_exists($eid, $allElementsArray) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
 			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
 				 {
-				  if (!key_exists($eid, $arrayEIdOId)) $arrayEIdOId[$eid] = [];
-				  if ($eid != 0)
+				  if (!key_exists($eid, $arrayEIdOId))
 				     {
-				      $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
-				      $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
+				      $arrayEIdOId[$eid] = [];
+				      if ($eid != 0) $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
 				     }
-				   else
-				     {
-				      $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
-				     }
+				  if ($eid != 0) $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
+				   else $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
 				 }
 			     }
-			     
+			     //loog($arrayEIdOId);
 		     // No any element defined?	
 		     if ($sqlElementList == '')
 			{
@@ -222,9 +220,13 @@ try {
 			      // Iterate all objects identificators for current eid to fill $objectTable. First - for all object when oid=0:
 			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $oid => $valeu)
 				 {
-				  if (!key_exists($oid, $objectTable)) $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
+				  if (!key_exists($oid, $objectTable)) // Result $objectTable current object ($oid) doesn't exist? Create it
+				     {
+				      $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
+				      $objectTable[$oid][$eid] = [];
+				     }
 				  if (!$static) $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data for non static element types
-				  $objectTable[$oid][$eid] = ['props' => $arrayEIdOId[$eid][0]]; // Set current object element props data
+				  $objectTable[$oid][$eid]['props'] = $arrayEIdOId[$eid][0]; // Set current object element props data
 				  //--------------------------Merge style rules start-----------------------
 				  $styles = []; // CSS style rules in order of priority
 				  if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
@@ -264,7 +266,7 @@ try {
 			      if ($oid >= STARTOBJECTID && $oid != $firstOId && isset($objectTable[$oid][$eid]))
 				 $objectTable[$oid][$eid]['json'] = $objectTableSrc[$firstOId][$eidstr];
 			     }
-			     
+			     loog($objectTable);
 		     // Check the result data to be sent to client part
 		     if (count($objectTable) > 0)
 		        {

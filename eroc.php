@@ -295,7 +295,7 @@ function getODProps($db)
      foreach ($allElementsArray as $eid => $value)
     	     {
 	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
+	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
 	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
 	      $x++;
 	     }
