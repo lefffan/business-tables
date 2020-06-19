@@ -3,6 +3,10 @@
 try {
      require_once 'eroc.php';
      createDefaultDatabases($db);
+     /*$c = ["a" => 1, '""' => 1];
+     loog($c);
+     unset($c['""']);
+     loog($c);*/
     }
 catch (PDOException $e)
     {
@@ -59,8 +63,11 @@ try {
 		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();
 		    // Insert new OD properties
+		    //$query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
+		    //$query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
+		    $hui = json_encode(adjustODProperties($input['data'], $db, $id));
 		    $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
-		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
+		    $query->execute([':odprops' => $hui]);
 		    //-------------------------------------------------------------------------------------
 		   }
 		$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
@@ -139,6 +146,7 @@ try {
 				     }
 				  continue;
 				 }
+				 
 			      if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
 			      if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
 			      
@@ -234,8 +242,8 @@ try {
 		    	      foreach ($value as $oid => $props) if ($oid != 0)
 				      {
 				       $json = NULL;
-				       if ($oid === NEWOBJECTID) $json = '{"value": ""}';
-				       if ($oid === TITLEOBJECTID) $json = '{"value": "'.$allElementsArray[$eid]['element1']['data'].'"}';
+				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '']);
+				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data']]);
 				       if (key_exists($oid, $objectTableSrc))
 				       if ($static) $json = '';
 				        else $json = $objectTableSrc[$oid][$eidstr];
@@ -302,7 +310,8 @@ try {
 				   }
 		     if ($cmd === 'INIT')
 		        {
-			 InsertObject();
+			 loog($output);
+			 //InsertObject();
 			 $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 			}
 		      else

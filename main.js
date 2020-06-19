@@ -1277,8 +1277,8 @@ function getInnerDialog(content)
 		   break;
 	      case 'password':
 	      case 'text':
-	           if (element.readonly != undefined) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + data + '" readonly>';
-		    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + data + '">';
+	           if (element.readonly != undefined) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '" readonly>';
+		    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '">';
 		   break;
 	      case 'textarea':
 		   if (element.readonly != undefined) inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '" readonly>' + data + '</textarea>';
@@ -1506,4 +1506,9 @@ function collapseMainTable() // Function removes collapse flag tagged rows and c
 	    col++;
 	   }
        }
+}
+
+function escapeDoubleQuotes(data)
+{ 
+ return data.replace(/"/g,"&quot;");
 }

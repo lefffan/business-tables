@@ -54,13 +54,14 @@ function adjustODProperties($data, $db, $id)
        else if ($key != 'New element') // Remove empty elements for non new element profile
 	 {
 	  $eid = intval(substr($key, strrpos($key, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
+	  $data['dialog']['Element'][$key]['element4']['data'] = trim($data['dialog']['Element'][$key]['element4']['data']);
 	  if ($eid > $eidmax) $eidmax = $eid; // Calculate max element id
 	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '')
 	     {
 	      $eid = strval($eid);
 	      $query = $db->prepare("ALTER TABLE `data_$id` DROP COLUMN eid$eid");
 	      $query->execute();
-	      if ($value['element3']['data'] === 'standart|static|+unique|')
+	      if ($value['element3']['data'] === UNIQELEMENTTYPE)
 		 {
 		  $query = $db->prepare("ALTER TABLE `uniq_$id` DROP COLUMN eid$eid");
 		  $query->execute();
@@ -78,7 +79,6 @@ function adjustODProperties($data, $db, $id)
 	          unset($data['dialog']['Element'][$key]);
 		 }
 	     }
-	  $data['dialog']['Element'][$key]['element4']['data'] = trim($data['dialog']['Element'][$key]['element4']['data']);
 	 }
  // New element have been set? Create it
  if ($data['dialog']['Element']['New element']['element1']['data'] != '' || $data['dialog']['Element']['New element']['element2']['data'] != '' || $data['dialog']['Element']['New element']['element4']['data'] != '')
@@ -107,7 +107,7 @@ function adjustODProperties($data, $db, $id)
  foreach ($data['dialog']['View'] as $key => $value)
       if (!isset($value['element1']['data']) || !isset($value['element2']['data'])) return NULL; // Dialog 'View' pad corrupted?
        else if ($value['element1']['data'] === '') unset($data['dialog']['View'][$key]);	 // View name is empty? Remove it
-       else if (isset($data['dialog']['View'][$value['element1']['data']])) $data['dialog']['View'][strval($key)]['element1']['data'] = strval($key); // New view name already exists? Discard changes
+       else if (isset($data['dialog']['View'][$value['element1']['data']])) $data['dialog']['View'][$key]['element1']['data'] = $key; // New view name already exists? Discard changes
        else
 	 {
 	  $data['dialog']['View'][$value['element1']['data']] = $data['dialog']['View'][$key];	// Otherwise create new view with new view name
@@ -120,7 +120,7 @@ function adjustODProperties($data, $db, $id)
  foreach ($data['dialog']['Rule'] as $key => $value)
       if (!isset($value['element1']['data']) || !isset($value['element2']['data'])) return NULL; // Dialog 'Rule' pad corrupted?
        else if ($value['element1']['data'] === '') unset($data['dialog']['Rule'][$key]);	 // Rule name is empty? Remove it
-       else if (isset($data['dialog']['Rule'][$value['element1']['data']])) $value['element1']['data'] = $key; // New rule name already exists? Discard changes
+       else if (isset($data['dialog']['Rule'][$value['element1']['data']])) $data['dialog']['Rule'][$key]['element1']['data'] = $key; // New rule name already exists? Discard changes
        else
 	 {
 	  $data['dialog']['Rule'][$value['element1']['data']] = $data['dialog']['Rule'][$key];	// Otherwise create new rule with new rule name
@@ -172,7 +172,7 @@ function initNewODDialogElements()
 		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element9' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit/delete objects:', 'data' => '', 'line' => '']];
 							  
- $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'readonly' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
+ $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'readonl' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => 'No action|Warning|Confirm|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Log the message', 'data' => 'Log', 'line' => ''],
@@ -268,7 +268,8 @@ function getODProps($db)
  $query->execute();
  if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
  $data = $data[0];
- 		     
+ $odid = $data[0];
+  		     
  // Decode element profiles array form OD props, remove 'New element' section and check elements existence
  $elements = json_decode($data[1], true);
  unset($elements['New element']);
@@ -279,22 +280,19 @@ function getODProps($db)
 	 {
 	  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
 	  $allElementsArray[$eid] = $elements[$profile];
-	  /*if ($value['element3']['data'] === STATICELEMENTTYPE) $staticElementsArray[$eid] = '';
-	   else if ($value['element3']['data'] === UNIQELEMENTTYPE) $uniqElementsArray[$eid] = '';
-	    else $standartElementsArray[$eid] = '';*/
 	  $value['element3']['data'] === STATICELEMENTTYPE ? $staticElementsArray[$eid] = '' : $value['element3']['data'] === UNIQELEMENTTYPE ? $uniqElementsArray[$eid] = '' : $standartElementsArray[$eid] = '';
 	 }
 			
  // Move on. Get specified view JSON element selection (what elements should be displayed and how)
  $elementSelectionJSONList = json_decode($data[2], true);
- if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return "Specified Object View doesn't exist!";
+ if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return 'Please create/select Object View!';
  $elementSelectionJSONList = trim($elementSelectionJSONList[$OV]['element5']['data']);
  
  // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
  if ($elementSelectionJSONList === '')
     {
      $x = 0;
-     foreach ($elements as $eid => $value)
+     foreach ($allElementsArray as $eid => $value)
     	     {
 	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
 	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
@@ -302,8 +300,6 @@ function getODProps($db)
 	      $x++;
 	     }
     }
-        
- $odid = $data[0];
 }
 
 function checkObjectElementID($input, $elements)
@@ -354,7 +350,8 @@ function parseJSONEventData($listJSON, $event)
 
 function InsertObject($db, $output)
 {
- global $OD, $OV, $odid, $allElementsArray, $standartElementsArray, $staticElementsArray, $uniqElementsArray, $elementSelectionJSONList;
+ global $odid, $allElementsArray, $staticElementsArray, $uniqElementsArray;
+
  $query = $values = ''; 
  foreach ($uniqElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.json_decode($output[$id], true)['value']; }
  if (query != '') { $query = substr($query, 1); $values = substr($values, 1); }
@@ -366,11 +363,11 @@ function InsertObject($db, $output)
  $query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
  $query->execute();                                                                  
  // Generate new exception in case of non correct last insert id value               
- if (!(($newId = intval($query->fetch(PDO::FETCH_NUM)[0])) >= STARTOBJECTID)) throw new Exception();
- $query = 'id,';
- $values = strval($newId).',';
+ if (($newId = intval($query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID)) throw new Exception();
+
+ $query = 'id,vresion,'; // Plus date, time, user
+ $values = strval($newId).',1,';
  foreach ($allElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.$output[$id]; }
- 
  $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
  $query->execute();                                                                  
  $db->commit();
