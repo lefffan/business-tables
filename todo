@@ -163,7 +163,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "Escape double quotes bug"
+git commit -a -m "OV existence diagnostic bug"
 git push -u origin master
 lefffan
 B267tr54

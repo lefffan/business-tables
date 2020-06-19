@@ -269,19 +269,6 @@ function getODProps($db)
  if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
  $data = $data[0];
  $odid = $data[0];
-  		     
- // Decode element profiles array form OD props, remove 'New element' section and check elements existence
- $elements = json_decode($data[1], true);
- unset($elements['New element']);
- if (!is_array($elements) || !count($elements)) return 'Object Database has no elements exist!';
-
- // Convert elements assoc array to num array with element identificators as array elements instead of profile names
- foreach ($elements as $profile => $value)
-	 {
-	  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
-	  $allElementsArray[$eid] = $elements[$profile];
-	  $value['element3']['data'] === STATICELEMENTTYPE ? $staticElementsArray[$eid] = '' : $value['element3']['data'] === UNIQELEMENTTYPE ? $uniqElementsArray[$eid] = '' : $standartElementsArray[$eid] = '';
-	 }
 			
  // Move on. Get specified view JSON element selection (what elements should be displayed and how)
  $elementSelectionJSONList = json_decode($data[2], true);
@@ -300,6 +287,19 @@ function getODProps($db)
 	      $x++;
 	     }
     }
+  		     
+ // Decode element profiles array form OD props, remove 'New element' section and check elements existence
+ $elements = json_decode($data[1], true);
+ unset($elements['New element']);
+ if (!is_array($elements) || !count($elements)) return 'Object Database has no elements exist!';
+
+ // Convert elements assoc array to num array with element identificators as array elements instead of profile names
+ foreach ($elements as $profile => $value)
+	 {
+	  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
+	  $allElementsArray[$eid] = $elements[$profile];
+	  $value['element3']['data'] === STATICELEMENTTYPE ? $staticElementsArray[$eid] = '' : $value['element3']['data'] === UNIQELEMENTTYPE ? $uniqElementsArray[$eid] = '' : $standartElementsArray[$eid] = '';
+	 }
 }
 
 function checkObjectElementID($input, $elements)
