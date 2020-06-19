@@ -63,11 +63,8 @@ try {
 		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();
 		    // Insert new OD properties
-		    //$query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
-		    //$query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
-		    $hui = json_encode(adjustODProperties($input['data'], $db, $id));
 		    $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
-		    $query->execute([':odprops' => $hui]);
+		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
 		    //-------------------------------------------------------------------------------------
 		   }
 		$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
@@ -299,7 +296,7 @@ try {
 		     $output = [];
 
 		     foreach ($elements as $element => $elementProfile)
-		             if ($handlerName = $elementProfile['element4']['data'] != '')
+		             if (($handlerName = $elementProfile['element4']['data']) != '')
 		                if ($eventArray = parseJSONEventData($elementProfile['element5']['data'], $cmd))
 		    		   {
 			            $eventArray['event data'] = isset($data[$element]) ? $data[$element] : '';
@@ -310,8 +307,7 @@ try {
 				   }
 		     if ($cmd === 'INIT')
 		        {
-			 loog($output);
-			 //InsertObject();
+			 InsertObject($db, $output);
 			 $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 			}
 		      else

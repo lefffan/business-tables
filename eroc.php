@@ -274,19 +274,6 @@ function getODProps($db)
  $elementSelectionJSONList = json_decode($data[2], true);
  if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return 'Please create/select Object View!';
  $elementSelectionJSONList = trim($elementSelectionJSONList[$OV]['element5']['data']);
- 
- // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
- if ($elementSelectionJSONList === '')
-    {
-     $x = 0;
-     foreach ($allElementsArray as $eid => $value)
-    	     {
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
-	      $x++;
-	     }
-    }
   		     
  // Decode element profiles array form OD props, remove 'New element' section and check elements existence
  $elements = json_decode($data[1], true);
@@ -300,6 +287,19 @@ function getODProps($db)
 	  $allElementsArray[$eid] = $elements[$profile];
 	  $value['element3']['data'] === STATICELEMENTTYPE ? $staticElementsArray[$eid] = '' : $value['element3']['data'] === UNIQELEMENTTYPE ? $uniqElementsArray[$eid] = '' : $standartElementsArray[$eid] = '';
 	 }
+ 
+ // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+ if ($elementSelectionJSONList === '')
+    {
+     $x = 0;
+     foreach ($allElementsArray as $eid => $value)
+    	     {
+	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
+	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n"}'."'\n";
+	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
+	      $x++;
+	     }
+    }
 }
 
 function checkObjectElementID($input, $elements)
@@ -324,10 +324,10 @@ function Handler($handler, $input)
  return ['cmd' => 'UNDEFINED'];
 }
 
-function parseJSONEventData($listJSON, $event)
+function parseJSONEventData($JSONs, $event)
 {
- foreach (preg_split("/\n/", $listJSON) as $line) // Split json list and parse its lines to find specified event
-      if ($json = json_decode($line, true) && isset($json['event']) && $json['event'] === $event) // Event match?
+ foreach (preg_split("/\n/", $JSONs) as $line) // Split json list and parse its lines to find specified event
+      if (($json = json_decode($line, true)) && isset($json['event']) && $json['event'] === $event) // Event match?
          {
 	  $eventArray = ['event' => $event];
           foreach ($json as $prop => $value) // Search non reserved array elements to pass them to result event array
@@ -353,8 +353,8 @@ function InsertObject($db, $output)
  global $odid, $allElementsArray, $staticElementsArray, $uniqElementsArray;
 
  $query = $values = ''; 
- foreach ($uniqElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.json_decode($output[$id], true)['value']; }
- if (query != '') { $query = substr($query, 1); $values = substr($values, 1); }
+ foreach ($uniqElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.$output[$id]['value']; }
+ if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
 
  $db->beginTransaction();
  $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
@@ -363,13 +363,17 @@ function InsertObject($db, $output)
  $query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
  $query->execute();                                                                  
  // Generate new exception in case of non correct last insert id value               
- if (($newId = intval($query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID)) throw new Exception();
+ if (intval($newId = $query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID) throw new Exception();
 
- $query = 'id,vresion,'; // Plus date, time, user
- $values = strval($newId).',1,';
- foreach ($allElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.$output[$id]; }
+ $query = 'id,version'; // Plus date, time, user
+ $values = $newId.',1';
+ foreach ($allElementsArray as $id => $value) if (isset($output[$id]))
+	 {
+	  $json = json_encode($output[$id]);
+	  if (isset($json)) { $query .= ',eid'.strval($id); $values .= ",'".$json."'"; }
+	 }
  $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
- $query->execute();                                                                  
+ $query->execute();
  $db->commit();
 }
 

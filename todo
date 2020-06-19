@@ -163,7 +163,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "OV existence diagnostic bug"
+git commit -a -m "INIT command ver3"
 git push -u origin master
 lefffan
 B267tr54
