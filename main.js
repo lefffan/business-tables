@@ -247,7 +247,7 @@ function drawMain()
 	      }
 	      
            if (mainTable[y] == undefined) mainTable[y] = [];
-           mainTable[y][x] = { 'oId': oid, 'eId': eid, 'data': '', 'style': cell['props']['style'] };
+           mainTable[y][x] = { 'oId': Number(oid), 'eId': Number(eid), 'data': '', 'style': cell['props']['style'] };
 	   if (obj && obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 
@@ -451,7 +451,7 @@ function eventHandler(event)
 		      cmd = 'DBLCLICK';
 		      callController();
 		     }
-		   else if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
+		   else if (mainTable[focusElement.y][focusElement.x].oId === +NEWOBJECTID)
 		     {
 		      focusElement.olddata = '';
 	    	      focusElement.td.contentEditable = 'true';
@@ -663,7 +663,7 @@ function eventHandler(event)
 		  if (mainTable[focusElement.y][focusElement.x].oId == NEWOBJECTID)
 		     {
 		      mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(event.target.innerHTML);
-		      cmd = 'New object';
+		      cmd = 'New Object';
 		      callController();
 		     }
 		   else
@@ -1036,7 +1036,7 @@ function callController(data)
 		  }
 	      break;
 	 default:
-	      loog("Undefined browser message: " + cmd + "!");
+	      alert("Undefined browser message: " + cmd + "!");
 	}
 
  if (object) Hujax("main.php", commandHandler, object);

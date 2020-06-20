@@ -1,4 +1,6 @@
 June 2020:
+check why the browser gets object instead array
+- not all parameters of element data json shouldbe passed to the browser
 - rebuild element events (DBLCLICK, KEYPRESS..) in dialog box - checkbox with text area with json list to pass to the handler
 - New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
   What if that format is wrong? I think do nothing, or log it to the system OD?
@@ -163,7 +165,7 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "INIT command ver3"
+git commit -a -m "INIT command ver4"
 git push -u origin master
 lefffan
 B267tr54

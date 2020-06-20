@@ -200,13 +200,16 @@ function getODVNamesForSidebar($db)
  return $arr;
 }
 
-function getFirstOId($db, $id)
+function getFirstOIds($db, $id)
 {
- $query = $db->prepare("SELECT id FROM `data_$id` ORDER BY id LIMIT 1");
+ global $firstOId, $secondOId;
+ 
+ $query = $db->prepare("SELECT id FROM `data_$id` WHERE last=1 AND version!=0 ORDER BY id LIMIT 2");
  $query->execute();
- $firstOId = $query->fetchAll(PDO::FETCH_NUM);
- if (isset($firstId[0][0])) return $firstOId;
- return NULL;
+ $identificators = $query->fetchAll(PDO::FETCH_NUM);
+ 
+ if (isset($identificators[0][0])) $firstOId = $identificators[0][0];
+ if (isset($identificators[1][0])) $secondOId = $identificators[1][0];
 }
 
 function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys defined in $keys array element values
@@ -378,5 +381,9 @@ function InsertObject($db, $output)
 }
 
 function DeleteObject()
+{
+}
+
+function UpdateObject()
 {
 }

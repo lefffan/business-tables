@@ -163,7 +163,7 @@ try {
 				   else $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
 				 }
 			     }
-			     //loog($arrayEIdOId);
+			     
 		     // No any element defined?	
 		     if ($sqlElementList == '')
 			{
@@ -173,7 +173,7 @@ try {
 			
 		     // Create result $objectTable array section. First step - init vars
 		     $objectTable = $objectTableSrc = [];
-		     $firstOId = getFirstOId($db, $odid); // Get first object id to use it as a static object that has one instance value for all objects in OD (for static elements only)
+		     getFirstOIds($db, $odid); // Set first object id as a global var to use it as a static object that has one instance value for all objects in OD (for static elements only)
 
 		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
 		     // While this features are not released, get all objects:
@@ -266,7 +266,7 @@ try {
 			      if ($oid >= STARTOBJECTID && $oid != $firstOId && isset($objectTable[$oid][$eid]))
 				 $objectTable[$oid][$eid]['json'] = $objectTableSrc[$firstOId][$eidstr];
 			     }
-			     loog($objectTable);
+			     
 		     // Check the result data to be sent to client part
 		     if (count($objectTable) > 0)
 		        {
