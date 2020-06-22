@@ -166,7 +166,7 @@ Input style:
 
 Git:
 #git commit -a -m "INIT command ver4"
-git commit -a -m "last-good-with-static-obj"
+git commit -a -m "element array sort"
 git push -u origin master
 lefffan
 B267tr54

@@ -171,10 +171,8 @@ try {
 			 break;
 			}
 			
-		     // Create result $objectTable array section. First step - init vars
+		     // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
 		     $objectTable = $objectTableSrc = [];
-		     getFirstOIds($db, $odid); // Set first object id as a global var to use it as a static object that has one instance value for all objects in OD (for static elements only)
-
 		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
 		     // While this features are not released, get all objects:
 		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1 AND version!=0");
@@ -214,8 +212,6 @@ try {
 		     foreach ($arrayEIdOId as $eid => $value) if ($eid != 0)
 		    	     {
 			      $eidstr = 'eid'.strval($eid);
-			      $static = false;
-			      if ($allElementsArray[$eid]['element3']['data'] === STATICELEMENTTYPE && isset($firstOId)) $static = true;
 			      
 			      // Iterate all objects identificators for current eid to fill $objectTable. First - for all object when oid=0:
 			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $oid => $valeu)
@@ -225,16 +221,16 @@ try {
 				      $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
 				      $objectTable[$oid][$eid] = [];
 				     }
-				  if (!$static) $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data for non static element types
+				  $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data
 				  $objectTable[$oid][$eid]['props'] = $arrayEIdOId[$eid][0]; // Set current object element props data
-				  //--------------------------Merge style rules start-----------------------
-				  $styles = []; // CSS style rules in order of priority
+				  //----------------Merge CSS style rules in order of priority--------------
+				  $styles = [];
 				  if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
 				  if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
 				  if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
 				  if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
 				  $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
-				  //---------------------------Merhe style rules end------------------------ 
+				  //---------------------------Merge style rules end------------------------ 
 				 }
 				 
 			      // Second - for other exact object oids:
@@ -243,28 +239,21 @@ try {
 				       $json = NULL;
 				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '']);
 				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data']]);
-				       if (key_exists($oid, $objectTableSrc))
-				       if ($static) $json = '';
-				        else $json = $objectTableSrc[$oid][$eidstr];
+				       if (key_exists($oid, $objectTableSrc)) $json = $objectTableSrc[$oid][$eidstr];
 				       if (isset($json))
 				          {
 					   if (!key_exists($oid, $objectTable)) $objectTable[$oid] = [];
 					   $objectTable[$oid][$eid] = ['json' => $json, 'props' => $props];
-					   //--------------------------Merge style rules start-----------------------
-					   $styles = []; // CSS style rules in order of priority
+					   //----------------Merge CSS style rules in order of priority--------------
+					   $styles = [];
 					   if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
 					   if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
 					   if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
 					   if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
 					   $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
-					   //---------------------------Merhe style rules end------------------------ 
+					   //---------------------------Merge style rules end------------------------ 
 					  }
 				      }
-				      
-			      // Iterate all objects identificators for current eid to fill $objectTable with static element
-			      if ($static) foreach ($objectTable as $oid => $value)
-			      if ($oid >= STARTOBJECTID && $oid != $firstOId && isset($objectTable[$oid][$eid]))
-				 $objectTable[$oid][$eid]['json'] = $objectTableSrc[$firstOId][$eidstr];
 			     }
 			     
 		     // Check the result data to be sent to client part

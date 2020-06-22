@@ -1,15 +1,13 @@
 <?php
 
-const DATABASENAME			= 'OE6';
+const DATABASENAME			= 'OE7';
 const MAXOBJECTS			= 100000;
 const ODSTRINGMAXCHAR			= 32;
 const HANDLERDIR			= 'handlers';
 const ELEMENTPROFILENAMEMAXCHAR		= 16;
 const ELEMENTPROFILENAMEADDSTRING	= 'element id';
 const UNIQKEYCHARLENGTH			= 300;
-const STANDARTELEMENTTYPE		= '+standart|static|unique|';
-const STATICELEMENTTYPE			= 'standart|+static|unique|';
-const UNIQELEMENTTYPE			= 'standart|static|+unique|';
+const UNIQELEMENTTYPE			= '+unique|';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
 const STARTOBJECTID			= 3;
@@ -59,6 +57,7 @@ function adjustODProperties($data, $db, $id)
 	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '')
 	     {
 	      $eid = strval($eid);
+	      $db->beginTransaction();
 	      $query = $db->prepare("ALTER TABLE `data_$id` DROP COLUMN eid$eid");
 	      $query->execute();
 	      if ($value['element3']['data'] === UNIQELEMENTTYPE)
@@ -67,6 +66,7 @@ function adjustODProperties($data, $db, $id)
 		  $query->execute();
 		 }
 	      unset($data['dialog']['Element'][$key]);		// Element name, description and handler file are empty? Remove element.
+	      $db->commit();
 	     }
 	   else
 	     {
@@ -91,15 +91,17 @@ function adjustODProperties($data, $db, $id)
      $eid = strval($eidmax + 1);
      $id = strval($id);
      // Add object element column to database
+     $db->beginTransaction();
      $query = $db->prepare("ALTER TABLE `data_$id` ADD eid$eid JSON");
      $query->execute();
-     if ($data['dialog']['Element']['New element']['element3']['data'] === 'standart|static|+unique|')
+     if ($data['dialog']['Element']['New element']['element3']['data'] === UNIQELEMENTTYPE)
         {
          $query = $db->prepare("ALTER TABLE `uniq_$id` ADD eid$eid TEXT, ADD UNIQUE(eid$eid(".UNIQKEYCHARLENGTH."))");
 	 $query->execute();
 	}
      $data['dialog']['Element'][$name.' - '.ELEMENTPROFILENAMEADDSTRING.$eid] = $data['dialog']['Element']['New element'];
      $data['dialog']['Element']['New element'] = $newElement;
+     $db->commit();
     }
     
  // New view section handle
@@ -156,9 +158,8 @@ function initNewODDialogElements()
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
-		    'element3' => ['type' => 'radio', 'head' => 'Element type', 'data' => '+standart|static|unique', 'line' => '', 'help' => "Static type implies element value with one single instance for all objects in object database,<br>while unique element type guarantees element value uniqueness among all objects.<br>Normal type doesn't have all these features. Element type can be selected only at element creation."],
+		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
 		    'element4' => ['type' => 'text', 'head' => 'Server side element event handler file that processes incoming user defined events (see event section below):', 'data' => '', 'line' => ''],
-		    //'element5' => ['type' => 'textarea', 'head' => 'JSON format event list', 'data' => '', 'line' => '', 'help' => "JSON string to pass to element handler when specified event above occurs. Some properties <br>of that JSON are reserved to pass some service data. They are 'event', 'user' initiated<br>event, element 'id' and its 'header'. User defined properties can be set to string or<br>another JSON with Object Database 'OD', Object View 'OV', Object Id 'oId',<br>Element Id 'eId' and element property. In case of 'OD', 'OV', 'oId' or 'eId' omitted -<br>current object database/view and object/element id values are used.<br>To remove element event handle set event to 'NONE' and handler args to empty string."],
 		    'element5' => ['type' => 'textarea', 'head' => 'JSON format event list', 'data' => '', 'line' => '', 'help' => 'Event JSON string (one per line) is a JSON to pass to the element handler as an input argument<br>when specified event occurs. JSONs properties:<br>"event" - event to be processed by the handler, JSONs with undefined event are ignored<br>"user" - user initiated event (automatically set by controller)<br>"eid" - element id (automatically set by controller)<br>"header" - element header (automatically set by controller)<br>Plus any user defined property can be used - its string values are sent to the handler without changes<br>with one exception - JSON formated value is replaced by object element JSON data. Format of the value:<br>{"OD": "&lt;Object Database>", "OV": "&lt;Object View>", "oid": "&lt;Object Id>", "eid": "&lt;Element Id", "any prop": "..."}<br>"any prop" - at least one custom property. Its value points to specified by OD/OV/eid/oid<br>element JSON data property to be retrieved. In case of "OD", "OV", "oId" or "eId" omitted -<br>current object database/view and object/element id values are used.<br>In the example below handler for element id 2 on mouse double click event gets JSON<br>with two properties. First property value is "test", second value -<br>json element data property "count" value of current object element identificator 1:<br>{ "event": "DBLCLICK", "abc": "test", "def": {"eid": "1", "xyz": "count", } }'],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
 	
@@ -198,18 +199,6 @@ function getODVNamesForSidebar($db)
 			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], 1) as $key => $v) if ($key != 'New view') $arr[$value['odname']][$key] = '';
 			}
  return $arr;
-}
-
-function getFirstOIds($db, $id)
-{
- global $firstOId, $secondOId;
- 
- $query = $db->prepare("SELECT id FROM `data_$id` WHERE last=1 AND version!=0 ORDER BY id LIMIT 2");
- $query->execute();
- $identificators = $query->fetchAll(PDO::FETCH_NUM);
- 
- if (isset($identificators[0][0])) $firstOId = $identificators[0][0];
- if (isset($identificators[1][0])) $secondOId = $identificators[1][0];
 }
 
 function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys defined in $keys array element values
@@ -263,8 +252,8 @@ function checkODOV($db, $input, $cmdcheck = false)
 
 function getODProps($db)
 {			
- global $OD, $OV, $odid, $allElementsArray, $standartElementsArray, $staticElementsArray, $uniqElementsArray, $elementSelectionJSONList;
- $allElementsArray = $standartElementsArray = $staticElementsArray = $uniqElementsArray = [];
+ global $OD, $OV, $odid, $allElementsArray, $uniqElementsArray, $elementSelectionJSONList;
+ $allElementsArray = $uniqElementsArray = [];
   
  // Get odname $OD props
  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View'), JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$odid'");
@@ -282,14 +271,15 @@ function getODProps($db)
  unset($elements['New element']);
  if (!is_array($elements) || !count($elements)) return 'Object Database has no elements exist!';
 
- // Convert elements assoc array to num array with element identificators as array elements instead of profile names
+ // Convert elements assoc array to num array with element identificators as array elements instead of profile names and sort it
  foreach ($elements as $profile => $value)
 	 {
 	  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
 	  $allElementsArray[$eid] = $elements[$profile];
-	  $value['element3']['data'] === STATICELEMENTTYPE ? $staticElementsArray[$eid] = '' : $value['element3']['data'] === UNIQELEMENTTYPE ? $uniqElementsArray[$eid] = '' : $standartElementsArray[$eid] = '';
+	  if ($value['element3']['data'] === UNIQELEMENTTYPE) $uniqElementsArray[$eid] = '';
 	 }
- 
+ ksort($allElementsArray, SORT_NUMERIC);	 
+	 
  // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
  if ($elementSelectionJSONList === '')
     {
@@ -360,7 +350,7 @@ function parseJSONEventData($JSONs, $event)
 
 function InsertObject($db, $output)
 {
- global $odid, $allElementsArray, $staticElementsArray, $uniqElementsArray;
+ global $odid, $allElementsArray, $uniqElementsArray;
 
  $query = $values = ''; 
  foreach ($uniqElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.$output[$id]['value']; }
