@@ -279,7 +279,6 @@ try {
 			}
 		     break;
 		case 'DELETEOBJECT':
-		     // main.js check object deletion and grey context menu for undefined, title or new objects, but first check error diagnostic here (for title may be)
 		     // Check input OD/OV to be valid and input object/element id vars existence/correctness
 		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string')
 			{
@@ -287,7 +286,7 @@ try {
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
-		     DeleteObject();
+		     DeleteObject($db, $oid);
 		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		     break;
 		case 'KEYPRESS':

@@ -308,21 +308,18 @@ function checkObjectElementID($input)
 {
  global $oid, $eid, $allElementsArray, $cmd, $data;
 
- // Check browser event (cmd) data to be valid and return an error in case of undefined data for KEYPRESS, CONFIRM and INIT events
+ // Check browser event (cmd) data to be valid and return an error in case of undefined data for KEYPRESS and CONFIRM events
  $cmd = $input['cmd'];
- if (isset($input['data']))
-    {
-     if ($cmd != 'DBLCLICK') return 'Controller report: undefined browser event data!';
-     $data = $input['data'];
-    }
+ if (isset($input['data'])) $data = $input['data'];
+  else if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return 'Controller report: undefined browser event data!';
 
  // Check object/element id existence/correctness. In case of 'INIT' this check is not required
  if ($cmd != 'INIT')
     {
-     if (!isset($input['eid']) || !isset($input['oid']) || $input['oid'] < STARTOBJECTID) return 'Incorrect object/element identificator value!';
-     if (isset($allElementsArray) && !isset($allElementsArray[$input['eid']])) return 'Incorrect element identificator value!';
-     $oid = $input['oid'];
-     $eid = $input['eid'];
+     if (!isset($input['eId']) || !isset($input['oId']) || $input['oId'] < STARTOBJECTID) return 'Incorrect object/element identificator value!';
+     if (isset($allElementsArray) && !isset($allElementsArray[$input['eId']])) return 'Incorrect element identificator value!';
+     $oid = $input['oId'];
+     $eid = $input['eId'];
     }
 }
 
@@ -393,8 +390,15 @@ function InsertObject($db, $output)
 function DeleteObject($db, $id)
 {
  global $odid;
+ 
+ $db->beginTransaction();
+ $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$id AND last=1 FOR UPDATE");
+ $query->execute();
+ $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$id AND last=1");
+ $query->execute();
  $query = $db->prepare("INSERT INTO `data_$odid` (id,version) VALUES ($id,0)");
  $query->execute();
+ $db->commit();
 }
 
 function UpdateObject()

@@ -1004,7 +1004,8 @@ function callController(data)
 		 object['data'][key] = mainTable[objectTable[NEWOBJECTID][key]['props']['y']][objectTable[NEWOBJECTID][key]['props']['x']]['data'];
 	      break;
 	 case 'Delete Object':
-	      object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId };
+	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
+	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId, "eId": mainTable[focusElement.y][focusElement.x].eId };
 	      break;
 	 case 'New Object Database':
 	      object = { "cmd": cmd };
