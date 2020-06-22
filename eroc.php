@@ -239,26 +239,26 @@ function mergeStyleRules($rules)
 
 function checkODOV($db, $input, $cmdcheck = false)
 {
- global $OD, $OV, $cmd, $data;
+ global $OD, $OV, $odid;
  
- // Check OD/OV existence
+ // Check input OD/OV vars existence
  if (!isset($input['OD']) || !isset($input['OV'])) return 'Incorrect Object Database/View!';
  
  // Check any OD sql database existence
- $query = $db->prepare("SELECT odname FROM $ LIMIT 1");
+ $query = $db->prepare("SELECT id FROM $ LIMIT 1");
  $query->execute();
  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create Object Database first!';
 
  // Empty value OD/OV check
  if ($input['OD'] === '' || $input['OV'] === '') return 'Please create/select Object View!'; 
- 
- // Check browser event (cmd) data to be valid, so return an error in case of undefined data for KEYPRESS, CONFIRM and INIT events
- if ($cmdcheck && !isset($input['data']) && $input['cmd'] != 'DBLCLICK') return 'Controller report: undefined browser event data!';
- 
  $OD = $input['OD'];
  $OV = $input['OV'];
- $cmd = $input['cmd'];
- if (isset($input['data'])) $data = $input['data'];
+ 
+ // Check $OD existence and get its id
+ $query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");
+ $query->execute();
+ if (count($odid = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
+ $odid = $odid[0][0];
 }
 
 function getODProps($db)
@@ -267,14 +267,13 @@ function getODProps($db)
  $allElementsArray = $standartElementsArray = $staticElementsArray = $uniqElementsArray = [];
   
  // Get odname $OD props
- $query = $db->prepare("SELECT id, JSON_EXTRACT(odprops, '$.dialog.Element'), JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$OD'");
+ $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View'), JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$odid'");
  $query->execute();
  if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
  $data = $data[0];
- $odid = $data[0];
 			
  // Move on. Get specified view JSON element selection (what elements should be displayed and how)
- $elementSelectionJSONList = json_decode($data[2], true);
+ $elementSelectionJSONList = json_decode($data[0], true);
  if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return 'Please create/select Object View!';
  $elementSelectionJSONList = trim($elementSelectionJSONList[$OV]['element5']['data']);
   		     
@@ -305,15 +304,26 @@ function getODProps($db)
     }
 }
 
-function checkObjectElementID($input, $elements)
+function checkObjectElementID($input)
 {
- global $oid, $eid;
+ global $oid, $eid, $allElementsArray, $cmd, $data;
 
- if ($input['cmd'] === 'INIT') return;
- if (!isset($input['eid']) || !isset($input['oid']) || $input['oid'] < STARTOBJECTID || !isset($elements[$input['eid']])) return 'Incorrect object/elemnt identificator value!';
- 
- $oid = $input['oid'];
- $eid = $input['eid'];
+ // Check browser event (cmd) data to be valid and return an error in case of undefined data for KEYPRESS, CONFIRM and INIT events
+ $cmd = $input['cmd'];
+ if (isset($input['data']))
+    {
+     if ($cmd != 'DBLCLICK') return 'Controller report: undefined browser event data!';
+     $data = $input['data'];
+    }
+
+ // Check object/element id existence/correctness. In case of 'INIT' this check is not required
+ if ($cmd != 'INIT')
+    {
+     if (!isset($input['eid']) || !isset($input['oid']) || $input['oid'] < STARTOBJECTID) return 'Incorrect object/element identificator value!';
+     if (isset($allElementsArray) && !isset($allElementsArray[$input['eid']])) return 'Incorrect element identificator value!';
+     $oid = $input['oid'];
+     $eid = $input['eid'];
+    }
 }
 
 function Handler($handler, $input)
@@ -380,8 +390,11 @@ function InsertObject($db, $output)
  $db->commit();
 }
 
-function DeleteObject()
+function DeleteObject($db, $id)
 {
+ global $odid;
+ $query = $db->prepare("INSERT INTO `data_$odid` (id,version) VALUES ($id,0)");
+ $query->execute();
 }
 
 function UpdateObject()

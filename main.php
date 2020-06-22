@@ -106,7 +106,7 @@ try {
 		   $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		break;
 		case 'GETMAIN':
-		     // Check input OD/OV to be valid and OD/OV/elements database existence
+		     // Check input OD/OV to be valid and elements existence
 		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string')
 			{
 			 $output = ['cmd' => 'INFO', 'error' => $error];
@@ -177,7 +177,7 @@ try {
 
 		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
 		     // While this features are not released, get all objects:
-		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1");
+		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1 AND version!=0");
 		     $query->execute();
 		     
 		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
@@ -279,6 +279,14 @@ try {
 			}
 		     break;
 		case 'DELETEOBJECT':
+		     // main.js check object deletion and grey context menu for undefined, title or new objects, but first check error diagnostic here (for title may be)
+		     // Check input OD/OV to be valid and input object/element id vars existence/correctness
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string')
+			{
+			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
+			 break;
+			}
 		     DeleteObject();
 		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		     break;
@@ -286,12 +294,14 @@ try {
 		case 'DBLCLICK':
 		case 'CONFIRM':
 		case 'INIT':
-		     // Check input OD/OV to be valid, OD/OV/elements database existence and input object/elemnt id existence/correctness check
-		     if (gettype($error = checkODOV($db, $input, true)) === 'string' || gettype($error = getODProps($db)) === 'string'  || gettype($error = checkObjectElementID($input, $allElementsArray)) === 'string')
+		     // Check input OD/OV to be valid, elements existence and input object/element id vars existence/correctness
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string')
 			{
-			 $output = ['cmd' => 'INFO', 'error' => $error];
+			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
+			
 		     // For 'INIT' event handle all elements of new object, otherwise handle only current element 
 		     if ($cmd === 'INIT') $elements = $allElementsArray;
 		      else $elements = [$eid => $allElementsArray[$eid]];

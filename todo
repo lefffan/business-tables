@@ -165,7 +165,8 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-git commit -a -m "INIT command ver4"
+#git commit -a -m "INIT command ver4"
+git commit -a -m "extra error check"
 git push -u origin master
 lefffan
 B267tr54
