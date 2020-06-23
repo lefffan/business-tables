@@ -166,7 +166,7 @@ Input style:
 
 Git:
 #git commit -a -m "INIT command ver4"
-git commit -a -m "getMain function rebuild"
+git commit -a -m "uniq element CRUD operations bug"
 git push -u origin master
 lefffan
 B267tr54

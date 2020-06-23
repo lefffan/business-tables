@@ -356,14 +356,14 @@ function InsertObject($db, $output)
  foreach ($uniqElementsArray as $id => $value)
 	 {
 	  $query .= ",eid$id";
-	  isset($output[$id]['value']) ? $values .= ','.$output[$id]['value'] : $values .= ",''";
+	  isset($output[$id]['value']) ? $values .= ",'".$output[$id]['value']."'" : $values .= ",''";
 	 }
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
 
  $db->beginTransaction();
  $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
  $query->execute();                                                                  
-
+ 
  $query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
  $query->execute();                                                                  
  // Generate new exception in case of non correct last insert id value               
@@ -391,6 +391,8 @@ function DeleteObject($db, $id)
  $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$id AND last=1");
  $query->execute();
  $query = $db->prepare("INSERT INTO `data_$odid` (id,version) VALUES ($id,0)");
+ $query->execute();
+ $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$id");
  $query->execute();
  $db->commit();
 }
