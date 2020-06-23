@@ -353,7 +353,11 @@ function InsertObject($db, $output)
  global $odid, $allElementsArray, $uniqElementsArray;
 
  $query = $values = ''; 
- foreach ($uniqElementsArray as $id => $value) { $query .= ",eid$id"; $values .= ','.$output[$id]['value']; }
+ foreach ($uniqElementsArray as $id => $value)
+	 {
+	  $query .= ",eid$id";
+	  isset($output[$id]['value']) ? $values .= ','.$output[$id]['value'] : $values .= ",''";
+	 }
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
 
  $db->beginTransaction();
@@ -393,4 +397,151 @@ function DeleteObject($db, $id)
 
 function UpdateObject()
 {
+}
+
+function getMainFieldData($db)
+{
+ global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid;
+ $arrayEIdOId = [];
+ $allElementsArray[0] = $sqlElementList = '';
+ 
+ // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
+ // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
+ // are parsed for undefined cells css style and collapse capability. Array structure:
+ //  ----------------------------------------------------------------
+ // |  \eid|       Element #0        |        Element #1..           | 
+ // |oid\  |         styles          | x,y,style,startevent..        |
+ //  ----------------------------------------------------------------
+ // |  0   | for any oid/eid   	     | for default object element #1 |
+ //  ----- ----------------------------------------------------------
+ // |  1   | for whole new object    | for new object element #1     |
+ //  ----------------------------------------------------------------
+ // |  2   | for whole title object  | for title object element #1   |
+ //  ----------------------------------------------------------------
+ // |  3.. | for whole real object   | for real objects element #1   |
+ //  ----------------------------------------------------------------
+ foreach (preg_split("/\n/", $elementSelectionJSONList) as $value) if ($j = json_decode($value, true, 2))
+	 {
+	  $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
+	  if (!key_exists('eid', $j) || !key_exists('oid', $j)) // eid/oid property doesn't exist? Set some undefined cells features
+	     {
+	      if (!key_exists('eid', $j) && !key_exists('oid', $j))
+		 {
+		  $undefinedProps = [];
+		  if (key_exists('style', $j)) $undefinedProps['style'] = $j['style'];
+		  if (key_exists('collapse', $j)) $undefinedProps['collapse'] = $j['collapse'];
+		 }
+	      continue;
+	     }
+				 
+			      if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
+			      if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
+			      
+			      $eid = intval($j['eid']);
+			      $oid = intval($j['oid']);
+			      
+			      if (key_exists($eid, $allElementsArray) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
+			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
+				 {
+				  if (!key_exists($eid, $arrayEIdOId))
+				     {
+				      $arrayEIdOId[$eid] = [];
+				      if ($eid != 0) $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
+				     }
+				  if ($eid != 0) $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
+				   else $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
+				 }
+			     }
+			     
+		     // No any element defined?	
+		     if ($sqlElementList == '') return 'Specified view has no elements defined!';
+			
+		     // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
+		     $objectTable = $objectTableSrc = [];
+		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
+		     // While this features are not released, get all objects:
+		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1 AND version!=0");
+		     $query->execute();
+		     
+		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
+		     //  -----------------------------------------------------------------------------------
+		     // |  \ eid|               |                                             		    	|
+		     // |   \   |       0       |           5.. (was 'eid5' column)             	    	|
+		     // |oid \  |               |                                             		    	|
+		     //  -----------------------------------------------------------------------------------
+		     // |       |style rules    |                                             		    	|
+		     // |   0   |for undefined  |Apply object element props for all objects with element #5 |                                        		 |
+		     // |       |cells          |                                             		    	|
+		     //  -----------------------------------------------------------------------------------
+		     // |       |Apply styles   |"json" : JSON element data                   		   	 	|
+		     // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
+		     // |       |new object     |                                                    	    |
+		     //  -----------------------------------------------------------------------------------
+		     // |       |Apply styles   |"json" : JSON element data                   		    	|
+		     // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
+		     // |       |title object   |                                                           |
+		     //  -----------------------------------------------------------------------------------
+		     // |       |Apply styles   |"json" : JSON element data                   		    	|
+		     // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
+		     // |       |real object    |                                                   	    |
+		     //  -----------------------------------------------------------------------------------
+		     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
+		    	     {
+			      $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
+			      $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
+			     }
+			     
+		     // Rewrite $objectTableSrc array (to the table above) on eidoid array to $objectTable, not forgeting about static element status.
+		     // In the future release create first object (static) flag whether it is on the object list or not, then remove it at the end or not.
+		     // So - iterate all elements with non zero identificators (real elements)
+		     foreach ($arrayEIdOId as $eid => $value) if ($eid != 0)
+		    	     {
+			      $eidstr = 'eid'.strval($eid);
+			      
+			      // Iterate all objects identificators for current eid to fill $objectTable. First - for all object when oid=0:
+			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $oid => $valeu)
+				 {
+				  if (!key_exists($oid, $objectTable)) // Result $objectTable current object ($oid) doesn't exist? Create it
+				     {
+				      $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
+				      $objectTable[$oid][$eid] = [];
+				     }
+				  $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data
+				  $objectTable[$oid][$eid]['props'] = $arrayEIdOId[$eid][0]; // Set current object element props data
+				  //----------------Merge CSS style rules in order of priority--------------
+				  $styles = [];
+				  if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
+				  if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
+				  if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
+				  if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
+				  $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
+				  //---------------------------Merge style rules end------------------------ 
+				 }
+				 
+			      // Second - for other exact object oids:
+		    	      foreach ($value as $oid => $props) if ($oid != 0)
+				      {
+				       $json = NULL;
+				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '']);
+				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data']]);
+				       if (key_exists($oid, $objectTableSrc)) $json = $objectTableSrc[$oid][$eidstr];
+				       if (isset($json))
+				          {
+					   if (!key_exists($oid, $objectTable)) $objectTable[$oid] = [];
+					   $objectTable[$oid][$eid] = ['json' => $json, 'props' => $props];
+					   //----------------Merge CSS style rules in order of priority--------------
+					   $styles = [];
+					   if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
+					   if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
+					   if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
+					   if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
+					   $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
+					   //---------------------------Merge style rules end------------------------ 
+					  }
+				      }
+			     }
+			     
+ // Check the result data to be sent to client part
+ if (count($objectTable) < 1) return 'Specified view has no objects defined!';
+  else if (isset($undefinedProps)) $objectTable[0][0] = $undefinedProps;
 }
