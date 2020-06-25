@@ -10,6 +10,7 @@ check why the browser gets object instead array
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - format all code from vs code
 - https access only, register domain tabels.app and certificate
+- prevent it: ff -> dblclick -> enter -> backspace -> cell is big -> dblclick -> cell is small!
 
 July 2020:
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
@@ -166,7 +167,7 @@ Input style:
 
 Git:
 #git commit -a -m "INIT command ver4"
-git commit -a -m "uniq element CRUD operations bug"
+git commit -a -m "\n and <br> contentEditable adding browser fucking bug!"
 git push -u origin master
 lefffan
 B267tr54
@@ -187,3 +188,5 @@ SELECT @@autocommit;
 //SELECT JSON_EXTRACT(eid1, '$.colq'), JSON_EXTRACT(eid1, '$.colz') FROM `data_4`;   
 //$query = $db->prepare("SELECT JSON_EXTRACT(ed1, '$.value') FROM `data_$data[0]`"); 
 //$query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.q', '$.value') FROM `data_4`");
+
+

@@ -342,7 +342,7 @@ function parseJSONEventData($JSONs, $event)
 		  }
 	  break;
 	 }
-		 
+	 
  if (isset($eventArray)) return $eventArray;
  if ($event === 'CONFIRM') return ['event' => 'CONFIRM'];
  return NULL;
@@ -378,6 +378,7 @@ function InsertObject($db, $output)
 	 }
  $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
  $query->execute();
+ 
  $db->commit();
 }
 
@@ -386,8 +387,14 @@ function DeleteObject($db, $id)
  global $odid;
  
  $db->beginTransaction();
- $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$id AND last=1 FOR UPDATE");
+ $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$id AND last=1 AND version!=0 FOR UPDATE");
  $query->execute();
+ if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
+    {
+     $db->rollBack();
+     return "Object (identificator $id) not found!";
+    }
+ 
  $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$id AND last=1");
  $query->execute();
  $query = $db->prepare("INSERT INTO `data_$odid` (id,version) VALUES ($id,0)");
@@ -397,8 +404,13 @@ function DeleteObject($db, $id)
  $db->commit();
 }
 
-function UpdateObject()
+function UpdateObject($db, $output)
 {
+ global $oid;
+ 
+ foreach ($output as $eid => $json) if (isset($json['cmd']))
+	 {
+	 }
 }
 
 function getMainFieldData($db)

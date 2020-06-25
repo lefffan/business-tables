@@ -451,11 +451,13 @@ function eventHandler(event)
 		      cmd = 'DBLCLICK';
 		      callController();
 		     }
-		   else if (mainTable[focusElement.y][focusElement.x].oId === +NEWOBJECTID)
+		   else if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
 		     {
-		      focusElement.olddata = '';
+		      focusElement.olddata = mainTable[focusElement.y][focusElement.x].data;
 	    	      focusElement.td.contentEditable = 'true';
+		      if (focusElement.olddata === '') event.target.innerHTML = ''; // Fucking FF has bug inserting <br> to the empty content
 	    	      focusElement.td.focus();
+		      event.preventDefault();
 		     }
 		 }
 	      break;
@@ -655,7 +657,7 @@ function eventHandler(event)
 	     //--------------Remove context menu for no sidebar and main field events--------------
 		 rmContextMenu();
 		 break;
-	 case 'keypress':
+/*	 case 'keypress':
 	      if (focusElement.td && event.which === 10 && focusElement.td.contentEditable == 'true') 
 		 {
 		  event.preventDefault();
@@ -672,7 +674,7 @@ function eventHandler(event)
 		      callController(htmlCharsConvert(event.target.innerHTML));
 		     }
 		 }
-	      break;
+	      break;*/
 	 case 'keydown':
 	      //if (event.which == 45) createBox({"title":"Alert", "confirm": "The Object Database cannot be deleted!", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
 	      if (modalVisible === 'help')
@@ -682,7 +684,7 @@ function eventHandler(event)
 		  break;
 		 }
 	      if (modalVisible != "" && event.which != 27) break;
-	      if (focusElement.td != undefined && focusElement.td.contentEditable === 'true' && event.which != 27) break;
+	      if (focusElement.td != undefined && focusElement.td.contentEditable === 'true' && event.which != 27 && event.which != 13) break;
 	      switch (event.which)
 		     {
 		      case 36: //Home
@@ -708,7 +710,13 @@ function eventHandler(event)
 		      case 13: //Enter
 		           if (!contextMenu) // If context menu is not active,  try to move cursor down
 			      {
-			       moveCursor(0, 1, false);
+			       if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
+			          {
+				   event.preventDefault();
+				   //document.execCommand('insertHTML', false, '<br>');
+				   document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in FF
+				  }
+			       else moveCursor(0, 1, false);
 			      }
 			    else if (contextMenu.e) // If context menu item is active
 			      {
@@ -834,17 +842,15 @@ function commandHandler(input)
 
 function htmlCharsConvert(string)
 {
- if (string == undefined || string == null) return "";
- if (string.charCodeAt(string.length - 1) == 10 && string.charCodeAt(string.length - 2) != 10) return string.slice(0, -1);
-  else return string.replace(/<br>$/,"");
+ if (string === undefined || string === null || string === '') return '';
+ if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1); // Last char is '\n' (ASCII code 0x0A)? Remove it.
+ return string.replace(/<br>$/,""); // Otherwise remove <br> at the end of the line. FUCK the browsers for automatic adding <br> (FF) and \n (Chrome..)!
 }
 
-function toHTMLCharsConvert(string)
+function toHTMLCharsConvert(string) // Add '<' char replace by special symbol '&lt;' to prevent adding html tags
 {
  if (string == undefined || string == null) return "";
- //string = string.replace(/\\n/g,"<br>");
- if (string.charCodeAt(string.length - 1) == 10 && string.charCodeAt(string.length - 2) != 10) return string.slice(0, -1);
-  else return string;
+ return string;
 }
 
 function cellBorderToggleSelect(oldCell, newCell)

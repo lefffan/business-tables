@@ -115,16 +115,14 @@ try {
 		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'DELETEOBJECT':
-		     // Check input OD/OV to be valid and input object/element id vars existence/correctness
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string')
+		     // Check input OD/OV to be valid, input object/element id vars existence/correctness and other data
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string' || gettype($alert = DeleteObject($db, $oid)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string')
 			{
 			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
-		     DeleteObject($db, $oid);
-		     if (gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string') $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':
@@ -142,7 +140,7 @@ try {
 		     if ($cmd === 'INIT') $elements = $allElementsArray;
 		      else $elements = [$eid => $allElementsArray[$eid]];
 		     $output = [];
-
+		     
 		     foreach ($elements as $element => $elementProfile)
 		             if (($handlerName = $elementProfile['element4']['data']) != '')
 		                if ($eventArray = parseJSONEventData($elementProfile['element5']['data'], $cmd))
@@ -155,12 +153,13 @@ try {
 				   }
 		     if ($cmd === 'INIT')
 		        {
+			loog($output);
 			 InsertObject($db, $output);
 			 $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 			}
-		      else
+		      else if (isset($output[$eid]))
 		        {
-			 //UpdateObject();
+			 UpdateObject($db, $output);
 		         //Handle ONCHANGE if no INIT
 			 //UpdateObject(); 
 			 $output = ['cmd' => ''];
@@ -199,7 +198,12 @@ catch (PDOException $e)
 		  break;
 		case 'GETMENU':
 			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to get sidebar OD/OV list: '.$e->getMessage()]);
-		  break;
+		break;
+		case 'INIT':
+			if (preg_match("/Duplicate entry/", $e->getMessage()) === 1)
+			      echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object database for some unique elements:  Duplicate entry!']);
+			 else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: '.$e->getMessage()]);
+		break;
 	     default:
 		 echo json_encode(['cmd' => 'INFO', 'alert' => 'Unknown error: '.$e->getMessage()]);
 	    }
