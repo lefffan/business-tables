@@ -840,14 +840,28 @@ function commandHandler(input)
 	}
 }
 
-function htmlCharsConvert(string)
+function htmlCharsConvertOld(string) // To prevent any tag to be in contentEditable - first replace the tag <br> by LF special char '\n' (ASCII code 0x0A)
 {
  if (string === undefined || string === null || string === '') return '';
  if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1); // Last char is '\n' (ASCII code 0x0A)? Remove it.
  return string.replace(/<br>$/,""); // Otherwise remove <br> at the end of the line. FUCK the browsers for automatic adding <br> (FF) and \n (Chrome..)!
 }
 
-function toHTMLCharsConvert(string) // Add '<' char replace by special symbol '&lt;' to prevent adding html tags
+function htmlCharsConvert(string)
+{
+ if (string === undefined || string === null || string === '') return '';
+ string = string.replace(/<br>/g, "\n"); // To prevent any tag to be in contentEditable - first replace the tag <br> by LF special char '\n' (ASCII code 0x0A)
+ if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1); // Last char is '\n' (ASCII code 0x0A)? Remove it.
+ return string;
+}
+
+function toHTMLCharsConvertOld(string) // Add '<' char replace by special symbol '&lt;' to prevent adding html tags: return string.replace(/</g, "&lt;");
+{
+ if (string == undefined || string == null) return "";
+ return string;
+}
+
+function toHTMLCharsConvert(string)
 {
  if (string == undefined || string == null) return "";
  return string;

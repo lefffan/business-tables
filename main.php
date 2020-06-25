@@ -153,7 +153,6 @@ try {
 				   }
 		     if ($cmd === 'INIT')
 		        {
-			loog($output);
 			 InsertObject($db, $output);
 			 $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 			}

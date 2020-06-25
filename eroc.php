@@ -373,7 +373,7 @@ function InsertObject($db, $output)
  $values = $newId.',1';
  foreach ($allElementsArray as $id => $value) if (isset($output[$id]))
 	 {
-	  $json = json_encode($output[$id]);
+	  $json = str_replace("\\", "\\\\", json_encode($output[$id]));
 	  if (isset($json)) { $query .= ',eid'.strval($id); $values .= ",'".$json."'"; }
 	 }
  $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
