@@ -167,12 +167,11 @@ Input style:
 
 Git:
 #git commit -a -m "INIT command ver4"
-git commit -a -m "sql json insert slsah \ encoding"
+git commit -a -m "no pass"
 git push -u origin master
 lefffan
-B267tr54
 
-# Nakatit v local repositary lasr code version before work
+# Nakatit v local repositary last code version before work
 git pull origin
 
 drop database OE4; create database OE4; use OE4; show tables;
