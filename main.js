@@ -800,7 +800,7 @@ function commandHandler(input)
 		 }
 	      break;
 	 case 'SET':
-	      let object;
+	      /*let object;
 	      for (let i = 0; i < input.data.length; i++)
 	       if (!input.data[i].oId) // Global element
 		  {
@@ -813,8 +813,8 @@ function commandHandler(input)
 		  {
 		   if (object = objectTable[input.data[i].oId][input.data[i].eId])
 		      mainTablediv.rows[object.y].cells[object.x].innerHTML = toHTMLCharsConvert(input.data[i].data);
-		  }
-	      if (input.log) loog('Log controller message: ' + input.log);
+		  }*/loog(input.data);
+		  
 	      if (input.alert) alert(input.alert);
 	      break;
 	 case 'REFRESH':
@@ -1035,16 +1035,16 @@ function callController(data)
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
 	      break;
-	 case 'CONFIRM':
 	 case 'NEWOD':
  	 case 'EDITOD':
 	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      if (data != undefined) object.data = data;
 	      break;
+	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
 	      object = {"cmd": cmd, "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId, "eId": mainTable[focusElement.y][focusElement.x].eId };
-	      if (data !== undefined) object.data = data;
+	      if (data != undefined) object.data = data;
 	      break;
 	 case 'GETUI':
 	      let element, key, rule;

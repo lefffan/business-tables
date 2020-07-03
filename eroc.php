@@ -310,12 +310,11 @@ function checkObjectElementID($db, $input)
      if (isset($allElementsArray) && !isset($allElementsArray[$input['eId']])) return 'Incorrect element identificator value!';
      $oid = $input['oId'];
      $eid = $input['eId'];
+     // Check database object existence
+     $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+     $query->execute();
+     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return "Object (identificator $oid) doesn't exist!";
     }
-
- // Check database object existence
- $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
- $query->execute();
- if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return "Object (identificator $oid) doesn't exist!";
 }
 
 function Handler($handler, $input)
@@ -336,7 +335,7 @@ function parseJSONEventData($db, $JSONs, $event)
          {
 	  $eventArray = ['event' => $event];
           foreach ($json as $prop => $value) // Search non reserved array elements to pass them to result event array
-	       if ($prop != 'event' && $prop != 'event data' && $prop != 'user' && $prop != 'eid' && $prop != 'header')
+	       if ($prop != 'event' && $prop != 'data' && $prop != 'user' && $prop != 'eid' && $prop != 'header')
 	       if (gettype($value) === 'string')
 		  {
 		   $eventArray[$prop] = $value;
@@ -359,7 +358,7 @@ function getElementProperty($db, $prop, $elementId = NULL)
  if (!isset($oid) || !isset($eid)) return '';
  if (!isset($elementId)) $elementId = $eid;
 
- $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version desc LIMIT 1");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
  $query->execute();
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
@@ -425,7 +424,7 @@ function DeleteObject($db)
 
 function CreateNewObjectVersion($db, $output)
 {
- global $odid, $oid, $eid;
+ global $odid, $oid, $eid, $uniqElementsArray;
  
  // Start transaction, select last existing (non zero) version of the object and block the corresponded row
  $db->beginTransaction();
@@ -441,7 +440,7 @@ function CreateNewObjectVersion($db, $output)
  // Unset last flag of the object current version
  $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1");
  $query->execute();
- 
+
  // Update current object uniq element if exist
  if (isset($uniqElementsArray[$eid]) && isset($output['value']))
     {
@@ -452,7 +451,7 @@ function CreateNewObjectVersion($db, $output)
  // Insert new version of current object. First step - read current element json data to merge it with new data in case of 'SET' command
  if ($output['cmd'] === 'SET') 
     {
-     $query = $db->prepare("SELECT eid$eid FROM `data_$odid` WHERE id=$oid AND eid$eid IS NOT NULL ORDER BY version desc LIMIT 1");
+     $query = $db->prepare("SELECT eid$eid FROM `data_$odid` WHERE id=$oid AND eid$eid IS NOT NULL ORDER BY version DESC LIMIT 1");
      $query->execute();
      $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
      if (count($oldOutput) > 0) $output = array_replace(json_decode($oldOutput[0][0], true), $output);

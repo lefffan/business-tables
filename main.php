@@ -139,7 +139,7 @@ try {
 		             if (($handlerName = $elementProfile['element4']['data']) != '')
 		                if ($eventArray = parseJSONEventData($db, $elementProfile['element5']['data'], $cmd))
 		    		   {
-			            $eventArray['event data'] = isset($data[$element]) ? $data[$element] : '';
+			            $eventArray['data'] = isset($data[$element]) ? $data[$element] : '';
 			            $output[$element] = Handler($handlerName, json_encode($eventArray));
 				    if ($output[$element]['cmd'] != 'SET' && $output[$element]['cmd'] != 'RESET') unset($output[$element]);
 				   }
@@ -156,9 +156,9 @@ try {
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
-		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $elementProfile['element5']['data'], $cmd))
+		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd))
 		        {
-			 if (isset($data)) $eventArray['event data'] = $data;
+			 if (isset($data)) $eventArray['data'] = $data;
 			 $output = Handler($handlerName, json_encode($eventArray));
 			 // output = [ 'cmd'		=> 'EDIT[<LINES_NUM>]|DIALOG|ALERT'
 			 //	       'data'		=> '<text data for EDIT or ALERT>|<json data for DIALOG>' ]
@@ -177,13 +177,13 @@ try {
 			 //	       '<any key>'	=> '' ]
 			 if ($output['cmd'] === 'SET' || $output['cmd'] === 'RESET')
 			    {
-			     //$version = CreateNewObjectVersion($db, $output);
+			     $version = CreateNewObjectVersion($db, $output);
+			     //isset($output['alert']) ? $alert = 
 			     // Handle ONCHANGE if no INIT
 			     // UpdateObjectVersion($db, $output);
-			     // $output = ['cmd' => 'SET'];
-			     $output = ['cmd' => ''];
+			     $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $output]];
 			    }
-			  else if ($output['cmd'] === 'EDIT') isset($output['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output['data']] : $output = ['cmd' => 'EDIT'];
+			  else if ($output['cmd'] === 'EDIT') isset($output['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
 			  else if ($output['cmd'] === 'ALERT') isset($output['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
 			  else if ($output['cmd'] === 'DIALOG' && isset($output['data']) && is_array($output['data'])) $output = ['cmd' => 'DIALOG', 'data' => $output['data']];
 			  else $output = ['cmd' => ''];

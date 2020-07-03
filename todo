@@ -166,7 +166,7 @@ Input style:
 
 Git:
 #git commit -a -m "INIT command ver4"
-git commit -a -m "no pass"
+git commit -a -m "CreateNewObjectVersion function ver2"
 git push -u origin master
 lefffan
 
