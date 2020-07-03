@@ -1,5 +1,4 @@
 June 2020:
-check why the browser gets object instead array
 - not all parameters of element data json shouldbe passed to the browser
 - rebuild element events (DBLCLICK, KEYPRESS..) in dialog box - checkbox with text area with json list to pass to the handler
 - New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
@@ -100,7 +99,7 @@ Browser commands to the controller (fixed):
     { "cmd":	"GETMENU|GETMAIN|GETUI|INIT|DELETEOBJECT|DBLCLICK|KEYPRESS|CONFIRM"
       "OD":	"<OD name>"
       "OV":	"<OV name>"
-      "data":	"[eId=>data, eId=>data..] for NEWOBJECT|<key code> for KEYPRESS|<cell data> or <dialog json data> for CONFIRM"
+      "data":	"[eId=>data, eId=>data..] for INIT|<key code> for KEYPRESS|<cell data> or <dialog json data> for CONFIRM"
       "oId":	"<object id>"
       "eId":	"<element id>"
       "sId":	"<session id>" }

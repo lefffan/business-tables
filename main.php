@@ -116,7 +116,7 @@ try {
 		     break;
 		case 'DELETEOBJECT':
 		     // Check input OD/OV to be valid, input object/element id vars existence/correctness and other data
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string' || gettype($alert = DeleteObject($db, $oid)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string')
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string' || gettype($alert = DeleteObject($db)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string')
 			{
 			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
@@ -124,43 +124,72 @@ try {
 			}
 		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
-		case 'KEYPRESS':
-		case 'DBLCLICK':
-		case 'CONFIRM':
 		case 'INIT':
 		     // Check input OD/OV to be valid, elements existence and input object/element id vars existence/correctness
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($alert = checkObjectElementID($input)) === 'string')
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string')
 			{
 			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
 			
-		     // For 'INIT' event handle all elements of new object, otherwise handle only current element 
-		     if ($cmd === 'INIT') $elements = $allElementsArray;
-		      else $elements = [$eid => $allElementsArray[$eid]];
+		     // Handle all elements of a new object
 		     $output = [];
-		     
-		     foreach ($elements as $element => $elementProfile)
+		     foreach ($allElementsArray as $element => $elementProfile)
 		             if (($handlerName = $elementProfile['element4']['data']) != '')
-		                if ($eventArray = parseJSONEventData($elementProfile['element5']['data'], $cmd))
+		                if ($eventArray = parseJSONEventData($db, $elementProfile['element5']['data'], $cmd))
 		    		   {
 			            $eventArray['event data'] = isset($data[$element]) ? $data[$element] : '';
 			            $output[$element] = Handler($handlerName, json_encode($eventArray));
-				    if ($output[$element]['cmd'] != 'SET' && $output[$element]['cmd'] != 'RESET')
-				    if ($cmd === 'INIT' || ($output[$element]['cmd'] != 'EDIT' && $output[$element]['cmd'] != 'DIALOG' && $output[$element]['cmd'] != 'ALERT'))
-				       unset($output[$element]);
+				    if ($output[$element]['cmd'] != 'SET' && $output[$element]['cmd'] != 'RESET') unset($output[$element]);
 				   }
-		     if ($cmd === 'INIT')
-		        {
-			 InsertObject($db, $output);
-			 $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+		     InsertObject($db, $output);
+		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+		     break;
+		case 'KEYPRESS':
+		case 'DBLCLICK':
+		case 'CONFIRM':
+		     // Check input OD/OV to be valid, elements existence and input object/element id vars existence/correctness
+		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string')
+			{
+			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
+			 break;
 			}
-		      else if (isset($output[$eid]))
+		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $elementProfile['element5']['data'], $cmd))
 		        {
-			 UpdateObject($db, $output);
-		         //Handle ONCHANGE if no INIT
-			 //UpdateObject(); 
+			 if (isset($data)) $eventArray['event data'] = $data;
+			 $output = Handler($handlerName, json_encode($eventArray));
+			 // output = [ 'cmd'		=> 'EDIT[<LINES_NUM>]|DIALOG|ALERT'
+			 //	       'data'		=> '<text data for EDIT or ALERT>|<json data for DIALOG>' ]
+			 //
+			 // output = [ 'cmd'		=> 'SET|RESET'		// update defined object element props, SET - undefined props remain, RESET - undefined props removed
+			 //	       'alert'		=> '<alert message>'
+			 //	       'value'		=> 'visible cell data'
+			 //	       'image'		=> 'image to display instead of value text'
+			 //	       'link'		=> ''
+			 //	       'location'	=> ''
+			 //	       'hint'		=> ''
+			 //	       'fonts'		=> ''
+			 //	       'color'		=> ''
+			 //	       'background'	=> ''
+			 //	       '<other css>'	=> ''
+			 //	       '<any key>'	=> '' ]
+			 if ($output['cmd'] === 'SET' || $output['cmd'] === 'RESET')
+			    {
+			     //$version = CreateNewObjectVersion($db, $output);
+			     // Handle ONCHANGE if no INIT
+			     // UpdateObjectVersion($db, $output);
+			     // $output = ['cmd' => 'SET'];
+			     $output = ['cmd' => ''];
+			    }
+			  else if ($output['cmd'] === 'EDIT') isset($output['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output['data']] : $output = ['cmd' => 'EDIT'];
+			  else if ($output['cmd'] === 'ALERT') isset($output['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
+			  else if ($output['cmd'] === 'DIALOG' && isset($output['data']) && is_array($output['data'])) $output = ['cmd' => 'DIALOG', 'data' => $output['data']];
+			  else $output = ['cmd' => ''];
+			}
+		      else
+		        {
 			 $output = ['cmd' => ''];
 			}
 		     break;

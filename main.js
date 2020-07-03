@@ -440,6 +440,7 @@ function eventHandler(event)
 		 }
 	      break;
 	 case 'dblclick':
+	      if (modalVisible === "" ||  modalVisible === "hint")
 	      if (event.target.contentEditable != 'true')
 		 {
 		  focusElement.x = event.target.cellIndex;
@@ -786,7 +787,7 @@ function commandHandler(input)
 	      break;
 	 case 'EDIT':
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
-	      if (mainTable[focusElement.y][focusElement.x].oId == input.oId && mainTable[focusElement.y][focusElement.x].eId == input.eId)
+	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
 	    	  focusElement.olddata = focusElement.td.innerHTML;
 	          focusElement.td.contentEditable = 'true';

@@ -294,9 +294,9 @@ function getODProps($db)
     }
 }
 
-function checkObjectElementID($input)
+function checkObjectElementID($db, $input)
 {
- global $oid, $eid, $allElementsArray, $cmd, $data;
+ global $odid, $oid, $eid, $allElementsArray, $cmd, $data;
 
  // Check browser event (cmd) data to be valid and return an error in case of undefined data for KEYPRESS and CONFIRM events
  $cmd = $input['cmd'];
@@ -311,6 +311,11 @@ function checkObjectElementID($input)
      $oid = $input['oId'];
      $eid = $input['eId'];
     }
+
+ // Check database object existence
+ $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+ $query->execute();
+ if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return "Object (identificator $oid) doesn't exist!";
 }
 
 function Handler($handler, $input)
@@ -324,7 +329,7 @@ function Handler($handler, $input)
  return ['cmd' => 'UNDEFINED'];
 }
 
-function parseJSONEventData($JSONs, $event)
+function parseJSONEventData($db, $JSONs, $event)
 {
  foreach (preg_split("/\n/", $JSONs) as $line) // Split json list and parse its lines to find specified event
       if (($json = json_decode($line, true)) && isset($json['event']) && $json['event'] === $event) // Event match?
@@ -332,13 +337,13 @@ function parseJSONEventData($JSONs, $event)
 	  $eventArray = ['event' => $event];
           foreach ($json as $prop => $value) // Search non reserved array elements to pass them to result event array
 	       if ($prop != 'event' && $prop != 'event data' && $prop != 'user' && $prop != 'eid' && $prop != 'header')
-	       if ($j = json_decode($json[$prop], true))
+	       if (gettype($value) === 'string')
 		  {
-		   
+		   $eventArray[$prop] = $value;
 		  }
-	        else
+		else if (gettype($value) === 'array' && isset($value['prop']) && gettype($value['prop']) === 'string') // start here
 		  {
-		   $eventArray[$prop] = $json[$prop];
+		   isset($value['eid']) ? $eventArray[$prop] = getElementProperty($db, $value['prop'], $value['eid']) : $eventArray[$prop] = getElementProperty($db, $value['prop']);
 		  }
 	  break;
 	 }
@@ -346,6 +351,20 @@ function parseJSONEventData($JSONs, $event)
  if (isset($eventArray)) return $eventArray;
  if ($event === 'CONFIRM') return ['event' => 'CONFIRM'];
  return NULL;
+}
+
+function getElementProperty($db, $prop, $elementId = NULL)
+{
+ global $odid, $oid, $eid;
+ if (!isset($oid) || !isset($eid)) return '';
+ if (!isset($elementId)) $elementId = $eid;
+
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version desc LIMIT 1");
+ $query->execute();
+ 
+ $result = $query->fetchAll(PDO::FETCH_NUM);
+ if (count($result) === 0 || count($result[0]) === 0) return '';
+ return $result[0][0];
 }
 
 function InsertObject($db, $output)
@@ -359,7 +378,7 @@ function InsertObject($db, $output)
 	  isset($output[$id]['value']) ? $values .= ",'".$output[$id]['value']."'" : $values .= ",''";
 	 }
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
-
+ 
  $db->beginTransaction();
  $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
  $query->execute();                                                                  
@@ -382,35 +401,70 @@ function InsertObject($db, $output)
  $db->commit();
 }
 
-function DeleteObject($db, $id)
+function DeleteObject($db)
 {
- global $odid;
+ global $odid, $oid;
  
  $db->beginTransaction();
- $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$id AND last=1 AND version!=0 FOR UPDATE");
+ $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
  $query->execute();
  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
     {
      $db->rollBack();
-     return "Object (identificator $id) not found!";
+     return "Object (identificator $oid) not found!";
     }
  
- $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$id AND last=1");
+ $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1");
  $query->execute();
- $query = $db->prepare("INSERT INTO `data_$odid` (id,version) VALUES ($id,0)");
+ $query = $db->prepare("INSERT INTO `data_$odid` (id,version,last) VALUES ($oid,0,1)");
  $query->execute();
- $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$id");
+ $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$oid");
  $query->execute();
  $db->commit();
 }
 
-function UpdateObject($db, $output)
+function CreateNewObjectVersion($db, $output)
 {
- global $oid;
+ global $odid, $oid, $eid;
  
- foreach ($output as $eid => $json) if (isset($json['cmd']))
-	 {
-	 }
+ // Start transaction, select last existing (non zero) version of the object and block the corresponded row
+ $db->beginTransaction();
+ $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
+ $query->execute();
+    
+ // Get selected version, check the result and calculate next version of the object to be created
+ $version = $query->fetchAll(PDO::FETCH_NUM);
+ // No rows found? Return an error
+ if (count($version) === 0) { $db->rollBack(); return "Object (identificator $oid) not found!"; }
+ $version = intval($version[0][0]) + 1;
+
+ // Unset last flag of the object current version
+ $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1");
+ $query->execute();
+ 
+ // Update current object uniq element if exist
+ if (isset($uniqElementsArray[$eid]) && isset($output['value']))
+    {
+     $query = $db->prepare("UPDATE `uniq_$odid` SET eid$eid=:value WHERE id=$oid");
+     $query->execute([':value' => $output['value']]);
+    }
+
+ // Insert new version of current object. First step - read current element json data to merge it with new data in case of 'SET' command
+ if ($output['cmd'] === 'SET') 
+    {
+     $query = $db->prepare("SELECT eid$eid FROM `data_$odid` WHERE id=$oid AND eid$eid IS NOT NULL ORDER BY version desc LIMIT 1");
+     $query->execute();
+     $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
+     if (count($oldOutput) > 0) $output = array_replace(json_decode($oldOutput[0][0], true), $output);
+    }
+ // Second step - create new version with new result element data
+ if (($output = str_replace("\\", "\\\\", json_encode($output))) == '') { $db->rollBack(); return 'Unknown update element data error!'; }
+ $query = $db->prepare("INSERT INTO `data_$odid` (id,last,version,eid$eid) VALUES ($oid,1,$version,'$output')");
+ $query->execute();
+ 
+ // Commit transaction and return created version number of integer
+ $db->commit();
+ return $version;
 }
 
 function getMainFieldData($db)
