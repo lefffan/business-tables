@@ -438,7 +438,7 @@ function CreateNewObjectVersion($db)
  $version = intval($version[0][0]) + 1;
 
  // Unset last flag of the object current version and insert new object version with empty data
- $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (version,last) VALUES ($version,1)");
+ $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (id,version,last) VALUES ($oid,$version,1)");
  $query->execute();
  
  // Update current object uniq element if exist and commit the transaction, so the new version is created.
@@ -460,7 +460,7 @@ function CreateNewObjectVersion($db)
     
  // Set new object version data
  if (($json = str_replace("\\", "\\\\", json_encode($output[$eid]))) == '') return 'Element data update unknown error!';
- $query = $db->prepare("INSERT INTO `data_$odid` (id,last,version,eid$eid) VALUES ($oid,1,$version,'$json')");
+ $query = $db->prepare("UPDATE `data_$odid` SET eid$eid='$json' WHERE id=$oid AND version=$version");
  $query->execute();
  
  // Return created version number of integer
@@ -470,19 +470,25 @@ function CreateNewObjectVersion($db)
 function UpdateObjectVersion($db, $version)
 {
  global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output;
- 
- // Start transaction, select last existing (non zero) version of the object and block the corresponded row
- $db->beginTransaction();
- $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
- $query->execute();
 
- // Get selected version, check the result and calculate next version of the object to be created
- $version = $query->fetchAll(PDO::FETCH_NUM);
- // No rows found? Return an error
- if (count($version) === 0) return "Object (identificator $oid) not found!";
-
- // Commit transaction
- $db->commit();
+ foreach ($allElementsArray as $id => $value) if ($id != $eid)
+      if (($handlerName = $value['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $value['element5']['data'], 'ONCHANGE'))
+	 {
+	  $output[$id] = Handler($handlerName, json_encode($eventArray));
+	  if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))
+	     {
+	      try {
+		   $query = $db->prepare("UPDATE `uniq_$odid` SET eid$id=:value WHERE id=$oid");
+	           $query->execute([':value' => $output[$id]['value']]);
+		  }
+	      catch ()
+	          {
+		   unset($output[$id]);
+		  }
+	     }
+	  
+	 
+	 }
 }
 
 function getMainFieldData($db)

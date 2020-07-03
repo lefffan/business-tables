@@ -179,7 +179,6 @@ try {
 			    {
 			     if (gettype($version = CreateNewObjectVersion($db)) === 'string' || gettype($version = UpdateObjectVersion($db, $version)) === 'string')
 			        {
-				 $db->rollBack();
 				 $output = ['cmd' => 'INFO', 'alert' => $version];
 				 break;
 				}

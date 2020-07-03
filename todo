@@ -1,4 +1,7 @@
 June 2020:
+
+sdelat odnu funciu vmesto CreateObjectVersion and UpdateObjectVersion
+
 - $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
   if object is changed - does the locked row will be locked even if last !=1 already?
   Another words - the query tries to lock the last version and if it is busy, realy last version or the row that has already selected 
