@@ -366,9 +366,9 @@ function getElementProperty($db, $prop, $elementId = NULL)
  return $result[0][0];
 }
 
-function InsertObject($db, $output)
+function InsertObject($db)
 {
- global $odid, $allElementsArray, $uniqElementsArray;
+ global $odid, $allElementsArray, $uniqElementsArray, $output;
 
  $query = $values = ''; 
  foreach ($uniqElementsArray as $id => $value)
@@ -422,9 +422,9 @@ function DeleteObject($db)
  $db->commit();
 }
 
-function CreateNewObjectVersion($db, $output)
+function CreateNewObjectVersion($db)
 {
- global $odid, $oid, $eid, $uniqElementsArray;
+ global $odid, $oid, $eid, $uniqElementsArray, $output;
  
  // Start transaction, select last existing (non zero) version of the object and block the corresponded row
  $db->beginTransaction();
@@ -437,33 +437,52 @@ function CreateNewObjectVersion($db, $output)
  if (count($version) === 0) { $db->rollBack(); return "Object (identificator $oid) not found!"; }
  $version = intval($version[0][0]) + 1;
 
- // Unset last flag of the object current version
- $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1");
- $query->execute();
-
- // Update current object uniq element if exist
- if (isset($uniqElementsArray[$eid]) && isset($output['value']))
-    {
-     $query = $db->prepare("UPDATE `uniq_$odid` SET eid$eid=:value WHERE id=$oid");
-     $query->execute([':value' => $output['value']]);
-    }
-
- // Insert new version of current object. First step - read current element json data to merge it with new data in case of 'SET' command
- if ($output['cmd'] === 'SET') 
-    {
-     $query = $db->prepare("SELECT eid$eid FROM `data_$odid` WHERE id=$oid AND eid$eid IS NOT NULL ORDER BY version DESC LIMIT 1");
-     $query->execute();
-     $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($oldOutput) > 0) $output = array_replace(json_decode($oldOutput[0][0], true), $output);
-    }
- // Second step - create new version with new result element data
- if (($output = str_replace("\\", "\\\\", json_encode($output))) == '') { $db->rollBack(); return 'Unknown update element data error!'; }
- $query = $db->prepare("INSERT INTO `data_$odid` (id,last,version,eid$eid) VALUES ($oid,1,$version,'$output')");
+ // Unset last flag of the object current version and insert new object version with empty data
+ $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (version,last) VALUES ($version,1)");
  $query->execute();
  
- // Commit transaction and return created version number of integer
+ // Update current object uniq element if exist and commit the transaction, so the new version is created.
+ if (isset($uniqElementsArray[$eid]) && isset($output[$eid]['value']))
+    {
+     $query = $db->prepare("UPDATE `uniq_$odid` SET eid$eid=:value WHERE id=$oid");
+     $query->execute([':value' => $output[$eid]['value']]);
+    }
  $db->commit();
+
+ // Read current element json data to merge it with new data in case of 'SET' command
+ if ($output[$eid]['cmd'] === 'SET')
+    {
+     $query = $db->prepare("SELECT eid$eid FROM `data_$odid` WHERE id=$oid AND eid$eid IS NOT NULL AND version<$version ORDER BY version DESC LIMIT 1");
+     $query->execute();
+     $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
+     if (count($oldOutput) > 0) $output[$eid] = array_replace(json_decode($oldOutput[0][0], true), $output[$eid]);
+    }
+    
+ // Set new object version data
+ if (($json = str_replace("\\", "\\\\", json_encode($output[$eid]))) == '') return 'Element data update unknown error!';
+ $query = $db->prepare("INSERT INTO `data_$odid` (id,last,version,eid$eid) VALUES ($oid,1,$version,'$json')");
+ $query->execute();
+ 
+ // Return created version number of integer
  return $version;
+}
+
+function UpdateObjectVersion($db, $version)
+{
+ global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output;
+ 
+ // Start transaction, select last existing (non zero) version of the object and block the corresponded row
+ $db->beginTransaction();
+ $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
+ $query->execute();
+
+ // Get selected version, check the result and calculate next version of the object to be created
+ $version = $query->fetchAll(PDO::FETCH_NUM);
+ // No rows found? Return an error
+ if (count($version) === 0) return "Object (identificator $oid) not found!";
+
+ // Commit transaction
+ $db->commit();
 }
 
 function getMainFieldData($db)

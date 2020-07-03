@@ -143,7 +143,7 @@ try {
 			            $output[$element] = Handler($handlerName, json_encode($eventArray));
 				    if ($output[$element]['cmd'] != 'SET' && $output[$element]['cmd'] != 'RESET') unset($output[$element]);
 				   }
-		     InsertObject($db, $output);
+		     InsertObject($db);
 		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		     break;
 		case 'KEYPRESS':
@@ -159,7 +159,7 @@ try {
 		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd))
 		        {
 			 if (isset($data)) $eventArray['data'] = $data;
-			 $output = Handler($handlerName, json_encode($eventArray));
+			 $output = [$eid => Handler($handlerName, json_encode($eventArray))];
 			 // output = [ 'cmd'		=> 'EDIT[<LINES_NUM>]|DIALOG|ALERT'
 			 //	       'data'		=> '<text data for EDIT or ALERT>|<json data for DIALOG>' ]
 			 //
@@ -175,17 +175,21 @@ try {
 			 //	       'background'	=> ''
 			 //	       '<other css>'	=> ''
 			 //	       '<any key>'	=> '' ]
-			 if ($output['cmd'] === 'SET' || $output['cmd'] === 'RESET')
+			 if ($output[$eid]['cmd'] === 'SET' || $output[$eid]['cmd'] === 'RESET')
 			    {
-			     $version = CreateNewObjectVersion($db, $output);
-			     //isset($output['alert']) ? $alert = 
-			     // Handle ONCHANGE if no INIT
-			     // UpdateObjectVersion($db, $output);
-			     $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $output]];
+			     if (gettype($version = CreateNewObjectVersion($db)) === 'string' || gettype($version = UpdateObjectVersion($db, $version)) === 'string')
+			        {
+				 $db->rollBack();
+				 $output = ['cmd' => 'INFO', 'alert' => $version];
+				 break;
+				}
+			     if (isset($output[$eid]['alert'])) $alert = $output[$eid]['alert'];
+			     $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
+			     if (isset($alert)) $output['alert'] = $alert;
 			    }
-			  else if ($output['cmd'] === 'EDIT') isset($output['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
-			  else if ($output['cmd'] === 'ALERT') isset($output['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
-			  else if ($output['cmd'] === 'DIALOG' && isset($output['data']) && is_array($output['data'])) $output = ['cmd' => 'DIALOG', 'data' => $output['data']];
+			  else if ($output[$eid]['cmd'] === 'EDIT') isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
+			  else if ($output[$eid]['cmd'] === 'ALERT') isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
+			  else if ($output[$eid]['cmd'] === 'DIALOG' && isset($output[$eid]['data']) && is_array($output[$eid]['data'])) $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
 			  else $output = ['cmd' => ''];
 			}
 		      else
@@ -217,8 +221,7 @@ catch (PDOException $e)
 			     $query = $db->prepare("DROP TABLE IF EXISTS `data_$id`; DROP TABLE IF EXISTS `uniq_$id`");
 			     $query->execute();
 			    }
-			if (preg_match("/already exist/", $e->getMessage()) === 1 || preg_match("/Duplicate entry/", $e->getMessage()) === 1)
-			      echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object database: OD name or data tables already exist!']);
+			if (preg_match("/already exist/", $e->getMessage()) === 1 || preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object database: OD name or data tables already exist!']);
 			 else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object database: '.$e->getMessage()]);
 		  break;
 		case 'EDITOD':
@@ -228,11 +231,16 @@ catch (PDOException $e)
 			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to get sidebar OD/OV list: '.$e->getMessage()]);
 		break;
 		case 'INIT':
-			if (preg_match("/Duplicate entry/", $e->getMessage()) === 1)
-			      echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object database for some unique elements:  Duplicate entry!']);
-			 else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: '.$e->getMessage()]);
-		break;
+		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: unique elements duplicate entry!']);
+		      else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: '.$e->getMessage()]);
+		     break;
+		case 'KEYPRESS':
+		case 'DBLCLICK':
+		case 'CONFIRM':
+		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to write object data: unique elements duplicate entry!']);
+		      else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to write object data: '.$e->getMessage()]);
+		     break;
 	     default:
-		 echo json_encode(['cmd' => 'INFO', 'alert' => 'Unknown error: '.$e->getMessage()]);
+		 echo json_encode(['cmd' => 'INFO', 'alert' => 'Controller unknown error: '.$e->getMessage()]);
 	    }
     }
