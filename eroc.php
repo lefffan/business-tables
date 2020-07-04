@@ -352,20 +352,6 @@ function parseJSONEventData($db, $JSONs, $event)
  return NULL;
 }
 
-function getElementPropertyOLD($db, $prop, $elementId = NULL)
-{
- global $odid, $oid, $eid;
- if (!isset($oid) || !isset($eid)) return '';
- if (!isset($elementId)) $elementId = $eid;
-
- $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
- $query->execute();
- 
- $result = $query->fetchAll(PDO::FETCH_NUM);
- if (count($result) === 0 || count($result[0]) === 0) return '';
- return $result[0][0];
-}
-
 function getElementProperty($db, $elementId, $prop = NULL)
 {
  global $odid, $oid, $eid;
@@ -385,7 +371,7 @@ function getElementProperty($db, $elementId, $prop = NULL)
      $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
      $query->execute();
      $result = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($result) === 0 || count($result[0]) === 0) return ['value' => ''];
+     if (count($result) === 0 || count($result[0]) === 0) return '';
      return json_decode($result[0][0], true);
     }
 }
@@ -474,13 +460,7 @@ function CreateNewObjectVersion($db)
  $db->commit();
 
  // Read current element json data to merge it with new data in case of 'SET' command
- if ($output[$eid]['cmd'] === 'SET')
-    {
-     $query = $db->prepare("SELECT eid$eid FROM `data_$odid` WHERE id=$oid AND eid$eid IS NOT NULL AND version<$version ORDER BY version DESC LIMIT 1");
-     $query->execute();
-     $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($oldOutput) > 0) $output[$eid] = array_replace(json_decode($oldOutput[0][0], true), $output[$eid]);
-    }
+ if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
     
  // Set new object version data
  if (($json = str_replace("\\", "\\\\", json_encode($output[$eid]))) == '') return 'Element data update unknown error!';
@@ -505,13 +485,8 @@ function CreateNewObjectVersion($db)
 	  if (isset($output[$id]))
 	  if ($output[$id]['cmd'] === 'SET' || $output[$id]['cmd'] === 'RESET')
 	     {
-	      if ($output[$id]['cmd'] === 'SET')
-		 {
-    		  $query = $db->prepare("SELECT eid$id FROM `data_$odid` WHERE id=$oid AND eid$id IS NOT NULL AND version<$version ORDER BY version DESC LIMIT 1");
-    		  $query->execute();
-    		  $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
-    		  if (count($oldOutput) > 0) $output[$id] = array_replace(json_decode($oldOutput[0][0], true), $output[$id]);
-		 }
+	      // Read current element json data to merge it with new data in case of 'SET' command
+	      if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $id)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
 	      if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '') return 'Element data update unknown error!';
 	      $query = $db->prepare("UPDATE `data_$odid` SET eid$id='$json' WHERE id=$oid AND version=$version");
 	      $query->execute();

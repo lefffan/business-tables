@@ -234,7 +234,8 @@ catch (PDOException $e)
 		case 'CONFIRM':
 		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
 		      else $alert = 'Failed to write object data: '.$e->getMessage();
-		     echo json_encode(['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => getElementProperty($db, $eid)], 'alert' => $alert]);
+		     if (gettype($undo = getElementProperty($db, $eid)) === 'string') $undo = ['value' => ''];
+		     echo json_encode(['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert]);
 		     break;
 	     default:
 		 echo json_encode(['cmd' => 'INFO', 'alert' => 'Controller unknown error: '.$e->getMessage()]);
