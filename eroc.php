@@ -424,7 +424,7 @@ function DeleteObject($db)
 
 function CreateNewObjectVersion($db)
 {
- global $odid, $oid, $eid, $uniqElementsArray, $output;
+ global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output;
  
  // Start transaction, select last existing (non zero) version of the object and block the corresponded row
  $db->beginTransaction();
@@ -463,14 +463,6 @@ function CreateNewObjectVersion($db)
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid='$json' WHERE id=$oid AND version=$version");
  $query->execute();
  
- // Return created version number of integer
- return $version;
-}
-
-function UpdateObjectVersion($db, $version)
-{
- global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output;
-
  foreach ($allElementsArray as $id => $value) if ($id != $eid)
       if (($handlerName = $value['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $value['element5']['data'], 'ONCHANGE'))
 	 {
@@ -481,13 +473,26 @@ function UpdateObjectVersion($db, $version)
 		   $query = $db->prepare("UPDATE `uniq_$odid` SET eid$id=:value WHERE id=$oid");
 	           $query->execute([':value' => $output[$id]['value']]);
 		  }
-	      catch ()
+	      catch (PDOException $e)
 	          {
 		   unset($output[$id]);
 		  }
 	     }
-	  
-	 
+	  if (isset($output[$id]))
+	  if ($output[$id]['cmd'] === 'SET' || $output[$id]['cmd'] === 'RESET')
+	     {
+	      if ($output[$id]['cmd'] === 'SET')
+		 {
+    		  $query = $db->prepare("SELECT eid$id FROM `data_$odid` WHERE id=$oid AND eid$id IS NOT NULL AND version<$version ORDER BY version DESC LIMIT 1");
+    		  $query->execute();
+    		  $oldOutput = $query->fetchAll(PDO::FETCH_NUM);
+    		  if (count($oldOutput) > 0) $output[$id] = array_replace(json_decode($oldOutput[0][0], true), $output[$id]);
+		 }
+	      if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '') return 'Element data update unknown error!';
+	      $query = $db->prepare("UPDATE `data_$odid` SET eid$id='$json' WHERE id=$oid AND version=$version");
+	      $query->execute();
+	     }
+	   else unset($output[$id]);
 	 }
 }
 

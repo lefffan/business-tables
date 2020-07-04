@@ -177,11 +177,7 @@ try {
 			 //	       '<any key>'	=> '' ]
 			 if ($output[$eid]['cmd'] === 'SET' || $output[$eid]['cmd'] === 'RESET')
 			    {
-			     if (gettype($version = CreateNewObjectVersion($db)) === 'string' || gettype($version = UpdateObjectVersion($db, $version)) === 'string')
-			        {
-				 $output = ['cmd' => 'INFO', 'alert' => $version];
-				 break;
-				}
+			     if (gettype($error = CreateNewObjectVersion($db)) === 'string') { $output = ['cmd' => 'INFO', 'alert' => $error]; break; }
 			     if (isset($output[$eid]['alert'])) $alert = $output[$eid]['alert'];
 			     $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
 			     if (isset($alert)) $output['alert'] = $alert;
@@ -209,9 +205,6 @@ catch (PDOException $e)
      loog($e);
      switch ($input['cmd'])
     	    {
-	     case 'CONFIRM':
-	          echo json_encode(['cmd' => 'INFO', 'alert' => 'Some text: '.$e->getMessage()]);
-		  break;
 		 case 'NEWOD':
 			if (isset($id))
 			    {

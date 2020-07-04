@@ -658,24 +658,6 @@ function eventHandler(event)
 	     //--------------Remove context menu for no sidebar and main field events--------------
 		 rmContextMenu();
 		 break;
-/*	 case 'keypress':
-	      if (focusElement.td && event.which === 10 && focusElement.td.contentEditable == 'true') 
-		 {
-		  event.preventDefault();
-		  event.target.contentEditable = 'false';
-		  if (mainTable[focusElement.y][focusElement.x].oId == NEWOBJECTID)
-		     {
-		      mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(event.target.innerHTML);
-		      cmd = 'New Object';
-		      callController();
-		     }
-		   else
-		     {
-		      cmd = 'CONFIRM';
-		      callController(htmlCharsConvert(event.target.innerHTML));
-		     }
-		 }
-	      break;*/
 	 case 'keydown':
 	      //if (event.which == 45) createBox({"title":"Alert", "confirm": "The Object Database cannot be deleted!", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
 	      if (modalVisible === 'help')
@@ -1417,11 +1399,7 @@ function getAbsoluteY(element, flag = '')
 
 function mainTableAddEventListeners()
 {
- if (mainTablediv)
-    {
-     mainTablediv.addEventListener('dblclick', eventHandler);
-     mainTablediv.addEventListener('keypress', eventHandler);
-    }
+ if (mainTablediv) mainTablediv.addEventListener('dblclick', eventHandler);
 
  // Add current table hint div tags event listeners
  let cell;
@@ -1440,11 +1418,7 @@ function mainTableAddEventListeners()
 
 function mainTableRemoveEventListeners()
 {
- if (mainTablediv)
-    {
-     mainTablediv.removeEventListener('dblclick', eventHandler);
-     mainTablediv.removeEventListener('keypress', eventHandler);
-    }
+ if (mainTablediv) mainTablediv.removeEventListener('dblclick', eventHandler);
     
  // Remove current table hint div tags event listeners
  tdhintDiv.forEach((el) => {
