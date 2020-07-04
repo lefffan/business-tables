@@ -284,11 +284,11 @@ function getODProps($db)
  if ($elementSelectionJSONList === '')
     {
      $x = 0;
-     foreach ($allElementsArray as $eid => $value)
+     foreach ($allElementsArray as $id => $profile)
     	     {
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$eid.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
+	      $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
+	      $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
+	      $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
 	      $x++;
 	     }
     }
@@ -328,7 +328,7 @@ function Handler($handler, $input)
  return ['cmd' => 'UNDEFINED'];
 }
 
-function parseJSONEventData($db, $JSONs, $event)
+function parseJSONEventData($db, $JSONs, $event, $id)
 {
  foreach (preg_split("/\n/", $JSONs) as $line) // Split json list and parse its lines to find specified event
       if (($json = json_decode($line, true)) && isset($json['event']) && $json['event'] === $event) // Event match?
@@ -342,7 +342,7 @@ function parseJSONEventData($db, $JSONs, $event)
 		  }
 		else if (gettype($value) === 'array' && isset($value['prop']) && gettype($value['prop']) === 'string') // start here
 		  {
-		   isset($value['eid']) ? $eventArray[$prop] = getElementProperty($db, $value['eid'], $value['prop']) : $eventArray[$prop] = getElementProperty($db, NULL, $value['prop']);
+		   isset($value['eid']) ? $eventArray[$prop] = getElementProperty($db, $value['eid'], $value['prop']) : $eventArray[$prop] = getElementProperty($db, $id, $value['prop']);
 		  }
 	  break;
 	 }
@@ -399,7 +399,7 @@ function InsertObject($db)
 
  $query = 'id,version'; // Plus date, time, user
  $values = $newId.',1';
- foreach ($allElementsArray as $id => $value) if (isset($output[$id]))
+ foreach ($allElementsArray as $id => $profile) if (isset($output[$id]))
 	 {
 	  $json = str_replace("\\", "\\\\", json_encode($output[$id]));
 	  if (isset($json)) { $query .= ',eid'.strval($id); $values .= ",'".$json."'"; }
@@ -467,8 +467,8 @@ function CreateNewObjectVersion($db)
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid='$json' WHERE id=$oid AND version=$version");
  $query->execute();
  
- foreach ($allElementsArray as $id => $value) if ($id != $eid)
-      if (($handlerName = $value['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $value['element5']['data'], 'ONCHANGE'))
+ foreach ($allElementsArray as $id => $profile) if ($id != $eid)
+      if (($handlerName = $profile['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id))
 	 {
 	  $output[$id] = Handler($handlerName, json_encode($eventArray));
 	  if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))

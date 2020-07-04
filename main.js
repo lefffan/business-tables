@@ -1031,7 +1031,7 @@ function callController(data)
 	 default:
 	      alert("Undefined browser message: " + cmd + "!");
 	}
-
+	
  if (object) Hujax("main.php", commandHandler, object);
 }
 

@@ -3,10 +3,6 @@
 try {
      require_once 'eroc.php';
      createDefaultDatabases($db);
-     /*$c = ["a" => 1, '""' => 1];
-     loog($c);
-     unset($c['""']);
-     loog($c);*/
     }
 catch (PDOException $e)
     {
@@ -135,13 +131,13 @@ try {
 			
 		     // Handle all elements of a new object
 		     $output = [];
-		     foreach ($allElementsArray as $element => $elementProfile)
-		             if (($handlerName = $elementProfile['element4']['data']) != '')
-		                if ($eventArray = parseJSONEventData($db, $elementProfile['element5']['data'], $cmd))
+		     foreach ($allElementsArray as $id => $profile)
+		             if (($handlerName = $profile['element4']['data']) != '')
+		                if ($eventArray = parseJSONEventData($db, $profile['element5']['data'], $cmd, $id))
 		    		   {
-			            $eventArray['data'] = isset($data[$element]) ? $data[$element] : '';
-			            $output[$element] = Handler($handlerName, json_encode($eventArray));
-				    if ($output[$element]['cmd'] != 'SET' && $output[$element]['cmd'] != 'RESET') unset($output[$element]);
+			            $eventArray['data'] = isset($data[$id]) ? $data[$id] : '';
+			            $output[$id] = Handler($handlerName, json_encode($eventArray));
+				    if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
 				   }
 		     InsertObject($db);
 		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
@@ -156,7 +152,7 @@ try {
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
-		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd))
+		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
 		        {
 			 if (isset($data)) $eventArray['data'] = $data;
 			 $output = [$eid => Handler($handlerName, json_encode($eventArray))];
