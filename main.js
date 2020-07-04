@@ -782,21 +782,10 @@ function commandHandler(input)
 		 }
 	      break;
 	 case 'SET':
-	      /*let object;
-	      for (let i = 0; i < input.data.length; i++)
-	       if (!input.data[i].oId) // Global element
-		  {
-		   for (oId in objectTable)
-		    if (oId > 0)
-		    if (object = objectTable[oId][input.data[i].eId])
-		       mainTablediv.rows[object.y].cells[object.x].innerHTML = toHTMLCharsConvert(input.data[i].data);
-		  }
-		else
-		  {
-		   if (object = objectTable[input.data[i].oId][input.data[i].eId])
-		      mainTablediv.rows[object.y].cells[object.x].innerHTML = toHTMLCharsConvert(input.data[i].data);
-		  }*/loog(input.data);
-		  
+	      let object;
+	      for (let i in input.data)
+		  if (object = objectTable[input.oId][i]['props'])
+		     mainTablediv.rows[object['y']].cells[object['x']].innerHTML = toHTMLCharsConvert(input.data[i]['value']);
 	      if (input.alert) alert(input.alert);
 	      break;
 	 case 'REFRESH':

@@ -196,7 +196,7 @@ function getODVNamesForSidebar($db)
 			 $arr[$value['odname']] = [];
 			 $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
 			 $query->execute();
-			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], 1) as $key => $v) if ($key != 'New view') $arr[$value['odname']][$key] = '';
+			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $valeu) if ($key != 'New view') $arr[$value['odname']][$key] = '';
 			}
  return $arr;
 }
@@ -342,7 +342,7 @@ function parseJSONEventData($db, $JSONs, $event)
 		  }
 		else if (gettype($value) === 'array' && isset($value['prop']) && gettype($value['prop']) === 'string') // start here
 		  {
-		   isset($value['eid']) ? $eventArray[$prop] = getElementProperty($db, $value['prop'], $value['eid']) : $eventArray[$prop] = getElementProperty($db, $value['prop']);
+		   isset($value['eid']) ? $eventArray[$prop] = getElementProperty($db, $value['eid'], $value['prop']) : $eventArray[$prop] = getElementProperty($db, NULL, $value['prop']);
 		  }
 	  break;
 	 }
@@ -352,7 +352,7 @@ function parseJSONEventData($db, $JSONs, $event)
  return NULL;
 }
 
-function getElementProperty($db, $prop, $elementId = NULL)
+function getElementPropertyOLD($db, $prop, $elementId = NULL)
 {
  global $odid, $oid, $eid;
  if (!isset($oid) || !isset($eid)) return '';
@@ -364,6 +364,30 @@ function getElementProperty($db, $prop, $elementId = NULL)
  $result = $query->fetchAll(PDO::FETCH_NUM);
  if (count($result) === 0 || count($result[0]) === 0) return '';
  return $result[0][0];
+}
+
+function getElementProperty($db, $elementId, $prop = NULL)
+{
+ global $odid, $oid, $eid;
+ if (!isset($oid) || !isset($eid)) return '';
+ if (!isset($elementId)) $elementId = $eid;
+
+ if (isset($prop))
+    {
+     $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
+     $query->execute();
+     $result = $query->fetchAll(PDO::FETCH_NUM);
+     if (count($result) === 0 || count($result[0]) === 0) return '';
+     return substr($result[0][0], 1, -1);
+    }
+  else
+    {
+     $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
+     $query->execute();
+     $result = $query->fetchAll(PDO::FETCH_NUM);
+     if (count($result) === 0 || count($result[0]) === 0) return ['value' => ''];
+     return json_decode($result[0][0], true);
+    }
 }
 
 function InsertObject($db)
