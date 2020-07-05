@@ -322,9 +322,7 @@ function Handler($handler, $input)
  include './'.HANDLERDIR.'/'.$handler;
  if (isset($output))
     {
-     loog($output);
      $output = json_decode($output, true);
-     loog($output);
      if (is_array($output) && isset($output['cmd'])) return $output;
     }
  return ['cmd' => 'UNDEFINED'];
@@ -366,8 +364,7 @@ function getElementProperty($db, $elementId, $prop = NULL)
      $query->execute();
      $result = $query->fetchAll(PDO::FETCH_NUM);
      if (count($result) === 0 || count($result[0]) === 0) return '';
-     return substr($result[0][0], 1, -1);
-     //return substr(str_replace("\\\\", "\\", $result[0][0]), 1, -1);
+     return str_replace("\\n", "\n", substr($result[0][0], 1, -1));
     }
   else
     {
@@ -383,7 +380,7 @@ function InsertObject($db)
 {
  global $odid, $allElementsArray, $uniqElementsArray, $output;
 
- $query = $values = ''; 
+ $query = $values = '';
  foreach ($uniqElementsArray as $id => $value)
 	 {
 	  $query .= ",eid$id";
@@ -404,7 +401,7 @@ function InsertObject($db)
  $values = $newId.',1';
  foreach ($allElementsArray as $id => $profile) if (isset($output[$id]))
 	 {
-	  $json = str_replace("\\", "\\\\", json_encode($output[$id]));
+	  if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '') continue;
 	  if (isset($json)) { $query .= ',eid'.strval($id); $values .= ",'".$json."'"; }
 	 }
  $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
