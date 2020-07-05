@@ -1,36 +1,38 @@
 <?php
 
 /*****************************************************************************************************************
-Element handler JSON to the controller stored in $input variable:
+Element handler JSON to the controller stored in $output variable.
 
+Content edit, dialog call and alert message:
     { 
      "cmd":		"EDIT[<LINES_NUM>]|DIALOG|ALERT"
-     "data":		"<text data for EDIT|ALERT>|<json data for DIALOG>"
+     "data":		"<text data for EDIT or ALERT>|<JSON for DIALOG>"
     }
 
+Element data set and reset. RESET command sets defined properties and removes all other:
     {
      "cmd":		"SET|RESET"
      "alert":		"<alert message>"
-     "value":		"view cell data" 
+     "value":		"visible cell data" 
      "image":		"image to display instead of value text"
-     "link":		"" 
-     "location":	"" 
-     "hint":		"" 
-     "fonts":		"" 
-     "color":		"" 
+     "link":		""
+     "location":	""
+     "hint":		""
+     "fonts":		""
+     "color":		""
      "background":	"" 
      "<other css>":	"" 
-     "<any property>":	"<any value>"
+     "<any property>":	""
     }
 
-Controller JSON to the element handler should be put into $output variable:
+Controller JSON to the element handler is in $intput variable:
     
     {
      "event":		"INIT|DBLCLICK|KEYPRESS|CONFIRM|ONCHANGE"
      "user":		"<username initiated the process>"
      "title":		"element title"
-     "data":		"<key code for KEYPRESS>|<element value for CONFIRM or NEWOBJECT>|<dialog json data for CONFIRM>"
-     "<any property>":	'<json {"OD": "", "oId": "", "eId": "", "property": ""}|<string>'
+     "data":		"<key code or pasted data for KEYPRESS>|<element value (table cell innerHTML) for CONFIRM or NEWOBJECT>|<dialog JSON for CONFIRM>"
+     "<any property>":	{ "OD": "", "oId": "", "eId": "", "property": ""}|<string>'
     }
 *****************************************************************************************************************/
 

@@ -1,19 +1,14 @@
 June 2020:
-
-- $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
-  if object is changed - does the locked row will be locked even if last !=1 already?
-  Another words - the query tries to lock the last version and if it is busy, realy last version or the row that has already selected 
+- context menu new element is displayed on absent OV
+- context menu pos is wrong
 - not all parameters of element data json shouldbe passed to the browser
-- rebuild element events (DBLCLICK, KEYPRESS..) in dialog box - checkbox with text area with json list to pass to the handler
-- New handlers format: { "cmd": "SET|NEW...", "DATA": "<visible_data>", "any_data": "any invisible service data", "LINK": "element_link", ..}, start event(!!)
-  What if that format is wrong? I think do nothing, or log it to the system OD?
+- start event(!!)
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
 - td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
 - remove hint handlers from table cells in order to one handler of main table
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - format all code from vs code
 - https access only, register domain tabels.app and certificate
-- prevent it: ff -> dblclick -> enter -> backspace -> cell is big -> dblclick -> cell is small!
 - visible value property limit on Handler
 
 July 2020:

@@ -393,7 +393,7 @@ function eventHandler(event)
 		  break;
 		 }
 		 //--------------Applcation context menu (main field or sidebar) event? Display appropriate context menu--------------
-		 if (event.target.tagName == 'TD' || event.target.classList.contains('menu') || event.target === mainDiv)
+		 if (event.target.tagName == 'TD' || event.target.classList.contains('menu') || (event.target === mainDiv && activeOV != ''))
 		 {
 		  event.preventDefault();
 		  // Context event on wrap icon cell with OD item? Display OD context
@@ -775,7 +775,8 @@ function commandHandler(input)
 		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
 		   else focusElement.td.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
 		  focusElement.td.focus();
-		  /*range.selectNodeContents(focusElement.td);
+		  /* Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case.
+		  range.selectNodeContents(focusElement.td);
 		  range.collapse(false);
 		  selection.removeAllRanges();
 		  selection.addRange(range);*/
@@ -806,8 +807,12 @@ function commandHandler(input)
 	      break;
 	 case 'INFO':
 	      if (input.log) loog('Log controller message: ' + input.log);
-	      if (input.error) mainDiv.innerHTML = '<h1>' + input.error + '</h1>';
 	      if (input.alert) alert(input.alert);
+	      if (input.error)
+	         {
+		  mainDiv.innerHTML = '<h1>' + input.error + '</h1>';
+		  activeOD = activeOV = '';
+		 }
 	      break;
 	 case '':
 	      break;
