@@ -152,6 +152,7 @@ try {
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
+			
 		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
 		        {
 			 if (isset($data)) $eventArray['data'] = $data;

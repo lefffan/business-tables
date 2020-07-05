@@ -322,7 +322,9 @@ function Handler($handler, $input)
  include './'.HANDLERDIR.'/'.$handler;
  if (isset($output))
     {
+     loog($output);
      $output = json_decode($output, true);
+     loog($output);
      if (is_array($output) && isset($output['cmd'])) return $output;
     }
  return ['cmd' => 'UNDEFINED'];
@@ -365,6 +367,7 @@ function getElementProperty($db, $elementId, $prop = NULL)
      $result = $query->fetchAll(PDO::FETCH_NUM);
      if (count($result) === 0 || count($result[0]) === 0) return '';
      return substr($result[0][0], 1, -1);
+     //return substr(str_replace("\\\\", "\\", $result[0][0]), 1, -1);
     }
   else
     {

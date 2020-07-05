@@ -45,6 +45,6 @@ if (isset($input['event'])) switch($input['event'])
 	 $output = json_encode(['cmd' => 'EDIT']);
 	 break;
     case 'CONFIRM':
-	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data']]);
+	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data']]);
 	 break;
    }

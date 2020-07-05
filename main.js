@@ -248,7 +248,7 @@ function drawMain()
 	      
            if (mainTable[y] == undefined) mainTable[y] = [];
            mainTable[y][x] = { 'oId': Number(oid), 'eId': Number(eid), 'data': '', 'style': cell['props']['style'] };
-	   if (obj && obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = toHTMLCharsConvert(obj.value);
+	   if (obj && obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = obj.value;
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 
            mainTableWidth = Math.max(mainTableWidth, x + 1);
@@ -292,8 +292,8 @@ function drawMain()
        else for (x = 0; x < mainTableWidth; x++)
 	 {
 	  if (!(cell = mainTable[y][x])) rowHTML += undefinedCell;
-	   else if (cell.style) rowHTML += '<td style="' + cell.style + '">' + cell.data + '</td>';
-	    else rowHTML += '<td>' + cell.data + '</td>';
+	   else if (cell.style) rowHTML += '<td style="' + cell.style + '">' + toHTMLCharsConvert(cell.data) + '</td>';
+	    else rowHTML += '<td>' + toHTMLCharsConvert(cell.data) + '</td>';
 	 }
       rowHTML += '</tr>';
      }
@@ -454,9 +454,9 @@ function eventHandler(event)
 		     }
 		   else if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
 		     {
-		      focusElement.olddata = mainTable[focusElement.y][focusElement.x].data;
 	    	      focusElement.td.contentEditable = 'true';
-		      if (focusElement.olddata === '') event.target.innerHTML = ''; // Fucking FF has bug inserting <br> to the empty content
+		      focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+		      event.target.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
 	    	      focusElement.td.focus();
 		      event.preventDefault();
 		     }
@@ -696,7 +696,6 @@ function eventHandler(event)
 			       if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
 			          {
 				   event.preventDefault();
-				   //document.execCommand('insertHTML', false, '<br>');
 				   document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in FF
 				  }
 			       else moveCursor(0, 1, false);
@@ -771,21 +770,26 @@ function commandHandler(input)
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
-	    	  focusElement.olddata = focusElement.td.innerHTML;
 	          focusElement.td.contentEditable = 'true';
+		  loog(focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data));
+		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
+		   else focusElement.td.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
 		  focusElement.td.focus();
-		  if (input.data != undefined) focusElement.td.innerHTML = input.data;
-		  range.selectNodeContents(focusElement.td);
+		  /*range.selectNodeContents(focusElement.td);
 		  range.collapse(false);
 		  selection.removeAllRanges();
-		  selection.addRange(range);
+		  selection.addRange(range);*/
 		 }
 	      break;
 	 case 'SET':
 	      let object;
 	      for (let i in input.data)
 		  if (object = objectTable[input.oId][i]['props'])
-		     mainTablediv.rows[object['y']].cells[object['x']].innerHTML = toHTMLCharsConvert(input.data[i]['value']);
+		     {
+		      let x = object['x'], y = object['y'];
+		      mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[i]['value']);
+		      mainTable[y][x].data = input.data[i]['value'];
+		     }
 	      if (input.alert) alert(input.alert);
 	      break;
 	 case 'REFRESH':
@@ -812,31 +816,21 @@ function commandHandler(input)
 	}
 }
 
-function htmlCharsConvertOld(string) // To prevent any tag to be in contentEditable - first replace the tag <br> by LF special char '\n' (ASCII code 0x0A)
-{
- if (string === undefined || string === null || string === '') return '';
- if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1); // Last char is '\n' (ASCII code 0x0A)? Remove it.
- return string.replace(/<br>$/,""); // Otherwise remove <br> at the end of the line. FUCK the browsers for automatic adding <br> (FF) and \n (Chrome..)!
-}
-
 function htmlCharsConvert(string)
 {
  if (string === undefined || string === null || string === '') return '';
- string = string.replace(/<br>/g, "\n"); // To prevent any tag to be in contentEditable - first replace the tag <br> by LF special char '\n' (ASCII code 0x0A)
- if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1); // Last char is '\n' (ASCII code 0x0A)? Remove it.
- return string;
-}
-
-function toHTMLCharsConvertOld(string) // Add '<' char replace by special symbol '&lt;' to prevent adding html tags: return string.replace(/</g, "&lt;");
-{
- if (string == undefined || string == null) return "";
+ // To prevent any html tag to be in contentEditable - first replace the tag <br> by LF special char '\n' (ASCII code 0x0A)
+ string = string.replace(/<br>/g, "\n");
+ // Last char is '\n' (ASCII code 0x0A)? Remove it.
+ if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1);
  return string;
 }
 
 function toHTMLCharsConvert(string)
 {
  if (string == undefined || string == null) return "";
- return string;
+ string = string.replace(/\n/g, "<br>");
+ return string.replace(/<br>$/g, "<br><br>");
 }
 
 function cellBorderToggleSelect(oldCell, newCell)
