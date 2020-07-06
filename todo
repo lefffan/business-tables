@@ -1,14 +1,11 @@
 July 2020:
-- context menu pos is wrong
-- not all parameters of element data json should be passed to the browser
-- start event(!!)
-- Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
+- start event(!!), remove hint handlers from table cells in order to one handler of main table
 - td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
-- remove hint handlers from table cells in order to one handler of main table
+
+- Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->). And format all code from vs code
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
-- format all code from vs code
+
 - https access only, register domain tabels.app and certificate
-- visible value property limit on Handler
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
 - Logs should be in one OD, system user/groups in another, view scheme in third to manage access by approporiate OD/OV.

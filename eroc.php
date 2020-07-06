@@ -4,6 +4,7 @@ const DATABASENAME			= 'OE7';
 const MAXOBJECTS			= 100000;
 const ODSTRINGMAXCHAR			= 32;
 const HANDLERDIR			= 'handlers';
+const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 16;
 const ELEMENTPROFILENAMEADDSTRING	= 'element id';
 const UNIQKEYCHARLENGTH			= 300;
@@ -83,6 +84,7 @@ function adjustODProperties($data, $db, $id)
  // New element have been set? Create it
  if ($data['dialog']['Element']['New element']['element1']['data'] != '' || $data['dialog']['Element']['New element']['element2']['data'] != '' || $data['dialog']['Element']['New element']['element4']['data'] != '')
     {
+     if (strlen($data['dialog']['Element']['New element']['element1']['data']) > ELEMENTDATAVALUEMAXCHAR) $data['dialog']['Element']['New element']['element1']['data'] = substr($data['dialog']['Element']['New element']['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR);
      $data['dialog']['Element']['New element']['element4']['data'] = trim($data['dialog']['Element']['New element']['element4']['data']);
      $data['dialog']['Element']['New element']['element3']['readonly'] = '';
      $data['dialog']['Element']['New element']['element3']['head'] .= ' (readonly)';
@@ -323,7 +325,18 @@ function Handler($handler, $input)
  if (isset($output))
     {
      $output = json_decode($output, true);
-     if (is_array($output) && isset($output['cmd'])) return $output;
+     if (is_array($output) && isset($output['cmd']))
+        {
+	 // To avoid handler wrong behaviour check handler result and cut its unnecessary output data
+	 if ($output['cmd'] === 'EDIT' || (substr($output['cmd'], 0, 4) === 'EDIT' && intval(substr($output['cmd'], 4)) > 0) || ($output['cmd'] === 'DIALOG' && is_array($output['data'])) || $output['cmd'] === 'ALERT')
+	    if (isset($output['data'])) return ['cmd' => $output['cmd'], 'data' => $output['data']];
+	     else return ['cmd' => $output['cmd']];
+	 if ($output['cmd'] === 'SET' || $output['cmd'] === 'RESET')
+	    {
+	     if (isset($output['value']) && strlen($output['value']) > ELEMENTDATAVALUEMAXCHAR) $output['value'] = substr($output['value'], 0, ELEMENTDATAVALUEMAXCHAR);
+	     return $output;
+	    }
+	}
     }
  return ['cmd' => 'UNDEFINED'];
 }

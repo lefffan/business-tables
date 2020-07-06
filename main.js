@@ -8,6 +8,7 @@ const selection = window.getSelection();
 const style = document.createElement('style');
 
 const mainObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
+const mainTitleObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
 const mainDefaultContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems greyContextMenuItem">Element description</div><div class="contextMenuItems">Help</div>';
 const sidebarOVContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems greyContextMenuItem">Edit Database Properties</div>';
 const sidebarODContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems">Edit Database Structure</div>';
@@ -419,10 +420,10 @@ function eventHandler(event)
  			  }
 		  else
 		   {
-		    if (event.target.tagName == 'TD' && mainTable[event.target.parentNode.rowIndex] &&
-			mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && 
-			mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].oId >= STARTOBJECTID) contextMenuDiv.innerHTML = mainObjectContext;
-		     else contextMenuDiv.innerHTML = mainDefaultContext;
+		    if (event.target.tagName == 'TD' && mainTable[event.target.parentNode.rowIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].oId > 0)
+		       if (mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].oId < STARTOBJECTID) contextMenuDiv.innerHTML = mainTitleObjectContext;
+			else contextMenuDiv.innerHTML = mainObjectContext;
+			 else contextMenuDiv.innerHTML = mainDefaultContext;
 		    if (event.target.tagName == 'TD')
 		       {
 			cellBorderToggleSelect(focusElement.td, event.target);
@@ -988,8 +989,18 @@ function callController(data)
 	 case 'GETMAIN':
 	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      break;
-	 case 'Object Versions':
-	      alert('Object id = ' + String(mainTable[focusElement.y][focusElement.x].oId) + ', Element id = ' + String(mainTable[focusElement.y][focusElement.x].eId));
+	 case 'Element description':
+	      let msg = objectTable[mainTable[focusElement.y][focusElement.x].oId][mainTable[focusElement.y][focusElement.x].eId];
+	      try   { msg = JSON.parse(msg['json']); }
+	      catch { msg = null; }
+	      if (msg === null || msg['description'] === undefined) msg = '';
+	       else msg = '\n\nElement description property:\n' + String(msg['description']);
+	       
+	      msg = `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}` + msg;
+	      if (mainTable[focusElement.y][focusElement.x].oId === 1) msg = 'Table cell to input new ebject data for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
+	       else if (mainTable[focusElement.y][focusElement.x].oId === 2) msg = 'Object title for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
+	        else msg = 'Object id: ' + mainTable[focusElement.y][focusElement.x].oId + '\nElement id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
+	      alert(msg);
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
