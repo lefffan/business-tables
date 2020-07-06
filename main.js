@@ -378,21 +378,24 @@ function eventHandler(event)
 		  contextMenu = { 'x': focusElement.x, 'y': focusElement.y, 'e': null };
 		  contextMenuDiv.innerHTML = mainObjectContext; 
 		  contextMenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'show';
-		  // Computing context menu position
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft + focusElement.td.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop + focusElement.td.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop + focusElement.td.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft + focusElement.td.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft + focusElement.td.offsetWidth - contextMenuDiv.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop + focusElement.td.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft, focusElement.td.offsetTop - mainDiv.scrollTop + focusElement.td.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft, focusElement.td.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight)) break;
-		  if (contextFitMainDiv(focusElement.td.offsetLeft - mainDiv.scrollLeft + focusElement.td.offsetWidth, focusElement.td.offsetTop - mainDiv.scrollTop)) break;
-		  contextMenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextMenuDiv.offsetWidth) + "px";
-		  contextMenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextMenuDiv.offsetHeight) + "px";
+		  // Computing context menu position, trying left-upper, middle-upper, right-upper etc.. side of <td> cell. In case of fail position is right-lower
+		  const foc = focusElement.td;
+		  if (!contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth, foc.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft, foc.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight) &&
+		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth, foc.offsetTop - mainDiv.scrollTop))
+		     {
+		      contextMenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextMenuDiv.offsetWidth) + "px";
+		      contextMenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextMenuDiv.offsetHeight) + "px";
+		     }
 		  break;
 		 }
-		 //--------------Applcation context menu (main field or sidebar) event? Display appropriate context menu--------------
+		 //--------------Application context menu (main field or sidebar) event? Display appropriate context menu--------------
 		 if (event.target.tagName == 'TD' || event.target.classList.contains('menu') || (event.target === mainDiv && activeOV != ''))
 		 {
 		  event.preventDefault();
@@ -433,7 +436,7 @@ function eventHandler(event)
 		  contextMenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'show';
 		  // Computing context menu position
 		  if (mainDiv.offsetWidth + mainDiv.offsetLeft > contextMenuDiv.offsetWidth + event.clientX) contextMenuDiv.style.left = event.clientX + "px";
-		   else contextMenuDiv.style.left = event.clientX -contextMenuDiv.clientWidth + "px";
+		   else contextMenuDiv.style.left = event.clientX - contextMenuDiv.clientWidth + "px";
 		  if (mainDiv.offsetHeight + mainDiv.offsetTop > contextMenuDiv.offsetHeight + event.clientY) contextMenuDiv.style.top = event.clientY + "px";
 		   else contextMenuDiv.style.top = event.clientY - contextMenuDiv.clientHeight + "px";
 		  break;

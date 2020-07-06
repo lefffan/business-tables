@@ -1,7 +1,6 @@
-June 2020:
-- context menu new element is displayed on absent OV
+July 2020:
 - context menu pos is wrong
-- not all parameters of element data json shouldbe passed to the browser
+- not all parameters of element data json should be passed to the browser
 - start event(!!)
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->)
 - td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
@@ -10,8 +9,6 @@ June 2020:
 - format all code from vs code
 - https access only, register domain tabels.app and certificate
 - visible value property limit on Handler
-
-July 2020:
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
 - Logs should be in one OD, system user/groups in another, view scheme in third to manage access by approporiate OD/OV.
@@ -20,7 +17,6 @@ August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
 - pages on the bottom of the main block; object page number (0 or undefinded - one page for all object), next page redirect bottom scroll
-- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
 - status 'Loading..' should be displayed page block footer div or/and cursor wait style.sheet.insertRule(".menu tr:hover { cursor: wait !important;}"); ???
 
 September:
