@@ -41,12 +41,12 @@ $input = json_decode($input, true);
 if (isset($input['event'])) switch($input['event'])
    {
     case 'INIT':
-	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'description' => 'HUI']);
+	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'description' => 'HUI', 'hint' => 'FUCK OFF!']);
 	 break;
     case 'DBLCLICK':
 	 $output = json_encode(['cmd' => 'EDIT']);
 	 break;
     case 'CONFIRM':
-	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data']]);
+	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data']]);
 	 break;
    }

@@ -79,7 +79,7 @@ const uiProfile = {
 		  "box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Box animation
-		  "box effect": { "hint": "grow", "alert": "fall", "confirm": "slideleft", "dialog": "rise", "context": "rise", "select": "rise", "dialog filter": "grayscale(0.5)", "confirm filter": "blur(3px)", "alert filter": "blur(3px)", "Ok button default text": "OK",  "Cancel button default text": "CANCEL" },
+		  "box effect": { "hint": "slidedown", "alert": "fall", "confirm": "slideleft", "dialog": "rise", "context": "rise", "select": "rise", "dialog filter": "grayscale(0.5)", "confirm filter": "blur(3px)", "alert filter": "blur(3px)", "Ok button default text": "OK",  "Cancel button default text": "CANCEL" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
 		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
 		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
@@ -110,7 +110,7 @@ let mainTable, mainTableWidth, mainTableHeight, objectTable;
 let cmd = activeOD = activeOV = '';
 let sidebar = focusElement = {};
 let selectExpandedDiv = contextMenu = boxContent = null, modalVisible = "";
-let tdhintDiv = [];
+let hintX, hintY;
 /*---------------------------------------------------------------------------*/
 
 function loog(...data)
@@ -129,7 +129,7 @@ function Hujax(url, callback, requestBody)
 		 headers: { 'Content-Type': 'application/json; charset=UTF-8'}, 
 		 body: JSON.stringify(requestBody) }).then(function(response) {
 			    if (response.ok) response.json().then(callback);
-			     else mainDiv.innerHTML = '<h1>Request failed with response ' + response.status + ': ' + response.statusText + '</h1>'; })
+			     else displayMainError('Request failed with response ' + response.status + ': ' + response.statusText); })
 							    .catch (function(error) { console.log('Ajax request error: ', error); });
  return true;
 }
@@ -221,9 +221,6 @@ function drawMain()
  mainTable = [];
  focusElement = {};
   
- // Remove previous view event listeners
- mainTableRemoveEventListeners();
-
  // Fill mainTable tw dimension array with next format - mainTable[y][x]: { oid, eid, data, style, collapse}
  // Format of objectTable[oid][eid]: ['json': 'any element json data', 'props': 'oid, eid, eval(x), eval(y), style, collapse, startevent']
  for (oid in objectTable) if (oid != 0) // Iterate object identificators from objectTable
@@ -249,24 +246,33 @@ function drawMain()
 	      
            if (mainTable[y] == undefined) mainTable[y] = [];
            mainTable[y][x] = { 'oId': Number(oid), 'eId': Number(eid), 'data': '', 'style': cell['props']['style'] };
-	   if (obj && obj.value != undefined && obj.value != null) mainTable[y][x]['data'] = obj.value;
+	   if (obj && typeof obj.value === 'string') mainTable[y][x]['data'] = obj.value;
+	   if (obj && typeof obj.hint === 'string') mainTable[y][x]['hint'] = obj.hint;
+	   if (obj && typeof obj.description === 'string') mainTable[y][x]['description'] = obj.description;
            if (cell['props']['collapse'] != undefined) mainTable[y][x]['collapse'] = '';
 
            mainTableWidth = Math.max(mainTableWidth, x + 1);
 	   mainTableHeight = Math.max(mainTableHeight, y + 1);
 	   cell['props']['x'] = x;
 	   cell['props']['y'] = y;
+	   if (cell['props']['startevent'] && typeof cell['props']['startevent'] === 'string')
+	   if (cell['props']['startevent'] === 'DBLCLICK') focusElement = { "x": x, "y": y, "cmd": 'DBLCLICK' };
+	    else if (cell['props']['startevent'].substr(0, 8) === 'KEYPRESS' && cell['props']['startevent'].length > 8)
+		    focusElement = { "x": x, "y": y, "cmd": 'KEYPRESS', "data": cell['props']['startevent'].substr(8) };
 	  }
       n++;
      }
  if (!mainTableHeight)
     {
-     mainDiv.innerHTML = "<h1>Specified view has some x,y definition errors!<br>See element selection expression</h1>";
+     displayMainError('Specified view has some x,y definition errors!<br>See element selection expression');
      return;
     }
  if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
   else if (error === false) alert('Specified view has some x,y definition errors! See element selection expression'); // Set string 'warning' as box title
  
+ // Remove previous view event listeners
+ mainTableRemoveEventListeners();
+    
  // Remove undefined (and 'collapse' property set) main table rows and columns
  collapseMainTable();
  
@@ -302,30 +308,48 @@ function drawMain()
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
 
- // Add current view event listeners and set default cursor  
- mainTableAddEventListeners();
+ // Add current view event listeners
+ mainTablediv.addEventListener('dblclick', eventHandler);
+ mainTablediv.addEventListener('mouseleave', eventHandler);
+ mainTablediv.addEventListener('mousemove', eventHandler); 
+ 
+ // Focus element is not empty? Emulate mouse/keyboard start event!
+ if (focusElement.x != undefined)
+    {
+     cellBorderToggleSelect(null, focusElement.td = mainTablediv.rows[focusElement.y].cells[focusElement.x]);
+     focusElement.td.focus();
+     cmd = focusElement.cmd;
+     callController(focusElement.data);
+    }
+}
+
+function HideHint()
+{
+ clearTimeout(tooltipTimerId);                                              
+ hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
+ hintX = undefined;                                                         
+ if (modalVisible === 'hint') modalVisible = '';                            
 }
 
 function eventHandler(event)
 {
  switch (event.type)
 	{
-	 case 'mouseenter':
-	      if (boxContent == null) tooltipTimerId = setTimeout(() => { createBox({ "hint": mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].hint }, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')); }, 1000);
-	      break;
 	 case 'mouseleave':
-	      if (boxContent == null)
-	         {
-	          clearTimeout(tooltipTimerId);
-	          hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
-	         }
+	      if (hintX != undefined) HideHint();
 	      break;
 	 case 'mousemove':
-	      if (boxContent == null)
+	      if (mainTable[event.target.parentNode.rowIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].hint != undefined && !boxContent && !contextMenu)
 	         {
-		  clearTimeout(tooltipTimerId);
-		  tooltipTimerId = setTimeout(() => { createBox({ "hint": mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].hint }, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')); }, 1000);
+		  if (hintX != event.target.cellIndex || hintY != event.target.parentNode.rowIndex)
+		     {
+		      hintX = event.target.cellIndex;
+		      hintY = event.target.parentNode.rowIndex;
+		      clearTimeout(tooltipTimerId);
+		      tooltipTimerId = setTimeout(() => { createBox({ "hint": mainTable[hintY][hintX].hint }, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')); }, 1000);
+		     }
 		 }
+	       else if (hintX != undefined) HideHint();
 	      break;
 	 case 'mouseover':
 	      // Mouse over non grey context menu item? Set current menu item to call appropriate menu action by 'enter' key
@@ -775,7 +799,7 @@ function commandHandler(input)
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
 	          focusElement.td.contentEditable = 'true';
-		  loog(focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data));
+		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
 		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
 		   else focusElement.td.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
 		  focusElement.td.focus();
@@ -792,8 +816,10 @@ function commandHandler(input)
 		  if (object = objectTable[input.oId][i]['props'])
 		     {
 		      let x = object['x'], y = object['y'];
-		      mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[i]['value']);
+		      if (input.data[i]['value'] != undefined) mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[i]['value']);
+		       else mainTablediv.rows[y].cells[x].innerHTML = '';
 		      mainTable[y][x].data = input.data[i]['value'];
+		      mainTable[y][x].hint = input.data[i]['hint'];
 		     }
 	      if (input.alert) alert(input.alert);
 	      break;
@@ -812,17 +838,30 @@ function commandHandler(input)
 	 case 'INFO':
 	      if (input.log) loog('Log controller message: ' + input.log);
 	      if (input.alert) alert(input.alert);
-	      if (input.error)
-	         {
-		  mainDiv.innerHTML = '<h1>' + input.error + '</h1>';
-		  activeOD = activeOV = '';
-		 }
+	      if (input.error) displayMainError(input.error);
 	      break;
 	 case '':
 	      break;
 	 default:
 	      alert('Browser report: unknown controller message ' + input.cmd);
 	}
+}
+
+function displayMainError(error)
+{
+ mainDiv.innerHTML = '<h1>' + error + '</h1>';
+ activeOD = activeOV = '';
+ mainTableRemoveEventListeners();
+}
+
+function mainTableRemoveEventListeners()
+{
+ if (mainTablediv)
+    {
+     mainTablediv.removeEventListener('dblclick', eventHandler);
+     mainTablediv.removeEventListener('mouseleave', eventHandler);
+     mainTablediv.removeEventListener('mousemove', eventHandler); 
+    }
 }
 
 function htmlCharsConvert(string)
@@ -990,12 +1029,14 @@ function callController(data)
 	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      break;
 	 case 'Element description':
-	      let msg = objectTable[mainTable[focusElement.y][focusElement.x].oId][mainTable[focusElement.y][focusElement.x].eId];
+	      /*let msg = objectTable[mainTable[focusElement.y][focusElement.x].oId][mainTable[focusElement.y][focusElement.x].eId];
 	      try   { msg = JSON.parse(msg['json']); }
 	      catch { msg = null; }
 	      if (msg === null || msg['description'] === undefined) msg = '';
-	       else msg = '\n\nElement description property:\n' + String(msg['description']);
+	       else msg = '\n\nElement description property:\n' + String(msg['description']);*/
 	       
+	      let msg = '';
+	      if (typeof mainTable[focusElement.y][focusElement.x].description === 'string') msg = '\n\nElement description property:\n' + mainTable[focusElement.y][focusElement.x].description;
 	      msg = `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}` + msg;
 	      if (mainTable[focusElement.y][focusElement.x].oId === 1) msg = 'Table cell to input new ebject data for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
 	       else if (mainTable[focusElement.y][focusElement.x].oId === 2) msg = 'Object title for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
@@ -1375,10 +1416,10 @@ function rmBox()
 	      expandedDiv.className = 'select expanded ' + uiProfile["box effect"]["select"] + 'hide';
 	      break;
 	}
- modalVisible = "";
  boxContent = null;
- mainDiv.style.filter = "none";
- menuDiv.style.filter = "none";
+ mainDiv.style.filter = 'none';
+ menuDiv.style.filter = 'none';
+ modalVisible = '';
 }
 
 function getAbsoluteX(element, flag = '')
@@ -1397,37 +1438,6 @@ function getAbsoluteY(element, flag = '')
  if (flag == 'middle') disp = Math.trunc(element.offsetHeight/2);	// Select element middle position
  
  return element.offsetTop - element.scrollTop + mainDiv.offsetTop - mainDiv.scrollTop + disp;
-}
-
-function mainTableAddEventListeners()
-{
- if (mainTablediv) mainTablediv.addEventListener('dblclick', eventHandler);
-
- // Add current table hint div tags event listeners
- let cell;
- tdhintDiv = [];
- for (let r = 0; r < mainTableHeight; r++)
-  if (mainTable[r] != undefined)
-     for (let i = 0; i < mainTableWidth; i++)
-         if ((cell = mainTable[r][i]) && cell.hint)
-    	    {
-             tdhintDiv.push(mainTablediv.rows[r].cells[i]);
-	     mainTablediv.rows[r].cells[i].addEventListener('mouseenter', eventHandler);
-	     mainTablediv.rows[r].cells[i].addEventListener('mouseleave', eventHandler);
-	     mainTablediv.rows[r].cells[i].addEventListener('mousemove', eventHandler);
-    	    }
-}
-
-function mainTableRemoveEventListeners()
-{
- if (mainTablediv) mainTablediv.removeEventListener('dblclick', eventHandler);
-    
- // Remove current table hint div tags event listeners
- tdhintDiv.forEach((el) => {
-			    el.removeEventListener('mouseenter', eventHandler);
-			    el.removeEventListener('mouseleave', eventHandler);
-			    el.removeEventListener('mousemove', eventHandler);
-			   });
 }
 
 function collapseMainTable() // Function removes collapse flag tagged rows and columns from main object table

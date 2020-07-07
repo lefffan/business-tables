@@ -631,8 +631,8 @@ function getMainFieldData($db)
 		    	      foreach ($value as $oid => $props) if ($oid != 0)
 				      {
 				       $json = NULL;
-				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '']);
-				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data']]);
+				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '', 'hint' => 'Use mouse double click to enter element text for the new object']);
+				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data'], 'description' => $allElementsArray[$eid]['element2']['data'], 'hint' => 'Title for object element id'.strval($eid)]);
 				       if (key_exists($oid, $objectTableSrc)) $json = $objectTableSrc[$oid][$eidstr];
 				       if (isset($json))
 				          {

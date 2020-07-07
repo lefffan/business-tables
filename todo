@@ -1,14 +1,12 @@
 July 2020:
-- start event(!!), remove hint handlers from table cells in order to one handler of main table
-- td cell decription output alert with oid/eid and x/y pos (if 'description' property doesnot exist output only oid/eid)
-
+- set (main.js:817) command sets elements that are not in element selection
+- description of undefined cell
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->). And format all code from vs code
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
-
 - https access only, register domain tabels.app and certificate
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
-- Logs should be in one OD, system user/groups in another, view scheme in third to manage access by approporiate OD/OV.
+- System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV.
 
 August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
@@ -18,7 +16,7 @@ August 2020:
 
 September:
 - mishka-new.xls front-end/back-end features
-- help context menu for all help (conception, handler, keyboard/mouse..)
+- help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
 
 October 2020:
 - System calls and its object views: LINK
@@ -26,10 +24,8 @@ October 2020:
 - snmp function by SLAVA
 - diagnostic function by SLAVA
 - Deploy the product to the first real expluatation
--------------------------------------------------------------------------------------------
 
-
-December 2020:
+November 2020:
 - Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
   then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
   If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
@@ -45,7 +41,7 @@ December 2020:
   - what if no server responce occurs?
 - Todo from Mishka dir ois.xlsx file and think to make Boss edit opeations comfortable 
 
-2021:
+December 2020:
 - System calls and its object views: LOCATION.
 - System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four calls can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
 - System call NEWOBJECT (to create object by user handlers)
@@ -53,6 +49,8 @@ December 2020:
 - Object process SCHEDULER
 - Other estimated "todo" from Mishka directory ois.xlsx file
 - Feedback and finish
+
+-------------------------------------------------------------------------------------------
 
 2022:
 - React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
