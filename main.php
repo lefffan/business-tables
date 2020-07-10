@@ -51,16 +51,16 @@ try {
 		    // Getting created properties id
 		    $query = $db->prepare("SELECT LAST_INSERT_ID()");
 		    $query->execute();
-		    $id = $query->fetch(PDO::FETCH_NUM)[0];
+		    $odid = $query->fetch(PDO::FETCH_NUM)[0];
 		    // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
-		    $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+		    $query = $db->prepare("create table `uniq_$odid` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();                                                                                                                                   
 		    // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
-		    $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+		    $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		    $query->execute();
 		    // Insert new OD properties
-		    $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
-		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
+		    $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$odid");
+		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
 		    //-------------------------------------------------------------------------------------
 		   }
 		$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
@@ -74,15 +74,15 @@ try {
 		    // Getting old OD name id in `$`
 		    $query = $db->prepare("SELECT id FROM `$` WHERE odname=:odname");
 		    $query->execute([':odname' => $oldodname]);
-		    $id = $query->fetch(PDO::FETCH_NUM)[0];
+		    $odid = $query->fetch(PDO::FETCH_NUM)[0];
 		    // In case of empty OD name string try to remove current OD from the system
 		    if ($newodname === '')
 		    if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '' && count($input['data']['dialog']['Element']) === 1)
 		       {
-		        $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
+		        $query = $db->prepare("DELETE FROM `$` WHERE id=$odid");
 			$query->execute();
 			$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
-		        $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$id`; DROP TABLE IF EXISTS `data_$id`");
+		        $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$odid`; DROP TABLE IF EXISTS `data_$odid`");
 			$query->execute();
 			break;
 		       }
@@ -93,8 +93,8 @@ try {
 		       }
 			// Writing new properties
 		    initNewODDialogElements();
-		    $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$id");
-		    $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $id))]);
+		    $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$odid");
+		    $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
 		   }
 		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		     break;
@@ -182,12 +182,15 @@ catch (PDOException $e)
      loog($e);
      switch ($input['cmd'])
     	    {
+	     case 'Edit Database Structure':
+	    	  echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to get Object Database properties: '.$e->getMessage()]);
+	          break;
 		 case 'NEWOD':
-			if (isset($id))
+			if (isset($odid))
 			    {
-			     $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
+			     $query = $db->prepare("DELETE FROM `$` WHERE id=$odid");
 			     $query->execute();
-			     $query = $db->prepare("DROP TABLE IF EXISTS `data_$id`; DROP TABLE IF EXISTS `uniq_$id`");
+			     $query = $db->prepare("DROP TABLE IF EXISTS `data_$odid`; DROP TABLE IF EXISTS `uniq_$odid`");
 			     $query->execute();
 			    }
 			if (preg_match("/already exist/", $e->getMessage()) === 1 || preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object database: OD name or data tables already exist!']);
@@ -199,6 +202,13 @@ catch (PDOException $e)
 		case 'GETMENU':
 			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to get sidebar OD/OV list: '.$e->getMessage()]);
 		break;
+		case 'OBTAINMAIN':
+		case 'GETMAIN':
+		     echo json_encode(['cmd' => 'INFO', 'error' => 'Failed to delete object: '.$e->getMessage()]);
+		     break;
+		case 'DELETEOBJECT':
+		     echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to delete object: '.$e->getMessage()]);
+		     break;
 		case 'INIT':
 		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: unique elements duplicate entry!']);
 		      else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: '.$e->getMessage()]);
