@@ -813,7 +813,7 @@ function commandHandler(input)
 	 case 'SET':
 	      let object;
 	      for (let i in input.data)
-		  if (object = objectTable[input.oId][i]['props'])
+		  if (objectTable[input.oId] && objectTable[input.oId][i] && (object = objectTable[input.oId][i]['props']))
 		     {
 		      let x = object['x'], y = object['y'];
 		      if (input.data[i]['value'] != undefined) mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[i]['value']);

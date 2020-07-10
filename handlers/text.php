@@ -46,6 +46,9 @@ if (isset($input['event'])) switch($input['event'])
     case 'DBLCLICK':
 	 $output = json_encode(['cmd' => 'EDIT']);
 	 break;
+    case 'KEYPRESS':
+	 $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']]);
+	 break;
     case 'CONFIRM':
 	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data']]);
 	 break;

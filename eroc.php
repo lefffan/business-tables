@@ -12,6 +12,14 @@ const UNIQELEMENTTYPE			= '+unique|';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
 const STARTOBJECTID			= 3;
+const CHECK_OD_OV			= 0b00000001;
+const GET_ELEMENT_PROFILES		= 0b00000010;
+const GET_OBJECT_VIEWS			= 0b00000100;
+const SET_CMD_DATA			= 0b00001000;
+const CHECK_OID				= 0b00010000;
+const CHECK_EID				= 0b00100000;
+
+
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
@@ -108,7 +116,7 @@ function adjustODProperties($data, $db, $id)
 
  // New view section handle
  if (!isset($data['dialog']['View']['New view']['element1']['data'])) return NULL;
- foreach ($data['dialog']['View'] as $key => $value){loog(gettype($key));
+ foreach ($data['dialog']['View'] as $key => $value)
       if (!isset($value['element1']['data']) || !isset($value['element2']['data'])) return NULL; // Dialog 'View' pad corrupted?
        else if ($value['element1']['data'] === '') unset($data['dialog']['View'][$key]);	 // View name is empty? Remove it
        else if (isset($data['dialog']['View'][$value['element1']['data']])) $data['dialog']['View'][$key]['element1']['data'] = $key.''; // New view name already exists? Discard changes
@@ -116,7 +124,7 @@ function adjustODProperties($data, $db, $id)
 	 {
 	  $data['dialog']['View'][$value['element1']['data']] = $data['dialog']['View'][$key];	// Otherwise create new view with new view name
 	  unset($data['dialog']['View'][$key]);							// and remove old view
-	 }}
+	 }
  $data['dialog']['View']['New view'] = $newView; // Reset 'New view' profile to default
  
  // New rule section handle
@@ -228,94 +236,126 @@ function mergeStyleRules($rules)
  return $resultStyle;
 }
 
-function checkODOV($db, $input, $cmdcheck = false)
+function Check($db, $flags)
 {
- global $OD, $OV, $odid;
+ global $input, $alert, $error;
  
- // Check input OD/OV vars existence
- if (!isset($input['OD']) || !isset($input['OV'])) return 'Incorrect Object Database/View!';
- 
- // Check any OD sql database existence
- $query = $db->prepare("SELECT id FROM $ LIMIT 1");
- $query->execute();
- if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create Object Database first!';
-
- // Empty value OD/OV check
- if ($input['OD'] === '' || $input['OV'] === '') return 'Please create/select Object View!'; 
- $OD = $input['OD'];
- $OV = $input['OV'];
- 
- // Check $OD existence and get its id
- $query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");
- $query->execute();
- if (count($odid = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
- $odid = $odid[0][0];
-}
-
-function getODProps($db)
-{			
- global $OD, $OV, $odid, $allElementsArray, $uniqElementsArray, $elementSelectionJSONList;
- $allElementsArray = $uniqElementsArray = [];
-  
- // Get odname $OD props
- $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View'), JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$odid'");
- $query->execute();
- if (count($data = $query->fetchAll(PDO::FETCH_NUM)) == 0) return 'Please create/select Object View!';
- $data = $data[0];
-			
- // Move on. Get specified view JSON element selection (what elements should be displayed and how)
- $elementSelectionJSONList = json_decode($data[0], true);
- if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return 'Please create/select Object View!';
- $elementSelectionJSONList = trim($elementSelectionJSONList[$OV]['element5']['data']);
-  		     
- // Decode element profiles array form OD props, remove 'New element' section and check elements existence
- $elements = json_decode($data[1], true);
- unset($elements['New element']);
- if (!is_array($elements) || !count($elements)) return 'Object Database has no elements exist!';
-
- // Convert elements assoc array to num array with element identificators as array elements instead of profile names and sort it
- foreach ($elements as $profile => $value)
-	 {
-	  $eid = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
-	  $allElementsArray[$eid] = $elements[$profile];
-	  if ($value['element3']['data'] === UNIQELEMENTTYPE) $uniqElementsArray[$eid] = '';
-	 }
- ksort($allElementsArray, SORT_NUMERIC);	 
-	 
- // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
- if ($elementSelectionJSONList === '')
+ if ($flags & CHECK_OD_OV)
     {
-     $x = 0;
-     foreach ($allElementsArray as $id => $profile)
-    	     {
-	      $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
-	      $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
-	      $x++;
-	     }
+     global $OD, $OV, $odid;
+     
+     // Check input OD/OV vars existence
+     if (!isset($input['OD']) || !isset($input['OV'])) return $error = 'Incorrect Object Database/View!';
+ 
+     // Check any OD sql database existence
+     $query = $db->prepare("SELECT id FROM $ LIMIT 1");
+     $query->execute();
+     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create Object Database first!';
+
+     // Empty value OD/OV check
+     if ($input['OD'] === '' || $input['OV'] === '') return $error = 'Please create/select Object View!'; 
+     $OD = $input['OD'];
+     $OV = $input['OV'];
+ 
+     // Check $OD existence and get its id
+     query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");
+     $query->execute();
+     if (count($odid = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+     $odid = $odid[0][0];
     }
-}
 
-function checkObjectElementID($db, $input)
-{
- global $odid, $oid, $eid, $allElementsArray, $cmd, $data;
-
- // Check browser event (cmd) data to be valid and return an error in case of undefined data for KEYPRESS and CONFIRM events
- $cmd = $input['cmd'];
- if (isset($input['data'])) $data = $input['data'];
-  else if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return 'Controller report: undefined browser event data!';
-
- // Check object/element id existence/correctness. In case of 'INIT' this check is not required
- if ($cmd != 'INIT')
+ if ($flags & GET_ELEMENT_PROFILES)
     {
-     if (!isset($input['eId']) || !isset($input['oId']) || $input['oId'] < STARTOBJECTID) return 'Incorrect object/element identificator value!';
-     if (isset($allElementsArray) && !isset($allElementsArray[$input['eId']])) return 'Incorrect element identificator value!';
+     global $allElementsArray, $uniqElementsArray;
+     $allElementsArray = $uniqElementsArray = [];
+
+     // Get odname $OD element section
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$odid'");
+     $query->execute();
+     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+
+     // Decode element profiles array form OD props, remove 'New element' section and check elements existence
+     $profiles = json_decode($profiles[0][0], true);
+     unset($profiles['New element']);
+     if (!is_array($profiles) || !count($profiles)) return $error = 'Object Database has no elements exist!';
+
+     // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
+     foreach ($profiles as $profile => $value)
+    	     {
+    	      $id = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
+	      $allElementsArray[$id] = $profiles[$profile];
+	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $uniqElementsArray[$id] = '';
+	     }
+     ksort($allElementsArray, SORT_NUMERIC);	 
+    }
+    
+ if ($flags & GET_OBJECT_VIEWS)
+    {
+     global $elementSelectionJSONList;
+
+     // Get odname $OD view section
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$odid'");
+     $query->execute();
+     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+
+     // Move on. Get specified view JSON element selection (what elements should be displayed and how)
+     $elementSelectionJSONList = json_decode($profiles[0][0], true);
+     if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return $error = 'Please create/select Object View!';
+     
+     // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+     if (($elementSelectionJSONList = trim($elementSelectionJSONList[$OV]['element5']['data'])) === '')
+        {
+         $x = 0;
+         foreach ($allElementsArray as $id => $value)
+    	         {
+	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
+		  $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
+	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
+	          $x++;
+	    	 }
+	}
+    }
+    
+ if ($flags & SET_CMD_DATA)
+    {
+     global $cmd, $data;
+
+     // Check browser event (cmd) data to be valid and return alert in case of undefined data for KEYPRESS and CONFIRM events
+     $cmd = $input['cmd'];
+     isset($input['data']) ? $data = $input['data'] : if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return $alert = 'Controller report: undefined browser event data!';
+    }
+ 
+ if (($flags & CHECK_OID) && $cmd != 'INIT')
+    {
+     global $oid;
+     
+     // Check object identificator value existence
+     if (!isset($input['oId']) || $input['oId'] < STARTOBJECTID) return $alert = 'Incorrect object identificator value!';
      $oid = $input['oId'];
-     $eid = $input['eId'];
+     
      // Check database object existence
      $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
      $query->execute();
-     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return "Object (identificator $oid) doesn't exist!";
+     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object (identificator $oid) doesn't exist!";
+     
+     // Check oid object selection existence
+     // ...
+    }
+
+ if (($flags & CHECK_EID) && $cmd != 'INIT')
+    {
+     global $eid, $arrayEIdOId;
+     
+     // Check element identificator value existence
+     if (!isset($input['eId'])) return $alert = 'Incorrect element identificator value!';
+     $eid = $input['eId'];
+     
+     // Check element identificator database existence
+     if (!isset($allElementsArray[$eid])) return $alert = 'Incorrect element identificator value!';
+     
+     // Check eid element selection existence
+     setElementSelectionIds();
+     if (!isset($arrayEIdOId[$eid])) return $alert = 'Please refresh object view, element selection has been changed!';
     }
 }
 
@@ -481,7 +521,8 @@ function CreateNewObjectVersion($db)
  $query->execute();
  
  foreach ($allElementsArray as $id => $profile) if ($id != $eid)
-      if (($handlerName = $profile['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id))
+      if (($handlerName = $profile['element4']['data']) != '' && 
+      $eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id))
 	 {
 	  $output[$id] = Handler($handlerName, json_encode($eventArray));
 	  if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))
@@ -510,95 +551,46 @@ function CreateNewObjectVersion($db)
 
 function getMainFieldData($db)
 {
- global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid;
- $arrayEIdOId = [];
- $allElementsArray[0] = $sqlElementList = '';
- 
- // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
- // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
- // are parsed for undefined cells css style and collapse capability. Array structure:
- //  ----------------------------------------------------------------
- // |  \eid|       Element #0        |        Element #1..           | 
- // |oid\  |         styles          | x,y,style,startevent..        |
- //  ----------------------------------------------------------------
- // |  0   | for any oid/eid   	     | for default object element #1 |
- //  ----- ----------------------------------------------------------
- // |  1   | for whole new object    | for new object element #1     |
- //  ----------------------------------------------------------------
- // |  2   | for whole title object  | for title object element #1   |
- //  ----------------------------------------------------------------
- // |  3.. | for whole real object   | for real objects element #1   |
- //  ----------------------------------------------------------------
- foreach (preg_split("/\n/", $elementSelectionJSONList) as $value) if ($j = json_decode($value, true, 2))
-	 {
-	  $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
-	  if (!key_exists('eid', $j) || !key_exists('oid', $j)) // eid/oid property doesn't exist? Set some undefined cells features
-	     {
-	      if (!key_exists('eid', $j) && !key_exists('oid', $j))
-		 {
-		  $undefinedProps = [];
-		  if (key_exists('style', $j)) $undefinedProps['style'] = $j['style'];
-		  if (key_exists('collapse', $j)) $undefinedProps['collapse'] = $j['collapse'];
-		 }
-	      continue;
-	     }
-				 
-			      if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
-			      if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
-			      
-			      $eid = intval($j['eid']);
-			      $oid = intval($j['oid']);
-			      
-			      if (key_exists($eid, $allElementsArray) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
-			      if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
-				 {
-				  if (!key_exists($eid, $arrayEIdOId))
-				     {
-				      $arrayEIdOId[$eid] = [];
-				      if ($eid != 0) $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
-				     }
-				  if ($eid != 0) $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
-				   else $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
-				 }
-			     }
+ global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId;
+
+ // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
+ $objectTable = $objectTableSrc = [];
 			     
-		     // No any element defined?	
-		     if ($sqlElementList == '') return 'Specified view has no elements defined!';
+ // No any element defined?	
+ if (($sqlElementList = setElementSelectionIds()) === '') return 'Specified view has no elements defined!';
 			
-		     // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
-		     $objectTable = $objectTableSrc = [];
-		     // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
-		     // While this features are not released, get all objects:
-		     $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1 AND version!=0");
-		     $query->execute();
+ // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
+ // While this features are not released, get all objects:
+ $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1 AND version!=0");
+ $query->execute();
 		     
-		     // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
-		     //  -----------------------------------------------------------------------------------
-		     // |  \ eid|               |                                             		    	|
-		     // |   \   |       0       |           5.. (was 'eid5' column)             	    	|
-		     // |oid \  |               |                                             		    	|
-		     //  -----------------------------------------------------------------------------------
-		     // |       |style rules    |                                             		    	|
-		     // |   0   |for undefined  |Apply object element props for all objects with element #5 |                                        		 |
-		     // |       |cells          |                                             		    	|
-		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json" : JSON element data                   		   	 	|
-		     // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
-		     // |       |new object     |                                                    	    |
-		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json" : JSON element data                   		    	|
-		     // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
-		     // |       |title object   |                                                           |
-		     //  -----------------------------------------------------------------------------------
-		     // |       |Apply styles   |"json" : JSON element data                   		    	|
-		     // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
-		     // |       |real object    |                                                   	    |
-		     //  -----------------------------------------------------------------------------------
-		     foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
-		    	     {
-			      $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
-			      $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
-			     }
+ // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
+ //  -----------------------------------------------------------------------------------
+ // |  \ eid|               |                                             		|
+ // |   \   |       0       |           5.. (was 'eid5' column)             	    	|
+ // |oid \  |               |                                             		|
+ //  -----------------------------------------------------------------------------------
+ // |       |style rules    |                                             		|
+ // |   0   |for undefined  |Apply object element props for all objects with element #5 |
+ // |       |cells          |                                             		|
+ //  -----------------------------------------------------------------------------------
+ // |       |Apply styles   |"json" : JSON element data                   		|
+ // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
+ // |       |new object     |                                                    	|
+ //  -----------------------------------------------------------------------------------
+ // |       |Apply styles   |"json" : JSON element data                   		|
+ // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
+ // |       |title object   |                                                           |
+ //  -----------------------------------------------------------------------------------
+ // |       |Apply styles   |"json" : JSON element data                   		|
+ // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
+ // |       |real object    |                                                   	|
+ //  -----------------------------------------------------------------------------------
+ foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
+	 {
+	  $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
+	  $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
+	 }
 			     
 		     // Rewrite $objectTableSrc array (to the table above) on eidoid array to $objectTable, not forgeting about static element status.
 		     // In the future release create first object (static) flag whether it is on the object list or not, then remove it at the end or not.
@@ -650,7 +642,65 @@ function getMainFieldData($db)
 				      }
 			     }
 			     
- // Check the result data to be sent to client part
- if (count($objectTable) < 1) return 'Specified view has no objects defined!';
-  else if (isset($undefinedProps)) $objectTable[0][0] = $undefinedProps;
+ // Check result object table for empty content
+ $count = count($objectTable);
+ if ($count < 1 || ($count < 2 && isset($objectTable[0]))) return 'Specified view has no objects defined!';
+}
+
+function setElementSelectionIds()
+{
+ global $arrayEIdOId, $elementSelectionJSONList, $allElementsArray, $objectTable;
+ $arrayEIdOId = [];
+ $allElementsArray[0] = $sqlElementList = '';
+ 
+ // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
+ // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
+ // are parsed for undefined cells css style and collapse capability. Array structure:
+ //  ----------------------------------------------------------------
+ // |  \eid|       Element #0        |        Element #1..           | 
+ // |oid\  |         styles          | x,y,style,startevent..        |
+ //  ----------------------------------------------------------------
+ // |  0   | for any oid/eid   	     | for default object element #1 |
+ //  ----- ----------------------------------------------------------
+ // |  1   | for whole new object    | for new object element #1     |
+ //  ----------------------------------------------------------------
+ // |  2   | for whole title object  | for title object element #1   |
+ //  ----------------------------------------------------------------
+ // |  3.. | for whole real object   | for real objects element #1   |
+ //  ----------------------------------------------------------------
+ foreach (preg_split("/\n/", $elementSelectionJSONList) as $value)
+      if ($j = json_decode($value, true, 2))
+	 {
+	  $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
+	  if (!key_exists('eid', $j) || !key_exists('oid', $j)) // eid/oid property doesn't exist? Set some undefined cells features
+	     {
+	      if (!key_exists('eid', $j) && !key_exists('oid', $j) && (key_exists('style', $j) || key_exists('collapse', $j)))
+		 {
+		  $objectTable[0] = [0 => []];
+		  if (key_exists('style', $j)) $objectTable[0][0]['style'] = $j['style'];
+		  if (key_exists('collapse', $j)) $objectTable[0][0]['collapse'] = $j['collapse'];
+		 }
+	      continue;
+	     }
+				 
+	  if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
+	  if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
+			      
+	  $eid = intval($j['eid']);
+	  $oid = intval($j['oid']);
+			      
+	  if (key_exists($eid, $allElementsArray) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
+	  if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
+	     {
+	      if (!key_exists($eid, $arrayEIdOId))
+		 {
+		  $arrayEIdOId[$eid] = [];
+		  if ($eid != 0) $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
+		 }
+	      if ($eid != 0) $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
+	       else $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
+	     }
+         }
+ 
+ return $sqlElementList;
 }

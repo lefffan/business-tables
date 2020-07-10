@@ -114,8 +114,7 @@ try {
 		     // Check input OD/OV to be valid, input object/element id vars existence/correctness and other data
 		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string' || gettype($alert = DeleteObject($db)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string')
 			{
-			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
+			 (isset($error)) ? $output = ['cmd' => 'INFO', 'error' => $error] : $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
 		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
@@ -152,32 +151,20 @@ try {
 			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
 			 break;
 			}
-			
+		     // Check current element id to be in element selection
+		     setElementSelectionIds();
+		     if (!isset($arrayEIdOId[$eid])) { $output = ['cmd' => 'INFO', 'alert' => 'Please refresh object view, element selection has been changed!']; break; }
+		     
+		     // Search input cmd event and call the appropriate handler
 		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
 		        {
 			 if (isset($data)) $eventArray['data'] = $data;
 			 $output = [$eid => Handler($handlerName, json_encode($eventArray))];
-			 // output = [ 'cmd'		=> 'EDIT[<LINES_NUM>]|DIALOG|ALERT'
-			 //	       'data'		=> '<text data for EDIT or ALERT>|<json data for DIALOG>' ]
-			 //
-			 // output = [ 'cmd'		=> 'SET|RESET'		// update defined object element props, SET - undefined props remain, RESET - undefined props removed
-			 //	       'alert'		=> '<alert message>'
-			 //	       'value'		=> 'visible cell data'
-			 //	       'image'		=> 'image to display instead of value text'
-			 //	       'link'		=> ''
-			 //	       'location'	=> ''
-			 //	       'hint'		=> ''
-			 //	       'fonts'		=> ''
-			 //	       'color'		=> ''
-			 //	       'background'	=> ''
-			 //	       '<other css>'	=> ''
-			 //	       '<any key>'	=> '' ]
 			 if ($output[$eid]['cmd'] === 'SET' || $output[$eid]['cmd'] === 'RESET')
 			    {
 			     if (gettype($error = CreateNewObjectVersion($db)) === 'string') { $output = ['cmd' => 'INFO', 'alert' => $error]; break; }
-			     if (isset($output[$eid]['alert'])) $alert = $output[$eid]['alert'];
-			     $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
-			     if (isset($alert)) $output['alert'] = $alert;
+			     foreach ($output as $id => $value) if (!isset($arrayEIdOId[$id])) unset($output[$id]);
+			     (isset($output[$eid]['alert'])) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
 			    }
 			  else if ($output[$eid]['cmd'] === 'EDIT') isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
 			  else if ($output[$eid]['cmd'] === 'ALERT') isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
