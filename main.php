@@ -101,33 +101,32 @@ try {
 		case 'GETMENU':
 		     $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		     break;
+		case 'OBTAINMAIN':
 		case 'GETMAIN':
-		     // Check input OD/OV to be valid and elements existence
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string')
-			{
-			 $output = ['cmd' => 'INFO', 'error' => $error];
-			 break;
-			}
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
+		     getMainFieldData($db);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
 		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'DELETEOBJECT':
-		     // Check input OD/OV to be valid, input object/element id vars existence/correctness and other data
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string' || gettype($alert = DeleteObject($db)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($error = getMainFieldData($db)) === 'string')
-			{
-			 (isset($error)) ? $output = ['cmd' => 'INFO', 'error' => $error] : $output = ['cmd' => 'INFO', 'alert' => $alert];
-			 break;
-			}
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
+
+		     if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		      else getMainFieldData($db);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
 		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'INIT':
-		     // Check input OD/OV to be valid, elements existence and input object/element id vars existence/correctness
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string')
-			{
-			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
-			 break;
-			}
-			
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
+		     
 		     // Handle all elements of a new object
 		     $output = [];
 		     foreach ($allElementsArray as $id => $profile)
@@ -139,21 +138,17 @@ try {
 				    if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
 				   }
 		     InsertObject($db);
-		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+		     getMainFieldData($db);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
+		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
-		     // Check input OD/OV to be valid, elements existence and input object/element id vars existence/correctness
-		     if (gettype($error = checkODOV($db, $input)) === 'string' || gettype($error = getODProps($db)) === 'string' || gettype($alert = checkObjectElementID($db, $input)) === 'string')
-			{
-			 if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-			  else $output = ['cmd' => 'INFO', 'alert' => $alert];
-			 break;
-			}
-		     // Check current element id to be in element selection
-		     setElementSelectionIds();
-		     if (!isset($arrayEIdOId[$eid])) { $output = ['cmd' => 'INFO', 'alert' => 'Please refresh object view, element selection has been changed!']; break; }
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
 		     
 		     // Search input cmd event and call the appropriate handler
 		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
@@ -162,26 +157,24 @@ try {
 			 $output = [$eid => Handler($handlerName, json_encode($eventArray))];
 			 if ($output[$eid]['cmd'] === 'SET' || $output[$eid]['cmd'] === 'RESET')
 			    {
-			     if (gettype($error = CreateNewObjectVersion($db)) === 'string') { $output = ['cmd' => 'INFO', 'alert' => $error]; break; }
+			     if ($alert = CreateNewObjectVersion($db)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
 			     foreach ($output as $id => $value) if (!isset($arrayEIdOId[$id])) unset($output[$id]);
-			     (isset($output[$eid]['alert'])) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
+			     isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
 			    }
 			  else if ($output[$eid]['cmd'] === 'EDIT') isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
 			  else if ($output[$eid]['cmd'] === 'ALERT') isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
 			  else if ($output[$eid]['cmd'] === 'DIALOG' && isset($output[$eid]['data']) && is_array($output[$eid]['data'])) $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
 			  else $output = ['cmd' => ''];
+			 break;
 			}
-		      else
-		        {
-			 $output = ['cmd' => ''];
-			}
+		     $output = ['cmd' => ''];
 		     break;
 		default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the browser!'];
 		}
 		
      if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: undefined controller message!'];
-     echo json_encode($output);
+      echo json_encode($output);
     }
      
 catch (PDOException $e)

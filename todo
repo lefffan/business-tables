@@ -1,9 +1,9 @@
 July 2020:
 
+- emulate all errors
 - delete object with current eid with absent in element selection
 - init/delete refreshes OV so start event executes
-- refactor getODprops and all other error checks
-
+- main.php catch (PDOException $e) for all cases
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->). And format all code from vs code
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - https access only, register domain tabels.app and certificate

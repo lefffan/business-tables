@@ -170,7 +170,7 @@ window.onload = function()
  
  cmd = 'GETMENU';
  callController();
- cmd = 'GETMAIN';
+ cmd = 'OBTAINMAIN';
  callController();
 }
 
@@ -255,7 +255,7 @@ function drawMain()
 	   mainTableHeight = Math.max(mainTableHeight, y + 1);
 	   cell['props']['x'] = x;
 	   cell['props']['y'] = y;
-	   if (cell['props']['startevent'] && typeof cell['props']['startevent'] === 'string')
+	   if (cmd === 'OBTAINMAIN' && cell['props']['startevent'] && typeof cell['props']['startevent'] === 'string')
 	   if (cell['props']['startevent'] === 'DBLCLICK') focusElement = { "x": x, "y": y, "cmd": 'DBLCLICK' };
 	    else if (cell['props']['startevent'].substr(0, 8) === 'KEYPRESS' && cell['props']['startevent'].length > 8)
 		    focusElement = { "x": x, "y": y, "cmd": 'KEYPRESS', "data": cell['props']['startevent'].substr(8) };
@@ -635,7 +635,7 @@ function eventHandler(event)
 		     activeOV = event.target.innerHTML;
 		     drawMenu(sidebar);
 		    }
-		 cmd = 'GETMAIN';
+		 cmd = 'OBTAINMAIN';
 		 callController();
 		 break;
 		}
@@ -657,7 +657,7 @@ function eventHandler(event)
 		         activeOV = event.target.nextSibling.innerHTML;
 		         drawMenu(sidebar);
 			}
-		     cmd = 'GETMAIN';
+		     cmd = 'OBTAINMAIN';
 		     callController();
 		    }
 		 break;
@@ -800,14 +800,15 @@ function commandHandler(input)
 	         {
 	          focusElement.td.contentEditable = 'true';
 		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+		  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag, fuck!
 		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
-		   else focusElement.td.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
-		  focusElement.td.focus();
-		  /* Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case.
-		  range.selectNodeContents(focusElement.td);
+		   else focusElement.td.innerHTML = focusElement.olddata;
+		  // Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case.
+		  /*range.selectNodeContents(focusElement.td);
 		  range.collapse(false);
 		  selection.removeAllRanges();
 		  selection.addRange(range);*/
+		  focusElement.td.focus();
 		 }
 	      break;
 	 case 'SET':
@@ -1026,15 +1027,10 @@ function callController(data)
 	      object = { "cmd": cmd };
 	      break;
 	 case 'GETMAIN':
+	 case 'OBTAINMAIN':
 	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      break;
 	 case 'Element description':
-	      /*let msg = objectTable[mainTable[focusElement.y][focusElement.x].oId][mainTable[focusElement.y][focusElement.x].eId];
-	      try   { msg = JSON.parse(msg['json']); }
-	      catch { msg = null; }
-	      if (msg === null || msg['description'] === undefined) msg = '';
-	       else msg = '\n\nElement description property:\n' + String(msg['description']);*/
-	       
 	      let msg = '';
 	      if (typeof mainTable[focusElement.y][focusElement.x].description === 'string') msg = '\n\nElement description property:\n' + mainTable[focusElement.y][focusElement.x].description;
 	      msg = `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}` + msg;
@@ -1051,7 +1047,7 @@ function callController(data)
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
-	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId, "eId": mainTable[focusElement.y][focusElement.x].eId };
+	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId/*, "eId": mainTable[focusElement.y][focusElement.x].eId*/ };
 	      break;
 	 case 'New Object Database':
 	      object = { "cmd": cmd };

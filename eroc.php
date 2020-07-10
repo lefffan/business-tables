@@ -206,7 +206,8 @@ function getODVNamesForSidebar($db)
 			 $arr[$value['odname']] = [];
 			 $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
 			 $query->execute();
-			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $valeu) if ($key != 'New view') $arr[$value['odname']][$key] = '';
+			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $valeu)
+				 if ($key != 'New view') $arr[$value['odname']][$key] = '';
 			}
  return $arr;
 }
@@ -258,7 +259,7 @@ function Check($db, $flags)
      $OV = $input['OV'];
  
      // Check $OD existence and get its id
-     query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");
+     $query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");
      $query->execute();
      if (count($odid = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
      $odid = $odid[0][0];
@@ -322,7 +323,8 @@ function Check($db, $flags)
 
      // Check browser event (cmd) data to be valid and return alert in case of undefined data for KEYPRESS and CONFIRM events
      $cmd = $input['cmd'];
-     isset($input['data']) ? $data = $input['data'] : if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return $alert = 'Controller report: undefined browser event data!';
+     if (isset($input['data'])) $data = $input['data'];
+      else if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return $alert = 'Controller report: undefined browser event data!';
     }
  
  if (($flags & CHECK_OID) && $cmd != 'INIT')
@@ -497,7 +499,11 @@ function CreateNewObjectVersion($db)
  // Get selected version, check the result and calculate next version of the object to be created
  $version = $query->fetchAll(PDO::FETCH_NUM);
  // No rows found? Return an error
- if (count($version) === 0) { $db->rollBack(); return "Object (identificator $oid) not found!"; }
+ if (count($version) === 0)
+    {
+     $db->rollBack();
+     return "Object (identificator $oid) not found!";
+    }
  $version = intval($version[0][0]) + 1;
 
  // Unset last flag of the object current version and insert new object version with empty data
@@ -521,8 +527,7 @@ function CreateNewObjectVersion($db)
  $query->execute();
  
  foreach ($allElementsArray as $id => $profile) if ($id != $eid)
-      if (($handlerName = $profile['element4']['data']) != '' && 
-      $eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id))
+      if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
 	 {
 	  $output[$id] = Handler($handlerName, json_encode($eventArray));
 	  if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))
@@ -551,13 +556,17 @@ function CreateNewObjectVersion($db)
 
 function getMainFieldData($db)
 {
- global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId;
+ global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId, $error, $alert;
 
  // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
  $objectTable = $objectTableSrc = [];
 			     
  // No any element defined?	
- if (($sqlElementList = setElementSelectionIds()) === '') return 'Specified view has no elements defined!';
+ if (($sqlElementList = setElementSelectionIds()) === '')
+    {
+     $error= 'Specified view has no elements defined!';
+     return;
+    }
 			
  // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
  // While this features are not released, get all objects:
@@ -644,14 +653,14 @@ function getMainFieldData($db)
 			     
  // Check result object table for empty content
  $count = count($objectTable);
- if ($count < 1 || ($count < 2 && isset($objectTable[0]))) return 'Specified view has no objects defined!';
+ if ($count < 1 || ($count < 2 && isset($objectTable[0]))) $alert = 'Specified view has no objects defined!';
 }
 
 function setElementSelectionIds()
 {
  global $arrayEIdOId, $elementSelectionJSONList, $allElementsArray, $objectTable;
  $arrayEIdOId = [];
- $allElementsArray[0] = $sqlElementList = '';
+ $sqlElementList = '';
  
  // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
  // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
@@ -688,9 +697,9 @@ function setElementSelectionIds()
 			      
 	  $eid = intval($j['eid']);
 	  $oid = intval($j['oid']);
-			      
-	  if (key_exists($eid, $allElementsArray) && ($eid != 0 || key_exists('style', $j))) // Non zero or zero with style eid index of elements exist?
-	  if ($eid == 0 || (gettype($j['x']) === 'string' && gettype($j['y']) === 'string'))
+	  
+	  // Non zero or zero with style eid index of elements exist?
+	  if ((key_exists($eid, $allElementsArray) && gettype($j['x']) === 'string' && gettype($j['y']) === 'string') || ($eid === 0 && key_exists('style', $j)))
 	     {
 	      if (!key_exists($eid, $arrayEIdOId))
 		 {
