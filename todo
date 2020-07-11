@@ -1,9 +1,6 @@
 July 2020:
 
 - emulate end key to set cursor at the end of content
-- emulate all errors
-- main.php catch (PDOException $e) for all cases
-- Exclude < char to avoid html tags in table cells
 - Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->). And format all code from vs code
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - https access only, register domain tabels.app and certificate
@@ -27,7 +24,9 @@ August 2020:
   - what if no server responce occurs?
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
-- pages on last context menu item in little squares < 1 2 .. 10 11 > ?; object page number (0 or undefinded - max obj per page), next page redirect bottom scroll
+- pages on last context menu item in little squares < 1 2 .. 10 11 > ?;
+  object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
+  want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
 - status 'Loading..' on wrap icon
 
 September:

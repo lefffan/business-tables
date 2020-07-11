@@ -106,10 +106,8 @@ try {
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS);
 		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-		     getMainFieldData($db);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'DELETEOBJECT':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID);
@@ -117,10 +115,8 @@ try {
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
 
 		     if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-		      else getMainFieldData($db);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'INIT':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA);
@@ -138,10 +134,8 @@ try {
 				    if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
 				   }
 		     InsertObject($db);
-		     getMainFieldData($db);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-		     $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
 		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':

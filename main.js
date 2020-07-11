@@ -6,6 +6,7 @@ const STARTOBJECTID = 3;
 const range = document.createRange();
 const selection = window.getSelection();
 const style = document.createElement('style');
+const eventCtrlEnd = document.createEvent('KeyboardEvent');
 
 const mainObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
 const mainTitleObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
@@ -264,11 +265,12 @@ function drawMain()
      }
  if (!mainTableHeight)
     {
-     displayMainError('Specified view has some x,y definition errors!<br>See element selection expression');
+     if (n > 1) displayMainError("Specified view selection expression has some 'x','y' incorrect coordinate definitions!<br>See element selection expression help section");
+      else mainDiv.innerHTML = '<h1>Specified view has no objects defined!<br>Please add some objects</h1>';
      return;
     }
  if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
-  else if (error === false) alert('Specified view has some x,y definition errors! See element selection expression'); // Set string 'warning' as box title
+  else if (error === false) alert("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section"); // Set string 'warning' as box title
  
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
@@ -808,6 +810,8 @@ function commandHandler(input)
 		  range.collapse(false);
 		  selection.removeAllRanges();
 		  selection.addRange(range);*/
+		  /*eventCtrlEnd.initKeyboardEvent("keydown", true, true, window,"a", "a", false, '', 1);
+		  document.dispatchEvent(eventCtrlEnd);*/
 		  focusElement.td.focus();
 		 }
 	      break;

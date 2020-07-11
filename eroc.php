@@ -338,7 +338,7 @@ function Check($db, $flags)
      // Check database object existence
      $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
      $query->execute();
-     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object (identificator $oid) doesn't exist!";
+     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object with id=$oid doesn't exist!\nPlease refresh Object View";
      
      // Check oid object selection existence
      // ...
@@ -449,8 +449,12 @@ function InsertObject($db)
  
  $query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
  $query->execute();                                                                  
- // Generate new exception in case of non correct last insert id value               
- if (intval($newId = $query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID) throw new Exception();
+ // Generate new PDO exception in case of non correct last insert id value               
+ if (intval($newId = $query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID)
+    {
+     $db->rollBack();
+     throw new PDOException('Incorrect new object id value!', 0);
+    }
 
  $query = 'id,version'; // Plus date, time, user
  $values = $newId.',1';
@@ -475,7 +479,7 @@ function DeleteObject($db)
  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
     {
      $db->rollBack();
-     return "Object (identificator $oid) not found!";
+     return "Object with id=$oid is already deleted!\nPlease refresh Object View";
     }
  
  $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1");
@@ -502,7 +506,7 @@ function CreateNewObjectVersion($db)
  if (count($version) === 0)
     {
      $db->rollBack();
-     return "Object (identificator $oid) not found!";
+     return "Object with id=$oid not found!\nPlease refresh Object View";
     }
  $version = intval($version[0][0]) + 1;
 
@@ -522,11 +526,12 @@ function CreateNewObjectVersion($db)
  if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
     
  // Set new object version data
- if (($json = str_replace("\\", "\\\\", json_encode($output[$eid]))) == '') return 'Element data update unknown error!';
+ $json = str_replace("\\", "\\\\", json_encode($output[$eid]));
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid='$json' WHERE id=$oid AND version=$version");
  $query->execute();
  
- foreach ($allElementsArray as $id => $profile) if ($id != $eid)
+ foreach ($allElementsArray as $id => $profile)
+      if ($id != $eid)
       if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
 	 {
 	  $output[$id] = Handler($handlerName, json_encode($eventArray));
@@ -546,9 +551,15 @@ function CreateNewObjectVersion($db)
 	     {
 	      // Read current element json data to merge it with new data in case of 'SET' command
 	      if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $id)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
-	      if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '') return 'Element data update unknown error!';
-	      $query = $db->prepare("UPDATE `data_$odid` SET eid$id='$json' WHERE id=$oid AND version=$version");
-	      $query->execute();
+	      if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '')
+	         {
+		  unset($output[$id]);
+		 }
+	       else
+	         {
+		  $query = $db->prepare("UPDATE `data_$odid` SET eid$id='$json' WHERE id=$oid AND version=$version");
+		  $query->execute();
+	         }
 	     }
 	   else unset($output[$id]);
 	 }
@@ -556,17 +567,13 @@ function CreateNewObjectVersion($db)
 
 function getMainFieldData($db)
 {
- global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId, $error, $alert;
+ global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId;
 
  // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
  $objectTable = $objectTableSrc = [];
 			     
  // No any element defined?	
- if (($sqlElementList = setElementSelectionIds()) === '')
-    {
-     $error= 'Specified view has no elements defined!';
-     return;
-    }
+ if (($sqlElementList = setElementSelectionIds()) === '') return 'Specified view has no elements defined!';
 			
  // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
  // While this features are not released, get all objects:
@@ -650,10 +657,6 @@ function getMainFieldData($db)
 					  }
 				      }
 			     }
-			     
- // Check result object table for empty content
- $count = count($objectTable);
- if ($count < 1 || ($count < 2 && isset($objectTable[0]))) $alert = 'Specified view has no objects defined!';
 }
 
 function setElementSelectionIds()
