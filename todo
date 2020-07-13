@@ -1,7 +1,7 @@
 July 2020:
 
 - emulate end key to set cursor at the end of content
-- Look up all code and may be set some var constable? And comment all code (change menu->sidebar) (commandHandler->). And format all code from vs code
+- Look up all code and may be set some var constable? Format all code (by vs code) and comment all code.
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - https access only, register domain tabels.app and certificate
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
@@ -24,7 +24,7 @@ August 2020:
   - what if no server responce occurs?
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
-- pages on last context menu item in little squares < 1 2 .. 10 11 > ?;
+- pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go.
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
 - status 'Loading..' on wrap icon
@@ -44,7 +44,8 @@ November 2020:
 
 December 2020:
 - System calls and its object views: LOCATION.
-- System calls UPLOAD, DOWNLOAD, DELETE, GALLERY, OV. First four calls can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
+- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES, CALLOV.
+  First four calls can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
 - System call NEWOBJECT (to create object by user handlers)
 - Object view PIECHART and GRAPH
 - Other estimated "todo" from Mishka directory ois.xlsx file

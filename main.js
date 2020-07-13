@@ -105,12 +105,13 @@ const uiProfile = {
 
 /*------------------------------VARIABLES------------------------------------*/
 let tooltipTimerId, undefinedcellRuleIndex;
-let mainDiv, menuDiv, mainTablediv, contextMenuDiv;
+let mainDiv, sidebarDiv, mainTablediv;
+let contextmenuDiv;
 let hintDiv, alertDiv, confirmDiv, dialogDiv, expandedDiv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
 let cmd = activeOD = activeOV = '';
 let sidebar = focusElement = {};
-let selectExpandedDiv = contextMenu = boxContent = null, modalVisible = "";
+let selectExpandedDiv = contextmenu = boxContent = null, modalVisible = "";
 let hintX, hintY;
 /*---------------------------------------------------------------------------*/
 
@@ -151,16 +152,16 @@ window.onload = function()
  document.addEventListener('contextmenu', eventHandler);
  
  // Define sidebar div
- menuDiv = document.querySelector('.menu');
+ sidebarDiv = document.querySelector('.menu');
 
  // Define main field div and add 'scroll' event for it
  mainDiv = document.querySelector('.main');
  mainDiv.addEventListener('scroll', eventHandler);
  
  // Define context menu div and add some mouse events for it
- contextMenuDiv = document.querySelector('.contextMenu');
- contextMenuDiv.addEventListener('mouseover', eventHandler);
- contextMenuDiv.addEventListener('mouseout', eventHandler);
+ contextmenuDiv = document.querySelector('.contextMenu');
+ contextmenuDiv.addEventListener('mouseover', eventHandler);
+ contextmenuDiv.addEventListener('mouseout', eventHandler);
 
  // Define interface divs 
  hintDiv = document.querySelector('.hint');
@@ -175,7 +176,7 @@ window.onload = function()
  callController();
 }
 
-function drawMenu(data)
+function drawSidebar(data)
 {
  if (typeof data != 'object') return;
  let ovlistHTML, sidebarHTML = '';
@@ -207,7 +208,7 @@ function drawMenu(data)
     }
 
  // Push calculated html text to sidebar div
- sidebarHTML != '' ? menuDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>' : menuDiv.innerHTML = '';
+ sidebarHTML != '' ? sidebarDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>' : sidebarDiv.innerHTML = '';
   
  // Reset sidebar with new data
  sidebar = data;
@@ -217,7 +218,6 @@ function drawMain()
 {
  let oid, eid, obj, cell;
  let x, y, error, n = 1, q = 55;
- let reg = new RegExp('^\\*|^\\/|\\*$|\\/$|\\+$|-$|[nq]\\d|\\d[nq]|\\*\\*|\\*\\/|\\*\\+|\\*-|\\/\\*|\\/\\/|\\/\\+|\\/-|\\+\\*|\\+\\/|\\+\\+|\\+-|-\\*|-\\/|-\\+|--');
  mainTableWidth = mainTableHeight = 0;
  mainTable = [];
  focusElement = {};
@@ -231,14 +231,15 @@ function drawMain()
            cell = objectTable[oid][eid];
            try   { obj = JSON.parse(cell['json']); }
            catch { continue; }
-    	   if (reg.test(cell['props']['x']) != false || reg.test(cell['props']['y']) != false)
-              {
-	       error = false;
-	       continue;
-	      }
            
-           x = Math.trunc(eval(cell['props']['x']));
-           y = Math.trunc(eval(cell['props']['y']));
+           try	 {
+		  x = Math.trunc(eval(cell['props']['x']));
+        	  y = Math.trunc(eval(cell['props']['y']));
+		 }
+	   catch {
+		  error = false;
+		  continue;
+		 }
            if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS)
               {
 	       error = true;
@@ -265,12 +266,17 @@ function drawMain()
      }
  if (!mainTableHeight)
     {
-     if (n > 1) displayMainError("Specified view selection expression has some 'x','y' incorrect coordinate definitions!<br>See element selection expression help section");
+     if (n > 1) displayMainError("Specified view selection expression has some 'x','y'<br>incorrect coordinate definitions!<br><br>See element selection expression help section");
       else mainDiv.innerHTML = '<h1>Specified view has no objects defined!<br>Please add some objects</h1>';
      return;
     }
  if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
-  else if (error === false) alert("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section"); // Set string 'warning' as box title
+  else if (error === false)
+	  {
+	   //alert("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section"); // Set string 'warning' as box title
+	   createBox({"title": "Warning", "confirm": "Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
+	  }
+	   
  
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
@@ -318,7 +324,7 @@ function drawMain()
  // Focus element is not empty? Emulate mouse/keyboard start event!
  if (focusElement.x != undefined)
     {
-     cellBorderToggleSelect(null, focusElement.td = mainTablediv.rows[focusElement.y].cells[focusElement.x]);
+     CellBorderToggleSelect(null, mainTablediv.rows[focusElement.y].cells[focusElement.x]);
      focusElement.td.focus();
      cmd = focusElement.cmd;
      callController(focusElement.data);
@@ -341,7 +347,7 @@ function eventHandler(event)
 	      if (hintX != undefined) HideHint();
 	      break;
 	 case 'mousemove':
-	      if (mainTable[event.target.parentNode.rowIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].hint != undefined && !boxContent && !contextMenu)
+	      if (mainTable[event.target.parentNode.rowIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].hint != undefined && !boxContent && !contextmenu)
 	         {
 		  if (hintX != event.target.cellIndex || hintY != event.target.parentNode.rowIndex)
 		     {
@@ -356,17 +362,17 @@ function eventHandler(event)
 	 case 'mouseover':
 	      // Mouse over non grey context menu item? Set current menu item to call appropriate menu action by 'enter' key
 	      if (event.target.classList.contains('contextMenuItems') && !event.target.classList.contains('greyContextMenuItem'))
-	         setContextMenuItem(event.target);
+	         SetContextmenuItem(event.target);
 	      break;
 	 case 'mouseout':
-	      setContextMenuItem(null);
+	      SetContextmenuItem(null);
 	      break;
 	 case 'scroll':
-	      rmContextMenu();
+	      HideContextmenu();
 	      break;
 	 case 'contextmenu':
 	      //--------------Prevent default context menu (do nothing) on context menu or modal window click--------------
-	      if (event.target == contextMenuDiv || event.target.classList.contains('contextMenuItems') || (modalVisible != "" && modalVisible != "hint"))
+	      if (event.target == contextmenuDiv || event.target.classList.contains('contextMenuItems') || (modalVisible != "" && modalVisible != "hint") || (contextmenu && event.which != 3))
 	         {
 		  event.preventDefault();
 		  break;
@@ -387,87 +393,12 @@ function eventHandler(event)
 			  cmd = 'CONFIRM';
 			  callController(htmlCharsConvert(focusElement.td.innerHTML));
 			 }
-		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) // Main field table cell click?
-		         {
-			  cellBorderToggleSelect(focusElement.td, event.target);       
-			  focusElement.td = event.target;
-	    		  focusElement.x = event.target.cellIndex;
-			  focusElement.y = event.target.parentNode.rowIndex;
-			 }
+		      // Main field table cell click?
+		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(focusElement.td, event.target);
 		     }
 		  break;
 		 }
-	      //--------------Context menu event has been generated by keyboard (event.which != 3) and any element is selected? Display main context menu for tha element--------------
-	      if (event.target.tagName == 'HTML' && focusElement.td != undefined && event.which != 3)
-		 {
-		  event.preventDefault();
-		  if (contextMenu != null) break;
-		  contextMenu = { 'x': focusElement.x, 'y': focusElement.y, 'e': null };
-		  contextMenuDiv.innerHTML = mainObjectContext; 
-		  contextMenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'show';
-		  // Computing context menu position, trying left-upper, middle-upper, right-upper etc.. side of <td> cell. In case of fail position is right-lower
-		  const foc = focusElement.td;
-		  if (!contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth, foc.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft, foc.offsetTop - mainDiv.scrollTop + foc.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft - contextMenuDiv.offsetWidth, foc.offsetTop - mainDiv.scrollTop) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft, foc.offsetTop - mainDiv.scrollTop - contextMenuDiv.offsetHeight) &&
-		      !contextFitMainDiv(foc.offsetLeft - mainDiv.scrollLeft + foc.offsetWidth, foc.offsetTop - mainDiv.scrollTop))
-		     {
-		      contextMenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextMenuDiv.offsetWidth) + "px";
-		      contextMenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextMenuDiv.offsetHeight) + "px";
-		     }
-		  break;
-		 }
-		 //--------------Application context menu (main field or sidebar) event? Display appropriate context menu--------------
-		 if (event.target.tagName == 'TD' || event.target.classList.contains('menu') || (event.target === mainDiv && activeOV != ''))
-		 {
-		  event.preventDefault();
-		  // Context event on wrap icon cell with OD item? Display OD context
-		  if (event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-od'))
-		  	 { 
-			  contextMenuDiv.innerHTML = sidebarODContext;
-			  contextMenu = { 'e': null, 'data': event.target.nextSibling.innerHTML };
-			 }
-		  // Context event on OD item? Display OD context
-		  else if (event.target.classList.contains('sidebar-od'))
-			 { 
-			  contextMenuDiv.innerHTML = sidebarODContext;
-			  contextMenu = { 'e': null, 'data': event.target.innerHTML };
-			 }
-		  // Context event on OV item or wrap icon cell with OV item? Display OV context
-	          else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('menu'))
-		   	  {
-			   contextMenuDiv.innerHTML = sidebarOVContext;
-			   contextMenu = { 'e': null };
- 			  }
-		  else
-		   {
-		    if (event.target.tagName == 'TD' && mainTable[event.target.parentNode.rowIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].oId > 0)
-		       if (mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].oId < STARTOBJECTID) contextMenuDiv.innerHTML = mainTitleObjectContext;
-			else contextMenuDiv.innerHTML = mainObjectContext;
-			 else contextMenuDiv.innerHTML = mainDefaultContext;
-		    if (event.target.tagName == 'TD')
-		       {
-			cellBorderToggleSelect(focusElement.td, event.target);
-			focusElement.td = event.target;
-			focusElement.x = event.target.cellIndex;
-			focusElement.y = event.target.parentNode.rowIndex;
-		       }
-		    contextMenu = { 'e': null };
-		   }
-		  // Show context menu
-		  contextMenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'show';
-		  // Computing context menu position
-		  if (mainDiv.offsetWidth + mainDiv.offsetLeft > contextMenuDiv.offsetWidth + event.clientX) contextMenuDiv.style.left = event.clientX + "px";
-		   else contextMenuDiv.style.left = event.clientX - contextMenuDiv.clientWidth + "px";
-		  if (mainDiv.offsetHeight + mainDiv.offsetTop > contextMenuDiv.offsetHeight + event.clientY) contextMenuDiv.style.top = event.clientY + "px";
-		   else contextMenuDiv.style.top = event.clientY - contextMenuDiv.clientHeight + "px";
-		  break;
-		 }
+	      ShowContextmenu(event);
 	      break;
 	 case 'dblclick':
 	      if (modalVisible === "" ||  modalVisible === "hint")
@@ -516,9 +447,13 @@ function eventHandler(event)
 	      //--------------Dialog 'ok' button event? Only remove dialog--------------
 	      if (event.target.classList.contains('ok'))
 	         {
-		  if (modalVisible === "dialog") saveDialogProfile(); // Get content data for dialog box
-		  cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Edit Database Structure' ? cmd = 'EDITOD' : cmd = 'CONFIRM';
-		  callController(boxContent);
+		  if (modalVisible != "alert")
+		     {
+		      if (modalVisible === "dialog") saveDialogProfile(); // Get content data for dialog box
+		      cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Edit Database Structure' ? cmd = 'EDITOD' : cmd = 'CONFIRM';
+		      loog(boxContent);
+		      callController(boxContent);
+		     }
 		  rmBox();
 		  break;
 		 }
@@ -599,7 +534,7 @@ function eventHandler(event)
 	      //--------------Mouse middle button (1-left, 2- middle, 3-right button) click? Break anyway. Also remove context menu in case of non context menu area click--------------      
 	      if (event.which != 1)
 	         {
-		  if (event.target != contextMenuDiv && !event.target.classList.contains('contextMenuItems')) rmContextMenu();
+		  if (event.target != contextmenuDiv && !event.target.classList.contains('contextMenuItems')) HideContextmenu();
 		  break;
 		 }
 	      //--------------Mouse click on grey menu item or mouse click on context but not menu item? Do nohing and break;--------------
@@ -611,14 +546,14 @@ function eventHandler(event)
 	      if (event.target.classList.contains('contextMenuItems'))
 		 {
 		  cmd = event.target.innerHTML;
-		  callController(contextMenu.data);
-		  rmContextMenu();
+		  callController(contextmenu.data);
+		  HideContextmenu();
 		  break;
 		 }
 		//--------------OD item mouse click? Wrap/unwrap OV list--------------
 	      if (event.target.classList.contains('sidebar-od'))
 		 {
-		  rmContextMenu();
+		  HideContextmenu();
 		  if (Object.keys(sidebar[event.target.innerHTML]).length > 1)
 		     {
 		      sidebar[cmd = event.target.innerHTML][''] = !sidebar[cmd][''];
@@ -630,12 +565,12 @@ function eventHandler(event)
 		//--------------OV item mouse click? Open OV in main field--------------
 	      if (event.target.classList.contains('sidebar-ov'))
 		{
-		 rmContextMenu();
+		 HideContextmenu();
 		 if (activeOD != event.target.nextSibling.innerHTML || activeOV != event.target.innerHTML)
 		    {
 		     activeOD = event.target.nextSibling.innerHTML;
 		     activeOV = event.target.innerHTML;
-		     drawMenu(sidebar);
+		     drawSidebar(sidebar);
 		    }
 		 cmd = 'OBTAINMAIN';
 		 callController();
@@ -644,7 +579,7 @@ function eventHandler(event)
 		//--------------Mouse click on wrap icon? OD item sidebar line wraps/unwraps ov list, OV item sidebar line opens OV in main field--------------
 	     if (event.target.classList.contains('wrap'))
 		{
-		 rmContextMenu();
+		 HideContextmenu();
 		 if (event.target.nextSibling.classList.contains('sidebar-od') && Object.keys(sidebar[event.target.nextSibling.innerHTML]).length > 1)
 		    { 
 		     sidebar[cmd = event.target.nextSibling.innerHTML][''] = !sidebar[cmd][''];
@@ -657,7 +592,7 @@ function eventHandler(event)
 		        {
 			 activeOD = event.target.nextSibling.nextSibling.innerHTML;
 		         activeOV = event.target.nextSibling.innerHTML;
-		         drawMenu(sidebar);
+		         drawSidebar(sidebar);
 			}
 		     cmd = 'OBTAINMAIN';
 		     callController();
@@ -678,18 +613,11 @@ function eventHandler(event)
 		  callController(htmlCharsConvert(focusElement.td.innerHTML));
 		 }
 	      //--------------Mouse click on main field table?--------------
-	      if (event.target.tagName == 'TD')
-	         {
-		  cellBorderToggleSelect(focusElement.td, event.target);
-		  focusElement.td = event.target;
-	          focusElement.x = event.target.cellIndex;
-	          focusElement.y = event.target.parentNode.rowIndex;
-		 }
+	      if (event.target.tagName == 'TD') CellBorderToggleSelect(focusElement.td, event.target);
 	     //--------------Remove context menu for no sidebar and main field events--------------
-		 rmContextMenu();
+		 HideContextmenu();
 		 break;
 	 case 'keydown':
-	      //if (event.which == 45) createBox({"title":"Alert", "confirm": "The Object Database cannot be deleted!", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
 	      if (modalVisible === 'help')
 	         {
 		  hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
@@ -713,15 +641,15 @@ function eventHandler(event)
 		           moveCursor(focusElement.x, Math.min(Math.trunc((mainDiv.scrollTop + 1.7*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), mainTableHeight - 1), true);
 			   break;
 		      case 38: //Up
-			   setContextMenuItem("UP");
+			   SetContextmenuItem("UP");
 			   moveCursor(0, -1, false);
 			   break;
 		      case 40: //Down
-			   setContextMenuItem("DOWN");
+			   SetContextmenuItem("DOWN");
 			   moveCursor(0, 1, false);
 			   break;
 		      case 13: //Enter
-		           if (!contextMenu) // If context menu is not active,  try to move cursor down
+		           if (!contextmenu) // If context menu is not active,  try to move cursor down
 			      {
 			       if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
 			          {
@@ -730,11 +658,11 @@ function eventHandler(event)
 				  }
 			       else moveCursor(0, 1, false);
 			      }
-			    else if (contextMenu.e) // If context menu item is active
+			    else if (contextmenu.item) // If context menu item is active
 			      {
-			       cmd = contextMenu.e.innerHTML;
-			       callController(contextMenu.data);
-			       rmContextMenu();
+			       cmd = contextmenu.item.innerHTML;
+			       callController(contextmenu.data);
+			       HideContextmenu();
 			      }
 			   break;
 		      case 37: //Left
@@ -764,7 +692,7 @@ function eventHandler(event)
 			      }
 			    else
 			      {
-			       rmContextMenu();
+			       HideContextmenu();
 			      }
 			   break;
 		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
@@ -783,7 +711,7 @@ function eventHandler(event)
 	}
 }
 
-function commandHandler(input)
+function controllerCmdHandler(input)
 {
  if (input.cmd === undefined)
     {
@@ -829,12 +757,12 @@ function commandHandler(input)
 	      if (input.alert) alert(input.alert);
 	      break;
 	 case 'REFRESH':
-	      drawMenu(input.data);
+	      drawSidebar(input.data);
 	      cmd = 'GETMAIN'
 	      callController();
 	      break;
 	 case 'REFRESHMENU':
-	      drawMenu(input.data);
+	      drawSidebar(input.data);
 	      break;
 	 case 'REFRESHMAIN':
 	      objectTable = input.data;
@@ -886,7 +814,7 @@ function toHTMLCharsConvert(string)
  return string.replace(/<br>$/g, "<br><br>");
 }
 
-function cellBorderToggleSelect(oldCell, newCell)
+function CellBorderToggleSelect(oldCell, newCell)
 {
  if (oldCell)
     {
@@ -895,61 +823,22 @@ function cellBorderToggleSelect(oldCell, newCell)
     }
  if (uiProfile['main field table active cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table active cell']['outline'];
  if (uiProfile['main field table active cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table active cell']['shadow'];
+ focusElement.td = newCell;
+ focusElement.x = newCell.cellIndex;
+ focusElement.y = newCell.parentNode.rowIndex;
 }
 
 function contextFitMainDiv(x, y)
 {
- if (mainDiv.offsetWidth < x + contextMenuDiv.offsetWidth || mainDiv.offsetHeight < y + contextMenuDiv.offsetHeight || x < 0 || y < 0) return false;
- contextMenuDiv.style.left = mainDiv.offsetLeft + x + "px";
- contextMenuDiv.style.top = mainDiv.offsetTop + y + "px";
+ if (mainDiv.offsetWidth < x + contextmenuDiv.offsetWidth || mainDiv.offsetHeight < y + contextmenuDiv.offsetHeight || x < 0 || y < 0) return false;
+ contextmenuDiv.style.left = mainDiv.offsetLeft + x + "px";
+ contextmenuDiv.style.top = mainDiv.offsetTop + y + "px";
  return true;
-}
-
-function rmContextMenu()
-{
- if (contextMenu)
-    {
-     contextMenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'hide';
-     contextMenu = null;
-    }
-}
-
-function setContextMenuItem(newItem)
-{
- if (!contextMenu) return;
- 
- if (typeof newItem === 'string')
-    {
-     const direction = newItem;
-     if (!contextMenu.e)
-     if (direction === "UP") contextMenu.e = contextMenuDiv.firstChild;	// Set start item position in case of null contextMenu.e (current active item)
-      else contextMenu.e = contextMenuDiv.lastChild;			// In case of down direction start item is last item
-     newItem = contextMenu.e;						// Assign new item to current active item
-     do 
-       {
-        if (direction === "UP")
-	   {
-	    newItem = newItem.previousElementSibling;			// Take previous element as context menu item
-	    if (!newItem) newItem = contextMenuDiv.lastChild;		// if previous element is null, take last element as context menu item
-	   }
-	else
-	   {
-	    newItem = newItem.nextElementSibling;			// Take previous element as context menu item for 'down' direction
-	    if (!newItem) newItem = contextMenuDiv.firstChild;		// if previous element is null, take last element as context menu item
-	   }
-       }
-     while (newItem != contextMenu.e && newItem.classList.contains('greyContextMenuItem'));
-     if (newItem.classList.contains('greyContextMenuItem')) newItem = contextMenu.e = null;
-    }
- 
- if (contextMenu.e) contextMenu.e.classList.remove('activeContextMenuItem'); 
- if (newItem) newItem.classList.add('activeContextMenuItem');
- contextMenu.e = newItem;
 }
 
 function moveCursor(x, y, abs)
 {
- if (!focusElement.td || focusElement.td.contentEditable == 'true' || contextMenu || (abs && focusElement.x == x && focusElement.y == y)) return;
+ if (!focusElement.td || focusElement.td.contentEditable === 'true' || contextmenu || (abs && focusElement.x == x && focusElement.y == y)) return;
  
  let a, b, newTD;
  if (abs)
@@ -963,16 +852,13 @@ function moveCursor(x, y, abs)
      b = focusElement.y + y;
     }
     
- if (a >= 0 && a < mainTableWidth && b >= 0 && b < mainTableHeight) newTD = mainTablediv.rows[b].cells[a];
-  else return;
-  
+ if (a < 0 || a >= mainTableWidth || b < 0 || b >= mainTableHeight) return;
+ 
+ newTD = mainTablediv.rows[b].cells[a];
  if (abs || isVisible(newTD) || (!isVisible(focusElement.td) && tdVisibleSquare(newTD) > tdVisibleSquare(focusElement.td)) || (y == 0 && xAxisVisible(newTD)) || (x == 0 && yAxisVisible(newTD)))
     {
      if (!abs) event.preventDefault();
-     focusElement.x = a;
-     focusElement.y = b;
-     cellBorderToggleSelect(focusElement.td, newTD);
-     focusElement.td = newTD;
+     CellBorderToggleSelect(focusElement.td, newTD);
     }
 }
 
@@ -1051,7 +937,7 @@ function callController(data)
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
-	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId/*, "eId": mainTable[focusElement.y][focusElement.x].eId*/ };
+	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId };
 	      break;
 	 case 'New Object Database':
 	      object = { "cmd": cmd };
@@ -1086,40 +972,38 @@ function callController(data)
 	      alert("Undefined browser message: " + cmd + "!");
 	}
 	
- if (object) Hujax("main.php", commandHandler, object);
+ if (object) Hujax("main.php", controllerCmdHandler, object);
 }
 
 function createBox(content, x, y)
 {
  /*******************************************************************************************************************************/
  /* content.title		= box title											*/
- /* content.hint		= box text with no button									*/
- /* content.alert		= box text with 'ok' button only								*/
- /* content.confirm		= box text with 'ok' and 'cancel' buttons							*/
- /* content.dialog		= object with properties as tabs, each tab is an object with properties as profiles		*/
- /*				  Each profile property is an interface element with the format below.				*/
+ /*																*/
+ /* content.content		= JSON with properties as tabs, each tab is JSON with properties as profiles			*/
+ /*				  Each profile is JSON with properties as interface elements, see below.			*/
  /*		   		  "element_name":										*/
  /*						{										*/
  /*				      	  	 "type"      : select|multiple|checkbox|radio|textarea|password|text		*/
  /*				      	  	 "head"      : "<any text>"							*/
- /*				      	  	 "data"      : "{text1}|text2|text3"						*/
+ /*				      	  	 "data"      : "+text1|text2|text3"						*/
  /*		  		      	  	 "help"	     : "<any text>"							*/
  /*		  		      	  	 "line"	     : ""								*/
  /*		  		      	  	 "minheight" : ""								*/
  /*		  		      	  	 "readonly"  : ""								*/
  /*				     	 	}										*/
- /* content.flags		= object with properties:									*/
+ /* content.buttons		= json with properties as buttons where property name is a button text				*/
+ /*																*/
+ /* content.flags		= JSON with next properties:									*/
  /*				  "esc" - any value cancels the box 								*/
- /*				  "profile_head" - json with profile names as a properties and head text as values		*/
- /*				  "ok" - confirm action button text, default is corresponding uiProfile property		*/
- /*				  "cancel" - cancel action button text, default is corresponding uiProfile property		*/
+ /*				  "style" - css class to style the box such as hint, alert, dialog				*/
  /*				  "pad" - active (current) pad (if exists) for dialog box					*/
  /*				  "profile" - active (current) profile (if exist) for dialog box				*/
  /*				  "minwidth" - box min width in px								*/
  /*				  "minheight" - box min height in px								*/
  /*				  "display_single_pad" - set this flag to display pad block in case of single one		*/
  /*				  "display_single_profile" - set this flag to display profile select in case of single one	*/
- /*				  <any prop> - any callback data element handler can be used					*/
+ /*				  "callback" - any callback string element handler receives without changes at CONFIRM	event	*/
  /*******************************************************************************************************************************/
  if (typeof content !== 'object') return;
  let div, inner = "";
@@ -1194,7 +1078,7 @@ function createBox(content, x, y)
      if (uiProfile["box effect"][modalVisible + " filter"])
         {
 	 mainDiv.style.filter = uiProfile["box effect"][modalVisible + " filter"];
-	 menuDiv.style.filter = uiProfile["box effect"][modalVisible + " filter"];
+	 sidebarDiv.style.filter = uiProfile["box effect"][modalVisible + " filter"];
 	}
     }
 }
@@ -1418,7 +1302,7 @@ function rmBox()
 	}
  boxContent = null;
  mainDiv.style.filter = 'none';
- menuDiv.style.filter = 'none';
+ sidebarDiv.style.filter = 'none';
  modalVisible = '';
 }
 
@@ -1514,6 +1398,118 @@ function collapseMainTable() // Function removes collapse flag tagged rows and c
 	    col++;
 	   }
        }
+}
+
+function ShowContextmenu(event)
+{
+ let innerHTML, data;
+ 
+ // Context event on wrap icon cell with OD item? Display OD context menu
+ if (event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-od'))
+    {
+     innerHTML = sidebarODContext;
+     data = event.target.nextSibling.innerHTML;
+    }
+ // Context event on OD item? Display OD context menu
+  else if (event.target.classList.contains('sidebar-od'))
+    { 
+     innerHTML = sidebarODContext;
+     data = event.target.innerHTML;
+    }
+ // Context event on OV item or wrap icon cell with OV item? Display OV context menu
+  else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('menu')) innerHTML = sidebarOVContext;
+ // Application context menu on main field table? Display mainObjectContext or mainTitleObjectContext context menu
+  else if (event.target.tagName == 'TD')
+    {
+     CellBorderToggleSelect(focusElement.td, event.target);
+     if (!mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x]) innerHTML = mainDefaultContext;
+      else if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID) innerHTML = mainObjectContext;
+       else innerHTML = mainTitleObjectContext;
+    }
+ // Application context menu on main field empty area? Display mainDefaultContext context menu
+  else if (event.target === mainDiv && activeOV != '') innerHTML = mainDefaultContext;
+ // Context menu event has been generated by keyboard (event.which != 3) and any element is selected? Display mainObjectContext context menu
+  else if (focusElement.td != undefined && event.which != 3) if (!mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x]) innerHTML = mainDefaultContext;
+  else if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID) innerHTML = mainObjectContext;
+  else innerHTML = mainTitleObjectContext;
+
+
+ if (innerHTML != undefined)
+    {
+     event.preventDefault();
+     contextmenuDiv.innerHTML = innerHTML;
+     contextmenu = { item : null };
+     if (data) contextmenu.data = data;
+     // Context menu div left/top calculating
+     if (event.which != 3)
+        {
+	 data = focusElement.td;
+	 if (!contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
+	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop))
+	    {
+	     contextmenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextmenuDiv.offsetWidth) + "px";
+	     contextmenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextmenuDiv.offsetHeight) + "px";
+	    }
+	}
+      else
+        {
+	 if (mainDiv.offsetWidth + mainDiv.offsetLeft > contextmenuDiv.offsetWidth + event.clientX) contextmenuDiv.style.left = event.clientX + "px";
+	  else contextmenuDiv.style.left = event.clientX - contextmenuDiv.clientWidth + "px";
+	 if (mainDiv.offsetHeight + mainDiv.offsetTop > contextmenuDiv.offsetHeight + event.clientY) contextmenuDiv.style.top = event.clientY + "px";
+	  else contextmenuDiv.style.top = event.clientY - contextmenuDiv.clientHeight + "px";
+	}
+     // Show context menu
+     contextmenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'show';
+    }
+}
+
+function HideContextmenu()
+{
+ if (contextmenu)
+    {
+     contextmenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'hide';
+     contextmenu = null;
+    }
+}
+
+function SetContextmenuItem(newItem)
+{
+ if (!contextmenu) return;
+ 
+ if (typeof newItem === 'string')
+    {
+     const direction = newItem;
+     if (!contextmenu.item)
+     if (direction === "UP") contextmenu.item = contextmenuDiv.firstChild; 	// Set start item position in case of absent current active item)
+      else contextmenu.item = contextmenuDiv.lastChild;				// In case of down direction start item is last item
+     newItem = contextmenu.item;						// Assign new item to current active item
+     do 
+       {
+        if (direction === "UP")
+	   {
+	    newItem = newItem.previousElementSibling;				// Take previous element as context menu item
+	    if (!newItem) newItem = contextmenuDiv.lastChild;			// if previous element is null, take last element as context menu item
+	   }
+	else
+	   {
+	    newItem = newItem.nextElementSibling;				// Take previous element as context menu item for 'down' direction
+	    if (!newItem) newItem = contextmenuDiv.firstChild;			// if previous element is null, take last element as context menu item
+	   }
+       }
+     while (newItem != contextmenu.item && newItem.classList.contains('greyContextMenuItem'));
+     if (newItem.classList.contains('greyContextMenuItem')) newItem = contextmenu.item = null;
+    }
+ 
+ if (contextmenu.item) contextmenu.item.classList.remove('activeContextMenuItem'); 
+ if (newItem) newItem.classList.add('activeContextMenuItem');
+ contextmenu.item = newItem;
 }
 
 function escapeDoubleQuotes(data)
