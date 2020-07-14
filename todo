@@ -6,7 +6,7 @@ July 2020:
   document.dispatchEvent(eventCtrlEnd);*/                                                
 - all functions rename the letter to be big  
 - in 3 classes contexm make m letter small, menu call -> sidebar
-- cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Edit Database Structure' ? cmd = 'EDITOD' : cmd = 'CONFIRM' --> CONFIRM
+- change dialog content with new buutons and callback string to distinguish built-in newod/editod
 - Look up all code and may be set some var constable? Format all code (by vs code) and comment all code.
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - https access only, register domain tabels.app and certificate

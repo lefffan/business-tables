@@ -17,7 +17,7 @@ try {
 	    {
 	    case 'New Object Database':
 	          initNewODDialogElements();
-		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'flags'  => ['esc' => '', 'ok' => 'CREATE', 'display_single_profile' => '']]];
+		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => ''], 'flags'  => ['_callback' => 'NEWOD', 'esc' => '', 'display_single_profile' => '']]];
 		  break;
 	    case 'Edit Database Structure':
 			if (isset($input['data']))
@@ -28,76 +28,12 @@ try {
 				 $odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true);
 				 if ($odprops)
 				    {
-				     $odprops['flags']['callbackData'] = $input['data'];
+				     $odprops['flags']['callback'] = $input['data'];
 				     $output = ['cmd' => 'DIALOG', 'data' => $odprops];
 				    }
 				 else $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$input[data]' Object Database properties!"];
 				}
 		break;
-	    case 'NEWOD':
-		if (is_array($input['data']))
-		   {
-		    // Get dialog OD name, cut it and check
-		    $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr(trim($input['data']['dialog']['Database']['Properties']['element1']['data']), 0, ODSTRINGMAXCHAR);
-		    if ($odname === '')
-		       {
-		        $output = ['cmd' => 'INFO', 'alert' => 'Please input Object Database name!'];
-		        break;
-		       }
-		    initNewODDialogElements();
-		    // Inserting new OD name
-		    $query = $db->prepare("INSERT INTO `$` (odname) VALUES (:odname)");
-		    $query->execute([':odname' => $odname]);
-		    // Getting created properties id
-		    $query = $db->prepare("SELECT LAST_INSERT_ID()");
-		    $query->execute();
-		    $odid = $query->fetch(PDO::FETCH_NUM)[0];
-		    // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
-		    $query = $db->prepare("create table `uniq_$odid` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-		    $query->execute();                                                                                                                                   
-		    // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
-		    $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-		    $query->execute();
-		    // Insert new OD properties
-		    $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$odid");
-		    $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
-		    //-------------------------------------------------------------------------------------
-		   }
-		$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
-		break;
-	    case 'EDITOD':
-		if (is_array($input['data']))
-		   {
-		    // Get dialog old and new OD name
-		    $newodname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr($input['data']['dialog']['Database']['Properties']['element1']['data'], 0, ODSTRINGMAXCHAR);
-		    $oldodname = $input['data']['flags']['callbackData'] = substr($input['data']['flags']['callbackData'], 0, ODSTRINGMAXCHAR);
-		    // Getting old OD name id in `$`
-		    $query = $db->prepare("SELECT id FROM `$` WHERE odname=:odname");
-		    $query->execute([':odname' => $oldodname]);
-		    $odid = $query->fetch(PDO::FETCH_NUM)[0];
-		    // In case of empty OD name string try to remove current OD from the system
-		    if ($newodname === '')
-		    if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '' && count($input['data']['dialog']['Element']) === 1)
-		       {
-		        $query = $db->prepare("DELETE FROM `$` WHERE id=$odid");
-			$query->execute();
-			$output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
-		        $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$odid`; DROP TABLE IF EXISTS `data_$odid`");
-			$query->execute();
-			break;
-		       }
-		     else
-		       {
-		        $output = ['cmd' => 'INFO', 'alert' => "To remove Object Database (OD) - empty 'name' and 'description' OD fields and remove all elements (see 'Element' tab)"];
-			break;
-		       }
-			// Writing new properties
-		    initNewODDialogElements();
-		    $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$odid");
-		    $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
-		   }
-		     $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
-		     break;
 		case 'GETMENU':
 		     $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		     break;
@@ -140,6 +76,11 @@ try {
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
+		     if (isset($input['data']['_callback']))
+		        {
+			 $input['data']['_callback'] === 'EDITOD' ? $output = EditOD($db) : $output = NewOD($db);
+		         break;
+			}
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);
 		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
@@ -157,7 +98,11 @@ try {
 			    }
 			  else if ($output[$eid]['cmd'] === 'EDIT') isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
 			  else if ($output[$eid]['cmd'] === 'ALERT') isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
-			  else if ($output[$eid]['cmd'] === 'DIALOG' && isset($output[$eid]['data']) && is_array($output[$eid]['data'])) $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
+			  else if ($output[$eid]['cmd'] === 'DIALOG' && isset($output[$eid]['data']) && is_array($output[$eid]['data']))
+				  {
+				   if (isset($output[$eid]['data']['flags']['_callback'])) unset($output[$eid]['data']['flags']['_callback']);
+				   $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
+				  }
 			  else $output = ['cmd' => ''];
 			 break;
 			}

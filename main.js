@@ -154,7 +154,7 @@ window.onload = function()
 
  // Define interface divs 
  hintDiv = document.querySelector('.hint');
- boxDiv = document.querySelector('.dialog');
+ boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
  
  cmd = 'GETMENU';
@@ -909,7 +909,8 @@ function ShowBox()
  /*			  "minheight" - box min height in px									*/
  /*			  "display_single_pad" - set this flag to display pad block in case of single one			*/
  /*			  "display_single_profile" - set this flag to display profile select in case of single one		*/
- /*			  "callback" - any callback string element handler receives without changes at CONFIRM	event		*/
+ /*			  "callback" - any callback string element handler to pass without changes at CONFIRM event		*/
+ /*			  "_callback" - controller reserved property								*/
  /*******************************************************************************************************************************/
  if (typeof box !== 'object') return;
  let inner = getInnerDialog();

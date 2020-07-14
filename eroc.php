@@ -143,7 +143,9 @@ function adjustODProperties($data, $db, $id)
  // Return result data
  $data['title'] = 'Edit Object Database Structure';
  if (!isset($data['flags'])) $data['flags'] = [];
- $data['flags']['ok'] = 'SAVE';
+ unset($data['buttons']['CREATE']);
+ $data['buttons']['SAVE'] = ' ';
+ $data['flags']['_callback'] = 'EDITOD';
  return $data;
 }					
 
@@ -715,4 +717,66 @@ function setElementSelectionIds()
          }
  
  return $sqlElementList;
+}
+
+function NewOD($db)
+{
+ global $input;
+ $input['cmd'] = 'NEWOD';
+ 
+ // Get dialog OD name, cut it and check
+ $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr(trim($input['data']['dialog']['Database']['Properties']['element1']['data']), 0, ODSTRINGMAXCHAR);
+ if ($odname === '') return $output = ['cmd' => 'INFO', 'alert' => 'Please input Object Database name!'];
+
+ initNewODDialogElements();
+ // Inserting new OD name
+ $query = $db->prepare("INSERT INTO `$` (odname) VALUES (:odname)");
+ $query->execute([':odname' => $odname]);
+ // Getting created properties id
+ $query = $db->prepare("SELECT LAST_INSERT_ID()");
+ $query->execute();
+ $odid = $query->fetch(PDO::FETCH_NUM)[0];
+ // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
+ $query = $db->prepare("create table `uniq_$odid` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();                                                                                                                                   
+ // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
+ $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+ // Insert new OD properties
+ $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$odid");
+ $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
+		    
+ return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+}
+		
+function EditOD($db)		
+{
+ global $input;
+ $input['cmd'] = 'EDITOD';
+ 
+ // Get dialog old and new OD name
+ $newodname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr($input['data']['dialog']['Database']['Properties']['element1']['data'], 0, ODSTRINGMAXCHAR);
+ $oldodname = $input['data']['flags']['callback'] = substr($input['data']['flags']['callback'], 0, ODSTRINGMAXCHAR);
+ // Getting old OD name id in `$`
+ $query = $db->prepare("SELECT id FROM `$` WHERE odname=:odname");
+ $query->execute([':odname' => $oldodname]);
+ $odid = $query->fetch(PDO::FETCH_NUM)[0];
+ // In case of empty OD name string try to remove current OD from the system
+ if ($newodname === '')
+ if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '' && count($input['data']['dialog']['Element']) === 1)
+    {
+     $query = $db->prepare("DELETE FROM `$` WHERE id=$odid");
+     $query->execute();
+     $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$odid`; DROP TABLE IF EXISTS `data_$odid`");
+     $query->execute();
+     return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+    }
+  else return $output = ['cmd' => 'INFO', 'alert' => "To remove Object Database (OD) - empty 'name' and 'description' OD fields and remove all elements (see 'Element' tab)"];
+			
+ // Writing new properties
+ initNewODDialogElements();
+ $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$odid");
+ $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
+		    
+ return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 }
