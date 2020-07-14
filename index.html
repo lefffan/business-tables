@@ -70,26 +70,20 @@
 		  {
 		   margin-bottom: 0;
 		  }
-	    .wrap {
-		   vertical-align: middle;
-		   text-align: center;
-		  }
-	    .menu {
+	    .hint
+		  {
 		   position: absolute;
 		   overflow: auto;
+		   z-index: 20;
 		   -webkit-user-select: none;
 		   -moz-user-select: none;
 		   -ms-user-select: none;
 		   user-select: none;
 		  }
-	    .menu td
-		  {
-		   border: none;
-		  }
 	    .box
 		  {
 		   position: absolute;
-		   overflow: auto;
+		   overflow: hidden;
 		   z-index: 20;
 		   padding: 0px;
 		   box-sizing: border-box;
@@ -108,7 +102,23 @@
 		   vertical-align: top;
 		   outline: none;
 		  }
-	    .menunojs
+	    .wrap {
+		   vertical-align: middle;
+		   text-align: center;
+		  }
+	    .menu {
+		   position: absolute;
+		   overflow: auto;
+		   -webkit-user-select: none;
+		   -moz-user-select: none;
+		   -ms-user-select: none;
+		   user-select: none;
+		  }
+	    .menu td
+		  {
+		   border: none;
+		  }
+	    .sidebarnojs
 		  {
 		   background-color: #145DBF;
 		   border-radius: 5px;
@@ -135,7 +145,7 @@
 		   -ms-user-select: none;
 		   user-select: none;
 		  }
-	    .expanded, .hint
+	    .expanded
 		  {
 		   z-index: 30;
 		  }
@@ -143,7 +153,7 @@
     </head>
     <body>
         <noscript>
-    	    <div class="menunojs"></div>
+    	    <div class="sidebarnojs"></div>
 	    <div class="main mainnojs"><h1 style="color: #B00;">Please enable JavaScript!</h1></div>
 	</noscript>
 	<script src="main.js"></script>

@@ -1,10 +1,16 @@
 July 2020:
 
 - emulate end key to set cursor at the end of content
+  const eventCtrlEnd = document.createEvent('KeyboardEvent');
+  /*eventCtrlEnd.initKeyboardEvent("keydown", true, true, window,"a", "a", false, '', 1);
+  document.dispatchEvent(eventCtrlEnd);*/                                                
+- all functions rename the letter to be big  
+- in 3 classes contexm make m letter small, menu call -> sidebar
+- cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Edit Database Structure' ? cmd = 'EDITOD' : cmd = 'CONFIRM' --> CONFIRM
 - Look up all code and may be set some var constable? Format all code (by vs code) and comment all code.
 - change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
 - https access only, register domain tabels.app and certificate
-- OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..)
+- OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..) cmd = 'GETUI' should get data from the controller
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
 - System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV.
 
@@ -27,7 +33,7 @@ August 2020:
 - pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go.
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-- status 'Loading..' on wrap icon
+- status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 
 September:
 - mishka-new.xls front-end/back-end features and think other features to make Boss edit opeations comfortable

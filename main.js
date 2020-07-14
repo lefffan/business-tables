@@ -3,27 +3,17 @@ const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
-const range = document.createRange();
-const selection = window.getSelection();
 const style = document.createElement('style');
-const eventCtrlEnd = document.createEvent('KeyboardEvent');
-
-const mainObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
-const mainTitleObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
-const mainDefaultContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems greyContextMenuItem">Element description</div><div class="contextMenuItems">Help</div>';
-const sidebarOVContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems greyContextMenuItem">Edit Database Properties</div>';
-const sidebarODContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems">Edit Database Structure</div>';
 // User interface default profile
 const uiProfile = {
 		  // Body
 		  "body": { "target": "body", "background-color": "#343E54;" },
-		  //"wait cursor": { "target": ".waitcursor", "cursor": "wait" },
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
 		  "main field table cell": { "target": "td", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;" },
 		  "main field table active cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
-		  "main field table cursor": { "target": ".main table", "cursor": "cell;" },
+		  "main field table cursor": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
 		  "main message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
 		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
@@ -43,44 +33,40 @@ const uiProfile = {
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
 		  // Box types
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
-		  "alert": { "target": ".alert", "background-color": "rgb(115,163,181);", "color": "#000000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;" },
-		  "confirm": { "target": ".confirm", "background-color": "#FFF;", "color": "#000;", "border-radius": "5px;", "border": "1px solid #DDD;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;", "box-shadow": "3px 3px 5px 0px #DDD;" },
-		  "dialog": { "target": ".dialog", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;", "box-shadow": "none;" },
+		  "box": { "target": ".box", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;", "box-shadow": "none;" },
 		  // Box interface elements
-/*#404851;*/	  "box title": { "target": ".title", "background-color": "transparent;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
-		  "box pad": { "target": ".pad", "background-color": "#404851;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
-		  "box active pad": { "target": ".activepad", "background-color": "#17262B;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
-		  "box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
-		  "box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #4F4F4F;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
-		  "box ok": { "target": ".ok", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
-		  "box ok hover": { "target": ".ok:hover", "cursor": "pointer;", "background": "", "color": "" },
-		  "box cancel": { "target": ".cancel", "background-color": "#FF3516;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
-		  "box cancel hover": { "target": ".cancel:hover", "cursor": "pointer;", "background": "", "color": "" },
-		  "box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#9A7900;", "text-shadow": "none;" },
-		  "box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "black;", "background": "#BB0;", "border-radius": "40%;" },
-		  "box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "1em Lato, Helvetica;", "color": "black;", "background": "#880;", "cursor": "pointer;", "border-radius": "40%;" },
+/*#404851;*/	  "dialog box title": { "target": ".title", "background-color": "transparent;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
+		  "dialog box pad": { "target": ".pad", "background-color": "#404851;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
+		  "dialog box active pad": { "target": ".activepad", "background-color": "#17262B;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
+		  "dialog box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
+		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #4F4F4F;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
+		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
+		  "dialog box button hover": { "target": ".button:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
+		  "dialog box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#9A7900;", "text-shadow": "none;" },
+		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "black;", "background": "#BB0;", "border-radius": "40%;" },
+		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "1em Lato, Helvetica;", "color": "black;", "background": "#880;", "cursor": "pointer;", "border-radius": "40%;" },
 		  //
-		  "box select": { "target": ".select", "background-color": "#17262B;", "color": "#AAA;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
-		  "box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
-		  "box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "#404851;", "color": "" },
-		  "box select option selected": { "target": ".selected", "background-color": "#404851;", "color": "#fff;" },
-		  "box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
+		  "dialog box select": { "target": ".select", "background-color": "#17262B;", "color": "#AAA;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
+		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
+		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "#404851;", "color": "" },
+		  "dialog box select option selected": { "target": ".selected", "background-color": "#404851;", "color": "#fff;" },
+		  "dialog box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
 		  //
-		  "box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
-		  "box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
-		  "box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
-		  "box radio label" : { "target": "input[type=radio] + label", "color": "#AAA;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
+		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
+		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
+		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#AAA;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "box checkbox": { "target": "input[type=checkbox]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
-		  "box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
-		  "box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00609f;", "border": "1px solid #00609f;" },
-		  "box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#CCC;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
+		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
+		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00609f;", "border": "1px solid #00609f;" },
+		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#CCC;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "none;", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  // Box animation
-		  "box effect": { "hint": "slidedown", "alert": "fall", "confirm": "slideleft", "dialog": "rise", "context": "rise", "select": "rise", "dialog filter": "grayscale(0.5)", "confirm filter": "blur(3px)", "alert filter": "blur(3px)", "Ok button default text": "OK",  "Cancel button default text": "CANCEL" },
+		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "none;", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  // Effects and animation
+		  "effects": { "hint": "slidedown", "contextmenu": "rise", "box": "fall", "select": "rise", "box filter": "grayscale(0.5) blur(3px)" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
 		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
 		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
@@ -102,17 +88,20 @@ const uiProfile = {
 		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
 		  "none show": { "target": ".noneshow", "visibility": "visible;" }
 		  };
-
+const mainObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
+const mainTitleObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
+const mainDefaultContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems greyContextMenuItem">Element description</div><div class="contextMenuItems">Help</div>';
+const sidebarOVContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems greyContextMenuItem">Edit Database Structure</div>';
+const sidebarODContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems">Edit Database Structure</div>';
 /*------------------------------VARIABLES------------------------------------*/
+let contextmenu, contextmenuDiv;
+let hint, hintDiv;
+let box = selectExpandedDiv = null, boxDiv, expandedDiv;
 let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, sidebarDiv, mainTablediv;
-let contextmenuDiv;
-let hintDiv, alertDiv, confirmDiv, dialogDiv, expandedDiv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
 let cmd = activeOD = activeOV = '';
 let sidebar = focusElement = {};
-let selectExpandedDiv = contextmenu = boxContent = null, modalVisible = "";
-let hintX, hintY;
 /*---------------------------------------------------------------------------*/
 
 function loog(...data)
@@ -146,7 +135,7 @@ window.onload = function()
  callController();
 
  // Define document html and add appropriate event listeners for it
- document.body.innerHTML = '<div class="menu"></div><div class="main"></div><div class="contextMenu ' + uiProfile["box effect"]["context"] + 'hide"></div><div class="box hint ' + uiProfile["box effect"]["hint"] + 'hide"></div><div class="box alert ' + uiProfile["box effect"]["alert"] + 'hide"></div><div class="box confirm ' + uiProfile["box effect"]["confirm"] + 'hide"></div><div class="box dialog ' + uiProfile["box effect"]["dialog"] + 'hide"></div><div class="select expanded ' + uiProfile["box effect"]["select"] + 'hide"></div>';
+ document.body.innerHTML = '<div class="menu"></div><div class="main"></div><div class="contextMenu ' + uiProfile["effects"]["contextmenu"] + 'hide"></div><div class="hint ' + uiProfile["effects"]["hint"] + 'hide"></div><div class="box ' + uiProfile["effects"]["box"] + 'hide"></div><div class="select expanded ' + uiProfile["effects"]["select"] + 'hide"></div>';
  document.addEventListener('keydown', eventHandler);
  document.addEventListener('mousedown', eventHandler);
  document.addEventListener('contextmenu', eventHandler);
@@ -165,9 +154,7 @@ window.onload = function()
 
  // Define interface divs 
  hintDiv = document.querySelector('.hint');
- alertDiv = document.querySelector('.alert');
- confirmDiv = document.querySelector('.confirm');
- dialogDiv = document.querySelector('.dialog');
+ boxDiv = document.querySelector('.dialog');
  expandedDiv = document.querySelector('.expanded');
  
  cmd = 'GETMENU';
@@ -240,13 +227,14 @@ function drawMain()
 		  error = false;
 		  continue;
 		 }
+		 
            if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS)
               {
 	       error = true;
 	       continue;
 	      }
 	      
-           if (mainTable[y] == undefined) mainTable[y] = [];
+           if (mainTable[y] === undefined) mainTable[y] = [];
            mainTable[y][x] = { 'oId': Number(oid), 'eId': Number(eid), 'data': '', 'style': cell['props']['style'] };
 	   if (obj && typeof obj.value === 'string') mainTable[y][x]['data'] = obj.value;
 	   if (obj && typeof obj.hint === 'string') mainTable[y][x]['hint'] = obj.hint;
@@ -271,12 +259,7 @@ function drawMain()
      return;
     }
  if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
-  else if (error === false)
-	  {
-	   //alert("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section"); // Set string 'warning' as box title
-	   createBox({"title": "Warning", "confirm": "Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section", "flags": {"ok": "&nbsp&nbsp&nbsp&nbspOK&nbsp&nbsp&nbsp&nbsp"}});
-	  }
-	   
+  else if (error === false) alert("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section");
  
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
@@ -331,54 +314,40 @@ function drawMain()
     }
 }
 
-function HideHint()
-{
- clearTimeout(tooltipTimerId);                                              
- hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
- hintX = undefined;                                                         
- if (modalVisible === 'hint') modalVisible = '';                            
-}
-
 function eventHandler(event)
 {
  switch (event.type)
 	{
 	 case 'mouseleave':
-	      if (hintX != undefined) HideHint();
+	      if (!box) HideHint();
 	      break;
 	 case 'mousemove':
-	      if (mainTable[event.target.parentNode.rowIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex] && mainTable[event.target.parentNode.rowIndex][event.target.cellIndex].hint != undefined && !boxContent && !contextmenu)
+	      let x = event.target.cellIndex, y = event.target.parentNode.rowIndex;
+	      if (x != undefined && y != undefined && mainTable[y] && mainTable[y][x] && mainTable[y][x].hint != undefined && !box && !contextmenu)
 	         {
-		  if (hintX != event.target.cellIndex || hintY != event.target.parentNode.rowIndex)
+		  if (!hint || hint.x != x || hint.y != y)
 		     {
-		      hintX = event.target.cellIndex;
-		      hintY = event.target.parentNode.rowIndex;
+		      hint = { x: x, y: y };
 		      clearTimeout(tooltipTimerId);
-		      tooltipTimerId = setTimeout(() => { createBox({ "hint": mainTable[hintY][hintX].hint }, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')); }, 1000);
+		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), 1000);
 		     }
 		 }
-	       else if (hintX != undefined) HideHint();
+	       else HideHint();
 	      break;
-	 case 'mouseover':
-	      // Mouse over non grey context menu item? Set current menu item to call appropriate menu action by 'enter' key
-	      if (event.target.classList.contains('contextMenuItems') && !event.target.classList.contains('greyContextMenuItem'))
-	         SetContextmenuItem(event.target);
+	 case 'mouseover': // Mouse over non grey context menu item? Set current menu item to call appropriate menu action by 'enter' key
+	      if (event.target.classList.contains('contextMenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target);
 	      break;
-	 case 'mouseout':
+	 case 'mouseout': // Mouse out if the context menu? Set current menu item to null
 	      SetContextmenuItem(null);
 	      break;
 	 case 'scroll':
 	      HideContextmenu();
 	      break;
 	 case 'contextmenu':
-	      //--------------Prevent default context menu (do nothing) on context menu or modal window click--------------
-	      if (event.target == contextmenuDiv || event.target.classList.contains('contextMenuItems') || (modalVisible != "" && modalVisible != "hint") || (contextmenu && event.which != 3))
-	         {
-		  event.preventDefault();
-		  break;
-		 }
+	      //--------------Do nothing in case of dialog box or contextmenu event on context menu div area--------------
+	      if (event.target == contextmenuDiv || event.target.classList.contains('contextMenuItems') || box || (contextmenu && event.which != 3)) event.preventDefault();
 	      //--------------Is any element content editable? Apply changes in case of no event.target match--------------
-	      if (focusElement.td && focusElement.td.contentEditable === 'true')
+	       else if (focusElement.td && focusElement.td.contentEditable === 'true')
 	         {
 		  if (focusElement.td != event.target)
 		     {
@@ -396,65 +365,46 @@ function eventHandler(event)
 		      // Main field table cell click?
 		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(focusElement.td, event.target);
 		     }
-		  break;
 		 }
-	      ShowContextmenu(event);
+	       else ShowContextmenu(event);
 	      break;
 	 case 'dblclick':
-	      if (modalVisible === "" ||  modalVisible === "hint")
-	      if (event.target.contentEditable != 'true')
+	      if (!box && event.target.contentEditable != 'true')
+	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
+	      if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
+	    	 {
+		  cmd = 'DBLCLICK';
+		  callController();
+		 }
+	       else if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
 		 {
-		  focusElement.x = event.target.cellIndex;
-		  focusElement.y = event.target.parentNode.rowIndex;
-		  focusElement.td = event.target;
-		  if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
-		  if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
-	    	     {
-		      cmd = 'DBLCLICK';
-		      callController();
-		     }
-		   else if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
-		     {
-	    	      focusElement.td.contentEditable = 'true';
-		      focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
-		      event.target.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
-	    	      focusElement.td.focus();
-		      event.preventDefault();
-		     }
+	    	  focusElement.td.contentEditable = 'true';
+		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+		  event.target.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
+	    	  focusElement.td.focus();
+		  event.preventDefault();
 		 }
 	      break;
 	 case 'mousedown':
-	      if (modalVisible === 'help')
-	         {
-		  hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
-		  modalVisible = 'dialog';
-		  break;
-		 }
+	      HideHint();
+	      if (event.which != 1) break;
 	      //--------------Dialog 'hint icon' event? Display element hint--------------
 	      if (event.target.classList.contains('help-icon'))
 	         {
-		  createBox({ "hint": boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][event.target.attributes.name.value]["help"] }, event.target.offsetLeft - event.target.scrollLeft + dialogDiv.offsetLeft - dialogDiv.scrollLeft + event.target.offsetWidth, event.target.offsetTop - event.target.scrollTop + dialogDiv.offsetTop - dialogDiv.scrollTop + event.target.offsetHeight);
-		  modalVisible = 'help';
+		  hint = { x: event.target.offsetLeft - event.target.scrollLeft + boxDiv.offsetLeft - boxDiv.scrollLeft + event.target.offsetWidth, y: event.target.offsetTop - event.target.scrollTop + boxDiv.offsetTop - boxDiv.scrollTop + event.target.offsetHeight };
+		  ShowHint(box.dialog[box.flags.pad][box.flags.profile][event.target.attributes.name.value]["help"], hint.x, hint.y);
 		  break;
 		 }
-	      //--------------Dialog 'cancel' button event? Only remove dialog or confirm box--------------
-	      if (event.target.classList.contains('cancel'))
+	      //--------------Any dialog button event? Non empty button property value calls controller, then hide box anyway--------------
+	      if (event.target.classList.contains('button'))
 	         {
-		  cmd = '';
-		  rmBox();
-		  break;
-		 }
-	      //--------------Dialog 'ok' button event? Only remove dialog--------------
-	      if (event.target.classList.contains('ok'))
-	         {
-		  if (modalVisible != "alert")
+		  if (box.buttons[event.target.innerHTML])
 		     {
-		      if (modalVisible === "dialog") saveDialogProfile(); // Get content data for dialog box
-		      cmd === 'New Object Database' ? cmd = 'NEWOD' : cmd === 'Edit Database Structure' ? cmd = 'EDITOD' : cmd = 'CONFIRM';
-		      loog(boxContent);
-		      callController(boxContent);
+		      saveDialogProfile(); // Save dialog box content and send it to the controller
+		      cmd = 'CONFIRM';
+		      callController(box);
 		     }
-		  rmBox();
+		  HideBox();
 		  break;
 		 }
 	      //--------------Dialog expanded div mousedown event?--------------
@@ -464,21 +414,21 @@ function eventHandler(event)
 		  if (selectExpandedDiv.attributes.type.value === 'select-profile')	// Select element is a profile select?
 		     {
 		      saveDialogProfile();
-		      boxContent.flags.profile = event.target.innerHTML;		// Set event.target.innerHTML as a current profile
-		      createBox(boxContent);						// Redraw dialog
+		      box.flags.profile = event.target.innerHTML;		// Set event.target.innerHTML as a current profile
+		      ShowBox();						// Redraw dialog box
 		     }
 		   else // Select element is usual option select?
 		     {
 		      // Set selected option as a current
 		      selectExpandedDiv.innerHTML = '<div value="' + event.target.attributes.value.value + '">' + event.target.innerHTML + '</div>';
-		      boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][selectExpandedDiv.attributes.name.value]["data"] = setOptionSelected(boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][selectExpandedDiv.attributes.name.value]["data"], event.target.attributes.value.value);
+		      box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"] = setOptionSelected(box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"], event.target.attributes.value.value);
 		     }
 		  // Hide expanded div and break;
-		  expandedDiv.className = 'select expanded ' + uiProfile["box effect"]["select"] + 'hide';
+		  expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
 		  break;
 		 }
-	      //--------------Dialog select mouse down event?--------------
-	      if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && (event.target.parentNode.attributes.name === undefined || boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined))
+	      //--------------Dialog box select interface element mouse down event?--------------
+	      if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && (event.target.parentNode.attributes.name === undefined || box.dialog[box.flags.pad][box.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined))
 	         {
 		  switch (event.target.parentNode.attributes.type.value)
 			 {
@@ -486,14 +436,14 @@ function eventHandler(event)
 			  case 'select-one':
 			       if ((/hide$/).test(expandedDiv.classList[2]) === false) // Expanded div visible? Hide it.
 				  {
-				   expandedDiv.className = 'select expanded ' + uiProfile["box effect"]["select"] + 'hide';
+				   expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
 				   break;
 				  }
 			       let data, inner = '', count = 0;
 			       selectExpandedDiv = event.target.parentNode; // Set current select div that expanded div belongs to
 			       if (selectExpandedDiv.attributes.type.value === 'select-one') // Define expandedDiv innerHTML for usual select, otherwise for profile select
 				  {
-			    	   if (typeof (data = boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][selectExpandedDiv.attributes.name.value]["data"]) === 'string')
+			    	   if (typeof (data = box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"]) === 'string')
 				   for (data of data.split('|')) // Split data by '|'
 			    	   //if (data.length > 0 && (data[0] != '+' || data.length > 1)) // Check non empty options
 				   if (data[0] == '+') inner += '<div class="selected" value="' + (count++) + '">' + data.substr(1) + '</div>'; // Current option
@@ -501,14 +451,14 @@ function eventHandler(event)
 				  }
 				else
 				  {
-				   for (data in boxContent.dialog[boxContent.flags.pad]) if (typeof boxContent.dialog[boxContent.flags.pad][data] === "object")
-				   if (data === boxContent.flags.profile) inner += '<div class="selected" value="' + (count++) + '">' + data + '</div>'; // Current option
+				   for (data in box.dialog[box.flags.pad]) if (typeof box.dialog[box.flags.pad][data] === "object")
+				   if (data === box.flags.profile) inner += '<div class="selected" value="' + (count++) + '">' + data + '</div>'; // Current option
 				    else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
 				  }
 			       expandedDiv.innerHTML  = inner; // Fill expandedDiv with innerHTML
 			       expandedDiv.style.top  = selectExpandedDiv.offsetTop + dialogDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position
 			       expandedDiv.style.left = selectExpandedDiv.offsetLeft + dialogDiv.offsetLeft + 'px'; // Place expandedDiv left position
-			       expandedDiv.className  = 'select expanded ' + uiProfile["box effect"]["select"] + 'show'; // Show expandedDiv
+			       expandedDiv.className  = 'select expanded ' + uiProfile["effects"]["select"] + 'show'; // Show expandedDiv
 			       break;
 			  case 'select-multiple':
 			       event.target.classList.toggle("selected");
@@ -519,30 +469,35 @@ function eventHandler(event)
 	      //--------------Expanded div still visible and non expanded div mouse click?--------------
 	      if ((/show$/).test(expandedDiv.classList[2]) === true && !event.target.classList.contains('expanded'))
 	         {
-		  expandedDiv.className = 'select expanded ' + uiProfile["box effect"]["select"] + 'hide';
+		  expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
 		  break;
 		 }
 	      //--------------Non active pad is selected?--------------
 	      if (event.target.classList.contains('pad'))
 		 {
 		  saveDialogProfile();
-		  boxContent.flags.pad = event.target.innerHTML; // Set event.target.innerHTML as a current pad
-		  createBox(boxContent);			 // Redraw dialog
+		  box.flags.pad = event.target.innerHTML; // Set event.target.innerHTML as a current pad
+		  ShowBox();			 // Redraw dialog
 		  break;
 		 }
-		 if (modalVisible != '') break;
-	      //--------------Mouse middle button (1-left, 2- middle, 3-right button) click? Break anyway. Also remove context menu in case of non context menu area click--------------      
-	      if (event.which != 1)
-	         {
-		  if (event.target != contextmenuDiv && !event.target.classList.contains('contextMenuItems')) HideContextmenu();
+	      //--------------Dialog box events are processed and mouse click on grey menu item or on context menu but not menu item? Break!----------
+	      if (box || event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextMenu')) break;
+	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
+	     if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
+	     if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
+		 {
+		  focusElement.td.contentEditable = 'false';
+		  mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(focusElement.td.innerHTML);
 		  break;
 		 }
-	      //--------------Mouse click on grey menu item or mouse click on context but not menu item? Do nohing and break;--------------
-	      if (event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextMenu'))
-	         {
+	      else
+		 {
+		  focusElement.td.contentEditable = 'false';
+		  cmd = 'CONFIRM';
+		  callController(htmlCharsConvert(focusElement.td.innerHTML));
 		  break;
 		 }
-	      //--------------Mouse click on context menu item? Call controller with appropriate context menu as a command--------------
+	      //--------------Mouse click on context menu item? Call controller with appropriate context menu item as a command--------------
 	      if (event.target.classList.contains('contextMenuItems'))
 		 {
 		  cmd = event.target.innerHTML;
@@ -550,10 +505,10 @@ function eventHandler(event)
 		  HideContextmenu();
 		  break;
 		 }
+	      HideContextmenu();
 		//--------------OD item mouse click? Wrap/unwrap OV list--------------
 	      if (event.target.classList.contains('sidebar-od'))
 		 {
-		  HideContextmenu();
 		  if (Object.keys(sidebar[event.target.innerHTML]).length > 1)
 		     {
 		      sidebar[cmd = event.target.innerHTML][''] = !sidebar[cmd][''];
@@ -565,7 +520,6 @@ function eventHandler(event)
 		//--------------OV item mouse click? Open OV in main field--------------
 	      if (event.target.classList.contains('sidebar-ov'))
 		{
-		 HideContextmenu();
 		 if (activeOD != event.target.nextSibling.innerHTML || activeOV != event.target.innerHTML)
 		    {
 		     activeOD = event.target.nextSibling.innerHTML;
@@ -579,7 +533,6 @@ function eventHandler(event)
 		//--------------Mouse click on wrap icon? OD item sidebar line wraps/unwraps ov list, OV item sidebar line opens OV in main field--------------
 	     if (event.target.classList.contains('wrap'))
 		{
-		 HideContextmenu();
 		 if (event.target.nextSibling.classList.contains('sidebar-od') && Object.keys(sidebar[event.target.nextSibling.innerHTML]).length > 1)
 		    { 
 		     sidebar[cmd = event.target.nextSibling.innerHTML][''] = !sidebar[cmd][''];
@@ -599,33 +552,12 @@ function eventHandler(event)
 		    }
 		 break;
 		}
-	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
-	     if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
-	     if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
-		 {
-		  focusElement.td.contentEditable = 'false';
-		  mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(focusElement.td.innerHTML);
-		 }
-	      else
-		 {
-		  focusElement.td.contentEditable = 'false';
-		  cmd = 'CONFIRM';
-		  callController(htmlCharsConvert(focusElement.td.innerHTML));
-		 }
 	      //--------------Mouse click on main field table?--------------
 	      if (event.target.tagName == 'TD') CellBorderToggleSelect(focusElement.td, event.target);
-	     //--------------Remove context menu for no sidebar and main field events--------------
-		 HideContextmenu();
-		 break;
+	      break;
 	 case 'keydown':
-	      if (modalVisible === 'help')
-	         {
-		  hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
-		  modalVisible = 'dialog';
-		  break;
-		 }
-	      if (modalVisible != "" && event.which != 27) break;
-	      if (focusElement.td != undefined && focusElement.td.contentEditable === 'true' && event.which != 27 && event.which != 13) break;
+	      HideHint();
+	      if ((box && event.which != 27) || (focusElement.td != undefined && focusElement.td.contentEditable === 'true' && event.which != 27 && event.which != 13)) break;
 	      switch (event.which)
 		     {
 		      case 36: //Home
@@ -672,28 +604,18 @@ function eventHandler(event)
 		           moveCursor(1, 0, false);
 			   break;
 		      case 27: //Esc
-		           if (modalVisible != "" && boxContent.flags.esc != undefined) // Any modal with esc flag set?
-			   if ((/show$/).test(expandedDiv.classList[2]) === true) // Expanded div visible? Hide it, otherwise hide modal
+		           if (box && box.flags.esc != undefined) // Any modal with esc flag set?
 			      {
-			       expandedDiv.className = 'select expanded ' + uiProfile["box effect"]["select"] + 'hide';
-			       break;
+			       // Expanded div visible? Hide it, otherwise hide dialog box
+			       if ((/show$/).test(expandedDiv.classList[2]) != true) HideBox();
+			        else expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
 			      }
-			    else
+			    else if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
 			      {
-			       cmd = '';
-			       rmBox();
-			       break;
-			      }
-			   if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
-			      {
-			       cmd = '';
 			       focusElement.td.contentEditable = 'false';
 			       focusElement.td.innerHTML = focusElement.olddata;
 			      }
-			    else
-			      {
-			       HideContextmenu();
-			      }
+			    else HideContextmenu();
 			   break;
 		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
 		    	   if (focusElement.td && focusElement.td.contentEditable != 'true')
@@ -722,7 +644,8 @@ function controllerCmdHandler(input)
  switch (input.cmd)
 	{
 	 case 'DIALOG':
-	      createBox(boxContent = input.data);
+	      box = input.data;
+	      ShowBox();
 	      break;
 	 case 'EDIT':
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
@@ -733,13 +656,6 @@ function controllerCmdHandler(input)
 		  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag, fuck!
 		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
 		   else focusElement.td.innerHTML = focusElement.olddata;
-		  // Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case.
-		  /*range.selectNodeContents(focusElement.td);
-		  range.collapse(false);
-		  selection.removeAllRanges();
-		  selection.addRange(range);*/
-		  /*eventCtrlEnd.initKeyboardEvent("keydown", true, true, window,"a", "a", false, '', 1);
-		  document.dispatchEvent(eventCtrlEnd);*/
 		  focusElement.td.focus();
 		 }
 	      break;
@@ -769,9 +685,17 @@ function controllerCmdHandler(input)
 	      drawMain();
 	      break;
 	 case 'INFO':
-	      if (input.log) loog('Log controller message: ' + input.log);
-	      if (input.alert) alert(input.alert);
-	      if (input.error) displayMainError(input.error);
+	      if (input.log) loog('Controller log message: ' + input.log);
+	      if (input.alert)
+	         {
+		  loog('Controller log message: ' + input.alert);
+		  alert(input.alert);
+		 }
+	      if (input.error)
+	         {
+		  loog('Controller log message: ' + input.error);
+		  displayMainError(input.error);
+		 }
 	      break;
 	 case '':
 	      break;
@@ -897,19 +821,6 @@ function rangeTest(a, b)
 
 function callController(data)
 {
- /*
- //BROWSER[cmd "DBLCLICK","KEYPRESS"] -> HANDLER[cmd "DIALOG"] -> BROWSER[at the end of dialog box - cmd "CONFIRM"] -> CONTROLLER[action "object database cration"]
- BROWSER[cmd "New Object Database"] -> CONTROLLER[cmd "DIALOG"] -> BROWSER[at the end of dialog box - cmd "NEWOD"] -> CONTROLLER[action "object database cration"]
- */
- /*
- "cmd":    "GETMENU|GETMAIN|GETUI|NEWOBJECT|DELETEOBJECT|DBLCLICK|KEYPRESS|CONFIRM"
- "OD":     "<OD name>"
- "OV":     "<OV name>"
- "data":   "[eId=>data, eId=>data..] for NEWOBJECT|<key code> for KEYPRESS|<cell data> or <dialog json data> for CONFIRM"
- "oId":    "<object id>"
- "eId":    "<element id>"
- "sId":    "<session id>"
- */
  let object;
  switch (cmd)
 	{
@@ -940,15 +851,8 @@ function callController(data)
 	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId };
 	      break;
 	 case 'New Object Database':
-	      object = { "cmd": cmd };
-	      break;
 	 case 'Edit Database Structure':
 	      object = { "cmd": cmd };
-	      if (data != undefined) object.data = data;
-	      break;
-	 case 'NEWOD':
- 	 case 'EDITOD':
-	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'CONFIRM':
@@ -975,14 +879,14 @@ function callController(data)
  if (object) Hujax("main.php", controllerCmdHandler, object);
 }
 
-function createBox(content, x, y)
+function ShowBox()
 {
  /*******************************************************************************************************************************/
- /* content.title		= box title											*/
+ /* box.title		= box title												*/
  /*																*/
- /* content.content		= JSON with properties as tabs, each tab is JSON with properties as profiles			*/
- /*				  Each profile is JSON with properties as interface elements, see below.			*/
- /*		   		  "element_name":										*/
+ /* box.dialog		= JSON with properties as tabs, each tab represents JSON with properties as profiles			*/
+ /*			  Each profile represents JSON with properties as interface elements with next format:			*/
+ /*		   	  "element_name":											*/
  /*						{										*/
  /*				      	  	 "type"      : select|multiple|checkbox|radio|textarea|password|text		*/
  /*				      	  	 "head"      : "<any text>"							*/
@@ -992,132 +896,78 @@ function createBox(content, x, y)
  /*		  		      	  	 "minheight" : ""								*/
  /*		  		      	  	 "readonly"  : ""								*/
  /*				     	 	}										*/
- /* content.buttons		= json with properties as buttons where property name is a button text				*/
  /*																*/
- /* content.flags		= JSON with next properties:									*/
- /*				  "esc" - any value cancels the box 								*/
- /*				  "style" - css class to style the box such as hint, alert, dialog				*/
- /*				  "pad" - active (current) pad (if exists) for dialog box					*/
- /*				  "profile" - active (current) profile (if exist) for dialog box				*/
- /*				  "minwidth" - box min width in px								*/
- /*				  "minheight" - box min height in px								*/
- /*				  "display_single_pad" - set this flag to display pad block in case of single one		*/
- /*				  "display_single_profile" - set this flag to display profile select in case of single one	*/
- /*				  "callback" - any callback string element handler receives without changes at CONFIRM	event	*/
+ /* box.buttons		= JSON with properties as buttons where property name is a button text					*/
+ /*			  Non empty values make th system to call the controller on specified button click event		*/
+ /*																*/
+ /* box.flags		= JSON with next properties:										*/
+ /*			  "esc" - property lets user to cancel dialog box by esc button 					*/
+ /*			  "style" - css class to style the dialog box								*/
+ /*			  "pad" - active (current) dialog box pad (if exists)							*/
+ /*			  "profile" - active (current) dialog box profile (if exist)						*/
+ /*			  "minwidth" - box min width in px									*/
+ /*			  "minheight" - box min height in px									*/
+ /*			  "display_single_pad" - set this flag to display pad block in case of single one			*/
+ /*			  "display_single_profile" - set this flag to display profile select in case of single one		*/
+ /*			  "callback" - any callback string element handler receives without changes at CONFIRM	event		*/
  /*******************************************************************************************************************************/
- if (typeof content !== 'object') return;
- let div, inner = "";
- 
- //---------------Content is alert, confirm or dialog? Do some actions for all these content types---------------
- if (content.alert != undefined || content.confirm != undefined || content.dialog != undefined)
-    {
-     // Remove hint if visible
-     if (modalVisible == 'hint')
-        {
-	 clearTimeout(tooltipTimerId);                                              
-	 hintDiv.className = 'box hint ' + uiProfile["box effect"]["hint"] + 'hide';
-	}
-     // Add title
-     if (content.title != undefined && typeof content.title == 'string') inner = '<div class="title">' + toHTMLCharsConvert(content.title) + '</div>';
-    }
-    
- //---------------Check content types to fill corresponding html data---------------
- let footer1, footer2 = '<div style="display: flex; flex-direction: row; justify-content: space-evenly;">';
- (content.flags != undefined && content.flags.ok != undefined) ? footer1 = footer2 += '<div class="ok">' + content.flags.ok + '</div>' : footer1 = footer2 += '<div class="ok">' + uiProfile["box effect"]["Ok button default text"] + '</div>';
- (content.flags != undefined && content.flags.cancel != undefined) ? footer2 += '<div class="cancel">' + content.flags.cancel + '</div>' : footer2 += '<div class="cancel">' + uiProfile["box effect"]["Cancel button default text"] + '</div>';
- footer1 += '</div>';
- footer2 += '</div>';
- 
- if (content.alert != undefined) // Content is an alert box?
-    {
-     if (typeof content.alert == 'string') inner += '<pre style="text-align: center;">' + content.alert + '</pre>'; // Add content
-     inner += footer1; // Add 'ok' button
-     modalVisible = 'alert'; // Setting _modalVisible_ global var string to current state
-     div = alertDiv;
-    }
-  else if (content.confirm != undefined) // Content is a confirm?
-    {
-     if (typeof content.confirm == 'string') inner += '<pre style="text-align: center;">' + content.confirm + '</pre>'; // Add content
-     inner += footer2; // Add 'ok' and 'cancel' buttons
-     modalVisible = 'confirm'; // Setting _modalVisible_ global var string to current stat
-     div = confirmDiv;
-    }
-  else if (content.dialog != undefined) // Content is a dialog box?
-    {
-     inner += getInnerDialog(content); // Add content
-     inner += footer2; // Add 'ok' and 'cancel' buttons
-     modalVisible = 'dialog'; // Setting _modalVisible_ global var string to current state
-     div = dialogDiv;
-    }
-  else if (content.hint && typeof content.hint == 'string') // Content is a hint with non empty text?
-    {
-     inner = '<pre>' + content.hint + '</pre>'; // Add content
-     modalVisible = 'hint'; // Setting _modalVisible_ global var string to current state
-     div = hintDiv;
-    }
+ if (typeof box !== 'object') return;
+ let inner = getInnerDialog();
+ HideHint();
+ HideContextmenu();
 
  //---------------Any content?---------------
  if (inner)
     {
-     div.innerHTML = inner; // Filling the div with the inner html
-     if (typeof x === 'number' && typeof y === 'number') // Set modal window left and top position
-	{
-	 div.style.left = x + "px";
-	 div.style.top = y + "px";
-	}
-      else // In case of incorrect x or y, calculate them to place modal in a center position
+     // Add title
+     if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner;
+     // Add buttons
+     inner += '<div style="display: flex; flex-direction: row; justify-content: space-evenly;">';
+     for (let button in box.buttons) inner += '<div class="button"> + button + </div>';
+     boxDiv.innerHTML = inner + '</div>';
+     // Calculate left/top box position
+     boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%";
+     boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%";
+     // Show box div
+     boxDiv.className = 'box ' + uiProfile["effects"]['box'] + 'show';
+     // Apply filters if exist
+     if (uiProfile["effects"]["box filter"])
         {
-	 x = Math.trunc((document.body.clientWidth - div.offsetWidth)*100/(2*document.body.clientWidth));
-	 y = Math.trunc((document.body.offsetHeight - div.offsetHeight)*100/(2*document.body.offsetHeight));
-	 div.style.left = x + "%";
-	 div.style.top = y + "%";
-	}
-     // Showing the div
-     div.className = 'box ' + modalVisible + ' ' + uiProfile["box effect"][modalVisible] + 'show';
-     // Applying filters if exist
-     if (uiProfile["box effect"][modalVisible + " filter"])
-        {
-	 mainDiv.style.filter = uiProfile["box effect"][modalVisible + " filter"];
-	 sidebarDiv.style.filter = uiProfile["box effect"][modalVisible + " filter"];
+	 mainDiv.style.filter = uiProfile["effects"]["box filter"];
+	 sidebarDiv.style.filter = uiProfile["effects"]["box filter"];
 	}
     }
 }
 
-function getInnerDialog(content)
+function getInnerDialog()
 {
- if (typeof content.dialog !== "object") return '';
+ if (typeof box.dialog !== 'object') return '';
  let element, data, count = 0, inner = '';
  
  //------------------Creating current pad and profile if not exist------------------
- if (!content.flags)
-    {
-     content.flags = { "pad": "", "profile": "" };
-    }
-  else
-    {
-     if (!content.flags.pad) content.flags.pad = "";
-     if (!content.flags.profile) content.flags.profile = "";
-    }
+ if (!box.flags) box.flags = {};
+ if (!box.flags.pad) box.flags.pad = "";
+ if (!box.flags.profile) box.flags.profile = "";
     
  //------------------Checking current pad. First step - seeking current pad match------------------
- for (element in content.dialog) if (typeof content.dialog[element] === "object")
+ for (element in box.dialog) if (typeof box.dialog[element] === "object")
      {
       if (count === 0) data = element; // Remember first pad as a current pad for default
-      if (element === content.flags.pad) data = count; // Match case? Assign current 'element' for current pad
+      if (element === box.flags.pad) data = count; // Match case? Assign current 'element' for current pad
       count++;
      }
  // Empty dialog with zero pads number? Return empty html.
  if (count === 0) return '';
  // No match - assing first pad for default
- if (typeof data === 'string') content.flags.pad = data;
+ if (typeof data === 'string') box.flags.pad = data;
  // Pads count more than one? Creating pad block DOM element.
- if (count > 1 || content.flags.display_single_pad != undefined)
+ if (count > 1 || box.flags.display_single_pad != undefined)
     {
      // Creating pad wrapper
      inner = '<div class="padbar" style="display: flex; flex-direction: row; justify-content: flex-start;">';
      // Inserting pad divs
-     for (element in content.dialog) if (typeof content.dialog[element] === "object")
-      if (element === content.flags.pad) inner += '<div class="activepad">' + element + '</div>';
+     for (element in box.dialog) if (typeof box.dialog[element] === "object")
+      if (element === box.flags.pad) inner += '<div class="activepad">' + element + '</div>';
        else inner += '<div class="pad">' + element + '</div>';
      // Closing pad wrapper tag
      inner += '</div>';
@@ -1126,32 +976,32 @@ function getInnerDialog(content)
  //------------------Checking current profile in current pad. First step - initiate variables------------------
  count = 0;
  // Seeking current profile match.
- for (element in content.dialog[content.flags.pad]) if (typeof content.dialog[content.flags.pad][element] === "object")
+ for (element in box.dialog[box.flags.pad]) if (typeof box.dialog[box.flags.pad][element] === "object")
      {
       if (count === 0) data = element; // Remember first profile as a current profile for default
-      if (element === content.flags.profile) data = count; // Match case? Assign current 'element' for current profile
+      if (element === box.flags.profile) data = count; // Match case? Assign current 'element' for current profile
       count++;
      }
  // Empty dialog[<current_pad>] with zero profiles number? Return current pad empty content.
  if (count === 0) return inner;
  // No match - assing first profile for default
- if (typeof data === 'string') content.flags.profile = data;
+ if (typeof data === 'string') box.flags.profile = data;
  // Profiles count more than one? Creating profile select DOM element.
- if (count > 1 || content.flags.display_single_profile != undefined)
+ if (count > 1 || box.flags.display_single_profile != undefined)
     {
      // Add profile head
-     if (content.flags.padprofilehead != undefined && content.flags.padprofilehead[content.flags.pad] != undefined) inner += '<pre class="element-headers">' + content.flags.padprofilehead[content.flags.pad] + '</pre>';
+     if (box.flags.padprofilehead != undefined && box.flags.padprofilehead[box.flags.pad] != undefined) inner += '<pre class="element-headers">' + box.flags.padprofilehead[box.flags.pad] + '</pre>';
      // In case of default first profile set zero value to use as a select attribute
      if (typeof data === 'string') data = 0;
      // Add select block and divider
-     inner += '<div class="select" type="select-profile"><div value="' + data + '">' + content.flags.profile + '</div></div><div class="divider"></div>';
+     inner += '<div class="select" type="select-profile"><div value="' + data + '">' + box.flags.profile + '</div></div><div class="divider"></div>';
     }
     
- //------------------Parsing interface element in content.dialog.<current pad>.<current profile>------------------
- for (let name in content.dialog[content.flags.pad][content.flags.profile])
-  if (content.dialog[content.flags.pad][content.flags.profile][name]["type"] != undefined)
+ //------------------Parsing interface element in box.dialog.<current pad>.<current profile>------------------
+ for (let name in box.dialog[box.flags.pad][box.flags.profile])
+  if (box.dialog[box.flags.pad][box.flags.profile][name]["type"] != undefined)
      {
-      element = content.dialog[content.flags.pad][content.flags.profile][name];
+      element = box.dialog[box.flags.pad][box.flags.profile][name];
       // Display element hint icon
       data = '';
       if (element.help != undefined && typeof element.help == "string") data = '<span name="' + name + '" class="help-icon"> ? </span>'
@@ -1229,7 +1079,7 @@ function saveDialogProfile()
 			    switch (element.attributes.type.value)
 				   {
 				    case 'select-multiple':
-					 const el = boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][element.attributes.name.value];
+					 const el = box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value];
 					 el.data = '';
 					 element.querySelectorAll('div').forEach(function(option)
 								{
@@ -1240,14 +1090,14 @@ function saveDialogProfile()
 					 break;
 				    case 'checkbox':
 				    case 'radio':
-					 if (init[element.attributes.name.value] === undefined) init[element.attributes.name.value] = boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][element.attributes.name.value]["data"] = '';
-					 if (element.checked) boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][element.attributes.name.value]["data"] += '+' + element.nextSibling.innerHTML + '|';
-					  else boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][element.attributes.name.value]["data"] += element.nextSibling.innerHTML + '|';
+					 if (init[element.attributes.name.value] === undefined) init[element.attributes.name.value] = box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] = '';
+					 if (element.checked) box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] += '+' + element.nextSibling.innerHTML + '|';
+					  else box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] += element.nextSibling.innerHTML + '|';
 					 break;
 				    case 'password':
 				    case 'text':
 				    case 'textarea':
-					 boxContent.dialog[boxContent.flags.pad][boxContent.flags.profile][element.attributes.name.value]["data"] = element.value;
+					 box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] = element.value;
 					 break;
 				   }
 			   });
@@ -1285,25 +1135,16 @@ function setOptionSelected(data, value) // Function selects option (by setting '
  return result;									// Return result string with last divided char '|'
 }
 		       
-function rmBox()
+function HideBox()
 {
- switch (modalVisible)
-	{
-	 case 'alert':
-	      alertDiv.className = 'box alert ' + uiProfile["box effect"]["alert"] + 'hide';
-	      break;
-	 case 'confirm':
-	      confirmDiv.className = 'box confirm ' + uiProfile["box effect"]["confirm"] + 'hide';
-	      break;
-	 case 'dialog':
-	      dialogDiv.className = 'box dialog ' + uiProfile["box effect"]["dialog"] + 'hide';
-	      expandedDiv.className = 'select expanded ' + uiProfile["box effect"]["select"] + 'hide';
-	      break;
-	}
- boxContent = null;
- mainDiv.style.filter = 'none';
- sidebarDiv.style.filter = 'none';
- modalVisible = '';
+ if (box)
+    {
+     boxDiv.className = 'box ' + uiProfile["effects"]["box"] + 'hide';
+     expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
+     box = null;
+     mainDiv.style.filter = 'none';
+     sidebarDiv.style.filter = 'none';
+    }
 }
 
 function getAbsoluteX(element, flag = '')
@@ -1466,7 +1307,7 @@ function ShowContextmenu(event)
 	  else contextmenuDiv.style.top = event.clientY - contextmenuDiv.clientHeight + "px";
 	}
      // Show context menu
-     contextmenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'show';
+     contextmenuDiv.className = 'contextMenu ' + uiProfile["effects"]["contextmenu"] + 'show';
     }
 }
 
@@ -1474,7 +1315,7 @@ function HideContextmenu()
 {
  if (contextmenu)
     {
-     contextmenuDiv.className = 'contextMenu ' + uiProfile["box effect"]["context"] + 'hide';
+     contextmenuDiv.className = 'contextMenu ' + uiProfile["effects"]["contextmenu"] + 'hide';
      contextmenu = null;
     }
 }
@@ -1510,6 +1351,24 @@ function SetContextmenuItem(newItem)
  if (contextmenu.item) contextmenu.item.classList.remove('activeContextMenuItem'); 
  if (newItem) newItem.classList.add('activeContextMenuItem');
  contextmenu.item = newItem;
+}
+
+function ShowHint(content, x, y)
+{
+ hintDiv.innerHTML = '<pre>' + content + '</pre>'; // Add content
+ hintDiv.style.left = x + "px";
+ hintDiv.style.top = y + "px";
+ hintDiv.className = 'hint ' + uiProfile["effects"]["hint"] + 'show';
+}
+
+function HideHint()
+{
+ if (hint)
+    {
+     clearTimeout(tooltipTimerId);                                              
+     hintDiv.className = 'hint ' + uiProfile["effects"]["hint"] + 'hide';
+     hint = null;
+    }
 }
 
 function escapeDoubleQuotes(data)
