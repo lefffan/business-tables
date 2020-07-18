@@ -76,9 +76,9 @@ try {
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
-		     if (isset($input['data']['_callback']))
+		     if (isset($input['data']['flags']['_callback']))
 		        {
-			 $input['data']['_callback'] === 'EDITOD' ? $output = EditOD($db) : $output = NewOD($db);
+			 $input['data']['flags']['_callback'] === 'EDITOD' ? $output = EditOD($db) : $output = NewOD($db);
 		         break;
 			}
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);

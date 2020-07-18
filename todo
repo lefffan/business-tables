@@ -4,11 +4,14 @@ July 2020:
   const eventCtrlEnd = document.createEvent('KeyboardEvent');
   /*eventCtrlEnd.initKeyboardEvent("keydown", true, true, window,"a", "a", false, '', 1);
   document.dispatchEvent(eventCtrlEnd);*/                                                
+
 - all functions rename the letter to be big  
 - in 3 classes contexm make m letter small, menu call -> sidebar
-- change dialog content with new buutons and callback string to distinguish built-in newod/editod
-- Look up all code and may be set some var constable? Format all code (by vs code) and comment all code.
-- change alert function to createBox, so style bootstrap like alert/confirm - https://freefrontend.com/bootstrap-modal-windows/
+- some vars from let to const
+- dialog props - fix width/heght, button style
+- change back color of dialog box and change alert to ShowBox
+
+- Look up all code, format all code (by vs code) and comment all code.
 - https access only, register domain tabels.app and certificate
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..) cmd = 'GETUI' should get data from the controller
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)

@@ -4,6 +4,9 @@ const NEWOBJECTID = 1;
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
 const style = document.createElement('style');
+const range = document.createRange();   
+const selection = window.getSelection();
+ 
 // User interface default profile
 const uiProfile = {
 		  // Body
@@ -33,7 +36,7 @@ const uiProfile = {
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
 		  // Box types
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
-		  "box": { "target": ".box", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "min-width": "20%;", "max-height": "100%;", "scrollbar-width": "thin;", "box-shadow": "none;" },
+		  "box": { "target": ".box", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "box-shadow": "none;" },
 		  // Box interface elements
 /*#404851;*/	  "dialog box title": { "target": ".title", "background-color": "transparent;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
 		  "dialog box pad": { "target": ".pad", "background-color": "#404851;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
@@ -66,7 +69,7 @@ const uiProfile = {
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Effects and animation
-		  "effects": { "hint": "slidedown", "contextmenu": "rise", "box": "fall", "select": "rise", "box filter": "grayscale(0.5) blur(3px)" },
+		  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5) blur(3px)" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
 		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
 		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
@@ -456,8 +459,8 @@ function eventHandler(event)
 				    else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
 				  }
 			       expandedDiv.innerHTML  = inner; // Fill expandedDiv with innerHTML
-			       expandedDiv.style.top  = selectExpandedDiv.offsetTop + dialogDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position
-			       expandedDiv.style.left = selectExpandedDiv.offsetLeft + dialogDiv.offsetLeft + 'px'; // Place expandedDiv left position
+			       expandedDiv.style.top  = selectExpandedDiv.offsetTop + boxDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position
+			       expandedDiv.style.left = selectExpandedDiv.offsetLeft + boxDiv.offsetLeft + 'px'; // Place expandedDiv left position
 			       expandedDiv.className  = 'select expanded ' + uiProfile["effects"]["select"] + 'show'; // Show expandedDiv
 			       break;
 			  case 'select-multiple':
@@ -656,6 +659,7 @@ function controllerCmdHandler(input)
 		  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag, fuck!
 		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
 		   else focusElement.td.innerHTML = focusElement.olddata;
+		  if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
 		  focusElement.td.focus();
 		 }
 	      break;
@@ -858,7 +862,12 @@ function callController(data)
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
-	      object = {"cmd": cmd, "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId, "eId": mainTable[focusElement.y][focusElement.x].eId };
+	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
+	      if (focusElement.td)
+	         {
+	          object["oId"] = mainTable[focusElement.y][focusElement.x].oId;
+		  object["eId"] = mainTable[focusElement.y][focusElement.x].eId;
+		 }
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'GETUI':
@@ -924,7 +933,7 @@ function ShowBox()
      if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner;
      // Add buttons
      inner += '<div style="display: flex; flex-direction: row; justify-content: space-evenly;">';
-     for (let button in box.buttons) inner += '<div class="button"> + button + </div>';
+     for (let button in box.buttons) inner += '<div class="button">' + button + '</div>';
      boxDiv.innerHTML = inner + '</div>';
      // Calculate left/top box position
      boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%";
@@ -1069,13 +1078,15 @@ function getInnerDialog()
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';
      }
- return inner;
+     
+ if (inner != '') return '<div class="boxcontentwrapper">' + inner + '</div>';
+ return '';
 }
 
 function saveDialogProfile()
 {
  const init = {};
- dialogDiv.querySelectorAll('input, .select, textarea').forEach(function(element)
+ boxDiv.querySelectorAll('input, .select, textarea').forEach(function(element)
 			   {
 			    switch (element.attributes.type.value)
 				   {
@@ -1370,6 +1381,14 @@ function HideHint()
      hintDiv.className = 'hint ' + uiProfile["effects"]["hint"] + 'hide';
      hint = null;
     }
+}
+
+function ContentEditableCursorSet(element)
+{
+ range.selectNodeContents(element);
+ range.collapse(false);
+ selection.removeAllRanges();
+ selection.addRange(range);
 }
 
 function escapeDoubleQuotes(data)
