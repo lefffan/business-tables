@@ -53,5 +53,6 @@ if (isset($input['event'])) switch($input['event'])
 	 break;
     case 'CONFIRM':
 	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data']]);
+	 sleep(10);
 	 break;
    }

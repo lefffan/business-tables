@@ -40,24 +40,27 @@ try {
 		case 'OBTAINMAIN':
 		case 'GETMAIN':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
+		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
 		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		     $output['OD'] = $OD;
+		     $output['OV'] = $OV;
 		     break;
 		case 'DELETEOBJECT':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-
-		     if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		      else if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'DRAWMAIN', 'OD' => $OD, 'OV' => $OV, 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		     $output['OD'] = $OD;
+		     $output['OV'] = $OV;
 		     break;
 		case 'INIT':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
 		     
 		     // Handle all elements of a new object
 		     $output = [];
@@ -71,19 +74,17 @@ try {
 				   }
 		     InsertObject($db);
 		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'DRAWMAIN', 'OD' => $OD, 'OV' => $OV, 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		     $output['OD'] = $OD;
+		     $output['OV'] = $OV;
 		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
-		     if (isset($input['data']['flags']['_callback']))
-		        {
-			 $input['data']['flags']['_callback'] === 'EDITOD' ? $output = EditOD($db) : $output = NewOD($db);
-		         break;
-			}
+		     if (isset($input['data']['flags']['_callback'])) { $input['data']['flags']['_callback'] === 'EDITOD' ? $output = EditOD($db) : $output = NewOD($db); break; }
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
+		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
+		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
 		     
 		     // Search input cmd event and call the appropriate handler
 		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
@@ -92,9 +93,12 @@ try {
 			 $output = [$eid => Handler($handlerName, json_encode($eventArray))];
 			 if ($output[$eid]['cmd'] === 'SET' || $output[$eid]['cmd'] === 'RESET')
 			    {
-			     if ($alert = CreateNewObjectVersion($db)) { $output = ['cmd' => 'INFO', 'alert' => $alert]; break; }
-			     foreach ($output as $id => $value) if (!isset($arrayEIdOId[$id])) unset($output[$id]);
-			     isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
+			     if ($alert = CreateNewObjectVersion($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+			      else
+			        {
+			         foreach ($output as $id => $value) if (!isset($arrayEIdOId[$id])) unset($output[$id]);
+			         isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
+				}
 			    }
 			  else if ($output[$eid]['cmd'] === 'EDIT') isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
 			  else if ($output[$eid]['cmd'] === 'ALERT') isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
@@ -111,10 +115,10 @@ try {
 		     $output = ['cmd' => ''];
 		     break;
 		default:
-	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the browser!'];
+	          $output = ['cmd' => 'INFO', 'log' => 'Controller report: unknown event "'.$input['cmd'].'" received from the browser!'];
 		}
 		
-     if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: undefined controller message!'];
+     if (!isset($output)) $output = ['cmd' => 'INFO', 'log' => 'Controller report: undefined controller message!'];
       echo json_encode($output);
     }
      
@@ -141,29 +145,29 @@ catch (PDOException $e)
 			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to write OD properties: '.$e->getMessage()]);
 		  break;
 		case 'GETMENU':
-			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to get sidebar OD/OV list: '.$e->getMessage()]);
+			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to read sidebar OD list: '.$e->getMessage()]);
 		break;
 		case 'OBTAINMAIN':
 		case 'GETMAIN':
-		     echo json_encode(['cmd' => 'INFO', 'error' => 'Failed to delete object: '.$e->getMessage()]);
+		     echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => 'Failed to get OD data: '.$e->getMessage()]);
 		     break;
 		case 'DELETEOBJECT':
-		     echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to delete object: '.$e->getMessage()]);
+		     echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to delete object: '.$e->getMessage()]);
 		     break;
 		case 'INIT':
-		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: unique elements duplicate entry!']);
-		      else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to add new object: '.$e->getMessage()]);
+		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to add new object: unique elements duplicate entry!']);
+		      else echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to add new object: '.$e->getMessage()]);
 		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':
-		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to write object data: unique elements duplicate entry!']);
-		      else echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to write object data: '.$e->getMessage()]);
+		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to write object data: unique elements duplicate entry!']);
+		      else echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to write object data: '.$e->getMessage()]);
 		     break;
 		case 'CONFIRM':
 		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
 		      else $alert = 'Failed to write object data: '.$e->getMessage();
 		     if (gettype($undo = getElementProperty($db, $eid)) === 'string') $undo = ['value' => ''];
-		     echo json_encode(['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert]);
+		     echo json_encode(['cmd' => 'SET', 'OD' => $OD, 'OV' => $OV, 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert]);
 		     break;
 	     default:
 		 echo json_encode(['cmd' => 'INFO', 'alert' => 'Controller unknown error: '.$e->getMessage()]);

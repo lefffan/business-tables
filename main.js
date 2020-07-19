@@ -639,20 +639,19 @@ function controllerCmdHandler(input)
 {
  if (input.cmd === undefined)
     {
-     alert('Unknown controller message!');
+     alert('Browser report: undefined controller message!');
+     loog('Browser report: undefined controller message!');
      return;
     }
+ if (input.OV != undefined && input.OD != undefined && (input.OD != activeOD || input.OV != activeOV) && ;; input.cmd != INFO) return;
+ 
  switch (input.cmd)
 	{
 	 case 'DIALOG':
-	      if ((input.OV === activeOV && input.OD === activeOD) || (input.data.flags && input.data.flags._callback))
-	         {
-		  box = input.data;
-	          ShowBox();
-		 }
+	      box = input.data;
+	      ShowBox();
 	      break;
 	 case 'EDIT':
-	      if (input.OV != activeOV || input.OD != activeOD) break;
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
@@ -666,7 +665,6 @@ function controllerCmdHandler(input)
 		 }
 	      break;
 	 case 'SET':
-	      if (input.OV != activeOV || input.OD != activeOD) break;
 	      let object;
 	      for (let i in input.data)
 		  if (objectTable[input.oId] && objectTable[input.oId][i] && (object = objectTable[input.oId][i]['props']))
@@ -691,30 +689,24 @@ function controllerCmdHandler(input)
 	      objectTable = input.data;
 	      drawMain();
 	      break;
-	 case 'DRAWMAIN':
-	      if (input.OV === activeOV && input.OD === activeOD)
-	         {
-	          objectTable = input.data;
-	          drawMain();
-		 }
-	      break;
 	 case 'INFO':
 	      if (input.log) loog('Controller log message: ' + input.log);
 	      if (input.alert)
 	         {
-		  loog('Controller log message: ' + input.alert);
-		  if (input.OV === activeOV && input.OD === activeOD) alert(input.alert);
+		  loog('Controller alert message: ' + input.alert);
+		  alert(input.alert);
 		 }
 	      if (input.error)
 	         {
-		  loog('Controller log message: ' + input.error);
-		  if (input.OV === activeOV && input.OD === activeOD) displayMainError(input.error);
+		  if (activeOD != '') loog('Controller error message: ' + input.error);
+		  displayMainError(input.error);
 		 }
 	      break;
 	 case '':
 	      break;
 	 default:
 	      alert('Browser report: unknown controller message ' + input.cmd);
+	      loog('Browser report: unknown controller message ' + input.cmd);
 	}
 }
 
@@ -843,7 +835,7 @@ function callController(data)
 	      break;
 	 case 'GETMAIN':
 	 case 'OBTAINMAIN':
-	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
+	      object = { "cmd": cmd };
 	      break;
 	 case 'Element description':
 	      let msg = '';
@@ -856,13 +848,13 @@ function callController(data)
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "OD": activeOD, "OV": activeOV, "data": {} };
+	      object = { "cmd": 'INIT', "data": {} };
 	      if (objectTable[NEWOBJECTID] != undefined) for (let key in objectTable[NEWOBJECTID])
 		 object['data'][key] = mainTable[objectTable[NEWOBJECTID][key]['props']['y']][objectTable[NEWOBJECTID][key]['props']['x']]['data'];
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
-	         object = {"cmd": 'DELETEOBJECT', "OD": activeOD, "OV": activeOV, "oId": mainTable[focusElement.y][focusElement.x].oId };
+	         object = {"cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId };
 	      break;
 	 case 'New Object Database':
 	 case 'Edit Database Structure':
@@ -872,7 +864,7 @@ function callController(data)
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
-	      object = { "cmd": cmd, "OD": activeOD, "OV": activeOV };
+	      object = { "cmd": cmd };
 	      if (focusElement.td)
 	         {
 	          object["oId"] = mainTable[focusElement.y][focusElement.x].oId;
@@ -893,9 +885,15 @@ function callController(data)
 	      break;
 	 default:
 	      alert("Undefined browser message: " + cmd + "!");
+	      loog("Undefined browser message: " + cmd + "!");
 	}
 	
- if (object) Hujax("main.php", controllerCmdHandler, object);
+ if (object)
+    {
+     object.OD = activeOD;
+     object.OV = activeOV;
+     Hujax("main.php", controllerCmdHandler, object);
+    }
 }
 
 function ShowBox()

@@ -27,8 +27,10 @@ August 2020:
   - should i use timeout if `insert` session will never ends?
   - should the object element process be locked during execution to prevent another session to execute the same element?
   - what if no server responce occurs?
+  
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
+- Object_selection in element selection to create complicated object views like setki.xls
 - pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go.
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
