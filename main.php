@@ -52,7 +52,7 @@ try {
 
 		     if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		      else $output = ['cmd' => 'DRAWMAIN', 'OD' => $OD, 'OV' => $OV, 'data' => $objectTable];
 		     break;
 		case 'INIT':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA);
@@ -71,7 +71,7 @@ try {
 				   }
 		     InsertObject($db);
 		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		      else $output = ['cmd' => 'DRAWMAIN', 'OD' => $OD, 'OV' => $OV, 'data' => $objectTable];
 		     break;
 		case 'KEYPRESS':
 		case 'DBLCLICK':
@@ -104,6 +104,8 @@ try {
 				   $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
 				  }
 			  else $output = ['cmd' => ''];
+			 $output['OD'] = $OD;
+			 $output['OV'] = $OV;
 			 break;
 			}
 		     $output = ['cmd' => ''];

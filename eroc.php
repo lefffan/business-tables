@@ -371,12 +371,21 @@ function Handler($handler, $input)
      $output = json_decode($output, true);
      if (is_array($output) && isset($output['cmd']))
         {
-	 // To avoid handler wrong behaviour check handler result and cut its unnecessary output data
-	 if ($output['cmd'] === 'EDIT' || (substr($output['cmd'], 0, 4) === 'EDIT' && intval(substr($output['cmd'], 4)) > 0) || ($output['cmd'] === 'DIALOG' && is_array($output['data'])) || $output['cmd'] === 'ALERT')
-	    if (isset($output['data'])) return ['cmd' => $output['cmd'], 'data' => $output['data']];
+	 // To avoid handler wrong behaviour check handler result and cut its unnecessary output data. First - EDIT and ALERT commands
+	 if ($output['cmd'] === 'EDIT' || (substr($output['cmd'], 0, 4) === 'EDIT' && intval(substr($output['cmd'], 4)) > 0) || $output['cmd'] === 'ALERT')
+	    if (isset($output['data']) && gettype($output['data']) === 'string') return ['cmd' => $output['cmd'], 'data' => $output['data']];
 	     else return ['cmd' => $output['cmd']];
+	 // Second - DIALOG command
+	 if ($output['cmd'] === 'DIALOG')
+	    if (is_array($output['data'])) return ['cmd' => $output['cmd'], 'data' => $output['data']];
+	     else return ['cmd' => $output['cmd']];
+	 // Third - SET and RESET commands
 	 if ($output['cmd'] === 'SET' || $output['cmd'] === 'RESET')
 	    {
+	     if (isset($output['value']) && gettype($output['value']) != 'string') unset($output['value']);
+	     if (isset($output['hint']) && gettype($output['hint']) != 'string') unset($output['hint']);
+	     if (isset($output['description']) && gettype($output['description']) != 'string') unset($output['description']);
+	     if (isset($output['alert']) && gettype($output['alert']) != 'string') unset($output['alert']);
 	     if (isset($output['value']) && strlen($output['value']) > ELEMENTDATAVALUEMAXCHAR) $output['value'] = substr($output['value'], 0, ELEMENTDATAVALUEMAXCHAR);
 	     return $output;
 	    }

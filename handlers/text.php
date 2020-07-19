@@ -3,13 +3,14 @@
 /*****************************************************************************************************************
 Element handler JSON to the controller stored in $output variable.
 
-Content edit, dialog call and alert message:
+Content edit, dialog call and alert message (non string "data" property is ignored):
     { 
      "cmd":		"EDIT[<LINES_NUM>]|DIALOG|ALERT"
      "data":		"<text data for EDIT or ALERT>|<JSON for DIALOG>"
     }
 
-Element data set and reset. RESET command sets defined properties and removes all other:
+Element data set and reset. 'SET' command sets defined properties, additionally 'RESET' removes all other.
+"image" and "<any property>" unlike other properties may consist of non string data types.
     {
      "cmd":		"SET|RESET"
      "alert":		"<alert message>"
@@ -32,7 +33,7 @@ Controller JSON to the element handler is in $intput variable:
      "user":		"<username initiated the process>"
      "title":		"element title"
      "data":		"<key code or pasted data for KEYPRESS>|<element value (table cell innerHTML) for CONFIRM or NEWOBJECT>|<dialog JSON for CONFIRM>"
-     "<any property>":	{ "OD": "", "oId": "", "eId": "", "property": ""}|<string>'
+     "<any property>":	{ "eId": "", "property": ""}|<string>'
     }
 *****************************************************************************************************************/
 
@@ -42,6 +43,7 @@ if (isset($input['event'])) switch($input['event'])
    {
     case 'INIT':
 	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'description' => 'HUI', 'hint' => 'FUCK OFF!']);
+	 sleep(10);
 	 break;
     case 'DBLCLICK':
 	 $output = json_encode(['cmd' => 'EDIT']);

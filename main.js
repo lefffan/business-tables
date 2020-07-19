@@ -6,7 +6,6 @@ const STARTOBJECTID = 3;
 const style = document.createElement('style');
 const range = document.createRange();   
 const selection = window.getSelection();
- 
 // User interface default profile
 const uiProfile = {
 		  // Body
@@ -643,14 +642,17 @@ function controllerCmdHandler(input)
      alert('Unknown controller message!');
      return;
     }
-    
  switch (input.cmd)
 	{
 	 case 'DIALOG':
-	      box = input.data;
-	      ShowBox();
+	      if ((input.OV === activeOV && input.OD === activeOD) || (input.data.flags && input.data.flags._callback))
+	         {
+		  box = input.data;
+	          ShowBox();
+		 }
 	      break;
 	 case 'EDIT':
+	      if (input.OV != activeOV || input.OD != activeOD) break;
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
@@ -664,6 +666,7 @@ function controllerCmdHandler(input)
 		 }
 	      break;
 	 case 'SET':
+	      if (input.OV != activeOV || input.OD != activeOD) break;
 	      let object;
 	      for (let i in input.data)
 		  if (objectTable[input.oId] && objectTable[input.oId][i] && (object = objectTable[input.oId][i]['props']))
@@ -688,17 +691,24 @@ function controllerCmdHandler(input)
 	      objectTable = input.data;
 	      drawMain();
 	      break;
+	 case 'DRAWMAIN':
+	      if (input.OV === activeOV && input.OD === activeOD)
+	         {
+	          objectTable = input.data;
+	          drawMain();
+		 }
+	      break;
 	 case 'INFO':
 	      if (input.log) loog('Controller log message: ' + input.log);
 	      if (input.alert)
 	         {
 		  loog('Controller log message: ' + input.alert);
-		  alert(input.alert);
+		  if (input.OV === activeOV && input.OD === activeOD) alert(input.alert);
 		 }
 	      if (input.error)
 	         {
 		  loog('Controller log message: ' + input.error);
-		  displayMainError(input.error);
+		  if (input.OV === activeOV && input.OD === activeOD) displayMainError(input.error);
 		 }
 	      break;
 	 case '':

@@ -1,10 +1,5 @@
 July 2020:
 
-- emulate end key to set cursor at the end of content
-  const eventCtrlEnd = document.createEvent('KeyboardEvent');
-  /*eventCtrlEnd.initKeyboardEvent("keydown", true, true, window,"a", "a", false, '', 1);
-  document.dispatchEvent(eventCtrlEnd);*/                                                
-
 - all functions rename the letter to be big  
 - in 3 classes contexm make m letter small, menu call -> sidebar
 - some vars from let to const
@@ -14,6 +9,7 @@ July 2020:
 - Look up all code, format all code (by vs code) and comment all code.
 - https access only, register domain tabels.app and certificate
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..) cmd = 'GETUI' should get data from the controller
+  add to the handler fuction data type check and in case of non string - unset the key.
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
 - System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV.
 
@@ -23,8 +19,8 @@ August 2020:
   If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
   Every element execution should be marked by some 'id_execution' to decide whever display the server responce result or not: for example the result of execution 
   is "OV change" after 10 sec, so the user don't want to wait the process execution and execute another element - in that case old "OV change" won't be applied.
-  This mechanism is controlled by that 'id_execution'. Or, for example, user can call element (by pressing F2 for example) many times, so to prevent 
-  multiple execution call 'id_execution' also will be useful.
+  This mechanism is controlled by that 'id_execution'. 
+
   Experiment1: create handler width "sleep(100sec)+set text" and execute it. Then reload the page and check for errors and for success of element data set.
   Experiment2: start transaction with insert, then drop table from another session, so it hangs up until the insert will commit.
   Problems:
