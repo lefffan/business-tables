@@ -14,20 +14,6 @@ July 2020:
 - System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV.
 
 August 2020:
-- Selection another object element, OD/OV selection or context menu (after cell edit) will be processed until ajax request finished as usual,
-  then in case of server response the appropriate object element (if it is show on main in specified OD/OV) will be updated.
-  If server responce is 'refresh' command then refresh will be applied only if OD/OV in refresh cmd matches current selected.
-  Every element execution should be marked by some 'id_execution' to decide whever display the server responce result or not: for example the result of execution 
-  is "OV change" after 10 sec, so the user don't want to wait the process execution and execute another element - in that case old "OV change" won't be applied.
-  This mechanism is controlled by that 'id_execution'. 
-
-  Experiment1: create handler width "sleep(100sec)+set text" and execute it. Then reload the page and check for errors and for success of element data set.
-  Experiment2: start transaction with insert, then drop table from another session, so it hangs up until the insert will commit.
-  Problems:
-  - should i use timeout if `insert` session will never ends?
-  - should the object element process be locked during execution to prevent another session to execute the same element?
-  - what if no server responce occurs?
-  
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
 - Object_selection in element selection to create complicated object views like setki.xls

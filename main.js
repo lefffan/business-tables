@@ -643,7 +643,7 @@ function controllerCmdHandler(input)
      loog('Browser report: undefined controller message!');
      return;
     }
- if (input.OV != undefined && input.OD != undefined && (input.OD != activeOD || input.OV != activeOV) && ;; input.cmd != INFO) return;
+ if (input.OV != undefined && input.OD != undefined && (input.OD != activeOD || input.OV != activeOV) && input.cmd != 'INFO') return;
  
  switch (input.cmd)
 	{
@@ -694,12 +694,12 @@ function controllerCmdHandler(input)
 	      if (input.alert)
 	         {
 		  loog('Controller alert message: ' + input.alert);
-		  alert(input.alert);
+		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) alert(input.alert);
 		 }
 	      if (input.error)
 	         {
 		  if (activeOD != '') loog('Controller error message: ' + input.error);
-		  displayMainError(input.error);
+		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) displayMainError(input.error);
 		 }
 	      break;
 	 case '':
