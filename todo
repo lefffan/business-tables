@@ -17,9 +17,10 @@ August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
 - Object_selection in element selection to create complicated object views like setki.xls
-- pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go.
+- pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go. 
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
+  Sort object by element headers click, page remains untouch (also active element)
 - status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 
 September:
@@ -33,7 +34,7 @@ October 2020:
 - diagnostic function by SLAVA
 
 November 2020:
-- Object process SCHEDULER
+- Object process SCHEDULER. Handlers are executed by built-in system user.
 
 December 2020:
 - System calls and its object views: LOCATION.

@@ -256,9 +256,9 @@ function Check($db, $flags)
      if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create Object Database first!';
 
      // Empty value OD/OV check
-     if ($input['OD'] === '' || $input['OV'] === '') return $error = 'Please create/select Object View!'; 
      $OD = $input['OD'];
      $OV = $input['OV'];
+     if ($OD === '' || $OV === '') return $error = 'Please create/select Object View!'; 
  
      // Check $OD existence and get its id
      $query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");

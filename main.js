@@ -20,17 +20,17 @@ const uiProfile = {
 		  // Scrollbar
 		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
 		  // Context Menu
-		  "context menu": { "target": ".contextMenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
-		  "context menu item": { "target": ".contextMenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
-		  "context menu item cursor": { "target": ".contextMenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
+		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
+		  "context menu item": { "target": ".contextmenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
+		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Sidebar
-    		  "sidebar": { "target": ".menu", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
+    		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
 		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
 		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
-		  "sidebar item hover": { "target": ".menu tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
+		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
 		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;"  },
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
 		  // Box types
@@ -90,11 +90,11 @@ const uiProfile = {
 		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
 		  "none show": { "target": ".noneshow", "visibility": "visible;" }
 		  };
-const mainObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
-const mainTitleObjectContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems">Element description</div><div class="contextMenuItems">Help</div>';
-const mainDefaultContext = '<div class="contextMenuItems">New Object</div><div class="contextMenuItems greyContextMenuItem">Delete Object</div><div class="contextMenuItems greyContextMenuItem">Element description</div><div class="contextMenuItems">Help</div>';
-const sidebarOVContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems greyContextMenuItem">Edit Database Structure</div>';
-const sidebarODContext = '<div class="contextMenuItems">New Object Database</div><div class="contextMenuItems">Edit Database Structure</div>';
+const mainObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Element description</div><div class="contextmenuItems">Help</div>';
+const mainTitleObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Element description</div><div class="contextmenuItems">Help</div>';
+const mainDefaultContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems greyContextMenuItem">Element description</div><div class="contextmenuItems">Help</div>';
+const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div>';
+const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div>';
 /*------------------------------VARIABLES------------------------------------*/
 let contextmenu, contextmenuDiv;
 let hint, hintDiv;
@@ -137,20 +137,20 @@ window.onload = function()
  callController();
 
  // Define document html and add appropriate event listeners for it
- document.body.innerHTML = '<div class="menu"></div><div class="main"></div><div class="contextMenu ' + uiProfile["effects"]["contextmenu"] + 'hide"></div><div class="hint ' + uiProfile["effects"]["hint"] + 'hide"></div><div class="box ' + uiProfile["effects"]["box"] + 'hide"></div><div class="select expanded ' + uiProfile["effects"]["select"] + 'hide"></div>';
+ document.body.innerHTML = '<div class="sidebar"></div><div class="main"></div><div class="contextmenu ' + uiProfile["effects"]["contextmenu"] + 'hide"></div><div class="hint ' + uiProfile["effects"]["hint"] + 'hide"></div><div class="box ' + uiProfile["effects"]["box"] + 'hide"></div><div class="select expanded ' + uiProfile["effects"]["select"] + 'hide"></div>';
  document.addEventListener('keydown', eventHandler);
  document.addEventListener('mousedown', eventHandler);
  document.addEventListener('contextmenu', eventHandler);
  
  // Define sidebar div
- sidebarDiv = document.querySelector('.menu');
+ sidebarDiv = document.querySelector('.sidebar');
 
  // Define main field div and add 'scroll' event for it
  mainDiv = document.querySelector('.main');
  mainDiv.addEventListener('scroll', eventHandler);
  
  // Define context menu div and add some mouse events for it
- contextmenuDiv = document.querySelector('.contextMenu');
+ contextmenuDiv = document.querySelector('.contextmenu');
  contextmenuDiv.addEventListener('mouseover', eventHandler);
  contextmenuDiv.addEventListener('mouseout', eventHandler);
 
@@ -337,7 +337,7 @@ function eventHandler(event)
 	       else HideHint();
 	      break;
 	 case 'mouseover': // Mouse over non grey context menu item? Set current menu item to call appropriate menu action by 'enter' key
-	      if (event.target.classList.contains('contextMenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target);
+	      if (event.target.classList.contains('contextmenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target);
 	      break;
 	 case 'mouseout': // Mouse out if the context menu? Set current menu item to null
 	      SetContextmenuItem(null);
@@ -347,7 +347,7 @@ function eventHandler(event)
 	      break;
 	 case 'contextmenu':
 	      //--------------Do nothing in case of dialog box or contextmenu event on context menu div area--------------
-	      if (event.target == contextmenuDiv || event.target.classList.contains('contextMenuItems') || box || (contextmenu && event.which != 3)) event.preventDefault();
+	      if (event.target == contextmenuDiv || event.target.classList.contains('contextmenuItems') || box || (contextmenu && event.which != 3)) event.preventDefault();
 	      //--------------Is any element content editable? Apply changes in case of no event.target match--------------
 	       else if (focusElement.td && focusElement.td.contentEditable === 'true')
 	         {
@@ -483,7 +483,7 @@ function eventHandler(event)
 		  break;
 		 }
 	      //--------------Dialog box events are processed and mouse click on grey menu item or on context menu but not menu item? Break!----------
-	      if (box || event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextMenu')) break;
+	      if (box || event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) break;
 	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
 	     if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
 	     if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
@@ -500,7 +500,7 @@ function eventHandler(event)
 		  break;
 		 }
 	      //--------------Mouse click on context menu item? Call controller with appropriate context menu item as a command--------------
-	      if (event.target.classList.contains('contextMenuItems'))
+	      if (event.target.classList.contains('contextmenuItems'))
 		 {
 		  cmd = event.target.innerHTML;
 		  callController(contextmenu.data);
@@ -1278,7 +1278,7 @@ function ShowContextmenu(event)
      data = event.target.innerHTML;
     }
  // Context event on OV item or wrap icon cell with OV item? Display OV context menu
-  else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('menu')) innerHTML = sidebarOVContext;
+  else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('sidebar')) innerHTML = sidebarOVContext;
  // Application context menu on main field table? Display mainObjectContext or mainTitleObjectContext context menu
   else if (event.target.tagName == 'TD')
     {
@@ -1327,7 +1327,7 @@ function ShowContextmenu(event)
 	  else contextmenuDiv.style.top = event.clientY - contextmenuDiv.clientHeight + "px";
 	}
      // Show context menu
-     contextmenuDiv.className = 'contextMenu ' + uiProfile["effects"]["contextmenu"] + 'show';
+     contextmenuDiv.className = 'contextmenu ' + uiProfile["effects"]["contextmenu"] + 'show';
     }
 }
 
@@ -1335,7 +1335,7 @@ function HideContextmenu()
 {
  if (contextmenu)
     {
-     contextmenuDiv.className = 'contextMenu ' + uiProfile["effects"]["contextmenu"] + 'hide';
+     contextmenuDiv.className = 'contextmenu ' + uiProfile["effects"]["contextmenu"] + 'hide';
      contextmenu = null;
     }
 }
