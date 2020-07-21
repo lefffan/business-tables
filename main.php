@@ -17,7 +17,7 @@ try {
 	    {
 	    case 'New Object Database':
 	          initNewODDialogElements();
-		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => ''], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 750px; height: 600px;', 'esc' => '', 'display_single_profile' => '']]];
+		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 750px; height: 600px;', 'esc' => '', 'display_single_profile' => '']]];
 		  break;
 	    case 'Edit Database Structure':
 			if (isset($input['data']))

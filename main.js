@@ -35,7 +35,7 @@ const uiProfile = {
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Box types
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
-		  "box": { "target": ".box", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "box-shadow": "none;" },
+		  "box": { "target": ".box", "background-color": "#16272A;", "color": "#000;", "border-radius": "5px;", "border": "none;", "box-shadow": "none;" },
 		  // Box interface elements
 /*#404851;*/	  "dialog box title": { "target": ".title", "background-color": "transparent;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
 		  "dialog box pad": { "target": ".pad", "background-color": "#404851;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
@@ -400,7 +400,7 @@ function eventHandler(event)
 	      //--------------Any dialog button event? Non empty button property value calls controller, then hide box anyway--------------
 	      if (event.target.classList.contains('button'))
 	         {
-		  if (box.buttons[event.target.innerHTML])
+		  if (typeof box.buttons[event.target.innerHTML] === 'string' && box.buttons[event.target.innerHTML] != '' && box.buttons[event.target.innerHTML].charCodeAt(0) === 32)
 		     {
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
 		      cmd = 'CONFIRM';
@@ -910,7 +910,6 @@ function ShowBox()
  /*				      	  	 "data"      : "+text1|text2|text3"						*/
  /*		  		      	  	 "help"	     : "<any text>"							*/
  /*		  		      	  	 "line"	     : ""								*/
- /*		  		      	  	 "style"     : element style attribute						*/
  /*		  		      	  	 "readonly"  : ""								*/
  /*				     	 	}										*/
  /*																*/
@@ -935,11 +934,17 @@ function ShowBox()
  //---------------Any content?---------------
  if (inner)
     {
+     let buttonStyle;
      // Add title
      if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner;
      // Add buttons
      inner += '<div class="footer">';
-     for (let button in box.buttons) inner += '<div class="button">' + button + '</div>';
+     for (let button in box.buttons)
+         {
+	  buttonStyle = '';
+	  if (typeof box.buttons[button] === 'string' && box.buttons[button].trim() != '') buttonStyle = ' style ="' + escapeHTMLTags(box.buttons[button].trim()) + '"';
+	  inner += '<div class="button"' + buttonStyle + '>' + button + '</div>';
+	 }
      boxDiv.innerHTML = inner + '</div>';
      // Calculate left/top box position
      boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%";
@@ -1408,6 +1413,6 @@ function escapeDoubleQuotes(string)
 }
 
 function escapeHTMLTags(string)
-{ 
- return string.replace(/</g,"&lt;");
+{
+ return string.replace(/</g,"&lt;").replace(/"/g,"");
 }
