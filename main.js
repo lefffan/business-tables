@@ -10,6 +10,14 @@ const selection = window.getSelection();
 const uiProfile = {
 		  // Body
 		  "body": { "target": "body", "background-color": "#343E54;" },
+		  // Sidebar
+    		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
+		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
+		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
+		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
+		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
+		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;"  },
+		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
@@ -25,14 +33,6 @@ const uiProfile = {
 		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
-		  // Sidebar
-    		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
-		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
-		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
-		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
-		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
-		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;"  },
-		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
 		  // Box types
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
 		  "box": { "target": ".box", "background-color": "#17262B;", "color": "#000;", "border-radius": "5px;", "border": "none;", "box-shadow": "none;" },
@@ -910,7 +910,7 @@ function ShowBox()
  /*				      	  	 "data"      : "+text1|text2|text3"						*/
  /*		  		      	  	 "help"	     : "<any text>"							*/
  /*		  		      	  	 "line"	     : ""								*/
- /*		  		      	  	 "minheight" : ""								*/
+ /*		  		      	  	 "style"     : element style attribute						*/
  /*		  		      	  	 "readonly"  : ""								*/
  /*				     	 	}										*/
  /*																*/
@@ -919,11 +919,9 @@ function ShowBox()
  /*																*/
  /* box.flags		= JSON with next properties:										*/
  /*			  "esc" - property lets user to cancel dialog box by esc button 					*/
- /*			  "style" - css class to style the dialog box								*/
+ /*			  "style" - dialog box content wrapper style attribute							*/
  /*			  "pad" - active (current) dialog box pad (if exists)							*/
  /*			  "profile" - active (current) dialog box profile (if exist)						*/
- /*			  "minwidth" - box min width in px									*/
- /*			  "minheight" - box min height in px									*/
  /*			  "display_single_pad" - set this flag to display pad block in case of single one			*/
  /*			  "display_single_profile" - set this flag to display profile select in case of single one		*/
  /*			  "callback" - any callback string element handler to pass without changes at CONFIRM event		*/
@@ -940,7 +938,7 @@ function ShowBox()
      // Add title
      if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner;
      // Add buttons
-     inner += '<div style="display: flex; flex-direction: row; justify-content: space-evenly;">';
+     inner += '<div class="footer">';
      for (let button in box.buttons) inner += '<div class="button">' + button + '</div>';
      boxDiv.innerHTML = inner + '</div>';
      // Calculate left/top box position
@@ -1086,8 +1084,13 @@ function getInnerDialog()
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';
      }
-     
- if (inner != '') return '<div class="boxcontentwrapper">' + inner + '</div>';
+ 
+ if (inner != '')
+    {
+     let contentStyle = '';
+     if (box.flags && box.flags.style && typeof box.flags.style === 'string') contentStyle = ' style ="' + escapeHTMLTags(box.flags.style) + '"';
+     return '<div class="boxcontentwrapper"'+ contentStyle +'>' + inner + '</div>';
+    }
  return '';
 }
 
@@ -1399,7 +1402,12 @@ function ContentEditableCursorSet(element)
  selection.addRange(range);
 }
 
-function escapeDoubleQuotes(data)
+function escapeDoubleQuotes(string)
 { 
- return data.replace(/"/g,"&quot;");
+ return string.replace(/"/g,"&quot;");
+}
+
+function escapeHTMLTags(string)
+{ 
+ return string.replace(/</g,"&lt;");
 }
