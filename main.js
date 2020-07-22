@@ -6,6 +6,7 @@ const STARTOBJECTID = 3;
 const style = document.createElement('style');
 const range = document.createRange();   
 const selection = window.getSelection();
+
 // User interface default profile
 const uiProfile = {
 		  // Body
@@ -28,45 +29,45 @@ const uiProfile = {
 		  // Scrollbar
 		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
 		  // Context Menu
-		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
+		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-4weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
 		  "context menu item": { "target": ".contextmenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
 		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Box types
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
-		  "box": { "target": ".box", "background-color": "#16272A;", "color": "#000;", "border-radius": "5px;", "border": "none;", "box-shadow": "none;" },
+		  "box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;" },
 		  // Box interface elements
-/*#404851;*/	  "dialog box title": { "target": ".title", "background-color": "transparent;", "color": "#AAA;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": ".9em Lato, Helvetica;", "padding": "5px;" },
-		  "dialog box pad": { "target": ".pad", "background-color": "#404851;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
-		  "dialog box active pad": { "target": ".activepad", "background-color": "#17262B;", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#aaa;", "border-radius": "5px 5px 0 0;" },
+		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
+		  "dialog box pad": { "target": ".pad", "background-color": "rgb(223,223,223);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
+		  "dialog box active pad": { "target": ".activepad", "background-color": "rgb(209,209,209);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": "bold .9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
 		  "dialog box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
-		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #4F4F4F;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
+		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #CCC;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
 		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
 		  "dialog box button hover": { "target": ".button:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
-		  "dialog box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#9A7900;", "text-shadow": "none;" },
-		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "black;", "background": "#BB0;", "border-radius": "40%;" },
-		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "1em Lato, Helvetica;", "color": "black;", "background": "#880;", "cursor": "pointer;", "border-radius": "40%;" },
+		  "dialog box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
+		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
+		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
 		  //
-		  "dialog box select": { "target": ".select", "background-color": "#17262B;", "color": "#AAA;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
+		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
-		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "#404851;", "color": "" },
-		  "dialog box select option selected": { "target": ".selected", "background-color": "#404851;", "color": "#fff;" },
+		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "rgb(209,209,209);", "color": "" },
+		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
 		  "dialog box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
 		  //
 		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
 		  "dialog box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
 		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
-		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#AAA;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
+		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
 		  "dialog box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
-		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00609f;", "border": "1px solid #00609f;" },
-		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#CCC;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
+		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
+		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "none;", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "transparent;", "border": "1px solid #777;", "outline": "", "color": "#AAA;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Effects and animation
 		  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5) blur(3px)" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
@@ -260,8 +261,8 @@ function drawMain()
       else mainDiv.innerHTML = '<h1>Specified view has no objects defined!<br>Please add some objects</h1>';
      return;
     }
- if (error === true) alert('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
-  else if (error === false) alert("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section");
+ if (error === true) warning('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
+  else if (error === false) warning("\nSpecified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section");
  
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
@@ -958,6 +959,7 @@ function ShowBox()
 	 sidebarDiv.style.filter = uiProfile["effects"]["box filter"];
 	}
     }
+ else {box = null; }
 }
 
 function getInnerDialog()
@@ -1020,7 +1022,7 @@ function getInnerDialog()
     
  //------------------Parsing interface element in box.dialog.<current pad>.<current profile>------------------
  for (let name in box.dialog[box.flags.pad][box.flags.profile])
-  if (box.dialog[box.flags.pad][box.flags.profile][name]["type"] != undefined)
+ //{loog(box.dialog[box.flags.pad][box.flags.profile][name]); if (box.dialog[box.flags.pad][box.flags.profile][name]["type"] != undefined)
      {
       element = box.dialog[box.flags.pad][box.flags.profile][name];
       // Display element hint icon
@@ -1089,7 +1091,7 @@ function getInnerDialog()
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';
      }
- 
+     
  if (inner != '')
     {
      let contentStyle = '';
@@ -1415,4 +1417,10 @@ function escapeDoubleQuotes(string)
 function escapeHTMLTags(string)
 {
  return string.replace(/</g,"&lt;").replace(/"/g,"");
+}
+
+function warning(text)
+{
+ box = { title: "Warning", dialog: {pad: {profile: {element: {head: text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: ""} };
+ ShowBox();
 }
