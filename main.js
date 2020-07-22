@@ -262,7 +262,7 @@ function drawMain()
      return;
     }
  if (error === true) warning('Some elements are out of range. Max table size allowed - ' + TABLE_MAX_CELLS + ' cells.'); // Set string 'warning' as box title
-  else if (error === false) warning("\nSpecified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section");
+  else if (error === false) warning("Specified view selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section");
  
  // Remove previous view event listeners
  mainTableRemoveEventListeners();
@@ -640,7 +640,7 @@ function controllerCmdHandler(input)
 {
  if (input.cmd === undefined)
     {
-     alert('Browser report: undefined controller message!');
+     warning('Browser report: undefined controller message!');
      loog('Browser report: undefined controller message!');
      return;
     }
@@ -885,8 +885,8 @@ function callController(data)
 		  }
 	      break;
 	 default:
-	      alert("Undefined browser message: " + cmd + "!");
-	      loog("Undefined browser message: " + cmd + "!");
+	      warning("Undefined browser message: '" + cmd + "'!");
+	      loog("Undefined browser message: '" + cmd + "'!");
 	}
 	
  if (object)
@@ -1022,7 +1022,6 @@ function getInnerDialog()
     
  //------------------Parsing interface element in box.dialog.<current pad>.<current profile>------------------
  for (let name in box.dialog[box.flags.pad][box.flags.profile])
- //{loog(box.dialog[box.flags.pad][box.flags.profile][name]); if (box.dialog[box.flags.pad][box.flags.profile][name]["type"] != undefined)
      {
       element = box.dialog[box.flags.pad][box.flags.profile][name];
       // Display element hint icon
@@ -1416,11 +1415,12 @@ function escapeDoubleQuotes(string)
 
 function escapeHTMLTags(string)
 {
- return string.replace(/</g,"&lt;").replace(/"/g,"");
+ return string.replace(/</g,"&lt;").replace(/"/g,"&quot;");
 }
 
-function warning(text)
+function warning(text, title = 'Warning')
 {
- box = { title: "Warning", dialog: {pad: {profile: {element: {head: text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: ""} };
+ if (typeof text != 'string') text = 'Undefined warning message!';
+ box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 50px;"} };
  ShowBox();
 }
