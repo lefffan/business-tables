@@ -676,7 +676,7 @@ function controllerCmdHandler(input)
 		      mainTable[y][x].data = input.data[i]['value'];
 		      mainTable[y][x].hint = input.data[i]['hint'];
 		     }
-	      if (input.alert) alert(input.alert);
+	      if (input.alert) warning(input.alert);
 	      break;
 	 case 'REFRESH':
 	      drawSidebar(input.data);
@@ -695,7 +695,7 @@ function controllerCmdHandler(input)
 	      if (input.alert)
 	         {
 		  loog('Controller alert message: ' + input.alert);
-		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) alert(input.alert);
+		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) warning(input.alert);
 		 }
 	      if (input.error)
 	         {
@@ -706,7 +706,7 @@ function controllerCmdHandler(input)
 	 case '':
 	      break;
 	 default:
-	      alert('Browser report: unknown controller message ' + input.cmd);
+	      warning('Browser report: unknown controller message ' + input.cmd);
 	      loog('Browser report: unknown controller message ' + input.cmd);
 	}
 }
@@ -845,7 +845,7 @@ function callController(data)
 	      if (mainTable[focusElement.y][focusElement.x].oId === 1) msg = 'Table cell to input new ebject data for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
 	       else if (mainTable[focusElement.y][focusElement.x].oId === 2) msg = 'Object title for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
 	        else msg = 'Object id: ' + mainTable[focusElement.y][focusElement.x].oId + '\nElement id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
-	      alert(msg);
+	      warning(msg);
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
