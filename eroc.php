@@ -311,9 +311,9 @@ function Check($db, $flags)
          $x = 0;
          foreach ($allElementsArray as $id => $value)
     	         {
-	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0", "style": "background-color: #BBB;"}'."\n";
+	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
 		  $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
-	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n", "style": "background-color: #AFF;"}'."\n";
+	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n"}'."\n";
 	          $x++;
 	    	 }
 	}
@@ -618,7 +618,7 @@ function getMainFieldData($db)
 	  $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
 	  $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
 	 }
-			     
+			     loog($objectTableSrc[211]['eid1']);
 		     // Rewrite $objectTableSrc array (to the table above) on eidoid array to $objectTable, not forgeting about static element status.
 		     // In the future release create first object (static) flag whether it is on the object list or not, then remove it at the end or not.
 		     // So - iterate all elements with non zero identificators (real elements)
@@ -641,7 +641,11 @@ function getMainFieldData($db)
 				  if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
 				  if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
 				  if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
-				  if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
+				  //if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
+				  /**/
+				  $ss = json_decode($objectTableSrc[$oid][$eidstr], true);
+				  if (isset($ss['style'])) $styles[] = $ss['style']; // Element style
+				  /**/
 				  $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
 				  //---------------------------Merge style rules end------------------------ 
 				 }

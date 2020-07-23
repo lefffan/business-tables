@@ -1,8 +1,5 @@
 July 2020:
 
-- dialog props - fix width/heght, button style
-- change back color of dialog box and change alert to ShowBox
-
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const 
 - https access only, register domain tabels.app and certificate
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..) cmd = 'GETUI' should get data from the controller
@@ -19,6 +16,7 @@ August 2020:
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
   Sort object by element headers click, page remains untouch (also active element)
 - status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
+- if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 
 September:
 - mishka-new.xls front-end/back-end features and think other features to make Boss edit opeations comfortable
@@ -110,10 +108,7 @@ Element handler commands to the controller:
       "link":		"" 
       "location":	"" 
       "hint":		"" 
-      "fonts":		"" 
-      "color":		"" 
-      "background":	"" 
-      "<other css>":	"" 
+      "style":		"" 
       "<any property>":	"<any value>" }
 
 Controller to the element handler:

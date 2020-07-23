@@ -3,14 +3,14 @@
 /*****************************************************************************************************************
 Element handler JSON to the controller stored in $output variable.
 
-Content edit, dialog call and alert message (non string "data" property is ignored):
+Cell content edit, dialog call and alert message (non string "data" property is ignored):
     { 
      "cmd":		"EDIT[<LINES_NUM>]|DIALOG|ALERT"
      "data":		"<text data for EDIT or ALERT>|<JSON for DIALOG>"
     }
 
 Element data set and reset. 'SET' command sets defined properties, additionally 'RESET' removes all other.
-"image" and "<any property>" unlike other properties may consist of non string data types.
+"image" and "<any property>" unlike other properties may contain non string data types.
     {
      "cmd":		"SET|RESET"
      "alert":		"<alert message>"
@@ -19,10 +19,7 @@ Element data set and reset. 'SET' command sets defined properties, additionally 
      "link":		""
      "location":	""
      "hint":		""
-     "fonts":		""
-     "color":		""
-     "background":	"" 
-     "<other css>":	"" 
+     "style":		""
      "<any property>":	""
     }
 
@@ -42,8 +39,7 @@ $input = json_decode($input, true);
 if (isset($input['event'])) switch($input['event'])
    {
     case 'INIT':
-	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'description' => 'HUI', 'hint' => 'FUCK OFF!']);
-	 sleep(10);
+	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'description' => 'HUI', 'hint' => 'FUCK OFF!', 'style' => 'color: red;']);
 	 break;
     case 'DBLCLICK':
 	 $output = json_encode(['cmd' => 'EDIT']);
@@ -52,7 +48,6 @@ if (isset($input['event'])) switch($input['event'])
 	 $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']]);
 	 break;
     case 'CONFIRM':
-	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data']]);
-	 sleep(10);
+	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data'], 'style' => 'background-color: red;']);
 	 break;
    }

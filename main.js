@@ -22,10 +22,14 @@ const uiProfile = {
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
-		  "main field table cell": { "target": "td", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;" },
+		  "main field table default cell": { "target": ".main table tbody tr td", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "", "font": "" },
 		  "main field table active cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
+		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "#CCC;", "font": "" },
+		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "rgb(191,255,191);", "font": "" },
+		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "", "font": "" },
+		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "1px solid #999;", "background": "" },
 		  "main field table cursor": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
-		  "main message": { "target": ".main h1", "color": "#BBBBBB;" },
+		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
 		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
 		  // Context Menu
@@ -269,36 +273,40 @@ function drawMain()
     
  // Remove undefined (and 'collapse' property set) main table rows and columns
  collapseMainTable();
- 
- // Drawing html table on main div and query table selector
- let rowHTML = '<table><tbody>';
- let undefinedCell = '<td></td>';
- let undefinedRow = '';
- 
- // Create 'undefined' html td cell template
- if (objectTable[0] != undefined && objectTable[0][0] != undefined && objectTable[0][0]['style'])
-    {
-     if (undefinedcellRuleIndex != undefined) style.sheet.deleteRule(undefinedcellRuleIndex);
-     undefinedcellRuleIndex = style.sheet.insertRule('.undefinedcell {' + objectTable[0][0]['style'] + '}');
-     undefinedCell = '<td class="undefinedcell"></td>';
-    }
-    
+
+ // Define attribute class strings for default, undefined, title, newobject and data td cells
+ let attributes, rowHTML = '<table><tbody>';
+ let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '';
+ if (!isObjectEmpty(uiProfile["main field table title cell"])) titlecellclass = ' class="titlecell"';
+ if (!isObjectEmpty(uiProfile["main field table newobject cell"])) newobjectcellclass = ' class="newobjectcell"';
+ if (!isObjectEmpty(uiProfile["main field table data cell"])) datacellclass = ' class="datacell"';
+ if (!isObjectEmpty(uiProfile["main field table undefined cell"])) undefinedcellclass = ' class="undefinedcell"';
+ if (objectTable[0] != undefined && objectTable[0][0] != undefined && objectTable[0][0]['style']) undefinedcellclass += ' style="' + objectTable[0][0]['style'] + '"';
+ const undefinedCell = '<td' + undefinedcellclass + '></td>';
  // Create 'undefined' html tr row
  for (x = 0; x < mainTableWidth; x++) undefinedRow += undefinedCell;
+ 
  // Create html table of mainTable array
  for (y = 0; y < mainTableHeight; y++)
      {
       rowHTML += '<tr>';
       if (mainTable[y] == undefined) rowHTML += undefinedRow;
        else for (x = 0; x < mainTableWidth; x++)
-	 {
-	  if (!(cell = mainTable[y][x])) rowHTML += undefinedCell;
-	   else if (cell.style) rowHTML += '<td style="' + cell.style + '">' + toHTMLCharsConvert(cell.data) + '</td>';
-	    else rowHTML += '<td>' + toHTMLCharsConvert(cell.data) + '</td>';
-	 }
+	     if (!(cell = mainTable[y][x]))
+		{
+		 rowHTML += undefinedCell;
+		}
+	      else
+	        {
+	         if (cell.oId === TITLEOBJECTID) attributes = titlecellclass;
+	          else if (cell.oId === NEWOBJECTID) attributes = newobjectcellclass;
+	           else attributes = datacellclass;
+	         if (cell.style) attributes += ' style="' + cell.style + '"';
+	         rowHTML += '<td' + attributes + '>' + toHTMLCharsConvert(cell.data) + '</td>';
+	        }
       rowHTML += '</tr>';
      }
-
+     
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
 
@@ -644,7 +652,11 @@ function controllerCmdHandler(input)
      loog('Browser report: undefined controller message!');
      return;
     }
- if (input.OV != undefined && input.OD != undefined && (input.OD != activeOD || input.OV != activeOV) && input.cmd != 'INFO') return;
+ if (input.OV != undefined && input.OD != undefined && input.cmd != 'INFO' && (input.OD != activeOD || input.OV != activeOV))
+    {
+     loog("Server response doesn't match current Object View!");
+     return;
+    }
  
  switch (input.cmd)
 	{
@@ -706,8 +718,8 @@ function controllerCmdHandler(input)
 	 case '':
 	      break;
 	 default:
-	      warning('Browser report: unknown controller message ' + input.cmd);
-	      loog('Browser report: unknown controller message ' + input.cmd);
+	      warning("Browser report: unknown controller message '" + input.cmd + "'");
+	      loog("Browser report: unknown controller message '" + input.cmd + "'");
 	}
 }
 
@@ -1418,9 +1430,18 @@ function escapeHTMLTags(string)
  return string.replace(/</g,"&lt;").replace(/"/g,"&quot;");
 }
 
-function warning(text, title = 'Warning')
+function warning(text, title)
 {
  if (typeof text != 'string') text = 'Undefined warning message!';
+ if (typeof title != 'string') title = 'Warning';
  box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 50px;"} };
  ShowBox();
+}
+
+function isObjectEmpty(object, excludeProp)
+{
+ if (typeof object != 'object') return false;
+ 
+ for (let element in object) if (!(object[element] === '' || element === excludeProp)) return false;
+ return true;
 }
