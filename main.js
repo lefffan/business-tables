@@ -27,7 +27,7 @@ const uiProfile = {
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "#CCC;", "font": "" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "rgb(191,255,191);", "font": "" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "", "font": "" },
-		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "1px solid #999;", "background": "" },
+		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "", "border": "none !important;", "background": "rgb(255,221,221);" },
 		  "main field table cursor": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
@@ -277,12 +277,13 @@ function drawMain()
  // Define attribute class strings for default, undefined, title, newobject and data td cells
  let attributes, rowHTML = '<table><tbody>';
  let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '';
- if (!isObjectEmpty(uiProfile["main field table title cell"])) titlecellclass = ' class="titlecell"';
- if (!isObjectEmpty(uiProfile["main field table newobject cell"])) newobjectcellclass = ' class="newobjectcell"';
- if (!isObjectEmpty(uiProfile["main field table data cell"])) datacellclass = ' class="datacell"';
- if (!isObjectEmpty(uiProfile["main field table undefined cell"])) undefinedcellclass = ' class="undefinedcell"';
+ if (!isObjectEmpty(uiProfile["main field table title cell"], 'target')) titlecellclass = ' class="titlecell"';
+ if (!isObjectEmpty(uiProfile["main field table newobject cell"], 'target')) newobjectcellclass = ' class="newobjectcell"';
+ if (!isObjectEmpty(uiProfile["main field table data cell"], 'target')) datacellclass = ' class="datacell"';
+ if (!isObjectEmpty(uiProfile["main field table undefined cell"], 'target')) undefinedcellclass = ' class="undefinedcell"';
  if (objectTable[0] != undefined && objectTable[0][0] != undefined && objectTable[0][0]['style']) undefinedcellclass += ' style="' + objectTable[0][0]['style'] + '"';
  const undefinedCell = '<td' + undefinedcellclass + '></td>';
+
  // Create 'undefined' html tr row
  for (x = 0; x < mainTableWidth; x++) undefinedRow += undefinedCell;
  
@@ -306,7 +307,6 @@ function drawMain()
 	        }
       rowHTML += '</tr>';
      }
-     
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
 
@@ -683,10 +683,12 @@ function controllerCmdHandler(input)
 		  if (objectTable[input.oId] && objectTable[input.oId][i] && (object = objectTable[input.oId][i]['props']))
 		     {
 		      let x = object['x'], y = object['y'];
-		      if (input.data[i]['value'] != undefined) mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[i]['value']);
-		       else mainTablediv.rows[y].cells[x].innerHTML = '';
+		      (input.data[i]['value']) ? mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[i]['value']) : mainTablediv.rows[y].cells[x].innerHTML = '';
+		      mainTablediv.rows[y].cells[x].setAttribute('style', input.data[i]['style']);
 		      mainTable[y][x].data = input.data[i]['value'];
 		      mainTable[y][x].hint = input.data[i]['hint'];
+		      mainTable[y][x].description = input.data[i]['description'];
+		      CellBorderToggleSelect(null, focusElement.td, false);
 		     }
 	      if (input.alert) warning(input.alert);
 	      break;
@@ -757,7 +759,7 @@ function toHTMLCharsConvert(string)
  return string.replace(/<br>$/g, "<br><br>");
 }
 
-function CellBorderToggleSelect(oldCell, newCell)
+function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
 {
  if (oldCell)
     {
@@ -766,9 +768,12 @@ function CellBorderToggleSelect(oldCell, newCell)
     }
  if (uiProfile['main field table active cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table active cell']['outline'];
  if (uiProfile['main field table active cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table active cell']['shadow'];
- focusElement.td = newCell;
- focusElement.x = newCell.cellIndex;
- focusElement.y = newCell.parentNode.rowIndex;
+ if (setFocusElement)
+    {
+     focusElement.td = newCell;
+     focusElement.x = newCell.cellIndex;
+     focusElement.y = newCell.parentNode.rowIndex;
+    }
 }
 
 function contextFitMainDiv(x, y)

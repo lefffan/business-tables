@@ -39,7 +39,7 @@ $input = json_decode($input, true);
 if (isset($input['event'])) switch($input['event'])
    {
     case 'INIT':
-	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'description' => 'HUI', 'hint' => 'FUCK OFF!', 'style' => 'color: red;']);
+	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'].'hui', 'escription' => 'HUI', 'hint' => 'FUCK OFF!', 'style' => 'color: red;']);
 	 break;
     case 'DBLCLICK':
 	 $output = json_encode(['cmd' => 'EDIT']);
@@ -48,6 +48,6 @@ if (isset($input['event'])) switch($input['event'])
 	 $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']]);
 	 break;
     case 'CONFIRM':
-	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data'], 'style' => 'background-color: red;']);
+	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data'], 'description' => 'AAAAAAAAAA', 'alert' => 'WTF????']);
 	 break;
    }
