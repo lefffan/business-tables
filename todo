@@ -5,12 +5,14 @@ July 2020:
 - OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..) cmd = 'GETUI' should get data from the controller
   add to the handler fuction data type check and in case of non string - unset the key.
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
-- System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV.
+- System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV. https://habr.com/ru/post/323714/
+- JWT: https://gist.github.com/zmts/802dc9c3510d79fd40f9dc38a12bccfc https://habr.com/ru/post/340146/
 
 August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
 - Object_selection in element selection to create complicated object views like setki.xls
+- Object_selection to OD rule section
 - pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go. 
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
@@ -21,12 +23,14 @@ August 2020:
 September:
 - mishka-new.xls front-end/back-end features and think other features to make Boss edit opeations comfortable
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
+- pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
 
 October 2020:
 - System calls and its object views: LINK
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA
+- emulate chat and helpdesk
 
 November 2020:
 - Object process SCHEDULER. Handlers are executed by built-in system user.
@@ -38,7 +42,7 @@ December 2020:
 - System call NEWOBJECT (to create object by user handlers)
 - Object view PIECHART and GRAPH
 - Other estimated "todo" from Mishka directory ois.xlsx file
-- Feedback and finish
+- Feedback and finish https://bakhirev.biz/book/#MmlJN
 
 -------------------------------------------------------------------------------------------
 
@@ -122,17 +126,10 @@ Controller to the element handler:
 
 
 
-
-global element type:
-- write new object: global elements write to the first object in OD and OD$
-- write existing object: global elements write to the first object in OD and OD$
-- delete object: in case of the first object - global elements data moves to 'another' first object
-- getOD: for all global elements its data has a single instance in output array
-- object elements var pass ()
-
 interface examples:
 - https://qna.habr.com/q/281940
 - https://htmlacademy.ru/blog/video/shorts/short-4
+- table column resize https://codepen.io/barring/pen/ZNObZg
 
 SVG:
 - https://habr.com/ru/sandbox/122675/
@@ -143,26 +140,71 @@ Input style:
 - http://jsfiddle.net/js5x06nL/
 
 Git:
-#git commit -a -m "INIT command ver4"
-git commit -a -m "CreateNewObjectVersion function ver2"
-git push -u origin master
-lefffan
+- #git commit -a -m "INIT command ver4"
+- git commit -a -m "CreateNewObjectVersion function ver2"
+- git push -u origin master
+- lefffan
+- git pull origin # Nakatit v local repositary last code version before work
 
-# Nakatit v local repositary last code version before work
-git pull origin
+DB SQL manage:
+- drop database OE4; create database OE4; use OE4; show tables;
+- drop database OE6; create database OE6; use OE6; show tables;
+- create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-drop database OE4; create database OE4; use OE4; show tables;
-drop database OE6; create database OE6; use OE6; show tables;
-create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+---------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case--------------------------
+const range = document.createRange();   
+const selection = window.getSelection();
 
-
-CREATE TABLE `$` (id MEDIUMINT NOT NULL) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");                                                            
-insert into `$` (odname, odprops) values ('hui', '{"q":"q"}'); 
-SELECT @@autocommit;
-
-
-//SELECT JSON_EXTRACT(eid1, '$.colq'), JSON_EXTRACT(eid1, '$.colz') FROM `data_4`;   
-//$query = $db->prepare("SELECT JSON_EXTRACT(ed1, '$.value') FROM `data_$data[0]`"); 
-//$query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.q', '$.value') FROM `data_4`");
-
-
+range.selectNodeContents(focusElement.td);
+range.collapse(false);
+selection.removeAllRanges();                                                                                
+selection.addRange(range);
+-------------------------Doubt features---------------------------------------------------
+- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
+- Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
+- Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
+- Predefined system messages can be displayed on other languages
+- not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
+- User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful. Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
+- Per OV permission to view-in-sidebar and add-edit-delete with low priority
+---------------------Source code requirement-------------------------------------------------------
+- formatting                                                   
+- error behaviour (no object, no elements, no items, etc..)    
+- php files change double qoutes to single quotes                                      
+- all comments should be here in system features
+- comment all code                                             
+- all error message should be more detailed (by now alert used only)
+- jslint.com                                                   
+- single char variable exclude
+- array to []
+- sql commands with big letters
+- remove useless loog
+-----------------------------Emulation-------------------------------------------------------
+- Corp chat
+- Corp book
+- Any request app (Helpdesk, Jira)
+- MRTG
+- Zabbix
+- CRM
+- ACS
+- Any  accounting system (may be billing)
+- Some excel functions
+- Voting
+- Any statistic/analitycs
+- Setki.xls
+- Operations.xls
+-----------------------------------TODO----------------------------------------------------
+- firefox up/down and left/right arrows scroll page
+- Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
+- How to show old versions of object? Custom OV system command in context menu or reales it as a built-in  feature? Show history of current element (or all elements) in a new tab.
+- Custom commands to the handler sent by context menu, for a example, display switch all interfaces in another OV
+- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
+- Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
+- Export OV data to xls, pdf or txt file
+- User defined element handler on other langs, not only php, for a example -  python: new.ph or php: new.php
+- Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+- Autorefresh OV (for example, for chats)
+- On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
+- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
+- OD Dialog Box - OD icon, OV icon, OV shortcut key, 
+- user/group (type, pass, force scheme from next user, OD add permission), name, tel, email, foto, comments, theme

@@ -19,6 +19,7 @@ Element data set and reset. 'SET' command sets defined properties, additionally 
      "link":		""
      "location":	""
      "hint":		""
+     "description":	""
      "style":		""
      "<any property>":	""
     }
@@ -48,6 +49,6 @@ if (isset($input['event'])) switch($input['event'])
 	 $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']]);
 	 break;
     case 'CONFIRM':
-	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data'], 'description' => 'AAAAAAAAAA', 'alert' => 'WTF????']);
+	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data'], 'description' => 'AAAAAAAAAA', 'lert' => 'WTF????']);
 	 break;
    }

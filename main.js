@@ -6,100 +6,11 @@ const STARTOBJECTID = 3;
 const style = document.createElement('style');
 const range = document.createRange();   
 const selection = window.getSelection();
-
-// User interface default profile
-const uiProfile = {
-		  // Body
-		  "body": { "target": "body", "background-color": "#343E54;" },
-		  // Sidebar
-    		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
-		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
-		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
-		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
-		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
-		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;"  },
-		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
-		  // Main field
-		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
-		  "main field table": { "target": "table", "margin": "0px;" },
-		  "main field table default cell": { "target": ".main table tbody tr td", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "", "font": "" },
-		  "main field table active cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
-		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "#CCC;", "font": "" },
-		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "rgb(191,255,191);", "font": "" },
-		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "white-space": "pre;", "text-overflow": "ellipsis;", "color": "black;", "background": "", "font": "" },
-		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "", "border": "none !important;", "background": "rgb(255,221,221);" },
-		  "main field table cursor": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
-		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
-		  // Scrollbar
-		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
-		  // Context Menu
-		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-4weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
-		  "context menu item": { "target": ".contextmenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
-		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
-		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
-		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
-		  // Box types
-		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
-		  "box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;" },
-		  // Box interface elements
-		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
-		  "dialog box pad": { "target": ".pad", "background-color": "rgb(223,223,223);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
-		  "dialog box active pad": { "target": ".activepad", "background-color": "rgb(209,209,209);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": "bold .9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
-		  "dialog box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
-		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #CCC;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
-		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
-		  "dialog box button hover": { "target": ".button:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
-		  "dialog box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
-		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
-		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
-		  //
-		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
-		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
-		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "rgb(209,209,209);", "color": "" },
-		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
-		  "dialog box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
-		  //
-		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
-		  "dialog box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
-		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
-		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
-		  //
-		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
-		  "dialog box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
-		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
-		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
-		  //
-		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  // Effects and animation
-		  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5) blur(3px)" },
-		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
-		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
-		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
-		  "fade show": { "target": ".fadeshow", "visibility": "visible;", "opacity": "1;", "transition": "opacity .5s;", "-webkit-transition": "opacity .5s;" },
-		  "grow hide": { "target": ".growhide", "visibility": "hidden;", "transform": "scale(0);", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
-		  "grow show": { "target": ".growshow", "visibility": "visible;", "transform": "scale(1);", "transition": "transform .4s;", "-webkit-transition": "transform .4s;" },
-		  "slideleft hide": { "target": ".slidelefthide", "visibility": "hidden;", "transform": "translate(1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slideleft show": { "target": ".slideleftshow", "visibility": "visible;", "transform": "translate(0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "all .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "slideright hide": { "target": ".sliderighthide", "visibility": "hidden;", "transform": "translate(-1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slideright show": { "target": ".sliderightshow", "visibility": "visible;", "transform": "translate(0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "slideup hide": { "target": ".slideuphide", "visibility": "hidden;", "transform": "translate(0%, 1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slideup show": { "target": ".slideupshow", "visibility": "visible;", "transform": "translate(0%, 0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "slidedown hide": { "target": ".slidedownhide", "visibility": "hidden;", "transform": "translate(0%, 1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slidedown show": { "target": ".slidedownshow", "visibility": "visible;", "transform": "translate(0%, 0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "fall hide": { "target": ".fallhide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(2);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
-		  "fall show": { "target": ".fallshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
-		  "rise hide": { "target": ".risehide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(0);", "transition": "all .2s cubic-bezier(.38,1.02,.69,.97);", "-webkit-transition": "all .2s cubic-bezier(.38,1.02,.69,.97);" },
-		  "rise show": { "target": ".riseshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "transition": "transform .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
-		  "none show": { "target": ".noneshow", "visibility": "visible;" }
-		  };
 const mainObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Element description</div><div class="contextmenuItems">Help</div>';
 const mainTitleObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Element description</div><div class="contextmenuItems">Help</div>';
 const mainDefaultContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems greyContextMenuItem">Element description</div><div class="contextmenuItems">Help</div>';
-const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div>';
-const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div>';
+const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
+const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 /*------------------------------VARIABLES------------------------------------*/
 let contextmenu, contextmenuDiv;
 let hint, hintDiv;
@@ -281,7 +192,11 @@ function drawMain()
  if (!isObjectEmpty(uiProfile["main field table newobject cell"], 'target')) newobjectcellclass = ' class="newobjectcell"';
  if (!isObjectEmpty(uiProfile["main field table data cell"], 'target')) datacellclass = ' class="datacell"';
  if (!isObjectEmpty(uiProfile["main field table undefined cell"], 'target')) undefinedcellclass = ' class="undefinedcell"';
- if (objectTable[0] != undefined && objectTable[0][0] != undefined && objectTable[0][0]['style']) undefinedcellclass += ' style="' + objectTable[0][0]['style'] + '"';
+ if (objectTable[0] != undefined && objectTable[0][0] != undefined)
+    {
+     if (objectTable[0][0]['style']) undefinedcellclass += ' style="' + objectTable[0][0]['style'] + '"';
+     if (objectTable[0][0]['tablestyle']) rowHTML = '<table style="' + objectTable[0][0]['tablestyle'] + '"><tbody>';
+    }
  const undefinedCell = '<td' + undefinedcellclass + '></td>';
 
  // Create 'undefined' html tr row
@@ -340,7 +255,7 @@ function eventHandler(event)
 		     {
 		      hint = { x: x, y: y };
 		      clearTimeout(tooltipTimerId);
-		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), 1000);
+		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), uiProfile['misc customization']['mouseover hint timer in msec']);
 		     }
 		 }
 	       else HideHint();
@@ -755,7 +670,7 @@ function htmlCharsConvert(string)
 function toHTMLCharsConvert(string)
 {
  if (string == undefined || string == null) return "";
- string = string.replace(/\n/g, "<br>");
+ string = string.replace(/</g,"&lt;").replace(/\n/g, "<br>");
  return string.replace(/<br>$/g, "<br><br>");
 }
 
@@ -766,8 +681,8 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
      oldCell.style.outline = "none";
      oldCell.style.boxShadow = "none";
     }
- if (uiProfile['main field table active cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table active cell']['outline'];
- if (uiProfile['main field table active cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table active cell']['shadow'];
+ if (uiProfile['main field table cursor cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table cursor cell']['outline'];
+ if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
  if (setFocusElement)
     {
      focusElement.td = newCell;
@@ -863,6 +778,10 @@ function callController(data)
 	       else if (mainTable[focusElement.y][focusElement.x].oId === 2) msg = 'Object title for element id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
 	        else msg = 'Object id: ' + mainTable[focusElement.y][focusElement.x].oId + '\nElement id: ' + mainTable[focusElement.y][focusElement.x].eId + msg;
 	      warning(msg);
+	      break;
+	 case 'Help':
+	      box = help;
+	      ShowBox();
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
@@ -1439,7 +1358,7 @@ function warning(text, title)
 {
  if (typeof text != 'string') text = 'Undefined warning message!';
  if (typeof title != 'string') title = 'Warning';
- box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 50px;"} };
+ box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
  ShowBox();
 }
 
@@ -1450,3 +1369,194 @@ function isObjectEmpty(object, excludeProp)
  for (let element in object) if (!(object[element] === '' || element === excludeProp)) return false;
  return true;
 }
+
+// User interface default profile
+const uiProfile = {
+		  // Body
+		  "body": { "target": "body", "background-color": "#343E54;" },
+		  // Sidebar
+    		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
+		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
+		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
+		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
+		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
+		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;"  },
+		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
+		  // Main field
+		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
+		  "main field table": { "target": "table", "margin": "10px;" },
+		  "main field table cursor cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
+		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "" },
+		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "" },
+		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "" },
+		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "", "border": "none;", "background": "rgb(255,235,235);" },
+		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
+		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
+		  // Scrollbar
+		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
+		  // Context Menu
+		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-4weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
+		  "context menu item": { "target": ".contextmenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
+		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
+		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
+		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
+		  // Box types
+		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
+		  "box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;" },
+		  // Box interface elements
+		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
+		  "dialog box pad": { "target": ".pad", "background-color": "rgb(223,223,223);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
+		  "dialog box active pad": { "target": ".activepad", "background-color": "rgb(209,209,209);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": "bold .9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
+		  "dialog box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
+		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #CCC;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
+		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
+		  "dialog box button and pad hover": { "target": ".button:hover, .pad:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
+		  "dialog box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
+		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
+		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
+		  //
+		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
+		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
+		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "rgb(209,209,209);", "color": "" },
+		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
+		  "dialog box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
+		  //
+		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
+		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
+		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
+		  //
+		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
+		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
+		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
+		  //
+		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  // Misc
+		  "misc customization": { "objects per page": "50", "next page bottom reach": "", "previous page top reach": "", "use next user scheme": "", "mouseover hint timer in msec": "1000" },
+		  // Effects and animation
+/*blur(3px)*/	  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5)" },
+		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
+		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
+		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
+		  "fade show": { "target": ".fadeshow", "visibility": "visible;", "opacity": "1;", "transition": "opacity .5s;", "-webkit-transition": "opacity .5s;" },
+		  "grow hide": { "target": ".growhide", "visibility": "hidden;", "transform": "scale(0);", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
+		  "grow show": { "target": ".growshow", "visibility": "visible;", "transform": "scale(1);", "transition": "transform .4s;", "-webkit-transition": "transform .4s;" },
+		  "slideleft hide": { "target": ".slidelefthide", "visibility": "hidden;", "transform": "translate(1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
+		  "slideleft show": { "target": ".slideleftshow", "visibility": "visible;", "transform": "translate(0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "all .4s cubic-bezier(.06,1.24,0,.98);" },
+		  "slideright hide": { "target": ".sliderighthide", "visibility": "hidden;", "transform": "translate(-1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
+		  "slideright show": { "target": ".sliderightshow", "visibility": "visible;", "transform": "translate(0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
+		  "slideup hide": { "target": ".slideuphide", "visibility": "hidden;", "transform": "translate(0%, 1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
+		  "slideup show": { "target": ".slideupshow", "visibility": "visible;", "transform": "translate(0%, 0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
+		  "slidedown hide": { "target": ".slidedownhide", "visibility": "hidden;", "transform": "translate(0%, 1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
+		  "slidedown show": { "target": ".slidedownshow", "visibility": "visible;", "transform": "translate(0%, 0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
+		  "fall hide": { "target": ".fallhide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(2);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
+		  "fall show": { "target": ".fallshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
+		  "rise hide": { "target": ".risehide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(0);", "transition": "all .2s cubic-bezier(.38,1.02,.69,.97);", "-webkit-transition": "all .2s cubic-bezier(.38,1.02,.69,.97);" },
+		  "rise show": { "target": ".riseshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "transition": "transform .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
+		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
+		  "none show": { "target": ".noneshow", "visibility": "visible;" }
+		  };
+
+const help = { title: 'Help', dialog:  { "System description": { profile: { element: { head:
+`Tabels application is a set of custom data tables the user can interact many different ways.
+Every table consists of identical objects, which, in turn, are set of user defined elements.
+Table data of itself is called Object Database (OD) and can be changed or created by
+appropriate sidebar context menu. Every OD should contain some Object Views (OV), that
+define which object of the OD (see object selection help section) and what kind of element
+should be displayed and how (see element selection help section).
+
+OV allows users to operate specified objects many different ways and display its data 
+generated by binded to elements appropriate handlers. Simple OV is a classic table with
+object list in 'y' order and its elements in 'x' order, so Object Database is similar to
+any SQL database, where objects are rows and elements are fields.
+
+Element data represents itself JSON data type and stored in SQL database with that type.
+Element JSON data can be managed by appropriate built-in or user defined element
+handlers (see element handler help section).`
+	    		  }}},
+			  "Object Selection": { profile: { element: { head:
+`Logical expression based on elements and its values is used to match the given object. Expression format:
+    (<id[ver]>|user|<string>[<operator>]..)..
+    id            Object element id (format $id) or its title (format $"my_title" or $'my_title').
+    user          Username/group selection function will be applied to.
+    string        Any text in double quotes. Single quotes interpret string as a regular expression.
+	          For case sensitive value use char '_' after quoted string. Additionally, this field
+		  first char '@' before the quoted string makes the system to retrieve text or regular
+		  expression from dialog box user input with the <string> text comment.
+		  Also no qouted predefined strings such as #user (determines username that selection
+		  function applying to) or #undef (id, ver or user/group doesn't exist; string of itself
+		  has false logical value) can be used.
+    operator  	  Compare operations: =  !=  ==  !==  =>  <=  <  >. Double char '==' construction means
+		  exact match, whereas single '=' matches "consists of" case.
+                  Element versions compare:  logical OR applied for default, char '&' before operator -
+		  logical AND applied. Element versions on both sides of the expression are compared
+		  one by one until the last match or one to any.
+                  Arithmetic operations: +  -  \  *. For digital operands only. All arithmetic operations
+		  on non digital operands leads to undefined result.
+                  String operations: Single point '.' concatenates strings.
+		  Logical operations: '!', 'AND', 'OR'.
+		  Link operations: 'uplink', 'downlink'. Selects appropriate object tree based on 'link'
+		  property (see appropriate tag) from the first matched object.
+       ver        Version expression is a logical expression in round brackets and without quotes (match
+    		  last selected object version), with single quotes (match first selected object version)
+		  or with double quotes (match all selected object versions). Format:
+		  (<id>|<string>|<operator> ..) ..
+		  Absent field or blank expression selects last available version, any digit value -
+		  exact version number.`
+	    		  }}},
+			  "Keyboard/Mouse": { profile: { element: { head:
+`  - CTRL with left button click on any object element opens new browser tab with the element text as url*
+  - CTRL with arrow left/right key set table cursor to the left/right end of the table*
+  - CTRL with Home/End key set table cursor to the upper/lower end of the table
+  - CTRL+C or CTRL+INS copy element text data to clipboard*
+  - CTRL+Shift+C or CTRL+Shift+INS copy current object to clipboard*
+  - CTRL+V pastes text data to the current via 'KEYPRESS' event (see event section help) or
+    clones clipboard object*
+  - CTRL+Shift+F search on user input regular expression among current view object elements
+  - CTRL+Z/Y usual undo actions are not implemented int the system, cos it is hard to undo element
+    handlers action due to its complicated and unique behaviour. To see previous element values
+    use object older versions selection feature
+  - Left/right/up/down arrow keys move cursor to appropriate direction
+  - 'Shift+Enter' and 'Enter' move cursor up and down
+  - Arrow keys with Scroll-Lock will move the page instead of cursor*
+  - ESC in element contenteditable mode cancels all changes
+  - Mouse right button on sidebar, main field or main table area calls appropriate context menu
+  - Any element 'mouseover' event for some time (default 1 sec) displays appropriate hint message if exist
+  - Excel like mouse pointer table cells resizing are not implemented due to multiuser complicated cells
+    width/height values change. Use element selection (see appropriate help section) feature to set
+    initial width/height values. By default, widths and heights of the table and its cells are adjusted
+    to fit the content.
+  
+* will be available in a future releases`
+	    		  }}},
+			  "Element events": { profile: { element: { head:
+`JSON strings (one by line) to pass to the element handler when specified event (in self-titled property) occurs. Format:
+{"event": "<event name>", "data": "<event data>", "oid": "<object id>", "user": "<username>", "header":"<header>", "<property>": "<user string|json string>"}
+<event name> - property is mandatory and represents external event such as:
+  KEYPRESS (occurs when the keyboard input is registered for letters, digits, space and non symbol keys: F2, F12, INS, DEL),
+    DBLCLICK (left button mouse double click),
+      CONFIRM (callback event occurs when dialog box or cell content editable data returns to the handler to be confirmed after the user has finished
+        dialog/edit process. Event is sent automatically with no args by default),
+	  INIT (object event occurs when the new object is being created),
+	    CHANGE (object event occurs after one of object elements has been changed by handler command SET or RESET, see handler section help).
+	      Error strings or JSON strings with undefined <event name> will be ignored.
+	      <event data> - property is set automatically by the controller with specified event data.
+	        For KEYPRESS it will be the key code or the string in case of text paste operation.
+		  For CONFIRM it will be editable text data or DIALOG handler command format json data, see handler section help.
+		    For INIT it will be new element cell text from OV new object table cells.
+		      For two other events DBLCLICK and CHANGE this property is undefined.
+		      <oid>, <user> and <header> properties are object id the specified event occurs on, user initiated the event and element header respectively.
+		        Properties are set automatically by the controller. Two events (KEYPRESS, DBLCLICK) that can be emulated by scheduler are initiated by 'system' user.
+			<any property> is any user defined properties that serve to pass any user defined string to the handler with one exception below.
+			  In case of json formated string - controller interprets this string as a certain object element property value that should be drawn and passed to the handler.
+			    JSON string format: {"OD": "<OD name>", "OV": "<OV name>", "oid": "<object id>", "eid": "<element id>", "prop": "<element JSON data property name>"}
+			      In case of "OD", "OV", "oId" or "eId" omitted - current Object Database/View and object/element id values are used. Property "prop" is mandatory.
+			        Object element JSON data should contain "prop" property, otherwise empty string value to pass to the handler is used.`
+	    		  }}}
+	    	        },
+	       buttons: { "&nbsp;   OK   &nbsp;": "" },
+	       flags:   { esc: "", style: "min-width: 700px; min-height: 600px;" }
+	     };

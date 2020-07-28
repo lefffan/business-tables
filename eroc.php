@@ -2,7 +2,7 @@
 
 const DATABASENAME			= 'OE7';
 const MAXOBJECTS			= 100000;
-const ODSTRINGMAXCHAR			= 32;
+const ODSTRINGMAXCHAR			= 64;
 const HANDLERDIR			= 'handlers';
 const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 16;
@@ -92,7 +92,8 @@ function adjustODProperties($data, $db, $id)
  // New element have been set? Create it
  if ($data['dialog']['Element']['New element']['element1']['data'] != '' || $data['dialog']['Element']['New element']['element2']['data'] != '' || $data['dialog']['Element']['New element']['element4']['data'] != '')
     {
-     if (strlen($data['dialog']['Element']['New element']['element1']['data']) > ELEMENTDATAVALUEMAXCHAR) $data['dialog']['Element']['New element']['element1']['data'] = substr($data['dialog']['Element']['New element']['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR);
+     if (strlen($data['dialog']['Element']['New element']['element1']['data']) > ELEMENTDATAVALUEMAXCHAR/2)
+        $data['dialog']['Element']['New element']['element1']['data'] = substr($data['dialog']['Element']['New element']['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR/2);
      $data['dialog']['Element']['New element']['element4']['data'] = trim($data['dialog']['Element']['New element']['element4']['data']);
      $data['dialog']['Element']['New element']['element3']['readonly'] = '';
      $data['dialog']['Element']['New element']['element3']['head'] .= ' (readonly)';
@@ -160,13 +161,13 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
 		    
  $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element2' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add new databases or edit its properties:', 'data' => '', 'line' => ''],
+		    'element2' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties:', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element4' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit object element properties:', 'data' => '', 'line' => ''],
+		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements:', 'data' => '', 'line' => ''],
 		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element6' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit object view properties:', 'data' => '', 'line' => ''],
+		    'element6' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views:', 'data' => '', 'line' => ''],
 		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element8' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit database rules:', 'data' => '', 'line' => '']];
+		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules:', 'data' => '', 'line' => '']];
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
@@ -178,18 +179,17 @@ function initNewODDialogElements()
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Object View name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Object View description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
-		    'element4' => ['type' => 'radio', 'head' => 'Object view type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays object statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element4' => ['type' => 'radio', 'head' => 'Object view type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element7' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to have this OV on the sidebar list, so able to select it:', 'data' => '', 'line' => ''],
+		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups one by line allowed or disallowed (see above) to have this OV on sidebar list, so able to select it:', 'data' => '', 'line' => ''],
 		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element9' => ['type' => 'textarea', 'head' => 'List of users and groups (one by line) allowed or disallowed (depending on list type above) to add/edit/delete objects:', 'data' => '', 'line' => '']];
+		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups one by line allowed or disallowed (see above) to add/edit/delete objects in this view:', 'data' => '', 'line' => '']];
 							  
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'readonl' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => 'No action|Warning|Confirm|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
-		    'element4' => ['type' => 'checkbox', 'head' => 'Log the message', 'data' => 'Log', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Rule expression', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
+		    'element4' => ['type' => 'textarea', 'head' => 'Rule expression', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
 }
 
 function createDefaultDatabases($db)
@@ -241,11 +241,11 @@ function mergeStyleRules($rules)
 
 function Check($db, $flags)
 {
- global $input, $alert, $error;
+ global $OD, $OV, $input, $alert, $error;
  
  if ($flags & CHECK_OD_OV)
     {
-     global $OD, $OV, $odid;
+     global $odid;
      
      // Check input OD/OV vars existence
      if (!isset($input['OD']) || !isset($input['OV'])) return $error = 'Incorrect Object Database/View!';
@@ -280,7 +280,7 @@ function Check($db, $flags)
      // Decode element profiles array form OD props, remove 'New element' section and check elements existence
      $profiles = json_decode($profiles[0][0], true);
      unset($profiles['New element']);
-     if (!is_array($profiles) || !count($profiles)) return $error = 'Object Database has no elements exist!';
+     if (!is_array($profiles) || !count($profiles)) return $error = "Object Database '$OD' has no elements exist!";
 
      // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
      foreach ($profiles as $profile => $value)
@@ -578,13 +578,13 @@ function CreateNewObjectVersion($db)
 
 function getMainFieldData($db)
 {
- global $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId;
+ global $OD, $OV, $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId;
 
  // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
  $objectTable = $objectTableSrc = [];
 			     
  // No any element defined?	
- if (($sqlElementList = setElementSelectionIds()) === '') return 'Specified view has no elements defined!';
+ if (($sqlElementList = setElementSelectionIds()) === '') return "Specified view '$OV' (database '$OD') has no elements defined!";
 			
  // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
  // While this features are not released, get all objects:
@@ -618,7 +618,6 @@ function getMainFieldData($db)
 	  $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
 	  $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
 	 }
-			     loog($objectTableSrc[211]['eid1']);
 		     // Rewrite $objectTableSrc array (to the table above) on eidoid array to $objectTable, not forgeting about static element status.
 		     // In the future release create first object (static) flag whether it is on the object list or not, then remove it at the end or not.
 		     // So - iterate all elements with non zero identificators (real elements)
@@ -701,11 +700,12 @@ function setElementSelectionIds()
 	  $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
 	  if (!key_exists('eid', $j) || !key_exists('oid', $j)) // eid/oid property doesn't exist? Set some undefined cells features
 	     {
-	      if (!key_exists('eid', $j) && !key_exists('oid', $j) && (key_exists('style', $j) || key_exists('collapse', $j)))
+	      if (!key_exists('eid', $j) && !key_exists('oid', $j) && (key_exists('style', $j) || key_exists('collapse', $j) || key_exists('tablestyle', $j)))
 		 {
 		  $objectTable[0] = [0 => []];
 		  if (key_exists('style', $j)) $objectTable[0][0]['style'] = $j['style'];
 		  if (key_exists('collapse', $j)) $objectTable[0][0]['collapse'] = $j['collapse'];
+		  if (key_exists('tablestyle', $j)) $objectTable[0][0]['tablestyle'] = $j['tablestyle'];
 		 }
 	      continue;
 	     }
@@ -782,6 +782,7 @@ function EditOD($db)
      $query->execute();
      $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$odid`; DROP TABLE IF EXISTS `data_$odid`");
      $query->execute();
+     $query->closeCursor();
      return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
     }
   else return $output = ['cmd' => 'INFO', 'alert' => "To remove Object Database (OD) - empty 'name' and 'description' OD fields and remove all elements (see 'Element' tab)"];
