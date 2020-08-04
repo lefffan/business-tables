@@ -537,7 +537,12 @@ function CreateNewObjectVersion($db)
  if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
     
  // Set new object version data
- $json = str_replace("\\", "\\\\", json_encode($output[$eid]));
+ $json = json_encode($output[$eid], JSON_HEX_APOS|JSON_HEX_QUOT);
+ $json = str_replace("\\", "\\\\", $json);
+ $json = str_replace("\u0022","\"", $json);
+ //$json = str_replace("\u0022", "\\\\"", $json);
+ //$json = str_replace("\u0027", "\\\\'", $json);
+ loog($json);
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid='$json' WHERE id=$oid AND version=$version");
  $query->execute();
  

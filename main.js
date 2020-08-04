@@ -326,6 +326,8 @@ function eventHandler(event)
 	         {
 		  if (typeof box.buttons[event.target.innerHTML] === 'string' && box.buttons[event.target.innerHTML] != '' && box.buttons[event.target.innerHTML].charCodeAt(0) === 32)
 		     {
+		      box.buttons = {};
+		      box.buttons[event.target.innerHTML] = '';
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
 		      cmd = 'CONFIRM';
 		      callController(box);
@@ -802,7 +804,7 @@ function callController(data)
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
 	      object = { "cmd": cmd };
-	      if (focusElement.td)
+	      if (focusElement.td && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
 	         {
 	          object["oId"] = mainTable[focusElement.y][focusElement.x].oId;
 		  object["eId"] = mainTable[focusElement.y][focusElement.x].eId;
@@ -1378,10 +1380,10 @@ const uiProfile = {
     		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
 		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
-		  "sidebar item active": { "target": ".itemactive", "font-weight": "bolder;", "background-color": "#4578BF;", "color": "#FFFFFF;" },
+		  "sidebar item active": { "target": ".itemactive", "background-color": "#4578BF;", "color": "#FFFFFF;", "font": "1.1em Lato, Helvetica;" },
 		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
-		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;"  },
-		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "" },		  
+		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;", "font": "1.1em Lato, Helvetica;"  },
+		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "", "font": "0.9em Lato, Helvetica;" },
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "10px;" },
@@ -1389,13 +1391,13 @@ const uiProfile = {
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "" },
-		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "", "border": "none;", "background": "rgb(255,235,235);" },
+		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "1px solid #999;", "background": "rgb(255,235,235);" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
 		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
 		  // Context Menu
-		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-4weight": "300", "line-height": "1.5;", "padding": "12px 0;" },
+		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-weight": "300;", "line-height": "1.5;", "padding": "12px 0;" },
 		  "context menu item": { "target": ".contextmenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
 		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
@@ -1435,7 +1437,7 @@ const uiProfile = {
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Misc
-		  "misc customization": { "objects per page": "50", "next page bottom reach": "", "previous page top reach": "", "use next user scheme": "", "mouseover hint timer in msec": "1000" },
+		  "misc customization": { "objects per page": "50", "next page bottom reach": "", "previous page top reach": "", "force next user scheme": "", "mouseover hint timer in msec": "1000" },
 		  // Effects and animation
 /*blur(3px)*/	  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5)" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },

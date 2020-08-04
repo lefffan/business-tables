@@ -6,7 +6,7 @@ July 2020:
   add to the handler fuction data type check and in case of non string - unset the key.
 - OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
 - System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV. https://habr.com/ru/post/323714/
-- JWT: https://gist.github.com/zmts/802dc9c3510d79fd40f9dc38a12bccfc https://habr.com/ru/post/340146/
+
 
 August 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
@@ -31,6 +31,7 @@ October 2020:
 - snmp function by SLAVA
 - diagnostic function by SLAVA
 - emulate chat and helpdesk
+- Image files handle for text.php
 
 November 2020:
 - Object process SCHEDULER. Handlers are executed by built-in system user.
@@ -43,8 +44,6 @@ December 2020:
 - Object view PIECHART and GRAPH
 - Other estimated "todo" from Mishka directory ois.xlsx file
 - Feedback and finish https://bakhirev.biz/book/#MmlJN
-
--------------------------------------------------------------------------------------------
 
 2022:
 - React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
@@ -125,33 +124,7 @@ Controller to the element handler:
 
 
 
-
-interface examples:
-- https://qna.habr.com/q/281940
-- https://htmlacademy.ru/blog/video/shorts/short-4
-- table column resize https://codepen.io/barring/pen/ZNObZg
-
-SVG:
-- https://habr.com/ru/sandbox/122675/
-- https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
-- https://css-tricks.com/lodge/svg/09-svg-data-uris/
-
-Input style:
-- http://jsfiddle.net/js5x06nL/
-
-Git:
-- #git commit -a -m "INIT command ver4"
-- git commit -a -m "CreateNewObjectVersion function ver2"
-- git push -u origin master
-- lefffan
-- git pull origin # Nakatit v local repositary last code version before work
-
-DB SQL manage:
-- drop database OE4; create database OE4; use OE4; show tables;
-- drop database OE6; create database OE6; use OE6; show tables;
-- create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
----------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case--------------------------
+-------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
 const range = document.createRange();   
 const selection = window.getSelection();
 
@@ -207,4 +180,33 @@ selection.addRange(range);
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
 - OD Dialog Box - OD icon, OV icon, OV shortcut key, 
-- user/group (type, pass, force scheme from next user, OD add permission), name, tel, email, foto, comments, theme
+- user/group (user|group, type, [pass, OD add permission, group-list]), name, tel, email, foto, info, theme
+-----------------------------------WIKI-----------------------------------------------------
+interface examples:
+- https://qna.habr.com/q/281940
+- https://htmlacademy.ru/blog/video/shorts/short-4
+- table column resize https://codepen.io/barring/pen/ZNObZg
+
+SVG:
+- https://habr.com/ru/sandbox/122675/
+- https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
+- https://css-tricks.com/lodge/svg/09-svg-data-uris/
+
+Input style:
+- http://jsfiddle.net/js5x06nL/
+
+JWT:
+- https://gist.github.com/zmts/802dc9c3510d79fd40f9dc38a12bccfc https://habr.com/ru/post/340146/
+
+Git:
+- #git commit -a -m "INIT command ver4"
+- git commit -a -m "CreateNewObjectVersion function ver2"
+- git push -u origin master
+- lefffan
+- git pull origin # Nakatit v local repositary last code version before work
+
+DB SQL manage:
+- drop database OE4; create database OE4; use OE4; show tables;
+- drop database OE6; create database OE6; use OE6; show tables;
+- create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
