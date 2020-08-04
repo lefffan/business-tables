@@ -430,7 +430,10 @@ function getElementProperty($db, $elementId, $prop = NULL)
      $query->execute();
      $result = $query->fetchAll(PDO::FETCH_NUM);
      if (count($result) === 0 || count($result[0]) === 0) return '';
-     return str_replace("\\n", "\n", substr($result[0][0], 1, -1));
+     $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
+     $result = str_replace('\\"', '"', $result);
+     $result = str_replace("\\\\", "\\", $result);
+     return $result;
     }
   else
     {
@@ -535,16 +538,9 @@ function CreateNewObjectVersion($db)
 
  // Read current element json data to merge it with new data in case of 'SET' command
  if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
-    
- // Set new object version data
- $json = json_encode($output[$eid], JSON_HEX_APOS|JSON_HEX_QUOT);
- $json = str_replace("\\", "\\\\", $json);
- $json = str_replace("\u0022","\"", $json);
- //$json = str_replace("\u0022", "\\\\"", $json);
- //$json = str_replace("\u0027", "\\\\'", $json);
- loog($json);
- $query = $db->prepare("UPDATE `data_$odid` SET eid$eid='$json' WHERE id=$oid AND version=$version");
- $query->execute();
+
+ $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
+ $query->execute([':json' => json_encode($output[$eid])]);
  
  foreach ($allElementsArray as $id => $profile)
       if ($id != $eid)
@@ -567,14 +563,14 @@ function CreateNewObjectVersion($db)
 	     {
 	      // Read current element json data to merge it with new data in case of 'SET' command
 	      if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $id)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
-	      if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '')
+	      if (($json = json_encode($output[$id])) === false)
 	         {
 		  unset($output[$id]);
 		 }
 	       else
 	         {
-		  $query = $db->prepare("UPDATE `data_$odid` SET eid$id='$json' WHERE id=$oid AND version=$version");
-		  $query->execute();
+		  $query = $db->prepare("UPDATE `data_$odid` SET eid$id=:json WHERE id=$oid AND version=$version");
+		  $query->execute([':json' => $json]);
 	         }
 	     }
 	   else unset($output[$id]);
