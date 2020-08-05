@@ -785,6 +785,9 @@ function callController(data)
 	      box = help;
 	      ShowBox();
 	      break;
+	 case 'Login':
+	      ShowLogin();
+	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
 	      object = { "cmd": 'INIT', "data": {} };
@@ -1244,6 +1247,7 @@ function ShowContextmenu(event)
 
  if (innerHTML != undefined)
     {
+     innerHTML += '<div class="contextmenuItems">Login</div>';
      event.preventDefault();
      contextmenuDiv.innerHTML = innerHTML;
      contextmenu = { item : null };
@@ -1361,6 +1365,12 @@ function warning(text, title)
  if (typeof text != 'string') text = 'Undefined warning message!';
  if (typeof title != 'string') title = 'Warning';
  box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
+ ShowBox();
+}
+
+function ShowLogin()
+{
+ box = { title: 'Login', dialog: {pad: {profile: {element1: {head: '\nUsername', type: 'text'}, element2: {head: 'Password', type: 'password'}}}}, buttons: {"&nbsp;   OK   &nbsp;": " ", "CANCEL": "background-color: red;"}, flags: {"_callback": "LOGIN", esc: "", style: "min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;"} };
  ShowBox();
 }
 

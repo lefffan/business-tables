@@ -82,7 +82,25 @@ try {
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
-		     if (isset($input['data']['flags']['_callback'])) { $input['data']['flags']['_callback'] === 'EDITOD' ? $output = EditOD($db) : $output = NewOD($db); break; }
+		     if (isset($input['data']['flags']['_callback']))
+		        {
+			 if ($input['data']['flags']['_callback'] === 'EDITOD') $output = EditOD($db);
+			  else if ($input['data']['flags']['_callback'] === 'NEWOD') $output = NewOD($db);
+			  else if ($input['data']['flags']['_callback'] === 'LOGIN')
+			       if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' && ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '')
+				  {
+				   $query = $db->prepare("SELECT id FROM `uniq_12` WHERE eid7=:user");
+				   $query->execute([':user' => $user]);
+				   $id = $query->fetchAll(PDO::FETCH_NUM)[0][0];
+				   $query = $db->prepare("SELECT JSON_EXTRACT(eid7, '$.password') FROM `data_12` WHERE id=$id AND eid7 IS NOT NULL ORDER BY version DESC LIMIT 1");
+				   $query->execute();
+				   if (password_verify($pass, substr($query->fetchAll(PDO::FETCH_NUM)[0][0], 1, -1))) $output = ['cmd' => 'INFO', 'alert' => 'You are logged in!'];
+				    else $output = ['cmd' => 'INFO', 'alert' => 'Wrong username or password!'];
+				  }
+				else $output = ['cmd' => 'INFO', 'alert' => 'Wrong username or password!'];
+			 break;
+			}
+			
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);
 		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }

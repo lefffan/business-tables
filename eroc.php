@@ -143,9 +143,8 @@ function adjustODProperties($data, $db, $id)
  
  // Return result data
  $data['title'] = 'Edit Object Database Structure';
+ $data['buttons'] = ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'];
  if (!isset($data['flags'])) $data['flags'] = [];
- unset($data['buttons']['CREATE']);
- $data['buttons']['SAVE'] = ' ';
  $data['flags']['_callback'] = 'EDITOD';
  return $data;
 }					
@@ -450,19 +449,22 @@ function InsertObject($db)
  global $odid, $allElementsArray, $uniqElementsArray, $output;
 
  $query = $values = '';
+ $params = [];
  foreach ($uniqElementsArray as $id => $value)
 	 {
 	  $query .= ",eid$id";
-	  isset($output[$id]['value']) ? $values .= ",'".$output[$id]['value']."'" : $values .= ",''";
+	  $values .= ",:eid$id";
+	  isset($output[$id]['value']) ? $params[":eid$id"] = $output[$id]['value'] : $params[":eid$id"] = '';
 	 }
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
- 
+
  $db->beginTransaction();
  $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
- $query->execute();                                                                  
+ $query->execute($params);
  
- $query = $db->prepare("SELECT LAST_INSERT_ID()");                                   
- $query->execute();                                                                  
+ // Get 
+ $query = $db->prepare("SELECT LAST_INSERT_ID()");
+ $query->execute();
  // Generate new PDO exception in case of non correct last insert id value               
  if (intval($newId = $query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID)
     {
@@ -471,14 +473,17 @@ function InsertObject($db)
     }
 
  $query = 'id,version'; // Plus date, time, user
- $values = $newId.',1';
+ $params = [':id' => $newId, ':version' => '1'];
+ $values = ':id,:version';
  foreach ($allElementsArray as $id => $profile) if (isset($output[$id]))
-	 {
-	  if (($json = str_replace("\\", "\\\\", json_encode($output[$id]))) == '') continue;
-	  if (isset($json)) { $query .= ',eid'.strval($id); $values .= ",'".$json."'"; }
-	 }
+	 if (($json = json_encode($output[$id])) !== false && isset($json))
+	    {
+	     $query .= ',eid'.strval($id);
+	     $params[':eid'.strval($id)] = $json;
+	     $values .= ",:eid".strval($id);
+	    }
  $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
- $query->execute();
+ $query->execute($params);
  
  $db->commit();
 }
@@ -536,9 +541,8 @@ function CreateNewObjectVersion($db)
     }
  $db->commit();
 
- // Read current element json data to merge it with new data in case of 'SET' command
+ // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
  if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
-
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
  $query->execute([':json' => json_encode($output[$eid])]);
  
