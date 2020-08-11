@@ -15,6 +15,14 @@ try {
      if (is_array($input = json_decode(file_get_contents("php://input"), true)))
      switch ($input['cmd'])
 	    {
+	    case 'GETUSER':
+		  if (isset($_SESSION["u"])) $output = ['cmd' => 'INFO', 'setuser' => getUserName($db, $_SESSION["u"])];
+		   else $output = ['cmd' => 'INFO', 'setuser' => ""];
+		  break;
+	    case 'LOGOUT':
+		  unset($_SESSION["u"]);
+		  $output = ['cmd' => 'INFO', 'alert' => '', 'setuser' => ''];
+		  break;
 	    case 'New Object Database':
 	          initNewODDialogElements();
 		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']]];
@@ -89,12 +97,11 @@ try {
 			  else if ($input['data']['flags']['_callback'] === 'LOGIN')
 			       if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' && ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '')
 				  {
-				   $query = $db->prepare("SELECT id FROM `uniq_12` WHERE eid7=:user");
-				   $query->execute([':user' => $user]);
-				   $id = $query->fetchAll(PDO::FETCH_NUM)[0][0];
-				   $query = $db->prepare("SELECT JSON_EXTRACT(eid7, '$.password') FROM `data_12` WHERE id=$id AND eid7 IS NOT NULL ORDER BY version DESC LIMIT 1");
-				   $query->execute();
-				   if (password_verify($pass, substr($query->fetchAll(PDO::FETCH_NUM)[0][0], 1, -1))) $output = ['cmd' => 'INFO', 'alert' => 'You are logged in!'];
+				   if (password_verify($pass, getUserPass($db, $uid = getUserId($db, $user))))
+				      {
+				       $output = ['cmd' => 'INFO', 'alert' => '', 'setuser' => $user];
+				       $_SESSION['u'] = $uid;
+				      }
 				    else $output = ['cmd' => 'INFO', 'alert' => 'Wrong username or password!'];
 				  }
 				else $output = ['cmd' => 'INFO', 'alert' => 'Wrong username or password!'];

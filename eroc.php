@@ -26,7 +26,8 @@ $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
 $db->exec("SET NAMES UTF8");
 $db->exec("ALTER DATABASE ".DATABASENAME." CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+session_start(['cookie_httponly' => true]);
+    
 function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
 {
  return str_replace(';', '', str_replace('"', '', str_replace("'", '', str_replace("%", '', $str))));
@@ -798,4 +799,26 @@ function EditOD($db)
  $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
 		    
  return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+}
+
+function getUserId($db, $user)
+{
+ if (gettype($user) != 'string' || $user === '') return '0';
+ $query = $db->prepare("SELECT id FROM `uniq_12` WHERE eid7=:user");
+ $query->execute([':user' => $user]);
+ return $query->fetchAll(PDO::FETCH_NUM)[0][0];                                
+}
+
+function getUserPass($db, $id)
+{
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid7, '$.password') FROM `data_12` WHERE id=:id AND eid7 IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query->execute([':id' => $id]);
+ return substr($query->fetchAll(PDO::FETCH_NUM)[0][0], 1, -1);
+}
+
+function getUserName($db, $id)
+{
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid7, '$.value') FROM `data_12` WHERE id=:id AND eid7 IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query->execute([':id' => $id]);
+ return substr($query->fetchAll(PDO::FETCH_NUM)[0][0], 1, -1);
 }

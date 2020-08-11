@@ -18,7 +18,7 @@ let box = selectExpandedDiv = null, boxDiv, expandedDiv;
 let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let cmd = activeOD = activeOV = '';
+let user = cmd = activeOD = activeOV = '';
 let sidebar = focusElement = {};
 /*---------------------------------------------------------------------------*/
 
@@ -76,6 +76,8 @@ window.onload = function()
  expandedDiv = document.querySelector('.expanded');
  
  cmd = 'GETMENU';
+ callController();
+ cmd = 'GETUSER';
  callController();
  cmd = 'OBTAINMAIN';
  callController();
@@ -633,6 +635,21 @@ function controllerCmdHandler(input)
 		  if (activeOD != '') loog('Controller error message: ' + input.error);
 		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) displayMainError(input.error);
 		 }
+	      if (input.setuser != undefined)
+	         {
+		  if (input.alert != undefined)
+		  if (input.setuser == '')
+		     {
+		      loog('User ' + user + ' succesfully logout!');
+		      warning('User ' + user + ' succesfully logout!');
+		     }
+		   else
+		     {
+		      loog('User ' + input.setuser + ' has logged in!');
+		      warning('User ' + input.setuser + ' has logged in!');
+		     }
+		  user = input.setuser;
+		 }
 	      break;
 	 case '':
 	      break;
@@ -766,10 +783,9 @@ function callController(data)
  switch (cmd)
 	{
 	 case 'GETMENU':
-	      object = { "cmd": cmd };
-	      break;
 	 case 'GETMAIN':
 	 case 'OBTAINMAIN':
+	 case 'GETUSER':
 	      object = { "cmd": cmd };
 	      break;
 	 case 'Element description':
@@ -826,8 +842,15 @@ function callController(data)
 		  }
 	      break;
 	 default:
-	      warning("Undefined browser message: '" + cmd + "'!");
-	      loog("Undefined browser message: '" + cmd + "'!");
+	      if (cmd.substr(0, 7) === 'Logout ')
+	         {
+		  object = { cmd: 'LOGOUT' };
+		 }
+	       else
+	         {
+	          warning("Undefined browser message: '" + cmd + "'!");
+	          loog("Undefined browser message: '" + cmd + "'!");
+		 }
 	}
 	
  if (object)
@@ -1247,7 +1270,12 @@ function ShowContextmenu(event)
 
  if (innerHTML != undefined)
     {
-     innerHTML += '<div class="contextmenuItems">Login</div>';
+     if (user === '') innerHTML += '<div class="contextmenuItems">Login</div>';
+      else
+        {
+	 if (user.length > 12) innerHTML += '<div class="contextmenuItems">Logout '+ user.substr(0, 10) +'..</div>';
+	  else innerHTML += '<div class="contextmenuItems">Logout '+ user +'</div>';
+	}
      event.preventDefault();
      contextmenuDiv.innerHTML = innerHTML;
      contextmenu = { item : null };
