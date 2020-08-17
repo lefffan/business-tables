@@ -206,6 +206,15 @@ Git:
 - git pull origin # Nakatit v local repositary last code version before work
 
 DB SQL manage:
-- drop database OE4; create database OE4; use OE4; show tables;
+- drop database OE8; create database OE8; use OE8; show tables;
 - drop database OE6; create database OE6; use OE6; show tables;
 - create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+user.php
+{"event":"INIT"}
+{ "event": "DBLCLICK", "account": {"prop": "value"}, "odaddperm": {"prop": "odaddperm"}, "groups": {"prop": "groups"} }
+
+
+{"eid": "1", "oid": "0", "x":"o", "y":"n", "startevent":"KEYPRESSjl;k\njjj "}
+{"eid": "2", "oid": "0", "x":"0", "y":"n"}

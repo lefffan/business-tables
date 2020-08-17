@@ -1,14 +1,15 @@
 <?php
 
-const DATABASENAME			= 'OE7';
+const DATABASENAME			= 'OE8';
 const MAXOBJECTS			= 100000;
 const ODSTRINGMAXCHAR			= 64;
+const USERSTRINGMAXCHAR			= '32';
 const HANDLERDIR			= 'handlers';
 const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 16;
 const ELEMENTPROFILENAMEADDSTRING	= 'element id';
 const UNIQKEYCHARLENGTH			= 300;
-const UNIQELEMENTTYPE			= '+unique|';
+const UNIQELEMENTTYPE			= '+unique';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
 const STARTOBJECTID			= 3;
@@ -18,8 +19,8 @@ const GET_OBJECT_VIEWS			= 0b00000100;
 const SET_CMD_DATA			= 0b00001000;
 const CHECK_OID				= 0b00010000;
 const CHECK_EID				= 0b00100000;
-
-
+const DEFAULTUSER			= 'root';
+const DEFAULTPASSWORD			= 'root';
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
@@ -182,9 +183,9 @@ function initNewODDialogElements()
 		    'element4' => ['type' => 'radio', 'head' => 'Object view type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups one by line allowed or disallowed (see above) to have this OV on sidebar list, so able to select it:', 'data' => '', 'line' => ''],
+		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to have this OV on sidebar list:', 'data' => '', 'line' => ''],
 		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups one by line allowed or disallowed (see above) to add/edit/delete objects in this view:', 'data' => '', 'line' => '']];
+		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view:', 'data' => '', 'line' => '']];
 							  
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'readonl' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
@@ -194,8 +195,86 @@ function initNewODDialogElements()
 
 function createDefaultDatabases($db)
 {
+ /***********Create OD list data sql table if not exists*************************/
  $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
+ 
+ /***********Default OD 'Users' existence check*************************/
+ $query = $db->prepare("SELECT odname FROM `$` WHERE odname='Users'");
+ $query->execute();
+ if (isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) return;
+ 
+ /***********Default OD 'Users' creating*************************/
+ global $newProperties, $newPermissions, $newElement, $newView, $newRule;
+ initNewODDialogElements();
+ $newProperties['element1']['data'] = 'Users';
+ $userOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'EDITOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']];
+
+ $newView['element1']['data'] = 'All users';
+ $userOD['dialog']['View']['All users'] = $newView;
+
+ $newElement['element1']['data'] = 'User';
+ $newElement['element2']['data'] = 'Double click the username to change the password and other user properties';
+ $newElement['element3']['data'] = '+unique';
+ $newElement['element4']['data'] = 'user.php';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK", "account": {"prop": "value"}, "odaddperm": {"prop": "odaddperm"}, "groups": {"prop": "groups"} }';
+ $userOD['dialog']['Element']['User - element id1'] = $newElement;
+
+ $newElement['element1']['data'] = 'Name';
+ $newElement['element2']['data'] = '';
+ $newElement['element3']['data'] = 'unique';
+ $newElement['element4']['data'] = 'text.php';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
+ $userOD['dialog']['Element']['Name - element id2'] = $newElement;
+
+ $newElement['element1']['data'] = 'Telephone';
+ $newElement['element2']['data'] = '';
+ $newElement['element3']['data'] = 'unique';
+ $newElement['element4']['data'] = 'text.php';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
+ $userOD['dialog']['Element']['Telephone - element id3'] = $newElement;
+
+ $newElement['element1']['data'] = 'Email';
+ $newElement['element2']['data'] = '';
+ $newElement['element3']['data'] = 'unique';
+ $newElement['element4']['data'] = 'text.php';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
+ $userOD['dialog']['Element']['Email - element id4'] = $newElement;
+
+ $newElement['element1']['data'] = 'Comment';
+ $newElement['element2']['data'] = '';
+ $newElement['element3']['data'] = 'unique';
+ $newElement['element4']['data'] = 'text.php';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
+ $userOD['dialog']['Element']['Comment - element id5'] = $newElement;
+
+ $newElement['element1']['data'] = 'Customization';
+ $newElement['element2']['data'] = 'Double click appropriate cell to change color, font, background and other properties for the specified user';
+ $newElement['element3']['data'] = '+unique';
+ $newElement['element4']['data'] = 'customization.php';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}';
+ $userOD['dialog']['Element']['Customization - element id6'] = $newElement;
+
+ $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
+ $query->execute([':odprops' => json_encode($userOD)]);
+
+ /***********Creating Object Database (uniq instance)*************************/
+ $query = $db->prepare("create table `uniq_1` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+ $query = $db->prepare("ALTER TABLE `uniq_1` ADD eid1 TEXT, ADD UNIQUE(eid1(".USERSTRINGMAXCHAR."))");
+ $query->execute();
+ $query = $db->prepare("ALTER TABLE `uniq_1` ADD eid6 TEXT, ADD UNIQUE(eid6(".USERSTRINGMAXCHAR."))");
+ $query->execute();
+ 
+ /***********Creating Object Database (actual data instance)*************************/
+ $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query->execute();
+ global $odid, $allElementsArray, $uniqElementsArray, $output;
+ $odid = '1';
+ $allElementsArray = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
+ $uniqElementsArray = ['1' => '', '6' => ''];
+ $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT)], '6' => ['cmd' => 'RESET', 'value' => 'Default']];
+ InsertObject($db);
 }
 
 function getODVNamesForSidebar($db)
@@ -421,7 +500,7 @@ function parseJSONEventData($db, $JSONs, $event, $id)
 function getElementProperty($db, $elementId, $prop = NULL)
 {
  global $odid, $oid, $eid;
- if (!isset($oid) || !isset($eid)) return '';
+ if (!isset($oid) || !isset($eid)) return NULL;
  if (!isset($elementId)) $elementId = $eid;
 
  if (isset($prop))
@@ -429,7 +508,7 @@ function getElementProperty($db, $elementId, $prop = NULL)
      $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
      $query->execute();
      $result = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($result) === 0 || count($result[0]) === 0) return '';
+     if (count($result) === 0 || count($result[0]) === 0) return NULL;
      $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
      $result = str_replace('\\"', '"', $result);
      $result = str_replace("\\\\", "\\", $result);
@@ -440,9 +519,22 @@ function getElementProperty($db, $elementId, $prop = NULL)
      $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
      $query->execute();
      $result = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($result) === 0 || count($result[0]) === 0) return '';
+     if (count($result) === 0 || count($result[0]) === 0) return NULL;
      return json_decode($result[0][0], true);
     }
+}
+
+function getElementJSON($db, $elementId)
+{
+ global $odid, $oid, $eid;
+ if (!isset($oid) || !isset($eid)) return NULL;
+ if (!isset($elementId)) $elementId = $eid;
+
+ $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query->execute();
+ $result = $query->fetchAll(PDO::FETCH_NUM);
+ if (count($result) === 0 || count($result[0]) === 0) return NULL;
+ return $result[0][0];
 }
 
 function InsertObject($db)
@@ -533,7 +625,8 @@ function CreateNewObjectVersion($db)
  // Unset last flag of the object current version and insert new object version with empty data
  $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (id,version,last) VALUES ($oid,$version,1)");
  $query->execute();
- 
+ $query->closeCursor();
+
  // Update current object uniq element if exist and commit the transaction, so the new version is created.
  if (isset($uniqElementsArray[$eid]) && isset($output[$eid]['value']))
     {
@@ -541,42 +634,46 @@ function CreateNewObjectVersion($db)
      $query->execute([':value' => $output[$eid]['value']]);
     }
  $db->commit();
-
+ 
  // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
  if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
  $query->execute([':json' => json_encode($output[$eid])]);
  
- foreach ($allElementsArray as $id => $profile)
-      if ($id != $eid)
-      if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
+ foreach ($allElementsArray as $id => $profile) if ($id != $eid)
 	 {
-	  $output[$id] = Handler($handlerName, json_encode($eventArray));
-	  if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))
+	  $json = NULL;
+	  ///////////////////////////
+          if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
 	     {
-	      try {
-		   $query = $db->prepare("UPDATE `uniq_$odid` SET eid$id=:value WHERE id=$oid");
-	           $query->execute([':value' => $output[$id]['value']]);
-		  }
-	      catch (PDOException $e)
-	          {
-		   unset($output[$id]);
-		  }
-	     }
-	  if (isset($output[$id]))
-	  if ($output[$id]['cmd'] === 'SET' || $output[$id]['cmd'] === 'RESET')
-	     {
-	      // Read current element json data to merge it with new data in case of 'SET' command
-	      if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $id)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
-	      if (($json = json_encode($output[$id])) === false)
+	      $output[$id] = Handler($handlerName, json_encode($eventArray));
+	      if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))
 	         {
-		  unset($output[$id]);
+	          try {
+		       $query = $db->prepare("UPDATE `uniq_$odid` SET eid$id=:value WHERE id=$oid");
+		       $query->execute([':value' => $output[$id]['value']]);
+		      }
+	    	  catch (PDOException $e)
+	              {
+		       unset($output[$id]);
+		      }
+	         }
+	      if (!isset($output[$id]) || ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET'))
+	         {
+		  $json = getElementJSON($db, $id);
 		 }
 	       else
 	         {
-		  $query = $db->prepare("UPDATE `data_$odid` SET eid$id=:json WHERE id=$oid AND version=$version");
-		  $query->execute([':json' => $json]);
+	          if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $id)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
+	          if (($json = json_encode($output[$id])) === false) $json = NULL;
 	         }
+	     }
+	  ////////////////////////
+	  if (!isset($json)) $json = getElementJSON($db, $id);
+	  if (isset($json))
+	     {
+	      $query = $db->prepare("UPDATE `data_$odid` SET eid$id=:json WHERE id=$oid AND version=$version");
+	      $query->execute([':json' => $json]);
 	     }
 	   else unset($output[$id]);
 	 }
@@ -804,21 +901,24 @@ function EditOD($db)
 function getUserId($db, $user)
 {
  if (gettype($user) != 'string' || $user === '') return '0';
- $query = $db->prepare("SELECT id FROM `uniq_12` WHERE eid7=:user");
+ $query = $db->prepare("SELECT id FROM `uniq_1` WHERE eid1=:user");
  $query->execute([':user' => $user]);
- return $query->fetchAll(PDO::FETCH_NUM)[0][0];                                
+ $id = $query->fetchAll(PDO::FETCH_NUM);
+ if (isset($id[0][0])) return $id[0][0];
 }
 
 function getUserPass($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid7, '$.password') FROM `data_12` WHERE id=:id AND eid7 IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.password') FROM `data_1` WHERE id=:id AND eid1 IS NOT NULL ORDER BY version DESC LIMIT 1");
  $query->execute([':id' => $id]);
- return substr($query->fetchAll(PDO::FETCH_NUM)[0][0], 1, -1);
+ $pass = $query->fetchAll(PDO::FETCH_NUM);
+ if (isset($pass[0][0])) return substr($pass[0][0], 1, -1);
 }
 
 function getUserName($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid7, '$.value') FROM `data_12` WHERE id=:id AND eid7 IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND eid1 IS NOT NULL ORDER BY version DESC LIMIT 1");
  $query->execute([':id' => $id]);
- return substr($query->fetchAll(PDO::FETCH_NUM)[0][0], 1, -1);
+ $name = $query->fetchAll(PDO::FETCH_NUM);
+ if (isset($name[0][0])) return substr($name[0][0], 1, -1);
 }

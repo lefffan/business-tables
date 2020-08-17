@@ -2,7 +2,7 @@
 
 try {
      require_once 'eroc.php';
-     createDefaultDatabases($db);
+     //createDefaultDatabases($db);
     }
 catch (PDOException $e)
     {
@@ -28,12 +28,11 @@ try {
 		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']]];
 		  break;
 	    case 'Edit Database Structure':
-			if (isset($input['data']))
-				{
-				 initNewODDialogElements();
- 				 $query = $db->prepare("SELECT odprops FROM `$` WHERE odname=:odname");
-				 $query->execute([':odname' => $input['data']]);
-				 $odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true);
+		  if (isset($input['data']))
+		     {
+ 		      $query = $db->prepare("SELECT odprops FROM `$` WHERE odname=:odname");
+		      $query->execute([':odname' => $input['data']]);
+		      $odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true);
 				 if ($odprops)
 				    {
 				     $odprops['flags']['callback'] = $input['data'];
@@ -41,8 +40,8 @@ try {
 				     $output = ['cmd' => 'DIALOG', 'data' => $odprops];
 				    }
 				 else $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$input[data]' Object Database properties!"];
-				}
-		break;
+		     }
+		 break;
 		case 'GETMENU':
 		     $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
 		     break;
