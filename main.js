@@ -18,7 +18,7 @@ let box = selectExpandedDiv = null, boxDiv, expandedDiv;
 let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let user = cmd = activeOD = activeOV = '';
+let cmd = activeOD = activeOV = '';
 let sidebar = focusElement = {};
 /*---------------------------------------------------------------------------*/
 
@@ -75,11 +75,7 @@ window.onload = function()
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
  
- cmd = 'GETMENU';
- callController();
- cmd = 'GETUSER';
- callController();
- cmd = 'OBTAINMAIN';
+ cmd = 'START';
  callController();
 }
 
@@ -635,21 +631,6 @@ function controllerCmdHandler(input)
 		  if (activeOD != '') loog('Controller error message: ' + input.error);
 		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) displayMainError(input.error);
 		 }
-	      if (input.setuser != undefined)
-	         {
-		  if (input.alert != undefined)
-		  if (input.setuser == '')
-		     {
-		      loog('User ' + user + ' succesfully logout!');
-		      warning('User ' + user + ' succesfully logout!');
-		     }
-		   else
-		     {
-		      loog('User ' + input.setuser + ' has logged in!');
-		      warning('User ' + input.setuser + ' has logged in!');
-		     }
-		  user = input.setuser;
-		 }
 	      break;
 	 case '':
 	      break;
@@ -785,7 +766,7 @@ function callController(data)
 	 case 'GETMENU':
 	 case 'GETMAIN':
 	 case 'OBTAINMAIN':
-	 case 'GETUSER':
+	 case 'START':
 	      object = { "cmd": cmd };
 	      break;
 	 case 'Element description':
@@ -800,9 +781,6 @@ function callController(data)
 	 case 'Help':
 	      box = help;
 	      ShowBox();
-	      break;
-	 case 'Login':
-	      ShowLogin();
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
@@ -841,16 +819,12 @@ function callController(data)
 		   style.sheet.insertRule(rule + "}"); //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
 		  }
 	      break;
+	 case 'Logout':
+	      object = { cmd: 'LOGOUT' };
+	      break;
 	 default:
-	      if (cmd.substr(0, 7) === 'Logout ')
-	         {
-		  object = { cmd: 'LOGOUT' };
-		 }
-	       else
-	         {
-	          warning("Undefined browser message: '" + cmd + "'!");
-	          loog("Undefined browser message: '" + cmd + "'!");
-		 }
+	      warning("Undefined browser message: '" + cmd + "'!");
+	      loog("Undefined browser message: '" + cmd + "'!");
 	}
 	
  if (object)
@@ -1270,12 +1244,7 @@ function ShowContextmenu(event)
 
  if (innerHTML != undefined)
     {
-     if (user === '') innerHTML += '<div class="contextmenuItems">Login</div>';
-      else
-        {
-	 if (user.length > 12) innerHTML += '<div class="contextmenuItems">Logout '+ user.substr(0, 10) +'..</div>';
-	  else innerHTML += '<div class="contextmenuItems">Logout '+ user +'</div>';
-	}
+     innerHTML += '<div class="contextmenuItems">Logout</div>';
      event.preventDefault();
      contextmenuDiv.innerHTML = innerHTML;
      contextmenu = { item : null };
@@ -1396,12 +1365,6 @@ function warning(text, title)
  ShowBox();
 }
 
-function ShowLogin()
-{
- box = { title: 'Login', dialog: {pad: {profile: {element1: {head: '\nUsername', type: 'text'}, element2: {head: 'Password', type: 'password'}}}}, buttons: {"&nbsp;   OK   &nbsp;": " ", "CANCEL": "background-color: red;"}, flags: {"_callback": "LOGIN", esc: "", style: "min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;"} };
- ShowBox();
-}
-
 function isObjectEmpty(object, excludeProp)
 {
  if (typeof object != 'object') return false;
@@ -1451,7 +1414,7 @@ const uiProfile = {
 		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #CCC;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
 		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
 		  "dialog box button and pad hover": { "target": ".button:hover, .pad:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
-		  "dialog box element headers": { "target": ".element-headers", "margin": "5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
+		  "dialog box element headers": { "target": ".element-headers", "margin": "5px 5px 5px 5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
 		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
 		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
 		  //

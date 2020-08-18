@@ -214,8 +214,8 @@ function createDefaultDatabases($db)
  $userOD['dialog']['View']['All users'] = $newView;
 
  $newElement['element1']['data'] = 'User';
- $newElement['element2']['data'] = 'Double click the username to change the password and other user properties';
- $newElement['element3']['data'] = '+unique';
+ $newElement['element2']['data'] = "\nDouble click the username to change the password and other user properties";
+ $newElement['element3']['data'] = UNIQELEMENTTYPE;
  $newElement['element4']['data'] = 'user.php';
  $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK", "account": {"prop": "value"}, "odaddperm": {"prop": "odaddperm"}, "groups": {"prop": "groups"} }';
  $userOD['dialog']['Element']['User - element id1'] = $newElement;
@@ -249,10 +249,10 @@ function createDefaultDatabases($db)
  $userOD['dialog']['Element']['Comment - element id5'] = $newElement;
 
  $newElement['element1']['data'] = 'Customization';
- $newElement['element2']['data'] = 'Double click appropriate cell to change color, font, background and other properties for the specified user';
- $newElement['element3']['data'] = '+unique';
+ $newElement['element2']['data'] = "\nDouble click appropriate cell to change color, font, background and other properties for the specified user";
+ $newElement['element3']['data'] = UNIQELEMENTTYPE;
  $newElement['element4']['data'] = 'customization.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}';
+ $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK", "dialog": {"prop": "dialog"}}';
  $userOD['dialog']['Element']['Customization - element id6'] = $newElement;
 
  $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
@@ -273,7 +273,7 @@ function createDefaultDatabases($db)
  $odid = '1';
  $allElementsArray = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
  $uniqElementsArray = ['1' => '', '6' => ''];
- $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT)], '6' => ['cmd' => 'RESET', 'value' => 'Default']];
+ $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT)], '6' => ['cmd' => 'RESET', 'value' => 'Default', 'dialog' => defaultCustomizationDialogJSON('Default')]];
  InsertObject($db);
 }
 
@@ -757,7 +757,7 @@ function getMainFieldData($db)
 				      {
 				       $json = NULL;
 				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '', 'hint' => 'Use mouse double click to enter element text for the new object']);
-				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data'], 'description' => $allElementsArray[$eid]['element2']['data'], 'hint' => 'Title for object element id'.strval($eid)]);
+				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data'], 'description' => $allElementsArray[$eid]['element2']['data'], 'hint' => 'Title for object element id'.strval($eid).'. '.$allElementsArray[$eid]['element2']['data']]);
 				       if (key_exists($oid, $objectTableSrc)) $json = $objectTableSrc[$oid][$eidstr];
 				       if (isset($json))
 				          {
@@ -921,4 +921,19 @@ function getUserName($db, $id)
  $query->execute([':id' => $id]);
  $name = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($name[0][0])) return substr($name[0][0], 1, -1);
+}
+
+function defaultCustomizationDialogJSON($name)
+{
+ return json_encode(['pad' => ['Scheme' => ['element1' => ['type' => 'text', 'head' => 'Name:', 'data' => $name, 'line' => ''], 'element2' => ['type' => 'text', 'head' => 'Force to use scheme name:', 'data' => '', 'line' => '']], 'Body' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'Background color:', 'data' => 'red']]]]);
+}
+
+function getLoginDialogData()
+{
+ return [
+	 'title'   => 'Login',
+	 'dialog'  => ['pad' => ['profile' => ['element1' => ['head' => "\nUsername", 'type' => 'text'], 'element2' => ['head' => 'Password', 'type' => 'password']]]],
+	 'buttons' => ['LOGIN' => ' '],
+	 'flags'   => ['_callback' => 'LOGIN', 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
+	];
 }

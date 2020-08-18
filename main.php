@@ -12,16 +12,55 @@ catch (PDOException $e)
     }
 
 try {
-     if (is_array($input = json_decode(file_get_contents("php://input"), true)))
+     $input = json_decode(file_get_contents("php://input"), true);
+     
+     if (!isset($input['cmd']))
+        {
+         echo json_encode(['cmd' => 'INFO', 'error' => '']);
+         exit;
+	}
+	
+     if (!isset($_SESSION["u"]))
+	{
+         if ($input['cmd'] === 'CONFIRM' && isset($input['data']['flags']['_callback']) && $input['data']['flags']['_callback'] === 'LOGIN')
+	 if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' &&
+	     ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' &&
+	     password_verify($pass, getUserPass($db, $uid = getUserId($db, $user))))
+	    {
+	     $_SESSION['u'] = $uid;
+	     if (isset($input['data']['flags']['callback'])) $input = $input['data']['flags']['callback'];
+	      else 
+	        {
+		 echo json_encode(['cmd' => 'INFO', 'alert' => "User '$user' has logged in!"]);
+		 exit;
+		}
+	    }
+	  else
+	    {
+	     $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+	     $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong passowrd or username, please try again!\n\nUsername";
+	     if (isset($input['data']['flags']['callback'])) $output['data']['flags']['callback'] = $input['data']['flags']['callback'];
+	     echo json_encode($output);
+	     exit;
+	    }
+	  else
+	    {
+	     $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+	     $output['data']['flags']['callback'] = $input;
+	     echo json_encode($output);
+	     exit;
+	    }
+	 
+	}
+	
      switch ($input['cmd'])
 	    {
-	    case 'GETUSER':
-		  if (isset($_SESSION["u"])) $output = ['cmd' => 'INFO', 'setuser' => getUserName($db, $_SESSION["u"])];
-		   else $output = ['cmd' => 'INFO', 'setuser' => ""];
+	    case 'START':
+		  $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
 		  break;
 	    case 'LOGOUT':
 		  unset($_SESSION["u"]);
-		  $output = ['cmd' => 'INFO', 'alert' => '', 'setuser' => ''];
+		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
 		  break;
 	    case 'New Object Database':
 	          initNewODDialogElements();
@@ -93,17 +132,6 @@ try {
 		        {
 			 if ($input['data']['flags']['_callback'] === 'EDITOD') $output = EditOD($db);
 			  else if ($input['data']['flags']['_callback'] === 'NEWOD') $output = NewOD($db);
-			  else if ($input['data']['flags']['_callback'] === 'LOGIN')
-			       if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' && ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '')
-				  {
-				   if (password_verify($pass, getUserPass($db, $uid = getUserId($db, $user))))
-				      {
-				       $output = ['cmd' => 'INFO', 'alert' => '', 'setuser' => $user];
-				       $_SESSION['u'] = $uid;
-				      }
-				    else $output = ['cmd' => 'INFO', 'alert' => 'Wrong username or password!'];
-				  }
-				else $output = ['cmd' => 'INFO', 'alert' => 'Wrong username or password!'];
 			 break;
 			}
 			
@@ -143,8 +171,8 @@ try {
 	          $output = ['cmd' => 'INFO', 'log' => 'Controller report: unknown event "'.$input['cmd'].'" received from the browser!'];
 		}
 		
-     if (!isset($output)) $output = ['cmd' => 'INFO', 'log' => 'Controller report: undefined controller message!'];
-      echo json_encode($output);
+     if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown error!'];
+     echo json_encode($output);
     }
      
 catch (PDOException $e)

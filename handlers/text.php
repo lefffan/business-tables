@@ -40,7 +40,7 @@ $input = json_decode($input, true);
 if (isset($input['event'])) switch($input['event'])
    {
     case 'INIT':
-	 $output = json_encode(['cmd' => 'SET', 'value' => '', '_description' => 'HUI', '_hint' => 'FUCK OFF!', '_style' => 'color: red;']);
+	 $output = json_encode(['cmd' => 'SET', 'value' => $input['data'], '_description' => 'HUI', '_hint' => 'FUCK OFF!', '_style' => 'color: red;']);
 	 break;
     case 'DBLCLICK':
 	 $output = json_encode(['cmd' => 'EDIT']);
