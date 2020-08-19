@@ -29,11 +29,7 @@ try {
 	    {
 	     $_SESSION['u'] = $uid;
 	     if (isset($input['data']['flags']['callback'])) $input = $input['data']['flags']['callback'];
-	      else 
-	        {
-		 echo json_encode(['cmd' => 'INFO', 'alert' => "User '$user' has logged in!"]);
-		 exit;
-		}
+	      else { echo json_encode(['cmd' => 'INFO', 'alert' => "User '$user' has logged in!", 'user' => $user]); exit; }
 	    }
 	  else
 	    {
@@ -50,17 +46,16 @@ try {
 	     echo json_encode($output);
 	     exit;
 	    }
-	 
 	}
 	
      switch ($input['cmd'])
 	    {
 	    case 'START':
-		  $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+		  $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has started application!"];
 		  break;
 	    case 'LOGOUT':
+		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has logged out!"];
 		  unset($_SESSION["u"]);
-		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
 		  break;
 	    case 'New Object Database':
 	          initNewODDialogElements();
@@ -172,6 +167,7 @@ try {
 		}
 		
      if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown error!'];
+     if (isset($_SESSION['u'])) $output['user'] = getUserName($db, $_SESSION['u']);
      echo json_encode($output);
     }
      

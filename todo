@@ -1,7 +1,5 @@
 July 2020:
 
-- Login always (what if modal div will be removed)
-- customization text align for cells
 - full customization dialog
 - style/hint/description edit for text.php, del deletes text, intval of value
 
