@@ -28,8 +28,17 @@ try {
 	     password_verify($pass, getUserPass($db, $uid = getUserId($db, $user))))
 	    {
 	     $_SESSION['u'] = $uid;
+	     $customization = getUserCustomization($db, $uid);
+	     if (isset($customization) && ($customization = json_decode($customization, true)) === false) $customization = NULL;
+	     
 	     if (isset($input['data']['flags']['callback'])) $input = $input['data']['flags']['callback'];
-	      else { echo json_encode(['cmd' => 'INFO', 'alert' => "User '$user' has logged in!", 'user' => $user]); exit; }
+	      else
+	        {
+		 $output = ['cmd' => 'INFO', 'alert' => "User '$user' has logged in!", 'user' => $user];
+		 if (isset($customization)) $output['customization'] = $customization;
+		 echo json_encode($output);
+		 exit;
+		}
 	    }
 	  else
 	    {
@@ -51,6 +60,8 @@ try {
      switch ($input['cmd'])
 	    {
 	    case 'START':
+	          $customization = getUserCustomization($db, $_SESSION['u']);
+	          if (isset($customization) && ($customization = json_decode($customization, true)) === false) $customization = NULL;
 		  $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has started application!"];
 		  break;
 	    case 'LOGOUT':
@@ -125,9 +136,18 @@ try {
 		case 'CONFIRM':
 		     if (isset($input['data']['flags']['_callback']))
 		        {
-			 if ($input['data']['flags']['_callback'] === 'EDITOD') $output = EditOD($db);
-			  else if ($input['data']['flags']['_callback'] === 'NEWOD') $output = NewOD($db);
-			 break;
+			 if ($input['data']['flags']['_callback'] === 'EDITOD')
+			    {
+			     $output = EditOD($db);
+			     break;
+			    }
+			  else if ($input['data']['flags']['_callback'] === 'NEWOD')
+			    {
+			     $output = NewOD($db);
+			     break;
+			    }
+			  else if ($input['data']['flags']['_callback'] === 'CUSTOMIZATION')
+			     $customization = $input['data']['dialog'];
 			}
 			
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);
@@ -152,7 +172,8 @@ try {
 			  else if ($output[$eid]['cmd'] === 'ALERT') isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
 			  else if ($output[$eid]['cmd'] === 'DIALOG' && isset($output[$eid]['data']) && is_array($output[$eid]['data']))
 				  {
-				   if (isset($output[$eid]['data']['flags']['_callback'])) unset($output[$eid]['data']['flags']['_callback']);
+				   if (isset($output[$eid]['data']['flags']['_callback']) && $handlerName != 'customization.php')
+				      unset($output[$eid]['data']['flags']['_callback']);
 				   $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
 				  }
 			  else $output = ['cmd' => ''];
@@ -168,6 +189,7 @@ try {
 		
      if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown error!'];
      if (isset($_SESSION['u'])) $output['user'] = getUserName($db, $_SESSION['u']);
+     if (isset($customization)) $output['customization'] = $customization;
      echo json_encode($output);
     }
      

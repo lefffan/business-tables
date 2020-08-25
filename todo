@@ -1,17 +1,16 @@
-July 2020:
-
-- full customization dialog
-- style/hint/description edit for text.php, del deletes text, intval of value
-
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const 
-- https access only, register domain tabels.app and certificate
-- OD View Scheme - full grafic (fonts, colors, background, scroll-bar, padding, etc..) cmd = 'GETUI' should get data from the controller
-  add to the handler fuction data type check and in case of non string - unset the key.
-- OD users and all user access by authorization token (if user loged in - logout context menu, if no user loged in - login context menu)
-- System user/groups in one OD, view scheme in second to manage access by approporiate OD/OV. https://habr.com/ru/post/323714/
-
-
 August 2020:
+
+- change customization/personalization at login/change element
+- force to use next user scheme name
+- more reliable authorization https://habr.com/ru/post/323714/ 
+- pass username date and time to the handler
+- self user can change only pass, other users can change other props
+- Release auth in creating/changing/reading OD/OV
+- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+- style/hint/description edit for text.php, del deletes text, intval of value
+- for text element enter key ends dialog with save button
+
+September 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
 - Object_selection in element selection to create complicated object views like setki.xls
@@ -23,13 +22,11 @@ August 2020:
 - status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 - if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 
-September:
+October 2020:
 - mishka-new.xls front-end/back-end features and think other features to make Boss edit opeations comfortable
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
 - pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
-
-October 2020:
-- System calls and its object views: LINK
+- https access only, certificate
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA
@@ -37,6 +34,7 @@ October 2020:
 - Image files handle for text.php
 
 November 2020:
+- System calls and its object views: LINK
 - Object process SCHEDULER. Handlers are executed by built-in system user.
 
 December 2020:
@@ -221,3 +219,9 @@ user.php
 
 {"eid": "1", "oid": "0", "x":"o", "y":"n", "startevent":"KEYPRESSjl;k\njjj "}
 {"eid": "2", "oid": "0", "x":"0", "y":"n"}
+
+
+On password change - all sessions should be dropped
+Other place auth - all sessions should be dropped
+
+user-id IP user-agent hash(ip,user-agent,pass-hash)
