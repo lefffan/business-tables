@@ -3,6 +3,7 @@
 try {
      require_once 'eroc.php';
      //createDefaultDatabases($db);
+     //loog(session_get_cookie_params());
     }
 catch (PDOException $e)
     {
@@ -25,12 +26,11 @@ try {
          if ($input['cmd'] === 'CONFIRM' && isset($input['data']['flags']['_callback']) && $input['data']['flags']['_callback'] === 'LOGIN')
 	 if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' &&
 	     ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' &&
-	     password_verify($pass, getUserPass($db, $uid = getUserId($db, $user))))
+	     password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user))))
 	    {
 	     $_SESSION['u'] = $uid;
+	     $_SESSION['h'] = password_hash($hash, PASSWORD_DEFAULT);
 	     $customization = getUserCustomization($db, $uid);
-	     if (isset($customization) && ($customization = json_decode($customization, true)) === false) $customization = NULL;
-	     
 	     if (isset($input['data']['flags']['callback'])) $input = $input['data']['flags']['callback'];
 	      else
 	        {
@@ -56,12 +56,19 @@ try {
 	     exit;
 	    }
 	}
+     else if (!isset($_SESSION['h']) || !password_verify(getUserPass($db, $_SESSION['u']), $_SESSION['h']))
+	     {
+	      unset($_SESSION["u"]);
+	      $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+	      $output['data']['flags']['callback'] = $input;
+	      echo json_encode($output);
+	      exit;
+	     }
 	
      switch ($input['cmd'])
 	    {
 	    case 'START':
 	          $customization = getUserCustomization($db, $_SESSION['u']);
-	          if (isset($customization) && ($customization = json_decode($customization, true)) === false) $customization = NULL;
 		  $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has started application!"];
 		  break;
 	    case 'LOGOUT':
@@ -147,7 +154,14 @@ try {
 			     break;
 			    }
 			  else if ($input['data']['flags']['_callback'] === 'CUSTOMIZATION')
-			     $customization = $input['data']['dialog'];
+			    {
+			     if ($_SESSION['u'] == $input['oId'])
+			     if (isset($input['data']['dialog']['pad']['Scheme']['element2']['data']))
+			     if ($input['data']['dialog']['pad']['Scheme']['element2']['data'] != '' && ($uid = getUserId($db, $input['data']['dialog']['pad']['Scheme']['element2']['data'])))
+				 $customization = getUserCustomization($db, $uid, true);
+			      else
+				 $customization = $input['data']['dialog'];
+			    }
 			}
 			
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);

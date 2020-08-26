@@ -9,6 +9,9 @@ August 2020:
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
 - style/hint/description edit for text.php, del deletes text, intval of value
 - for text element enter key ends dialog with save button
+- password more than 8 chars (big letters and digits), user a-z A-Z - _ space and readonly after creation
+- name root user and create system built in user
+- remove controller report from log and add username to the log
 
 September 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
@@ -26,7 +29,7 @@ October 2020:
 - mishka-new.xls front-end/back-end features and think other features to make Boss edit opeations comfortable
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
 - pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
-- https access only, certificate
+- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA
@@ -225,3 +228,10 @@ On password change - all sessions should be dropped
 Other place auth - all sessions should be dropped
 
 user-id IP user-agent hash(ip,user-agent,pass-hash)
+
+
+What to check in relibe auth
+1. User absence or password changed
+2. Cookie absence
+3. Browser and server time doesn't maych
+4. Relogin after SESSIONLIFETIME even browser hasn't ever closed
