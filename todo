@@ -1,15 +1,12 @@
 August 2020:
 
-- change customization/personalization at login/change element
-- force to use next user scheme name
-- more reliable authorization https://habr.com/ru/post/323714/ 
 - pass username date and time to the handler
 - self user can change only pass, other users can change other props
 - Release auth in creating/changing/reading OD/OV
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
 - style/hint/description edit for text.php, del deletes text, intval of value
 - for text element enter key ends dialog with save button
-- password more than 8 chars (big letters and digits), user a-z A-Z - _ space and readonly after creation
+- password more than 8 chars (big letters and digits), user 0-9 a-z A-Z - _ space and readonly after creation
 - name root user and create system built in user
 - remove controller report from log and add username to the log
 
@@ -234,5 +231,5 @@ user-id IP user-agent hash(ip,user-agent,pass-hash)
 What to check in relibe auth
 1. User absence or password changed
 2. Cookie absence
-3. Browser and server time doesn't maych
+3. Browser and server time doesn't match
 4. Relogin after SESSIONLIFETIME even browser hasn't ever closed

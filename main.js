@@ -166,6 +166,16 @@ window.onload = function()
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
  
+ if (!navigator.cookieEnabled)
+    {
+     warning('To make application work properly please enable Cookies!');
+     return;
+    }
+ if (document.cookie != '')
+    {
+     warning("Cookie flag 'httponly' should be set!");
+     return;
+    }
  cmd = 'START';
  callController();
 }

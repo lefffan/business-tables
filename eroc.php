@@ -29,8 +29,8 @@ $db->exec("SET NAMES UTF8");
 $db->exec("ALTER DATABASE ".DATABASENAME." CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-session_start(['cookie_httponly' => true]);
-setcookie(session_name(), session_id(), time() + SESSIONLIFETIME);
+session_start();
+setcookie(session_name(), session_id(), time() + SESSIONLIFETIME, '', $_SERVER['HTTP_HOST'], false, true);
     
 function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
 {
@@ -487,7 +487,7 @@ function parseJSONEventData($db, $JSONs, $event, $id)
          {
 	  $eventArray = ['event' => $event];
           foreach ($json as $prop => $value) // Search non reserved array elements to pass them to result event array
-	       if ($prop != 'event' && $prop != 'data' && $prop != 'user' && $prop != 'eid' && $prop != 'header')
+	       if ($prop != 'event' && $prop != 'data' && $prop != 'user' && $prop != 'title')
 	       if (gettype($value) === 'string')
 		  {
 		   $eventArray[$prop] = $value;
