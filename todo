@@ -30,6 +30,7 @@ October 2020:
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
 - pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA

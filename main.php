@@ -4,6 +4,8 @@ try {
      require_once 'eroc.php';
      //createDefaultDatabases($db);
      //loog(session_get_cookie_params());
+     //loog($_SERVER);
+     //loog(PHP_VERSION_ID);
     }
 catch (PDOException $e)
     {
@@ -64,7 +66,7 @@ try {
 	      echo json_encode($output);
 	      exit;
 	     }
-	
+
      switch ($input['cmd'])
 	    {
 	    case 'START':
@@ -251,7 +253,8 @@ catch (PDOException $e)
 		case 'CONFIRM':
 		     if (preg_match("/Duplicate entry/", $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
 		      else $alert = 'Failed to write object data: '.$e->getMessage();
-		     if (gettype($undo = getElementProperty($db, $eid)) === 'string') $undo = ['value' => ''];
+		     $undo = getElementArray($db, $eid);
+		     if (!isset($undo)) $undo = ['value' => ''];
 		     echo json_encode(['cmd' => 'SET', 'OD' => $OD, 'OV' => $OV, 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert]);
 		     break;
 	     default:

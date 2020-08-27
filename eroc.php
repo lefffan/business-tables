@@ -21,15 +21,16 @@ const CHECK_OID				= 0b00010000;
 const CHECK_EID				= 0b00100000;
 const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
-const SESSIONLIFETIME			= 1800;
+const SESSIONLIFETIME			= 36000;
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
 $db->exec("SET NAMES UTF8");
 $db->exec("ALTER DATABASE ".DATABASENAME." CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-//session_start(['cookie_httponly' => true, 'cookie_lifetime' => SESSIONLIFETIME, 'cookie_secure' => true]);
-session_start(['cookie_httponly' => true, 'cookie_lifetime' => SESSIONLIFETIME]);
+
+session_start(['cookie_httponly' => true]);
+setcookie(session_name(), session_id(), time() + SESSIONLIFETIME);
     
 function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
 {
@@ -271,8 +272,6 @@ function createDefaultDatabases($db)
  $query->execute();
  $query = $db->prepare("ALTER TABLE `uniq_1` ADD eid1 BLOB(65535), ADD UNIQUE(eid1(".USERSTRINGMAXCHAR."))");
  $query->execute();
- $query = $db->prepare("ALTER TABLE `uniq_1` ADD eid6 BLOB(65535), ADD UNIQUE(eid6(".USERSTRINGMAXCHAR."))");
- $query->execute();
  
  /***********Creating Object Database (actual data instance)*************************/
  $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -280,8 +279,8 @@ function createDefaultDatabases($db)
  global $odid, $allElementsArray, $uniqElementsArray, $output;
  $odid = '1';
  $allElementsArray = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
- $uniqElementsArray = ['1' => '', '6' => ''];
- $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT)], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON('Default')]];
+ $uniqElementsArray = ['1' => ''];
+ $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => 'Allow user to add Object Databases', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
  InsertObject($db);
 }
 
@@ -505,43 +504,53 @@ function parseJSONEventData($db, $JSONs, $event, $id)
  return NULL;
 }
 
-function getElementProperty($db, $elementId, $prop = NULL)
+function getElementProperty($db, $elementId, $prop, $version = NULL)
 {
  global $odid, $oid, $eid;
  if (!isset($oid) || !isset($eid)) return NULL;
  if (!isset($elementId)) $elementId = $eid;
 
- if (isset($prop))
-    {
-     $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
-     $query->execute();
-     $result = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($result) === 0 || count($result[0]) === 0) return NULL;
-     $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
-     $result = str_replace('\\"', '"', $result);
-     $result = str_replace("\\\\", "\\", $result);
-     return $result;
-    }
-  else
-    {
-     $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
-     $query->execute();
-     $result = $query->fetchAll(PDO::FETCH_NUM);
-     if (count($result) === 0 || count($result[0]) === 0) return NULL;
-     return json_decode($result[0][0], true);
-    }
+ if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
+  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+ $query->execute();
+ 
+ $result = $query->fetchAll(PDO::FETCH_NUM);
+ if (!isset($result[0][0])) return NULL;
+ 
+ $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
+ $result = str_replace('\\"', '"', $result);
+ return str_replace("\\\\", "\\", $result);
 }
 
-function getElementJSON($db, $elementId)
+function getElementArray($db, $elementId, $version = NULL)
 {
  global $odid, $oid, $eid;
  if (!isset($oid) || !isset($eid)) return NULL;
  if (!isset($elementId)) $elementId = $eid;
 
- $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND eid".strval($elementId)." IS NOT NULL ORDER BY version DESC LIMIT 1");
+ if (isset($version)) $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
+  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
  $query->execute();
+ 
  $result = $query->fetchAll(PDO::FETCH_NUM);
- if (count($result) === 0 || count($result[0]) === 0) return NULL;
+ if (!isset($result[0][0])) return NULL;
+
+ return json_decode($result[0][0], true);
+}
+
+function getElementJSON($db, $elementId, $version = NULL)
+{
+ global $odid, $oid, $eid;
+ if (!isset($oid) || !isset($eid)) return NULL;
+ if (!isset($elementId)) $elementId = $eid;
+
+ if (isset($version)) $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
+  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+ $query->execute();
+
+ $result = $query->fetchAll(PDO::FETCH_NUM);
+ if (!isset($result[0][0])) return NULL;
+ 
  return $result[0][0];
 }
 
@@ -644,7 +653,7 @@ function CreateNewObjectVersion($db)
  $db->commit();
  
  // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
- if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $eid)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
+ if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementArray($db, $eid, $version - 1)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
  $query->execute([':json' => json_encode($output[$eid])]);
  
@@ -668,16 +677,16 @@ function CreateNewObjectVersion($db)
 	         }
 	      if (!isset($output[$id]) || ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET'))
 	         {
-		  $json = getElementJSON($db, $id);
+		  $json = getElementJSON($db, $id, $version - 1);
 		 }
 	       else
 	         {
-	          if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementProperty($db, $id)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
+	          if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementArray($db, $id, $version - 1)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
 	          if (($json = json_encode($output[$id])) === false) $json = NULL;
 	         }
 	     }
 	  ////////////////////////
-	  if (!isset($json)) $json = getElementJSON($db, $id);
+	  if (!isset($json)) $json = getElementJSON($db, $id, $version - 1);
 	  if (isset($json))
 	     {
 	      $query = $db->prepare("UPDATE `data_$odid` SET eid$id=:json WHERE id=$oid AND version=$version");
@@ -917,7 +926,7 @@ function getUserId($db, $user)
 
 function getUserPass($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.password') FROM `data_1` WHERE id=:id AND eid1 IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.password') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
  $query->execute([':id' => $id]);
  $pass = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($pass[0][0])) return substr($pass[0][0], 1, -1);
@@ -925,7 +934,7 @@ function getUserPass($db, $id)
 
 function getUserName($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND eid1 IS NOT NULL ORDER BY version DESC LIMIT 1");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
  $query->execute([':id' => $id]);
  $name = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($name[0][0])) return substr($name[0][0], 1, -1);
