@@ -122,7 +122,9 @@ function lg(...data)
 function loog(...data)
 {
  const now = new Date();
- data.forEach((value) => console.log(now.toLocaleString() + ' - ' + value));
+ let acc = '';
+ if (user) acc = "Account '" + user + "', ";
+ data.forEach((value) => console.log(acc + now.toLocaleString() + ': ' + value));
 }
 
 function looog(...data)
@@ -583,6 +585,18 @@ function eventHandler(event)
 	      if (event.target.tagName == 'TD') CellBorderToggleSelect(focusElement.td, event.target);
 	      break;
 	 case 'keydown':
+	      if (box && event.which === 13 && event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
+	         for (let btn in box.buttons) if (box.buttons[btn][0] === ' ')
+		     {
+		      box.buttons = {};
+		      box.buttons[btn] = '';
+		      saveDialogProfile(); // Save dialog box content and send it to the controller
+		      cmd = 'CONFIRM';
+		      callController(box);
+		      HideBox();
+		      return;
+		     }
+
 	      HideHint();
 	      if ((box && event.which != 27) || (focusElement.td != undefined && focusElement.td.contentEditable === 'true' && event.which != 27 && event.which != 13)) break;
 	      switch (event.which)
@@ -664,8 +678,8 @@ function controllerCmdHandler(input)
 {
  if (input.cmd === undefined)
     {
-     warning('Browser report: undefined controller message!');
-     loog('Browser report: undefined controller message!');
+     warning('Browser reports undefined controller message!');
+     loog('Browser reports undefined controller message!');
      return;
     }
  if (input.OV != undefined && input.OD != undefined && input.cmd != 'INFO' && (input.OD != activeOD || input.OV != activeOV))
@@ -674,7 +688,7 @@ function controllerCmdHandler(input)
      return;
     }
 
- if (input.log) loog('Controller log message: ' + input.log); 
+ if (input.log) loog(input.log); 
  if (input.user) user = input.user;
   else user = '';
  if (input.customization)
@@ -732,20 +746,20 @@ function controllerCmdHandler(input)
 	 case 'INFO':
 	      if (input.alert)
 	         {
-		  loog('Controller alert message: ' + input.alert);
+		  loog(input.alert);
 		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) warning(input.alert);
 		 }
 	      if (input.error)
 	         {
-		  if (activeOD != '') loog('Controller error message: ' + input.error);
+		  if (activeOD != '') loog(input.error);
 		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) displayMainError(input.error);
 		 }
 	      break;
 	 case '':
 	      break;
 	 default:
-	      warning("Browser report: unknown controller message '" + input.cmd + "'");
-	      loog("Browser report: unknown controller message '" + input.cmd + "'");
+	      warning("Unknown controller message '" + input.cmd + "'");
+	      loog("Unknown controller message '" + input.cmd + "'");
 	}
 }
 

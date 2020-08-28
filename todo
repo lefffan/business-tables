@@ -1,14 +1,12 @@
 August 2020:
 
-- pass username date and time to the handler
-- self user can change only pass, other users can change other props
 - Release auth in creating/changing/reading OD/OV
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+
+- password more than 8 chars (big letters and digits), user readonly after creation, self user can change only pass, other users can change other props
 - style/hint/description edit for text.php, del deletes text, intval of value
-- for text element enter key ends dialog with save button
-- password more than 8 chars (big letters and digits), user 0-9 a-z A-Z - _ space and readonly after creation
+
 - name root user and create system built in user
-- remove controller report from log and add username to the log
 
 September 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
@@ -142,6 +140,7 @@ selection.addRange(range);
 - not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
 - User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful. Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
 - Per OV permission to view-in-sidebar and add-edit-delete with low priority
+- User names should consist of [0-9][a-zA-Z][-_][space]
 ---------------------Source code requirement-------------------------------------------------------
 - formatting                                                   
 - error behaviour (no object, no elements, no items, etc..)    

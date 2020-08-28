@@ -499,9 +499,14 @@ function parseJSONEventData($db, $JSONs, $event, $id)
 	  break;
 	 }
 	 
- if (isset($eventArray)) return $eventArray;
- if ($event === 'CONFIRM') return ['event' => 'CONFIRM'];
- return NULL;
+ if (!isset($eventArray) && $event === 'CONFIRM') $eventArray = ['event' => 'CONFIRM'];
+ if (isset($eventArray))
+    {
+     global $allElementsArray;
+     $eventArray['user'] = getUserName($db, $_SESSION['u']);
+     $eventArray['title'] = $allElementsArray[$id]['element1']['data'];
+     return $eventArray;
+    }
 }
 
 function getElementProperty($db, $elementId, $prop, $version = NULL)
