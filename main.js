@@ -38,7 +38,7 @@ const uiProfile = {
 		  "main field table cursor cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "", "text-align": "center" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "", "text-align": "center" },
-		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "", "text-align": "center" },
+		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
 		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "1px solid #999;", "background": "rgb(255,235,235);" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
@@ -122,9 +122,9 @@ function lg(...data)
 function loog(...data)
 {
  const now = new Date();
- let acc = '';
- if (user) acc = "Account '" + user + "', ";
- data.forEach((value) => console.log(acc + now.toLocaleString() + ': ' + value));
+ let accountInfo = '';
+ if (user) accountInfo = "Account '" + user + "', ";
+ data.forEach((value) => console.log(accountInfo + now.toLocaleString() + ': ' + value));
 }
 
 function looog(...data)
@@ -665,7 +665,7 @@ function eventHandler(event)
 		           if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
 			      {
 			       cmd = 'KEYPRESS';
-			       callController(event.key);
+			       callController({string: event.key, code: event.keyCode});
 			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
 			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
 			      }

@@ -60,7 +60,7 @@ try {
 	}
      else if (!isset($_SESSION['h']) || !password_verify(getUserPass($db, $_SESSION['u']), $_SESSION['h']))
 	     {
-	      unset($_SESSION["u"]);
+	      unset($_SESSION['u']);
 	      $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
 	      $output['data']['flags']['callback'] = $input;
 	      echo json_encode($output);
@@ -75,11 +75,17 @@ try {
 		  break;
 	    case 'LOGOUT':
 		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has logged out!"];
-		  unset($_SESSION["u"]);
+		  unset($_SESSION['u']);
 		  break;
 	    case 'New Object Database':
-	          initNewODDialogElements();
-		  $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']]];
+		  Check($db, CHECK_ACCESS);
+		  if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+		   else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		   else
+		     {
+	              initNewODDialogElements();
+		      $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']]];
+		     }
 		  break;
 	    case 'Edit Database Structure':
 		  if (isset($input['data']))
@@ -110,9 +116,10 @@ try {
 		     $output['OV'] = $OV;
 		     break;
 		case 'DELETEOBJECT':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID);
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_ACCESS);
 		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
 		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		      else if ($odid == 1 && $oid == STARTOBJECTID) $output = ['cmd' => 'INFO', 'alert' => 'System account cannot be deleted!'];
 		      else if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
 		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
@@ -120,7 +127,7 @@ try {
 		     $output['OV'] = $OV;
 		     break;
 		case 'INIT':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA);
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_ACCESS);
 		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
 		     
@@ -166,7 +173,7 @@ try {
 			    }
 			}
 			
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID);
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID | CHECK_ACCESS);
 		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
 		     

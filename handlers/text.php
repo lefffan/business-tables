@@ -30,7 +30,7 @@ Controller JSON to the element handler is in $intput variable:
      "event":		"INIT|DBLCLICK|KEYPRESS|CONFIRM|ONCHANGE"
      "user":		"<username initiated the process>"
      "title":		"element title"
-     "data":		"<key code or pasted data for KEYPRESS>|<element value (table cell innerHTML) for CONFIRM or NEWOBJECT>|<dialog JSON for CONFIRM>"
+     "data":		"<JSON (with 'string' and 'code' props) for KEYPRESS>|<element value (table cell innerHTML) for CONFIRM or NEWOBJECT>|<dialog JSON for CONFIRM>"
      "<any property>":	{ "eId": "", "property": ""}|<string>'
     }
 *****************************************************************************************************************/
@@ -46,7 +46,19 @@ if (isset($input['event'])) switch($input['event'])
 	 $output = json_encode(['cmd' => 'EDIT']);
 	 break;
     case 'KEYPRESS':
-	 $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']]);
+	 switch ($input['data']['code'])
+		{
+		 case 46: // Delete key
+		      $output = json_encode(['cmd' => 'RESET', 'value' => '']);
+		      break;
+		 case 113: // F2 key
+		      $output = json_encode(['cmd' => 'EDIT']);
+		      break;
+		 case 123: // F12 key
+		      break;
+		 default:
+		      $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']['string']]);
+		}
 	 break;
     case 'CONFIRM':
 	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data'], '_alert' => 'WTF????']);

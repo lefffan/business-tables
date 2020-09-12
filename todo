@@ -1,14 +1,11 @@
-August 2020:
-
+September 2020:
 - Release auth in creating/changing/reading OD/OV
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+- pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
+- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
 
-- password more than 8 chars (big letters and digits), user readonly after creation, self user can change only pass, other users can change other props
-- style/hint/description edit for text.php, del deletes text, intval of value
-
-- name root user and create system built in user
-
-September 2020:
+October 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
 - Object_selection in element selection to create complicated object views like setki.xls
@@ -16,25 +13,19 @@ September 2020:
 - pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go. 
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
   want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-  Sort object by element headers click, page remains untouch (also active element)
+  Sort object by element headers click, page remains untouch (so active element)
 - status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 - if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
-
-October 2020:
-- mishka-new.xls front-end/back-end features and think other features to make Boss edit opeations comfortable
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
-- pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
-- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
+
+November 2020:
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA
-- emulate chat and helpdesk
-- Image files handle for text.php
-
-November 2020:
-- System calls and its object views: LINK
-- Object process SCHEDULER. Handlers are executed by built-in system user.
+- 	emulate chat and helpdesk
+-	Image files handle for text.php
+-	System calls and its object views: LINK
+-	Object process SCHEDULER. Handlers are executed by built-in system user.
 
 December 2020:
 - System calls and its object views: LOCATION.
@@ -42,7 +33,7 @@ December 2020:
   First four calls can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
 - System call NEWOBJECT (to create object by user handlers)
 - Object view PIECHART and GRAPH
-- Other estimated "todo" from Mishka directory ois.xlsx file
+- Other estimated "TODO" at the end of this todo file and think other features to make Boss edit opeations comfortable
 - Feedback and finish https://bakhirev.biz/book/#MmlJN
 
 2022:
@@ -141,6 +132,8 @@ selection.addRange(range);
 - User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful. Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
 - Per OV permission to view-in-sidebar and add-edit-delete with low priority
 - User names should consist of [0-9][a-zA-Z][-_][space]
+- style/hint/description edit for text.php? The problem is that style/hint/description data should be transmitted automatically,
+  and it is hard to insert style/hint/description props to every element in OD properties dialog
 ---------------------Source code requirement-------------------------------------------------------
 - formatting                                                   
 - error behaviour (no object, no elements, no items, etc..)    
@@ -181,7 +174,6 @@ selection.addRange(range);
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
 - OD Dialog Box - OD icon, OV icon, OV shortcut key, 
-- user/group (user|group, type, [pass, OD add permission, group-list]), name, tel, email, foto, info, theme
 -----------------------------------WIKI-----------------------------------------------------
 interface examples:
 - https://qna.habr.com/q/281940
