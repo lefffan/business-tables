@@ -44,7 +44,7 @@ try {
 	    }
 	  else
 	    {
-	     $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+	     $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'log' => 'Wrong passowrd or username!'];
 	     $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong passowrd or username, please try again!\n\nUsername";
 	     if (isset($input['data']['flags']['callback'])) $output['data']['flags']['callback'] = $input['data']['flags']['callback'];
 	     echo json_encode($output);
@@ -69,10 +69,26 @@ try {
 
      switch ($input['cmd'])
 	    {
+	    case 'OBTAINMAIN':
+	    case 'GETMAIN':
 	    case 'START':
-	          $customization = getUserCustomization($db, $_SESSION['u']);
-		  $output = ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has started application!"];
-		  break;
+		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS);
+		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
+		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable];
+		     $output['OD'] = $OD;
+		     $output['OV'] = $OV;
+		     $output['sidebar'] = getODVNamesForSidebar($db);
+		  if ($input['cmd'] === 'START') 
+		     {
+	    	      $customization = getUserCustomization($db, $_SESSION['u']);
+		      $output['log'] = "User '".getUserName($db, $_SESSION['u'])."' has started application!";
+		     }
+		     break;
+		case 'GETMENU':
+		     $output = ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
+		     break;
 	    case 'LOGOUT':
 		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has logged out!"];
 		  unset($_SESSION['u']);
@@ -84,7 +100,7 @@ try {
 		   else
 		     {
 	              initNewODDialogElements();
-		      $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']]];
+		      $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'NEWOD', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
 		     }
 		  break;
 	    case 'Edit Database Structure':
@@ -102,19 +118,6 @@ try {
 				 else $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$input[data]' Object Database properties!"];
 		     }
 		 break;
-		case 'GETMENU':
-		     $output = ['cmd' => 'REFRESHMENU', 'data' => getODVNamesForSidebar($db)];
-		     break;
-		case 'OBTAINMAIN':
-		case 'GETMAIN':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS);
-		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
-		     $output['OD'] = $OD;
-		     $output['OV'] = $OV;
-		     break;
 		case 'DELETEOBJECT':
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_ACCESS);
 		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
@@ -122,7 +125,7 @@ try {
 		      else if ($odid == 1 && $oid == STARTOBJECTID) $output = ['cmd' => 'INFO', 'alert' => 'System account cannot be deleted!'];
 		      else if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable];
 		     $output['OD'] = $OD;
 		     $output['OV'] = $OV;
 		     break;
@@ -143,7 +146,7 @@ try {
 				   }
 		     InsertObject($db);
 		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESHMAIN', 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable];
 		     $output['OD'] = $OD;
 		     $output['OV'] = $OV;
 		     break;
@@ -154,29 +157,33 @@ try {
 		        {
 			 if ($input['data']['flags']['_callback'] === 'EDITOD')
 			    {
+			     $input['cmd'] = 'EDITOD';
 			     $output = EditOD($db);
 			     break;
 			    }
 			  else if ($input['data']['flags']['_callback'] === 'NEWOD')
 			    {
-			     $output = NewOD($db);
+			     $input['cmd'] = 'NEWOD';
+			     Check($db, CHECK_ACCESS);
+			     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+			      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+			      else $output = NewOD($db);
 			     break;
 			    }
-			  else if ($input['data']['flags']['_callback'] === 'CUSTOMIZATION')
-			    {
-			     if ($_SESSION['u'] == $input['oId'])
-			     if (isset($input['data']['dialog']['pad']['Scheme']['element2']['data']))
-			     if ($input['data']['dialog']['pad']['Scheme']['element2']['data'] != '' && ($uid = getUserId($db, $input['data']['dialog']['pad']['Scheme']['element2']['data'])))
-				 $customization = getUserCustomization($db, $uid, true);
-			      else
-				 $customization = $input['data']['dialog'];
-			    }
 			}
-			
+
 		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID | CHECK_ACCESS);
 		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
 		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
-		     
+			    
+		     if (isset($input['data']['flags']['_callback']) && $input['data']['flags']['_callback'] === 'CUSTOMIZATION')
+		     if ($_SESSION['u'] == $input['oId'])
+		     if (isset($input['data']['dialog']['pad']['misc customization']['element5']['data']))
+		     if ($input['data']['dialog']['pad']['misc customization']['element5']['data'] != '' && ($uid = getUserId($db, $input['data']['dialog']['pad']['misc customization']['element5']['data'])) && $uid != $_SESSION['u'])
+			$customization = getUserCustomization($db, $uid, true);
+		      else
+			$customization = $input['data']['dialog'];
+			
 		     // Search input cmd event and call the appropriate handler
 		     if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
 		        {

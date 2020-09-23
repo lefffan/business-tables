@@ -167,7 +167,7 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
 		    
  $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element2' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties:', 'data' => '', 'line' => ''],
+		    'element2' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties:', 'data' => '', 'help' => "You must be aware that this option can disallow all users to change this OD permissions,<br>so avoid user/group empty list with 'allowed' type list", 'line' => ''],
 		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements:', 'data' => '', 'line' => ''],
 		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
@@ -182,19 +182,19 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'textarea', 'head' => 'JSON format event list', 'data' => '', 'line' => '', 'help' => 'Event JSON string (one per line) is a JSON to pass to the element handler as an input argument<br>when specified event occurs. JSONs properties:<br>"event" - event to be processed by the handler, JSONs with undefined event are ignored<br>"user" - user initiated event (automatically set by controller)<br>"eid" - element id (automatically set by controller)<br>"header" - element header (automatically set by controller)<br>Additionally some custom properties can be defined - its string values are sent to the handler<br>without changes with one exception - JSON formated value is replaced by element JSON data.<br>Format of the value: {"eid": "&lt;element id>", "prop": "&lt;element property>"}<br>where "prop" - element property, which value points to the specified by element &lt;eid> JSON data<br>property to be retrieved. In case of "eid" omitted - current element id value is used.<br>In the example below handler on mouse double click event gets JSON<br>with two custom properties. First property value is "test", second value -<br>json element data property "value" of current object element identificator 1:<br>{ "event": "DBLCLICK", "abc": "test", "def": {"eid": "1", "prop": "value"} }'],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
 	
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Object View name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
-		    'element2' => ['type' => 'textarea', 'head' => 'Object View description', 'data' => '', 'line' => ''],
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
+		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
-		    'element4' => ['type' => 'radio', 'head' => 'Object view type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to have this OV on sidebar list:', 'data' => '', 'line' => ''],
 		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view:', 'data' => '', 'line' => '']];
 							  
- $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'readonl' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
+ $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => 'No action|Warning|Confirm|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+No action|Warning|Confirm|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
 		    'element4' => ['type' => 'textarea', 'head' => 'Rule expression', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
 }
 
@@ -213,7 +213,7 @@ function createDefaultDatabases($db)
  global $newProperties, $newPermissions, $newElement, $newView, $newRule;
  initNewODDialogElements();
  $newProperties['element1']['data'] = 'Users';
- $userOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'EDITOD', 'style' => 'width: 760px; height: 670px;', 'esc' => '', 'display_single_profile' => '']];
+ $userOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'EDITOD', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
 
  $newView['element1']['data'] = 'All users';
  $userOD['dialog']['View']['All users'] = $newView;
@@ -276,31 +276,41 @@ function createDefaultDatabases($db)
  $query->execute();
  
  /***********Creating Object Database (actual data instance)*************************/
- $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME, eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
  global $odid, $allElementsArray, $uniqElementsArray, $output;
  $odid = '1';
  $allElementsArray = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
  $uniqElementsArray = ['1' => ''];
  $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
- InsertObject($db);
+ InsertObject($db, 'system');
  $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
- InsertObject($db);
+ InsertObject($db, 'system');
 }
 
 function getODVNamesForSidebar($db)
 {
-	$arr = [];
-	$query = $db->prepare("SELECT odname FROM `$`");
-	$query->execute();
-	foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
-			 {
-			 $arr[$value['odname']] = [];
-			 $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
-			 $query->execute();
-			 foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $valeu)
-				 if ($key != 'New view') $arr[$value['odname']][$key] = '';
-			}
+ if (!isset($_SESSION['u'])) return [];
+ $groups = getUserGroups($db, $_SESSION['u']); // Get current user group list
+ $groups[] = getUserName($db, $_SESSION['u']); // and add username at the end of array
+
+ $arr = [];
+ $query = $db->prepare("SELECT odname FROM `$`");
+ $query->execute();
+ foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
+	 {
+	  $arr[$value['odname']] = [];
+	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
+	  $query->execute();
+	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
+		  {
+		   if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
+		      { if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') continue; }
+		    else 
+		      { if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') continue; }
+		   $arr[$value['odname']][$key] = '';
+		  }
+	 }
  return $arr;
 }
 
@@ -340,10 +350,8 @@ function Check($db, $flags)
      // Check input OD/OV vars existence
      if (!isset($input['OD']) || !isset($input['OV'])) return $error = 'Incorrect Object Database/View!';
  
-     // Check any OD sql database existence
-     $query = $db->prepare("SELECT id FROM $ LIMIT 1");
-     $query->execute();
-     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create Object Database first!';
+     // Check any OD for the current user
+     if (count(getODVNamesForSidebar($db)) == 0) return $error = 'Please create Object Database first!';
 
      // Empty value OD/OV check
      $OD = $input['OD'];
@@ -458,31 +466,38 @@ function Check($db, $flags)
      switch ($input['cmd'])
     	    {
     	     case 'New Object Database':
+    	     case 'NEWOD':
 	          if (getUserODAddPermission($db, $_SESSION['u']) != '+Allow user to add Object Databases|') return $alert = "You're not allowed to add Object Databases!";
 		  break;
+	     case 'OBTAINMAIN':
+	     case 'GETMAIN':
 	     case 'DELETEOBJECT':
 	     case 'INIT':
 	     case 'KEYPRESS':
 	     case 'DBLCLICK':
 	     case 'CONFIRM':
+	          if (($input['cmd'] === 'OBTAINMAIN' || $input['cmd'] === 'GETMAIN') && ($input['OD'] === '' || $input['OV'] === '')) return;
+		  
 		  if (!isset($OD) || !isset($OV) || !isset($odid)) return $alert = "You're not allowed to modify this Object View!";
+		     
 	          $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$odid'");
 		  $query->execute();
 		  if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "You're not allowed to modify this Object View!";
 		  $View = json_decode($View[0][0], true)[$OV];	// Set current view array data
 		  $groups = getUserGroups($db, $_SESSION['u']); // Get current user group list
-		  $groups[] = getUserName($db, $_SESSION['u']); // and the username at the end of array
-		  //loog($groups); loog(UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])));
+		  $groups[] = getUserName($db, $_SESSION['u']); // and add username at the end of array
 		  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
 		     {
 		      if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
-		         return $alert = "You're not allowed to modify this Object View!";
+		         return $error = "You're not allowed to display or modify this Object View!";
 		     }
 		   else
 		     {
 		      if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-		         return $alert = "You're not allowed to modify this Object View!";
+		         return $error = "You're not allowed to display or modify this Object View!";
 		     }
+		  if ($input['cmd'] === 'OBTAINMAIN' || $input['cmd'] === 'GETMAIN') return;
+		  
 		  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp")))
 		     {
 		      if ($View['element8']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
@@ -496,16 +511,6 @@ function Check($db, $flags)
 		    
 		  break;
 	    }
-
-     /*$odid = 1;
-     if (isset($odid))
-        {
-	 $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Database') FROM $ WHERE id='$odid'");
-	 $query->execute();
-         if (count($database = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = '--------------------';
-	 $database = json_decode($database[0][0], true);
-	 loog($database['Permissions']['element2']['data']);
-	}*/
     }
 }
 
@@ -572,11 +577,17 @@ function parseJSONEventData($db, $JSONs, $event, $id)
 function getElementProperty($db, $elementId, $prop, $version = NULL)
 {
  global $odid, $oid, $eid;
- if (!isset($oid) || !isset($eid)) return NULL;
  if (!isset($elementId)) $elementId = $eid;
+ return getElementPropStrict($db, $odid, $oid, $elementId, $prop, $version);
+}
 
- if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($elementId).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+
+function getElementPropStrict($db, $odid, $oid, $eid, $prop, $version = NULL)
+{
+ if (!isset($odid) || !isset($oid) || !isset($eid) || !isset($prop)) return NULL;
+
+ if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
+  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
  $query->execute();
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
@@ -619,7 +630,7 @@ function getElementJSON($db, $elementId, $version = NULL)
  return $result[0][0];
 }
 
-function InsertObject($db)
+function InsertObject($db, $owner = NULL)
 {
  global $odid, $allElementsArray, $uniqElementsArray, $output;
 
@@ -647,9 +658,10 @@ function InsertObject($db)
      throw new PDOException('Incorrect new object id value!', 0);
     }
 
- $query = 'id,version'; // Plus date, time, user
- $params = [':id' => $newId, ':version' => '1'];
- $values = ':id,:version';
+ if (!isset($owner)) $owner = getUserName($db, $_SESSION['u']);
+ $query = 'id,version,owner,datetime';
+ $params = [':id' => $newId, ':version' => '1', ':owner' => $owner];
+ $values = ':id,:version,:owner,NOW()';
  foreach ($allElementsArray as $id => $profile) if (isset($output[$id]))
 	 if (($json = json_encode($output[$id])) !== false && isset($json))
 	    {
@@ -705,8 +717,8 @@ function CreateNewObjectVersion($db)
  $version = intval($version[0][0]) + 1;
 
  // Unset last flag of the object current version and insert new object version with empty data
- $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (id,version,last) VALUES ($oid,$version,1)");
- $query->execute();
+ $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (id,owner,datetime,version,last) VALUES ($oid,:owner,NOW(),$version,1)");
+ $query->execute([':owner' => getUserName($db, $_SESSION['u'])]);
  $query->closeCursor();
 
  // Update current object uniq element if exist and commit the transaction, so the new version is created.
@@ -920,7 +932,6 @@ function setElementSelectionIds()
 function NewOD($db)
 {
  global $input;
- $input['cmd'] = 'NEWOD';
  
  // Get dialog OD name, cut it and check
  $odname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr(trim($input['data']['dialog']['Database']['Properties']['element1']['data']), 0, ODSTRINGMAXCHAR);
@@ -938,27 +949,36 @@ function NewOD($db)
  $query = $db->prepare("create table `uniq_$odid` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();                                                                                                                                   
  // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
- $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, date DATE, time TIME, user CHAR(64), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), date DATETIME, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
  // Insert new OD properties
  $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$odid");
  $query->execute([':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
 		    
- return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+ return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
 }
 		
 function EditOD($db)		
 {
  global $input;
- $input['cmd'] = 'EDITOD';
  
  // Get dialog old and new OD name
- $newodname = $input['data']['dialog']['Database']['Properties']['element1']['data'] = substr($input['data']['dialog']['Database']['Properties']['element1']['data'], 0, ODSTRINGMAXCHAR);
+ $newodname = str_replace("\\", "", $input['data']['dialog']['Database']['Properties']['element1']['data']);
+ $newodname = substr($newodname, 0, ODSTRINGMAXCHAR); 
+ $input['data']['dialog']['Database']['Properties']['element1']['data'] = $newodname;
  $oldodname = $input['data']['flags']['callback'] = substr($input['data']['flags']['callback'], 0, ODSTRINGMAXCHAR);
+ 
  // Getting old OD name id in `$`
- $query = $db->prepare("SELECT id FROM `$` WHERE odname=:odname");
+ $query = $db->prepare("SELECT id, odprops FROM `$` WHERE odname=:odname");
  $query->execute([':odname' => $oldodname]);
- $odid = $query->fetch(PDO::FETCH_NUM)[0];
+ $odid = $query->fetchAll(PDO::FETCH_NUM);
+ if (isset($odid[0][0]) && isset($odid[0][1]))
+    {
+     $odprops = $odid[0][1];
+     $odid = $odid[0][0];
+    }
+  else return $output = ['cmd' => 'INFO', 'alert' => "Failed to get Object Database properties!"];
+ 
  // In case of empty OD name string try to remove current OD from the system
  if ($newodname === '')
  if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '' && count($input['data']['dialog']['Element']) === 1)
@@ -968,21 +988,106 @@ function EditOD($db)
      $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$odid`; DROP TABLE IF EXISTS `data_$odid`");
      $query->execute();
      $query->closeCursor();
-     return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+     return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
     }
   else return $output = ['cmd' => 'INFO', 'alert' => "To remove Object Database (OD) - empty 'name' and 'description' OD fields and remove all elements (see 'Element' tab)"];
-			
+
+ // Decode current OD props
+ $odprops = json_decode($odprops, true);
+ if (isset($odprops['dialog']['Database']['Permissions'])) $dbPermissions = $odprops['dialog']['Database']['Permissions'];
+  else return $output = ['cmd' => 'INFO', 'alert' => "Failed to get Object Database properties!"];
+  
+ // Check current OD permissions to fetch new OD data from dialog box - $input['data']['dialog']['Database']['Permissions'])..
+ $alertstring = '';
+ $groups = getUserGroups($db, $_SESSION['u']); // Get current user group list
+ $groups[] = getUserName($db, $_SESSION['u']); // and add username at the end of array
+ 
+ // Check 'Database' pad change permissions
+ if ($input['data']['dialog']['Database'] != $odprops['dialog']['Database'])
+ if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element2']['data'])), "strcmp")))
+    {
+     if ($dbPermissions['element1']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'Database', ";
+	 $input['data']['dialog']['Database'] = $odprops['dialog']['Database'];
+	}
+    }
+  else
+    {
+     if ($dbPermissions['element1']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'Database', ";
+	 $input['data']['dialog']['Database'] = $odprops['dialog']['Database'];
+	}
+    }
+ // Check 'Element' pad change permissions
+ if ($input['data']['dialog']['Element'] != $odprops['dialog']['Element'])
+ if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element4']['data'])), "strcmp")))
+    {
+     if ($dbPermissions['element3']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'Element', ";
+	 $input['data']['dialog']['Element'] = $odprops['dialog']['Element'];
+	}
+    }
+  else
+    {
+     if ($dbPermissions['element3']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'Element', ";
+	 $input['data']['dialog']['Element'] = $odprops['dialog']['Element'];
+	}
+    }
+ // Check 'View' pad change permissions
+ if ($input['data']['dialog']['View'] != $odprops['dialog']['View'])
+ if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element6']['data'])), "strcmp")))
+    {
+     if ($dbPermissions['element5']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'View', ";
+	 $input['data']['dialog']['View'] = $odprops['dialog']['View'];
+	}
+    }
+  else
+    {
+     if ($dbPermissions['element5']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'View', ";
+	 $input['data']['dialog']['View'] = $odprops['dialog']['View'];
+	}
+    }
+ // Check 'Rule' pad change permissions
+ if ($input['data']['dialog']['Rule'] != $odprops['dialog']['Rule'])
+ if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element8']['data'])), "strcmp")))
+    {
+     if ($dbPermissions['element7']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'Rule', ";
+	 $input['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
+	}
+    }
+  else
+    {
+     if ($dbPermissions['element7']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
+	{
+	 $alertstring .= "'Rule', ";
+	 $input['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
+	}
+    }
+
  // Writing new properties
  initNewODDialogElements();
  $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$odid");
  $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($input['data'], $db, $odid))]);
-		    
- return ['cmd' => 'REFRESH', 'data' => getODVNamesForSidebar($db)];
+
+ // Return result		    
+ if ($alertstring === '') return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
+ return ['cmd' => 'INFO', 'alert' => "You're not allowed to change next OD properties: ".$alertstring."so they remain unchanged!", 'sidebar' => getODVNamesForSidebar($db)];
 }
 
 function getUserId($db, $user)
 {
- if (gettype($user) != 'string' || $user === '') return '0';
+ if (gettype($user) != 'string' || $user === '') return;
  $query = $db->prepare("SELECT id FROM `uniq_1` WHERE eid1=:user");
  $query->execute([':user' => $user]);
  $id = $query->fetchAll(PDO::FETCH_NUM);
@@ -999,10 +1104,12 @@ function getUserPass($db, $id)
 
 function getUserName($db, $id)
 {
+ if (!isset($id)) return '';
  $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
  $query->execute([':id' => $id]);
  $name = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($name[0][0])) return substr($name[0][0], 1, -1);
+ return '';
 }
 
 function getUserGroups($db, $id)
@@ -1031,26 +1138,22 @@ function getUserODAddPermission($db, $id)
   else return '';
 }
 
-function getUserCustomization($db, $id, $current = false)
+function getUserCustomization($db, $oid, $current = false)
 {
- global $odid, $oid, $eid;
- $odid = '1';
- $oid = $id;
- $eid = '6';
- 
+ // Check $id existence
+ if (!isset($oid)) return;
  // Get current user JSON customization and decode it
- $customization = json_decode(getElementProperty($db, 6, 'dialog'), true);
+ $customization = json_decode(getElementPropStrict($db, '1', $oid, '6', 'dialog'), true);
  // Wrong result data? Return NULL
- if (!isset($customization) || $customization === false || $customization === true || !is_array($customization) || !isset($customization['pad']['Scheme']['element2']['data'])) return;
+ if (!isset($customization) || $customization === false || $customization === true || !is_array($customization) || !isset($customization['pad']['misc customization']['element5']['data'])) return;
  // Flag 'current' is set? Return current customization
  if ($current) return $customization;
  
  // If current user customization forces to use another user customization, and the user does exist, and the user id doesn't point to itself - get it and return it
- if ($customization['pad']['Scheme']['element2']['data'] != '' && ($uid = getUserId($db, $customization['pad']['Scheme']['element2']['data'])) && strval($uid) != strval($id))
+ if ($customization['pad']['misc customization']['element5']['data'] != '' && ($uid = getUserId($db, $customization['pad']['misc customization']['element5']['data'])) && strval($uid) != strval($id))
     {
-     $oid = $uid;
-     $customization = json_decode(getElementProperty($db, 6, 'dialog'), true);
-     if (!isset($customization) || $customization === false || $customization === true || !is_array($customization) || !isset($customization['pad']['Scheme']['element2']['data'])) return;
+     $customization = json_decode(getElementPropStrict($db, '1', $uid, '6', 'dialog'), true);
+     if (!isset($customization) || $customization === false || $customization === true || !is_array($customization) || !isset($customization['pad']['misc customization']['element5']['data'])) return;
     }
  
  return $customization;
@@ -1070,10 +1173,11 @@ function defaultCustomizationDialogJSON()
 {
  // To transfer uiProfile from main.js: get uiProfile JSON from console by "console.log(JSON.stringify(uiProfile))" and put it json_decode below.
  // Don't forget to escape single quotes by "\'"
- $uiProfile = json_decode('{"body":{"target":"body","background-color":"#343E54;"},"sidebar":{"target":".sidebar","background-color":"rgb(17,101,176);","border-radius":"5px;","color":"#9FBDDF;","width":"13%;","height":"90%;","left":"4%;","top":"5%;","scrollbar-color":"#1E559D #266AC4;","scrollbar-width":"thin;","box-shadow":"4px 4px 5px #222;"},"sidebar wrap icon":{"wrap":"&#9658;","unwrap":"&#9660;"},"sidebar wrap cell":{"target":".wrap","font-size":"70%;","padding":"3px 5px;"},"sidebar item active":{"target":".itemactive","background-color":"#4578BF;","color":"#FFFFFF;","font":"1.1em Lato, Helvetica;"},"sidebar item hover":{"target":".sidebar tr:hover","background-color":"#4578BF;","cursor":"pointer;"},"sidebar object database":{"target":".sidebar-od","padding":"3px 5px 3px 0px;","margin":"0px;","color":"","width":"100%;","font":"1.1em Lato, Helvetica;"},"sidebar object view":{"target":".sidebar-ov","padding":"2px 5px 2px 10px;","margin":"0px;","color":"","font":"0.9em Lato, Helvetica;"},"main field":{"target":".main","width":"76%;","height":"90%;","left":"18%;","top":"5%;","border-radius":"5px;","background-color":"#EEE;","scrollbar-color":"#CCCCCC #FFFFFF;","box-shadow":"4px 4px 5px #111;"},"main field table":{"target":"table","margin":"0px;"},"main field table cursor cell":{"outline":"rgb(252,141,114) auto 1px","shadow":"aaaaaaaaaaaaaa0 0 5px rgba(100,0,0,0.5)"},"main field table title cell":{"target":".titlecell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"#CCC;","font":"","text-align":"center"},"main field table newobject cell":{"target":".newobjectcell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"rgb(191,255,191);","font":"","text-align":"center"},"main field table data cell":{"target":".datacell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"","font":"12px/14px arial;","text-align":"center"},"main field table undefined cell":{"target":".undefinedcell","padding":"10px;","border":"1px solid #999;","background":"rgb(255,235,235);"},"main field table mouse pointer":{"target":".main table tbody tr td:not([contenteditable=true])","cursor":"cell;"},"main field message":{"target":".main h1","color":"#BBBBBB;"},"scrollbar":{"target":"::-webkit-scrollbar","width":"8px;","height":"8px;"},"context menu":{"target":".contextmenu","width":"240px;","background-color":"#F3F3F3;","color":"#1166aa;","border":"solid 1px #dfdfdf;","box-shadow":"1px 1px 2px #cfcfcf;","font-family":"sans-serif;","font-size":"16px;","font-weight":"300;","line-height":"1.5;","padding":"12px 0;"},"context menu item":{"target":".contextmenuItems","margin-bottom":"4px;","padding-left":"10px;"},"context menu item cursor":{"target":".contextmenuItems:hover:not(.greyContextMenuItem)","cursor":"pointer;"},"context menu item active":{"target":".activeContextMenuItem","color":"#fff;","background-color":"#0066aa;"},"context menu item grey":{"target":".greyContextMenuItem","color":"#dddddd;"},"hint":{"target":".hint","background-color":"#CAE4B6;","color":"#7E5A1E;","border":"none;","padding":"5px;"},"box":{"target":".box","background-color":"rgb(233,233,233);","color":"#1166aa;","border-radius":"5px;","border":"solid 1px #dfdfdf;","box-shadow":"2px 2px 4px #cfcfcf;"},"dialog box title":{"target":".title","background-color":"rgb(209,209,209);","color":"#555;","border":"#000000;","border-radius":"5px 5px 0 0;","font":"bold .9em Lato, Helvetica;","padding":"5px;"},"dialog box pad":{"target":".pad","background-color":"rgb(223,223,223);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":".9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box active pad":{"target":".activepad","background-color":"rgb(209,209,209);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":"bold .9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box pad bar":{"target":".padbar","background-color":"transparent;","border":"none;","padding":"4px;","margin":"10px 0 15px 0;"},"dialog box divider":{"target":".divider","background-color":"transparent;","margin":"5px 10px 5px 10px;","height":"0px;","border-bottom":"1px solid #CCC;","border-top-color":"transparent;","border-left-color":"transparent;","border-right-color":"transparent;"},"dialog box button":{"target":".button","background-color":"#13BB72;","border":"none;","padding":"10px;","margin":"10px;","border-radius":"5px;","font":"bold 12px Lato, Helvetica;","color":"white;"},"dialog box button and pad hover":{"target":".button:hover, .pad:hover","cursor":"pointer;","background":"","color":"","border":""},"dialog box element headers":{"target":".element-headers","margin":"5px 5px 5px 5px;","font":".9em Lato, Helvetica;","color":"#555;","text-shadow":"none;"},"dialog box help icon":{"target":".help-icon","padding":"1px;","font":".9em Lato, Helvetica;","color":"#555;","background":"#FF0;","border-radius":"40%;"},"dialog box help icon hover":{"target":".help-icon:hover","padding":"1px;","font":"bold 1em Lato, Helvetica;","color":"black;","background":"#E8E800;","cursor":"pointer;","border-radius":"40%;"},"dialog box select":{"target":".select","background-color":"rgb(243,243,243);","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 5px 10px;","outline":"none;","border":"1px solid #777;","padding":"0px 0px 0px 0px;","overflow":"auto;","max-height":"10em;","scrollbar-width":"thin;","min-width":"10em;","width":"auto;","display":"inline-block;"},"dialog box select option":{"target":".select > div","padding":"2px 20px 2px 5px;","margin":"0px;"},"dialog box select option hover":{"target":".select:not([type*=\'o\']) > div:hover","background-color":"rgb(209,209,209);","color":""},"dialog box select option selected":{"target":".selected","background-color":"rgb(209,209,209);","color":"#fff;"},"dialog box select option expanded":{"target":".expanded","margin":"0px !important;","position":"absolute;"},"dialog box radio":{"target":"input[type=radio]","background":"transparent;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"20%;","width":"1.2em;","height":"1.2em;"},"dialog box radio checked":{"target":"input[type=radio]:checked::after","content":"","color":"white;"},"dialog box radio checked background":{"target":"input[type=radio]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box radio label":{"target":"input[type=radio] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box checkbox":{"target":"input[type=checkbox]","background":"#f3f3f3;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"50%;","width":"1.2em;","height":"1.2em;"},"dialog box checkbox checked":{"target":"input[type=checkbox]:checked::after","content":"","color":"white;"},"dialog box checkbox checked background":{"target":"input[type=checkbox]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box checkbox label":{"target":"input[type=checkbox] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box input text":{"target":"input[type=text]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"none;","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input password":{"target":"input[type=password]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input textarea":{"target":"textarea","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"misc customization":{"objects per page":"50","next page bottom reach":"","previous page top reach":"","force next user scheme":"","mouseover hint timer in msec":"1000"},"effects":{"hint":"hotnews","contextmenu":"rise","box":"slideup","select":"rise","box filter":"grayscale(0.5)"},"hotnews hide":{"target":".hotnewshide","visibility":"hidden;","transform":"scale(0) rotate(0deg);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"hotnews show":{"target":".hotnewsshow","visibility":"visible;","transform":"scale(1) rotate(720deg);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"fade hide":{"target":".fadehide","visibility":"hidden;","opacity":"0;","transition":"all .5s;","-webkit-transition":"all .5s;"},"fade show":{"target":".fadeshow","visibility":"visible;","opacity":"1;","transition":"opacity .5s;","-webkit-transition":"opacity .5s;"},"grow hide":{"target":".growhide","visibility":"hidden;","transform":"scale(0);","transition":"all .4s;","-webkit-transition":"all .4s;"},"grow show":{"target":".growshow","visibility":"visible;","transform":"scale(1);","transition":"transform .4s;","-webkit-transition":"transform .4s;"},"slideleft hide":{"target":".slidelefthide","visibility":"hidden;","transform":"translate(1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideleft show":{"target":".slideleftshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"all .4s cubic-bezier(.06,1.24,0,.98);"},"slideright hide":{"target":".sliderighthide","visibility":"hidden;","transform":"translate(-1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideright show":{"target":".sliderightshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slideup hide":{"target":".slideuphide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideup show":{"target":".slideupshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slidedown hide":{"target":".slidedownhide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slidedown show":{"target":".slidedownshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"fall hide":{"target":".fallhide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(2);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"fall show":{"target":".fallshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"rise hide":{"target":".risehide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(0);","transition":"all .2s cubic-bezier(.38,1.02,.69,.97);","-webkit-transition":"all .2s cubic-bezier(.38,1.02,.69,.97);"},"rise show":{"target":".riseshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","transition":"transform .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"none hide":{"target":".nonehide","visibility":"hidden;"},"none show":{"target":".noneshow","visibility":"visible;"}}', true);
+ // $uiProfile = json_decode('{"body":{"target":"body","background-color":"#343E54;"},"sidebar":{"target":".sidebar","background-color":"rgb(17,101,176);","border-radius":"5px;","color":"#9FBDDF;","width":"13%;","height":"90%;","left":"4%;","top":"5%;","scrollbar-color":"#1E559D #266AC4;","scrollbar-width":"thin;","box-shadow":"4px 4px 5px #222;"},"sidebar wrap icon":{"wrap":"&#9658;","unwrap":"&#9660;"},"sidebar wrap cell":{"target":".wrap","font-size":"70%;","padding":"3px 5px;"},"sidebar item active":{"target":".itemactive","background-color":"#4578BF;","color":"#FFFFFF;","font":"1.1em Lato, Helvetica;"},"sidebar item hover":{"target":".sidebar tr:hover","background-color":"#4578BF;","cursor":"pointer;"},"sidebar object database":{"target":".sidebar-od","padding":"3px 5px 3px 0px;","margin":"0px;","color":"","width":"100%;","font":"1.1em Lato, Helvetica;"},"sidebar object view":{"target":".sidebar-ov","padding":"2px 5px 2px 10px;","margin":"0px;","color":"","font":"0.9em Lato, Helvetica;"},"main field":{"target":".main","width":"76%;","height":"90%;","left":"18%;","top":"5%;","border-radius":"5px;","background-color":"#EEE;","scrollbar-color":"#CCCCCC #FFFFFF;","box-shadow":"4px 4px 5px #111;"},"main field table":{"target":"table","margin":"0px;"},"main field table cursor cell":{"outline":"rgb(252,141,114) auto 1px","shadow":"aaaaaaaaaaaaaa0 0 5px rgba(100,0,0,0.5)"},"main field table title cell":{"target":".titlecell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"#CCC;","font":"","text-align":"center"},"main field table newobject cell":{"target":".newobjectcell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"rgb(191,255,191);","font":"","text-align":"center"},"main field table data cell":{"target":".datacell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"","font":"12px/14px arial;","text-align":"center"},"main field table undefined cell":{"target":".undefinedcell","padding":"10px;","border":"1px solid #999;","background":"rgb(255,235,235);"},"main field table mouse pointer":{"target":".main table tbody tr td:not([contenteditable=true])","cursor":"cell;"},"main field message":{"target":".main h1","color":"#BBBBBB;"},"scrollbar":{"target":"::-webkit-scrollbar","width":"8px;","height":"8px;"},"context menu":{"target":".contextmenu","width":"240px;","background-color":"#F3F3F3;","color":"#1166aa;","border":"solid 1px #dfdfdf;","box-shadow":"1px 1px 2px #cfcfcf;","font-family":"sans-serif;","font-size":"16px;","font-weight":"300;","line-height":"1.5;","padding":"12px 0;"},"context menu item":{"target":".contextmenuItems","margin-bottom":"4px;","padding-left":"10px;"},"context menu item cursor":{"target":".contextmenuItems:hover:not(.greyContextMenuItem)","cursor":"pointer;"},"context menu item active":{"target":".activeContextMenuItem","color":"#fff;","background-color":"#0066aa;"},"context menu item grey":{"target":".greyContextMenuItem","color":"#dddddd;"},"hint":{"target":".hint","background-color":"#CAE4B6;","color":"#7E5A1E;","border":"none;","padding":"5px;"},"box":{"target":".box","background-color":"rgb(233,233,233);","color":"#1166aa;","border-radius":"5px;","border":"solid 1px #dfdfdf;","box-shadow":"2px 2px 4px #cfcfcf;"},"dialog box title":{"target":".title","background-color":"rgb(209,209,209);","color":"#555;","border":"#000000;","border-radius":"5px 5px 0 0;","font":"bold .9em Lato, Helvetica;","padding":"5px;"},"dialog box pad":{"target":".pad","background-color":"rgb(223,223,223);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":".9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box active pad":{"target":".activepad","background-color":"rgb(209,209,209);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":"bold .9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box pad bar":{"target":".padbar","background-color":"transparent;","border":"none;","padding":"4px;","margin":"10px 0 15px 0;"},"dialog box divider":{"target":".divider","background-color":"transparent;","margin":"5px 10px 5px 10px;","height":"0px;","border-bottom":"1px solid #CCC;","border-top-color":"transparent;","border-left-color":"transparent;","border-right-color":"transparent;"},"dialog box button":{"target":".button","background-color":"#13BB72;","border":"none;","padding":"10px;","margin":"10px;","border-radius":"5px;","font":"bold 12px Lato, Helvetica;","color":"white;"},"dialog box button and pad hover":{"target":".button:hover, .pad:hover","cursor":"pointer;","background":"","color":"","border":""},"dialog box element headers":{"target":".element-headers","margin":"5px 5px 5px 5px;","font":".9em Lato, Helvetica;","color":"#555;","text-shadow":"none;"},"dialog box help icon":{"target":".help-icon","padding":"1px;","font":".9em Lato, Helvetica;","color":"#555;","background":"#FF0;","border-radius":"40%;"},"dialog box help icon hover":{"target":".help-icon:hover","padding":"1px;","font":"bold 1em Lato, Helvetica;","color":"black;","background":"#E8E800;","cursor":"pointer;","border-radius":"40%;"},"dialog box select":{"target":".select","background-color":"rgb(243,243,243);","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 5px 10px;","outline":"none;","border":"1px solid #777;","padding":"0px 0px 0px 0px;","overflow":"auto;","max-height":"10em;","scrollbar-width":"thin;","min-width":"10em;","width":"auto;","display":"inline-block;"},"dialog box select option":{"target":".select > div","padding":"2px 20px 2px 5px;","margin":"0px;"},"dialog box select option hover":{"target":".select:not([type*=\'o\']) > div:hover","background-color":"rgb(209,209,209);","color":""},"dialog box select option selected":{"target":".selected","background-color":"rgb(209,209,209);","color":"#fff;"},"dialog box select option expanded":{"target":".expanded","margin":"0px !important;","position":"absolute;"},"dialog box radio":{"target":"input[type=radio]","background":"transparent;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"20%;","width":"1.2em;","height":"1.2em;"},"dialog box radio checked":{"target":"input[type=radio]:checked::after","content":"","color":"white;"},"dialog box radio checked background":{"target":"input[type=radio]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box radio label":{"target":"input[type=radio] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box checkbox":{"target":"input[type=checkbox]","background":"#f3f3f3;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"50%;","width":"1.2em;","height":"1.2em;"},"dialog box checkbox checked":{"target":"input[type=checkbox]:checked::after","content":"","color":"white;"},"dialog box checkbox checked background":{"target":"input[type=checkbox]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box checkbox label":{"target":"input[type=checkbox] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box input text":{"target":"input[type=text]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"none;","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input password":{"target":"input[type=password]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input textarea":{"target":"textarea","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"misc customization":{"objects per page":"50","next page bottom reach":"","previous page top reach":"","force next user scheme":"","mouseover hint timer in msec":"1000"},"effects":{"hint":"hotnews","contextmenu":"rise","box":"slideup","select":"rise","box filter":"grayscale(0.5)"},"hotnews hide":{"target":".hotnewshide","visibility":"hidden;","transform":"scale(0) rotate(0deg);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"hotnews show":{"target":".hotnewsshow","visibility":"visible;","transform":"scale(1) rotate(720deg);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"fade hide":{"target":".fadehide","visibility":"hidden;","opacity":"0;","transition":"all .5s;","-webkit-transition":"all .5s;"},"fade show":{"target":".fadeshow","visibility":"visible;","opacity":"1;","transition":"opacity .5s;","-webkit-transition":"opacity .5s;"},"grow hide":{"target":".growhide","visibility":"hidden;","transform":"scale(0);","transition":"all .4s;","-webkit-transition":"all .4s;"},"grow show":{"target":".growshow","visibility":"visible;","transform":"scale(1);","transition":"transform .4s;","-webkit-transition":"transform .4s;"},"slideleft hide":{"target":".slidelefthide","visibility":"hidden;","transform":"translate(1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideleft show":{"target":".slideleftshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"all .4s cubic-bezier(.06,1.24,0,.98);"},"slideright hide":{"target":".sliderighthide","visibility":"hidden;","transform":"translate(-1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideright show":{"target":".sliderightshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slideup hide":{"target":".slideuphide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideup show":{"target":".slideupshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slidedown hide":{"target":".slidedownhide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slidedown show":{"target":".slidedownshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"fall hide":{"target":".fallhide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(2);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"fall show":{"target":".fallshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"rise hide":{"target":".risehide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(0);","transition":"all .2s cubic-bezier(.38,1.02,.69,.97);","-webkit-transition":"all .2s cubic-bezier(.38,1.02,.69,.97);"},"rise show":{"target":".riseshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","transition":"transform .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"none hide":{"target":".nonehide","visibility":"hidden;"},"none show":{"target":".noneshow","visibility":"visible;"}}', true);
+ $uiProfile = json_decode('{"body":{"target":"body","background-color":"#343E54;"},"sidebar":{"target":".sidebar","background-color":"rgb(17,101,176);","border-radius":"5px;","color":"#9FBDDF;","width":"13%;","height":"90%;","left":"4%;","top":"5%;","scrollbar-color":"#1E559D #266AC4;","scrollbar-width":"thin;","box-shadow":"4px 4px 5px #222;"},"sidebar wrap icon":{"wrap":"&#9658;","unwrap":"&#9660;"},"sidebar wrap cell":{"target":".wrap","font-size":"70%;","padding":"3px 5px;"},"sidebar item active":{"target":".itemactive","background-color":"#4578BF;","color":"#FFFFFF;","font":"1.1em Lato, Helvetica;"},"sidebar item hover":{"target":".sidebar tr:hover","background-color":"#4578BF;","cursor":"pointer;"},"sidebar object database":{"target":".sidebar-od","padding":"3px 5px 3px 0px;","margin":"0px;","color":"","width":"100%;","font":"1.1em Lato, Helvetica;"},"sidebar object view":{"target":".sidebar-ov","padding":"2px 5px 2px 10px;","margin":"0px;","color":"","font":"0.9em Lato, Helvetica;"},"main field":{"target":".main","width":"76%;","height":"90%;","left":"18%;","top":"5%;","border-radius":"5px;","background-color":"#EEE;","scrollbar-color":"#CCCCCC #FFFFFF;","box-shadow":"4px 4px 5px #111;"},"main field table":{"target":"table","margin":"10px;"},"main field table cursor cell":{"outline":"red auto 1px","shadow":"0 0 5px rgba(100,0,0,0.5)"},"main field table title cell":{"target":".titlecell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"#CCC;","font":"","text-align":"center"},"main field table newobject cell":{"target":".newobjectcell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"rgb(191,255,191);","font":"","text-align":"center"},"main field table data cell":{"target":".datacell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"","font":"12px/14px arial;","text-align":"center"},"main field table undefined cell":{"target":".undefinedcell","padding":"10px;","border":"1px solid #999;","background":"rgb(255,235,235);"},"main field table mouse pointer":{"target":".main table tbody tr td:not([contenteditable=true])","cursor":"cell;"},"main field message":{"target":".main h1","color":"#BBBBBB;"},"scrollbar":{"target":"::-webkit-scrollbar","width":"8px;","height":"8px;"},"context menu":{"target":".contextmenu","width":"240px;","background-color":"#F3F3F3;","color":"#1166aa;","border":"solid 1px #dfdfdf;","box-shadow":"1px 1px 2px #cfcfcf;","font-family":"sans-serif;","font-size":"16px;","font-weight":"300;","line-height":"1.5;","padding":"12px 0;"},"context menu item":{"target":".contextmenuItems","margin-bottom":"4px;","padding-left":"10px;"},"context menu item cursor":{"target":".contextmenuItems:hover:not(.greyContextMenuItem)","cursor":"pointer;"},"context menu item active":{"target":".activeContextMenuItem","color":"#fff;","background-color":"#0066aa;"},"context menu item grey":{"target":".greyContextMenuItem","color":"#dddddd;"},"hint":{"target":".hint","background-color":"#CAE4B6;","color":"#7E5A1E;","border":"none;","padding":"5px;"},"box":{"target":".box","background-color":"rgb(233,233,233);","color":"#1166aa;","border-radius":"5px;","border":"solid 1px #dfdfdf;","box-shadow":"2px 2px 4px #cfcfcf;"},"dialog box title":{"target":".title","background-color":"rgb(209,209,209);","color":"#555;","border":"#000000;","border-radius":"5px 5px 0 0;","font":"bold .9em Lato, Helvetica;","padding":"5px;"},"dialog box pad":{"target":".pad","background-color":"rgb(223,223,223);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":".9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box active pad":{"target":".activepad","background-color":"rgb(209,209,209);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":"bold .9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box pad bar":{"target":".padbar","background-color":"transparent;","border":"none;","padding":"4px;","margin":"10px 0 15px 0;"},"dialog box divider":{"target":".divider","background-color":"transparent;","margin":"5px 10px 5px 10px;","height":"0px;","border-bottom":"1px solid #CCC;","border-top-color":"transparent;","border-left-color":"transparent;","border-right-color":"transparent;"},"dialog box button":{"target":".button","background-color":"#13BB72;","border":"none;","padding":"10px;","margin":"10px;","border-radius":"5px;","font":"bold 12px Lato, Helvetica;","color":"white;"},"dialog box button and pad hover":{"target":".button:hover, .pad:hover","cursor":"pointer;","background":"","color":"","border":""},"dialog box element headers":{"target":".element-headers","margin":"5px 5px 5px 5px;","font":".9em Lato, Helvetica;","color":"#555;","text-shadow":"none;"},"dialog box help icon":{"target":".help-icon","padding":"1px;","font":".9em Lato, Helvetica;","color":"#555;","background":"#FF0;","border-radius":"40%;"},"dialog box help icon hover":{"target":".help-icon:hover","padding":"1px;","font":"bold 1em Lato, Helvetica;","color":"black;","background":"#E8E800;","cursor":"pointer;","border-radius":"40%;"},"dialog box select":{"target":".select","background-color":"rgb(243,243,243);","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 5px 10px;","outline":"none;","border":"1px solid #777;","padding":"0px 0px 0px 0px;","overflow":"auto;","max-height":"10em;","scrollbar-width":"thin;","min-width":"10em;","width":"auto;","display":"inline-block;"},"dialog box select option":{"target":".select > div","padding":"2px 20px 2px 5px;","margin":"0px;"},"dialog box select option hover":{"target":".select:not([type*=\'o\']) > div:hover","background-color":"rgb(209,209,209);","color":""},"dialog box select option selected":{"target":".selected","background-color":"rgb(209,209,209);","color":"#fff;"},"dialog box select option expanded":{"target":".expanded","margin":"0px !important;","position":"absolute;"},"dialog box radio":{"target":"input[type=radio]","background":"transparent;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"20%;","width":"1.2em;","height":"1.2em;"},"dialog box radio checked":{"target":"input[type=radio]:checked::after","content":"","color":"white;"},"dialog box radio checked background":{"target":"input[type=radio]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box radio label":{"target":"input[type=radio] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box checkbox":{"target":"input[type=checkbox]","background":"#f3f3f3;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"50%;","width":"1.2em;","height":"1.2em;"},"dialog box checkbox checked":{"target":"input[type=checkbox]:checked::after","content":"","color":"white;"},"dialog box checkbox checked background":{"target":"input[type=checkbox]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box checkbox label":{"target":"input[type=checkbox] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box input text":{"target":"input[type=text]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"none;","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input password":{"target":"input[type=password]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input textarea":{"target":"textarea","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"effects":{"hint":"hotnews","contextmenu":"rise","box":"slideup","select":"rise","box filter":"grayscale(0.5)"},"hotnews hide":{"target":".hotnewshide","visibility":"hidden;","transform":"scale(0) rotate(0deg);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"hotnews show":{"target":".hotnewsshow","visibility":"visible;","transform":"scale(1) rotate(720deg);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"fade hide":{"target":".fadehide","visibility":"hidden;","opacity":"0;","transition":"all .5s;","-webkit-transition":"all .5s;"},"fade show":{"target":".fadeshow","visibility":"visible;","opacity":"1;","transition":"opacity .5s;","-webkit-transition":"opacity .5s;"},"grow hide":{"target":".growhide","visibility":"hidden;","transform":"scale(0);","transition":"all .4s;","-webkit-transition":"all .4s;"},"grow show":{"target":".growshow","visibility":"visible;","transform":"scale(1);","transition":"transform .4s;","-webkit-transition":"transform .4s;"},"slideleft hide":{"target":".slidelefthide","visibility":"hidden;","transform":"translate(1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideleft show":{"target":".slideleftshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"all .4s cubic-bezier(.06,1.24,0,.98);"},"slideright hide":{"target":".sliderighthide","visibility":"hidden;","transform":"translate(-1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideright show":{"target":".sliderightshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slideup hide":{"target":".slideuphide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideup show":{"target":".slideupshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slidedown hide":{"target":".slidedownhide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slidedown show":{"target":".slidedownshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"fall hide":{"target":".fallhide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(2);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"fall show":{"target":".fallshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"rise hide":{"target":".risehide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(0);","transition":"all .2s cubic-bezier(.38,1.02,.69,.97);","-webkit-transition":"all .2s cubic-bezier(.38,1.02,.69,.97);"},"rise show":{"target":".riseshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","transition":"transform .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"none hide":{"target":".nonehide","visibility":"hidden;"},"none show":{"target":".noneshow","visibility":"visible;"},"misc customization":{"objects per page":"50","next page bottom reach":"","previous page top reach":"","Force to use next user customization (empty or non-existent user - current is used)":"","mouseover hint timer in msec":"1000"}}', true);
  $dialog = ['pad' => []];
- $dialog['pad']['Scheme'] = ['element2' => ['type' => 'text', 'head' => 'Force to use next user customization (empty or non-existent user - current is used):', 'data' => '', 'line' => '']];
- $title = 'Customize css selector properties below:';
+ //$dialog['pad']['Scheme'] = ['element2' => ['type' => 'text', 'head' => 'Force to use next user customization (empty or non-existent user - current is used):', 'data' => '', 'line' => '']];
+ //$title = 'Customize css selector properties below:';
  
  foreach ($uiProfile as $profile => $value)
 	 {

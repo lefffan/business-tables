@@ -84,8 +84,6 @@ const uiProfile = {
 		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  // Misc
-		  "misc customization": { "objects per page": "50", "next page bottom reach": "", "previous page top reach": "", "force next user scheme": "", "mouseover hint timer in msec": "1000" },
 		  // Effects and animation
 /*blur(3px)*/	  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5)" },
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
@@ -107,8 +105,11 @@ const uiProfile = {
 		  "rise hide": { "target": ".risehide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(0);", "transition": "all .2s cubic-bezier(.38,1.02,.69,.97);", "-webkit-transition": "all .2s cubic-bezier(.38,1.02,.69,.97);" },
 		  "rise show": { "target": ".riseshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "transition": "transform .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
 		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
-		  "none show": { "target": ".noneshow", "visibility": "visible;" }
+		  "none show": { "target": ".noneshow", "visibility": "visible;" },
+		  // Misc
+		  "misc customization": { "objects per page": "50", "next page bottom reach": "", "previous page top reach": "", "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" }
 		  };
+//lg(JSON.stringify(uiProfile));
 const style = document.createElement('style');	// Create style DOM element
 styleUI();					// Style default user inteface profile
 document.head.appendChild(style);		// Append document style tag
@@ -271,9 +272,10 @@ function drawMain()
 	  }
       n++;
      }
+ erroradd = "Object Database: " + activeOD + "<br>Object View: " + activeOV + "<br>";
  if (!mainTableHeight)
     {
-     if (n > 1) displayMainError("Specified view selection expression has some 'x','y'<br>incorrect coordinate definitions!<br><br>See element selection expression help section");
+     if (n > 1) displayMainError("Specified view selection expression has some 'x','y'<br>incorrect coordinate definitions!<br>" + erroradd + "See element selection expression help section");
       else mainDiv.innerHTML = '<h1>Specified view has no objects defined!<br>Please add some objects</h1>';
      return;
     }
@@ -538,12 +540,9 @@ function eventHandler(event)
 		//--------------OD item mouse click? Wrap/unwrap OV list--------------
 	      if (event.target.classList.contains('sidebar-od'))
 		 {
-		  if (Object.keys(sidebar[event.target.innerHTML]).length > 1)
-		     {
-		      sidebar[cmd = event.target.innerHTML][''] = !sidebar[cmd][''];
-		      cmd = 'GETMENU';
-		      callController();
-		     }
+		  if (sidebar[cmd = event.target.innerHTML][''] != undefined) sidebar[cmd][''] = !sidebar[cmd][''];
+		  cmd = 'GETMENU';
+		  callController();
 		  break;
 		}
 		//--------------OV item mouse click? Open OV in main field--------------
@@ -696,7 +695,8 @@ function controllerCmdHandler(input)
      uiProfileSet(input.customization);
      styleUI();
     }
-   
+ if (input.sidebar) drawSidebar(input.sidebar);
+
  switch (input.cmd)
 	{
 	 case 'DIALOG':
@@ -732,14 +732,6 @@ function controllerCmdHandler(input)
 	      if (input.alert) warning(input.alert);
 	      break;
 	 case 'REFRESH':
-	      drawSidebar(input.data);
-	      cmd = 'GETMAIN'
-	      callController();
-	      break;
-	 case 'REFRESHMENU':
-	      drawSidebar(input.data);
-	      break;
-	 case 'REFRESHMAIN':
 	      objectTable = input.data;
 	      drawMain();
 	      break;
@@ -886,11 +878,14 @@ function callController(data)
  let object;
  switch (cmd)
 	{
+	 case 'New Object Database':
+	 case 'Edit Database Structure':
 	 case 'GETMENU':
 	 case 'GETMAIN':
 	 case 'OBTAINMAIN':
 	 case 'START':
 	      object = { "cmd": cmd };
+	      if (data != undefined) object.data = data;
 	      break;
 	 case 'Element description':
 	      let msg = '';
@@ -915,11 +910,6 @@ function callController(data)
 	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
 	         object = {"cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId };
 	      break;
-	 case 'New Object Database':
-	 case 'Edit Database Structure':
-	      object = { "cmd": cmd };
-	      if (data != undefined) object.data = data;
-	      break;
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
@@ -932,15 +922,13 @@ function callController(data)
 	      if (data != undefined) object.data = data;
 	      break;
 	 default:
-	      if (cmd.substr(0, 7) === 'Logout ')
-	         {
-		  object = { cmd: 'LOGOUT' };
-		 }
-	       else
+	      if (cmd.substr(0, 7) != 'Logout ')
 		 {
-		  warning("Undefined application message: '" + cmd + "'!");
 		  loog("Undefined application message: '" + cmd + "'!");
+		  warning("Undefined application message: '" + cmd + "'!");
+		  return;
 		 }
+	      object = { cmd: 'LOGOUT' };
 	}
 	
  if (object)

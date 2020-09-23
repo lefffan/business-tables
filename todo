@@ -1,19 +1,20 @@
 September 2020:
+- next day braowser request auth, then user logged in as root and didn't see 'all users'
 - Release auth in creating/changing/reading OD/OV
+- lines 655,713 - add date and time to object versions
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
-- pasting (by Ctrl+V) html pastes plain text like in whatsapp (without html tags)
-- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
 
 October 2020:
 - Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
 - Object_selection (expression_filter) as a context menu item and object restriction
-- Object_selection in element selection to create complicated object views like setki.xls
+- Object_selection in element selection to create complicated object views like setki.xls, also id, owner, data or time can be use instead of eid number
+- How to show old versions of object? Custom OV system command in context menu or implement it as a built-in  feature? Show history of current element (or all elements) in a new tab.
 - Object_selection to OD rule section
-- pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that prompts user for the page to go. 
+- System call CALLOV
+
+- pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go. 
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
-  want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-  Sort object by element headers click, page remains untouch (so active element)
+
 - status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 - if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
@@ -22,23 +23,32 @@ November 2020:
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA
-- 	emulate chat and helpdesk
--	Image files handle for text.php
+- 	emulate chat and helpdesk (Autorefresh OV, for example, for chats)
 -	System calls and its object views: LINK
 -	Object process SCHEDULER. Handlers are executed by built-in system user.
 
 December 2020:
 - System calls and its object views: LOCATION.
-- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES, CALLOV.
-  First four calls can be applied to files saved for OD|object|specified element (for a example in ../oId/eId/ dir)
+- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
+  These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
 - System call NEWOBJECT (to create object by user handlers)
 - Object view PIECHART and GRAPH
 - Other estimated "TODO" at the end of this todo file and think other features to make Boss edit opeations comfortable
+- single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags)
+  multi cell selecting - what should i copy? Plain text or excel table?:)
+  want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
+- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
+  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+- User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful. Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
+- firefox up/down and left/right arrows scroll page
+- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
+- On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
+- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
+- User can paste whole object then insert it to the OD not set it through INIT command - just copy the object
 - Feedback and finish https://bakhirev.biz/book/#MmlJN
 
-2022:
-- React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
-- Git https://habr.com/ru/post/174467/    https://proglib.io/p/git-for-half-an-hour/   https://git-scm.com/book/en/v2 https://proglib.io/p/git-github-gitflow
+
 
 
 
@@ -115,25 +125,21 @@ Controller to the element handler:
 
 
 
--------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
-const range = document.createRange();   
-const selection = window.getSelection();
-
-range.selectNodeContents(focusElement.td);
-range.collapse(false);
-selection.removeAllRanges();                                                                                
-selection.addRange(range);
 -------------------------Doubt features---------------------------------------------------
+- Export OV data to xls, pdf or txt file
+- Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
+- User defined element handler on other langs, not only php, for a example -  python: new.ph or php: new.php
+- OD Dialog Box - OD icon, OV icon, OV shortcut key, 
+- Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
 - dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
 - Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
 - Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
 - Predefined system messages can be displayed on other languages
 - not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
-- User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful. Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
-- Per OV permission to view-in-sidebar and add-edit-delete with low priority
-- User names should consist of [0-9][a-zA-Z][-_][space]
+- Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
 - style/hint/description edit for text.php? The problem is that style/hint/description data should be transmitted automatically,
   and it is hard to insert style/hint/description props to every element in OD properties dialog
+- fool protection by not allowing to block all users from changing DB props, so noone can add/delete/change views, elements and rules.
 ---------------------Source code requirement-------------------------------------------------------
 - formatting                                                   
 - error behaviour (no object, no elements, no items, etc..)    
@@ -160,45 +166,37 @@ selection.addRange(range);
 - Any statistic/analitycs
 - Setki.xls
 - Operations.xls
------------------------------------TODO----------------------------------------------------
-- firefox up/down and left/right arrows scroll page
-- Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
-- How to show old versions of object? Custom OV system command in context menu or reales it as a built-in  feature? Show history of current element (or all elements) in a new tab.
-- Custom commands to the handler sent by context menu, for a example, display switch all interfaces in another OV
-- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
-- Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
-- Export OV data to xls, pdf or txt file
-- User defined element handler on other langs, not only php, for a example -  python: new.ph or php: new.php
-- Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-- Autorefresh OV (for example, for chats)
-- On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
-- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
-- OD Dialog Box - OD icon, OV icon, OV shortcut key, 
 -----------------------------------WIKI-----------------------------------------------------
 interface examples:
 - https://qna.habr.com/q/281940
 - https://htmlacademy.ru/blog/video/shorts/short-4
 - table column resize https://codepen.io/barring/pen/ZNObZg
+-------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
+const range = document.createRange();   
+const selection = window.getSelection();
 
-SVG:
+range.selectNodeContents(focusElement.td);
+range.collapse(false);
+selection.removeAllRanges();                                                                                
+selection.addRange(range);
+--------------------------2021:--------------------
+- React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
+- Git https://habr.com/ru/post/174467/    https://proglib.io/p/git-for-half-an-hour/   https://git-scm.com/book/en/v2 https://proglib.io/p/git-github-gitflow
+--------------------------SVG:--------------------------
 - https://habr.com/ru/sandbox/122675/
 - https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
 - https://css-tricks.com/lodge/svg/09-svg-data-uris/
-
-Input style:
+--------------------------Input style:--------------------------
 - http://jsfiddle.net/js5x06nL/
-
-JWT:
+--------------------------JWT:--------------------------
 - https://gist.github.com/zmts/802dc9c3510d79fd40f9dc38a12bccfc https://habr.com/ru/post/340146/
-
-Git:
+--------------------------Git:--------------------------
 - #git commit -a -m "INIT command ver4"
 - git commit -a -m "CreateNewObjectVersion function ver2"
 - git push -u origin master
 - lefffan
 - git pull origin # Nakatit v local repositary last code version before work
-
-DB SQL manage:
+--------------------------DB SQL manage:--------------------------
 - drop database OE8; create database OE8; use OE8; show tables;
 - drop database OE6; create database OE6; use OE6; show tables;
 - create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -224,3 +222,23 @@ What to check in relibe auth
 2. Cookie absence
 3. Browser and server time doesn't match
 4. Relogin after SESSIONLIFETIME even browser hasn't ever closed
+
+
+------------------------------------------------------------
+Single click OV requests corresponded OV, in case of current OV refresh - current page is used
+in case of new OV - page 1 is used
+
+SELECT <element_selection> FROM data_N
+where id IN (SELECT id FROM data_N WHERE city = 'aa') and last=1 LIMIT a, b (a - from record number, b - quantity);
+if selection count is zero - do SELECT wthout LIMIT and return last page
+
+SELECT <element_sleection> FROM data_N <condition> LIMIT a, b (a - from record number, b - quantity)
+if selection count is zero - do SELECT wthout LIMIT and return last page
+
+#user - user/group requested OV data
+{question string to retreive string value from dialog box}
+
+in OV type:
+Uplink scheme
+Downlink scheme
+Table history with versions
