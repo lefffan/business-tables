@@ -185,7 +185,7 @@ function initNewODDialogElements()
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
-		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Uplink scheme|Downlink scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to have this OV on sidebar list:', 'data' => '', 'line' => ''],
@@ -276,7 +276,7 @@ function createDefaultDatabases($db)
  $query->execute();
  
  /***********Creating Object Database (actual data instance)*************************/
- $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME, eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
  global $odid, $allElementsArray, $uniqElementsArray, $output;
  $odid = '1';
@@ -436,7 +436,7 @@ function Check($db, $flags)
      $oid = $input['oId'];
      
      // Check database object existence
-     $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+     $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
      $query->execute();
      if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object with id=$oid doesn't exist!\nPlease refresh Object View";
      
@@ -587,7 +587,7 @@ function getElementPropStrict($db, $odid, $oid, $eid, $prop, $version = NULL)
  if (!isset($odid) || !isset($oid) || !isset($eid) || !isset($prop)) return NULL;
 
  if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
  $query->execute();
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
@@ -605,7 +605,7 @@ function getElementArray($db, $elementId, $version = NULL)
  if (!isset($elementId)) $elementId = $eid;
 
  if (isset($version)) $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
  $query->execute();
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
@@ -621,7 +621,7 @@ function getElementJSON($db, $elementId, $version = NULL)
  if (!isset($elementId)) $elementId = $eid;
 
  if (isset($version)) $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0");
+  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
  $query->execute();
 
  $result = $query->fetchAll(PDO::FETCH_NUM);
@@ -659,9 +659,9 @@ function InsertObject($db, $owner = NULL)
     }
 
  if (!isset($owner)) $owner = getUserName($db, $_SESSION['u']);
- $query = 'id,version,owner,datetime';
+ $query = 'id,version,owner';
  $params = [':id' => $newId, ':version' => '1', ':owner' => $owner];
- $values = ':id,:version,:owner,NOW()';
+ $values = ':id,:version,:owner';
  foreach ($allElementsArray as $id => $profile) if (isset($output[$id]))
 	 if (($json = json_encode($output[$id])) !== false && isset($json))
 	    {
@@ -680,7 +680,7 @@ function DeleteObject($db)
  global $odid, $oid;
  
  $db->beginTransaction();
- $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
+ $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
  $query->execute();
  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
     {
@@ -688,9 +688,9 @@ function DeleteObject($db)
      return "Object with id=$oid is already deleted!\nPlease refresh Object View";
     }
  
- $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1");
+ $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1");
  $query->execute();
- $query = $db->prepare("INSERT INTO `data_$odid` (id,version,last) VALUES ($oid,0,1)");
+ $query = $db->prepare("INSERT INTO `data_$odid` (id,version,lastversion) VALUES ($oid,0,1)");
  $query->execute();
  $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$oid");
  $query->execute();
@@ -703,7 +703,7 @@ function CreateNewObjectVersion($db)
  
  // Start transaction, select last existing (non zero) version of the object and block the corresponded row
  $db->beginTransaction();
- $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND last=1 AND version!=0 FOR UPDATE");
+ $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
  $query->execute();
     
  // Get selected version, check the result and calculate next version of the object to be created
@@ -717,7 +717,7 @@ function CreateNewObjectVersion($db)
  $version = intval($version[0][0]) + 1;
 
  // Unset last flag of the object current version and insert new object version with empty data
- $query = $db->prepare("UPDATE `data_$odid` SET last=0 WHERE id=$oid AND last=1; INSERT INTO `data_$odid` (id,owner,datetime,version,last) VALUES ($oid,:owner,NOW(),$version,1)");
+ $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1; INSERT INTO `data_$odid` (id,owner,version,lastversion) VALUES ($oid,:owner,$version,1)");
  $query->execute([':owner' => getUserName($db, $_SESSION['u'])]);
  $query->closeCursor();
 
@@ -785,7 +785,7 @@ function getMainFieldData($db)
 			
  // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
  // While this features are not released, get all objects:
- $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE last=1 AND version!=0");
+ $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE lastversion=1 AND version!=0");
  $query->execute();
 		     
  // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
@@ -949,7 +949,7 @@ function NewOD($db)
  $query = $db->prepare("create table `uniq_$odid` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();                                                                                                                                   
  // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
- $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, last BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), date DATETIME, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("create table `data_$odid` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
  // Insert new OD properties
  $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$odid");
@@ -1096,7 +1096,7 @@ function getUserId($db, $user)
 
 function getUserPass($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.password') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.password') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
  $query->execute([':id' => $id]);
  $pass = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($pass[0][0])) return substr($pass[0][0], 1, -1);
@@ -1105,7 +1105,7 @@ function getUserPass($db, $id)
 function getUserName($db, $id)
 {
  if (!isset($id)) return '';
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
  $query->execute([':id' => $id]);
  $name = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($name[0][0])) return substr($name[0][0], 1, -1);
@@ -1114,7 +1114,7 @@ function getUserName($db, $id)
 
 function getUserGroups($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.groups') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.groups') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
  $query->execute([':id' => $id]);
  $groups = $query->fetchAll(PDO::FETCH_NUM);
  if (!isset($groups[0][0])) return [];
@@ -1131,7 +1131,7 @@ function UnsetEmptyArrayElements($arr)
 
 function getUserODAddPermission($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.odaddperm') FROM `data_1` WHERE id=:id AND last=1 AND version!=0");
+ $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.odaddperm') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
  $query->execute([':id' => $id]);
  $odaddperm = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($odaddperm[0][0])) return substr($odaddperm[0][0], 1, -1);

@@ -1,23 +1,22 @@
-September 2020:
-- next day braowser request auth, then user logged in as root and didn't see 'all users'
-- Release auth in creating/changing/reading OD/OV
-- lines 655,713 - add date and time to object versions
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
-
 October 2020:
-- Object_selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
-- Object_selection (expression_filter) as a context menu item and object restriction
-- Object_selection in element selection to create complicated object views like setki.xls, also id, owner, data or time can be use instead of eid number
-- How to show old versions of object? Custom OV system command in context menu or implement it as a built-in  feature? Show history of current element (or all elements) in a new tab.
-- Object_selection to OD rule section
-- System call CALLOV
-
-- pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go. 
+- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+- OV permissions (to have this OV on sidebar list) -> (readable OV)
+- Symbol '_' as a first character in the object view name string keepes unnecessary views out of sidebar, so the specified view can be called from element handler only.
+- Object_selection in element selection to create complicated object views like setki.xls, also id, owner, datetime, version or lastversion can be use instead of eid number
+- Object_selection in object selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
+    SELECT <element_sleection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
+    if selection count is zero - do SELECT wthout LIMIT and return last page
+    #user - user/group requested OV data
+    {question string to retreive string value from dialog box}
+  Single click OV requests corresponded OV, in case of current OV refresh - current page is used, in case of new OV - page 1 is used
+  pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go.
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
-
+- System call CALLOV
+- Object_selection to OD rule section
 - status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
-- if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
+  if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 - help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
+- log in aparent OD
 
 November 2020:
 - telnet function by SLAVA
@@ -46,9 +45,16 @@ December 2020:
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
 - User can paste whole object then insert it to the OD not set it through INIT command - just copy the object
+- Paraga mail functional
+- see through all OD properties dialog box and try to check/release their all features
 - Feedback and finish https://bakhirev.biz/book/#MmlJN
-
-
+- remove selected objects by single action (udalyat' videlennie ob'ekty razom)
+- Operations:
+  Switch ip, switch description, switch location,
+  60 ports (description), for every port: type (uplink,downlink,free,service,client),
+  diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing)
+  In INFO scheme find mac on every switch in OV
+  In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
 
 
 
@@ -140,6 +146,7 @@ Controller to the element handler:
 - style/hint/description edit for text.php? The problem is that style/hint/description data should be transmitted automatically,
   and it is hard to insert style/hint/description props to every element in OD properties dialog
 - fool protection by not allowing to block all users from changing DB props, so noone can add/delete/change views, elements and rules.
+- event json can send not only current objects elements, but other objects of current OD and other objects of another OD
 ---------------------Source code requirement-------------------------------------------------------
 - formatting                                                   
 - error behaviour (no object, no elements, no items, etc..)    
@@ -222,23 +229,4 @@ What to check in relibe auth
 2. Cookie absence
 3. Browser and server time doesn't match
 4. Relogin after SESSIONLIFETIME even browser hasn't ever closed
-
-
 ------------------------------------------------------------
-Single click OV requests corresponded OV, in case of current OV refresh - current page is used
-in case of new OV - page 1 is used
-
-SELECT <element_selection> FROM data_N
-where id IN (SELECT id FROM data_N WHERE city = 'aa') and last=1 LIMIT a, b (a - from record number, b - quantity);
-if selection count is zero - do SELECT wthout LIMIT and return last page
-
-SELECT <element_sleection> FROM data_N <condition> LIMIT a, b (a - from record number, b - quantity)
-if selection count is zero - do SELECT wthout LIMIT and return last page
-
-#user - user/group requested OV data
-{question string to retreive string value from dialog box}
-
-in OV type:
-Uplink scheme
-Downlink scheme
-Table history with versions
