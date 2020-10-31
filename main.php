@@ -76,7 +76,7 @@ try {
 		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
 		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
 		     $output['OD'] = $OD;
 		     $output['OV'] = $OV;
 		     $output['sidebar'] = getODVNamesForSidebar($db);
@@ -125,7 +125,7 @@ try {
 		      else if ($odid == 1 && $oid == STARTOBJECTID) $output = ['cmd' => 'INFO', 'alert' => 'System account cannot be deleted!'];
 		      else if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
 		     $output['OD'] = $OD;
 		     $output['OV'] = $OV;
 		     break;
@@ -146,7 +146,7 @@ try {
 				   }
 		     InsertObject($db);
 		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable];
+		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
 		     $output['OD'] = $OD;
 		     $output['OV'] = $OV;
 		     break;
@@ -194,8 +194,11 @@ try {
 			     if ($alert = CreateNewObjectVersion($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 			      else
 			        {
-			         foreach ($output as $id => $value) if (!isset($arrayEIdOId[$id])) unset($output[$id]);
+			         foreach ($output as $id => $value) if (!isset($props[$id])) unset($output[$id]);
 			         isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
+				 $query = $db->prepare("SELECT id,version,owner,datetime,lastversion FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
+				 $query->execute();
+				 foreach ($query->fetchAll(PDO::FETCH_ASSOC)[0] as $id => $value) $output['data'][$id] = $value;
 				}
 			    }
 			  else if ($output[$eid]['cmd'] === 'EDIT') isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];

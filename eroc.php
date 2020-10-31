@@ -167,13 +167,13 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
 		    
  $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element2' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties:', 'data' => '', 'help' => "You must be aware that this option can disallow all users to change this OD permissions,<br>so avoid user/group empty list with 'allowed' type list", 'line' => ''],
+		    'element2' => ['type' => 'textarea', 'head' => "List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties.\nYou must be aware of disallowing all users, so avoid user/group empty list with 'allowed' type list", 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements:', 'data' => '', 'line' => ''],
+		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements', 'data' => '', 'line' => ''],
 		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element6' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views:', 'data' => '', 'line' => ''],
+		    'element6' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views', 'data' => '', 'line' => ''],
 		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules:', 'data' => '', 'line' => '']];
+		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
@@ -182,15 +182,15 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'textarea', 'head' => 'JSON format event list', 'data' => '', 'line' => '', 'help' => 'Event JSON string (one per line) is a JSON to pass to the element handler as an input argument<br>when specified event occurs. JSONs properties:<br>"event" - event to be processed by the handler, JSONs with undefined event are ignored<br>"user" - user initiated event (automatically set by controller)<br>"eid" - element id (automatically set by controller)<br>"header" - element header (automatically set by controller)<br>Additionally some custom properties can be defined - its string values are sent to the handler<br>without changes with one exception - JSON formated value is replaced by element JSON data.<br>Format of the value: {"eid": "&lt;element id>", "prop": "&lt;element property>"}<br>where "prop" - element property, which value points to the specified by element &lt;eid> JSON data<br>property to be retrieved. In case of "eid" omitted - current element id value is used.<br>In the example below handler on mouse double click event gets JSON<br>with two custom properties. First property value is "test", second value -<br>json element data property "value" of current object element identificator 1:<br>{ "event": "DBLCLICK", "abc": "test", "def": {"eid": "1", "prop": "value"} }'],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
 	
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if it already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as a name for new views creation.<br>To remove object view - set empty object view name string."],
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
 		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Uplink scheme|Downlink scheme|Graph|Piechart|Map', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to have this OV on sidebar list:', 'data' => '', 'line' => ''],
+		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to display this view', 'data' => '', 'line' => ''],
 		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view:', 'data' => '', 'line' => '']];
+		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view', 'data' => '', 'line' => '']];
 							  
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
@@ -302,7 +302,7 @@ function getODVNamesForSidebar($db)
 	  $arr[$value['odname']] = [];
 	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
 	  $query->execute();
-	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
+	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view' && substr($key, 0, 1) != '_')
 		  {
 		   if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
 		      { if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') continue; }
@@ -320,23 +320,6 @@ function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys
  foreach ($keys as $value)
 	 if (key_exists($value, $arr)) $result[$value] = $arr[$value];
  return $result;
-}
-
-function mergeStyleRules($rules)
-{
- $resultArray = [];
- $resultStyle = '';
-
- foreach($rules as $value) // Iterate all args
-	if (isset($value) && gettype($value) === 'string') // Value is set and is string?
-	   foreach (preg_split('/;/', $value) as $rule) // Split current rule collection by ';' char
-		   if (($pos = strpos($rule, ':')) > 0 && strlen($rule) > $pos + 1) // Some chars before and after ':'?
-		      $resultArray[trim(substr($rule, 0, $pos))] = substr($rule, $pos + 1); // Record rule to $resultArray
-
- foreach ($resultArray as $key => $values) $resultStyle .= $key.':'.$resultArray[$key].'; '; // Convert $resultArray to css style string
-
- if ($resultStyle != '') $resultStyle = substr($resultStyle, 0, -1);
- return $resultStyle;
 }
 
 function Check($db, $flags)
@@ -410,8 +393,8 @@ function Check($db, $flags)
          foreach ($allElementsArray as $id => $value)
     	         {
 	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
-		  $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n-1"}'."\n";
-	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "n"}'."\n";
+		  $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n+2"}'."\n";
+	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
 	          $x++;
 	    	 }
 	}
@@ -446,7 +429,7 @@ function Check($db, $flags)
 
  if (($flags & CHECK_EID) && $cmd != 'INIT')
     {
-     global $eid, $arrayEIdOId;
+     global $eid, $props;
      
      // Check element identificator value existence
      if (!isset($input['eId'])) return $alert = 'Incorrect element identificator value!';
@@ -457,7 +440,7 @@ function Check($db, $flags)
      
      // Check eid element selection existence
      setElementSelectionIds();
-     if (!isset($arrayEIdOId[$eid])) return $alert = 'Please refresh object view, element selection has been changed!';
+     if (!isset($props[strval($eid)])) return $alert = 'Please refresh object view, element selection has been changed!';
     }
 
  if ($flags & CHECK_ACCESS)
@@ -690,8 +673,8 @@ function DeleteObject($db)
  
  $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1");
  $query->execute();
- $query = $db->prepare("INSERT INTO `data_$odid` (id,version,lastversion) VALUES ($oid,0,1)");
- $query->execute();
+ $query = $db->prepare("INSERT INTO `data_$odid` (id,version,lastversion,owner) VALUES ($oid,0,1,:owner)");
+ $query->execute([':owner' => getUserName($db, $_SESSION['u'])]);
  $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$oid");
  $query->execute();
  $db->commit();
@@ -775,158 +758,123 @@ function CreateNewObjectVersion($db)
 
 function getMainFieldData($db)
 {
- global $OD, $OV, $allElementsArray, $elementSelectionJSONList, $objectTable, $odid, $arrayEIdOId;
+ global $objectTable, $odid, $props;
+ $elementQueryString = '';
+ 
+ // No any element defined?
+ setElementSelectionIds();
+ foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
+ if ($elementQueryString === '') return "Specified view '$OV' (database '$OD') has no elements defined!";
 
- // Create result $objectTable array section. First step - init objectTable array (result objects) and $objectTableSrc (object from sql database)
- $objectTable = $objectTableSrc = [];
-			     
- // No any element defined?	
- if (($sqlElementList = setElementSelectionIds()) === '') return "Specified view '$OV' (database '$OD') has no elements defined!";
-			
- // Object list selection should depends on JSON 'oid' property, specified view page number object range and object selection expression match.
- // While this features are not released, get all objects:
- $query = $db->prepare("SELECT id$sqlElementList FROM `data_$odid` WHERE lastversion=1 AND version!=0");
+ // Object list selection. No page specified - OV refresh is requested so get 1st page and count page number. Page is specified - get the page data and
+ // if object selection is empty recount count page number and get last page.
+ $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` WHERE lastversion=1 AND version!=0");
+ //$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid`");
  $query->execute();
-		     
- // Reindex $objectTable array to fit numeric indexes as object identificators to next format:
- //  -----------------------------------------------------------------------------------
- // |  \ eid|               |                                             		|
- // |   \   |       0       |           5.. (was 'eid5' column)             	    	|
- // |oid \  |               |                                             		|
- //  -----------------------------------------------------------------------------------
- // |       |style rules    |                                             		|
- // |   0   |for undefined  |Apply object element props for all objects with element #5 |
- // |       |cells          |                                             		|
- //  -----------------------------------------------------------------------------------
- // |       |Apply styles   |"json" : JSON element data                   		|
- // |   1   |for whole      |"props": props for new object element #5 (eid=5,oid=0)     |	NEWOBJECTID
- // |       |new object     |                                                    	|
- //  -----------------------------------------------------------------------------------
- // |       |Apply styles   |"json" : JSON element data                   		|
- // |   2   |for whole      |"props": props for title object element #5 (eid=5,oid=0)   |	TITLEOBJECTID
- // |       |title object   |                                                           |
- //  -----------------------------------------------------------------------------------
- // |       |Apply styles   |"json" : JSON element data                   		|
- // |  3..  |for whole      |"props": props for real object element #5 (eid=5,oid=0)    |	STARTOBJECTID
- // |       |real object    |                                                   	|
- //  -----------------------------------------------------------------------------------
- foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
-	 {
-	  $oid = intval($value['id']);    // Get object id of current 'id' column of the fetched array
-	  $objectTableSrc[$oid] = $value; // Create row with object-id as an index for $objectTableSrc array
-	 }
-		     // Rewrite $objectTableSrc array (to the table above) on eidoid array to $objectTable, not forgeting about static element status.
-		     // In the future release create first object (static) flag whether it is on the object list or not, then remove it at the end or not.
-		     // So - iterate all elements with non zero identificators (real elements)
-		     foreach ($arrayEIdOId as $eid => $value) if ($eid != 0)
-		    	     {
-			      $eidstr = 'eid'.strval($eid);
-			      
-			      // Iterate all objects identificators for current eid to fill $objectTable. First - for all object when oid=0:
-			      if (key_exists(0, $arrayEIdOId[$eid])) foreach($objectTableSrc as $oid => $valeu)
-				 {
-				  if (!key_exists($oid, $objectTable)) // Result $objectTable current object ($oid) doesn't exist? Create it
-				     {
-				      $objectTable[$oid] = []; // Result $objectTable current object ($oid) doesn't exist? Create it
-				      $objectTable[$oid][$eid] = [];
-				     }
-				  $objectTable[$oid][$eid]['json'] = $objectTableSrc[$oid][$eidstr]; // Set current element json data
-				  $objectTable[$oid][$eid]['props'] = $arrayEIdOId[$eid][0]; // Set current object element props data
-				  //----------------Merge CSS style rules in order of priority--------------
-				  $styles = [];
-				  if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
-				  if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
-				  if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
-				  //if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
-				  /**/
-				  $ss = json_decode($objectTableSrc[$oid][$eidstr], true);
-				  if (isset($ss['style'])) $styles[] = $ss['style']; // Element style
-				  /**/
-				  $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
-				  //---------------------------Merge style rules end------------------------ 
-				 }
-				 
-			      // Second - for other exact object oids:
-		    	      foreach ($value as $oid => $props) if ($oid != 0)
-				      {
-				       $json = NULL;
-				       if ($oid === NEWOBJECTID) $json = json_encode(['value' => '', 'hint' => 'Use mouse double click to input element text for the new object']);
-				       if ($oid === TITLEOBJECTID) $json = json_encode(['value' => $allElementsArray[$eid]['element1']['data'], 'description' => $allElementsArray[$eid]['element2']['data'], 'hint' => 'Title for object element id'.strval($eid).'. '.$allElementsArray[$eid]['element2']['data']]);
-				       if (key_exists($oid, $objectTableSrc)) $json = $objectTableSrc[$oid][$eidstr];
-				       if (isset($json))
-				          {
-					   if (!key_exists($oid, $objectTable)) $objectTable[$oid] = [];
-					   $objectTable[$oid][$eid] = ['json' => $json, 'props' => $props];
-					   //----------------Merge CSS style rules in order of priority--------------
-					   $styles = [];
-					   if (isset($arrayEIdOId[0][0])) $styles[] = $arrayEIdOId[0][0]; // General style for all objects
-					   if (isset($arrayEIdOId[0][$oid])) $styles[] = $arrayEIdOId[0][$oid]; // Object general style
-					   if (isset($objectTable[$oid][$eid]['props']['style'])) $styles[] = $objectTable[$oid][$eid]['props']['style']; // Props style
-					   if (isset($objectTableSrc[$oid][$eidstr]['style'])) $styles[] = $objectTableSrc[$oid][$eidstr]['style']; // Element style
-					   $objectTable[$oid][$eid]['props']['style'] = mergeStyleRules($styles);
-					   //---------------------------Merge style rules end------------------------ 
-					  }
-				      }
-			     }
+ $objectTable = $query->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function setElementSelectionIds()
 {
- global $arrayEIdOId, $elementSelectionJSONList, $allElementsArray, $objectTable;
- $arrayEIdOId = [];
- $sqlElementList = '';
+ global $props, $elementSelectionJSONList, $allElementsArray;
+ $props = [];
  
- // Split listJSON data by lines to parse defined element identificators and to build eid-oid two dimension array.
- // Undefined oid or oid - json line is ignored anyaway, but both undefined oid and oid 'style' and 'collapse' properties
- // are parsed for undefined cells css style and collapse capability. Array structure:
- //  ----------------------------------------------------------------
- // |  \eid|       Element #0        |        Element #1..           | 
- // |oid\  |         styles          | x,y,style,startevent..        |
- //  ----------------------------------------------------------------
- // |  0   | for any oid/eid   	     | for default object element #1 |
- //  ----- ----------------------------------------------------------
- // |  1   | for whole new object    | for new object element #1     |
- //  ----------------------------------------------------------------
- // |  2   | for whole title object  | for title object element #1   |
- //  ----------------------------------------------------------------
- // |  3.. | for whole real object   | for real objects element #1   |
- //  ----------------------------------------------------------------
+ //  ------ --------------------------------- ----------------------------------- ---------------------------------------
+ // |  \eid|                0                |              1..         	 | id,version,owner,datetime,lastversion |
+ // |oid\  |                                 | 					 |					 |
+ //  ------ --------------------------------- ----------------------------------- ---------------------------------------
+ // |  0   | undefined cell: style, collapse | object in selection:     	 | object service info:			 |
+ // |      | html table:     tablestyle      | x, y, style, collapse    	 | x, y, style				 |
+ //  ------ --------------------------------- ----------------------------------- ---------------------------------------
+ // |  1   | new object:     style     	     | new object:			 |		   -			 |
+ // |      | 				     | x, y, style, startevent, _hint	 |					 |
+ //  ------ --------------------------------- ----------------------------------- ---------------------------------------
+ // |  2   | title object:   style           | title object:			 |		   -			 |
+ // |      | 				     | x, y, style, _title, _hint	 |					 |
+ //  ------ --------------------------------- ----------------------------------- ---------------------------------------
+ // | 3..  | exact object:   style     	     | exact object: 			 | object service info:			 |
+ // |      | 				     | x, y, style, startevent, collapse | x, y, style				 |
+ //  ------ --------------------------------- ----------------------------------- ---------------------------------------
+ 
+ 
  foreach (preg_split("/\n/", $elementSelectionJSONList) as $value)
-      if ($j = json_decode($value, true, 2))
+      if ($arr = json_decode($value, true, 2))
 	 {
-	  $j = cutKeys($j, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent']);
-	  if (!key_exists('eid', $j) || !key_exists('oid', $j)) // eid/oid property doesn't exist? Set some undefined cells features
-	     {
-	      if (!key_exists('eid', $j) && !key_exists('oid', $j) && (key_exists('style', $j) || key_exists('collapse', $j) || key_exists('tablestyle', $j)))
-		 {
-		  $objectTable[0] = [0 => []];
-		  if (key_exists('style', $j)) $objectTable[0][0]['style'] = $j['style'];
-		  if (key_exists('collapse', $j)) $objectTable[0][0]['collapse'] = $j['collapse'];
-		  if (key_exists('tablestyle', $j)) $objectTable[0][0]['tablestyle'] = $j['tablestyle'];
-		 }
-	      continue;
-	     }
-				 
-	  if (gettype($j['eid']) != 'string' || gettype($j['oid']) != 'string') continue; // JSON eid/oid property is not a string? Continue
-	  if (!ctype_digit($j['eid']) || !ctype_digit($j['oid'])) continue; // JSON eid/oid property are not numerical? Continue
-			      
-	  $eid = intval($j['eid']);
-	  $oid = intval($j['oid']);
+	  $arr = cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent', 'tablestyle']); // Retrieve correct values only
+	  if (!key_exists('eid', $arr)) $arr['eid'] = '0'; // Set 'eid' key default value to zero
+	  if (!key_exists('oid', $arr)) $arr['oid'] = '0'; // Set 'oid' key default value to zero
+
+	  if (gettype($arr['eid']) != 'string' || gettype($arr['oid']) != 'string') continue; // JSON eid/oid properties are not strings? Continue
+	  if ($arr['eid'] != 'id' && $arr['eid'] != 'version' && $arr['eid'] != 'owner' && $arr['eid'] != 'datetime' && $arr['eid'] != 'lastversion')
+	  if (!ctype_digit($arr['eid']) || !ctype_digit($arr['oid'])) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
 	  
-	  // Non zero or zero with style eid index of elements exist?
-	  if ((key_exists($eid, $allElementsArray) && gettype($j['x']) === 'string' && gettype($j['y']) === 'string') || ($eid === 0 && key_exists('style', $j)))
-	     {
-	      if (!key_exists($eid, $arrayEIdOId))
+	  $eid = $arr['eid'];	// Creating aliases
+	  $oid = $arr['oid'];	// Creating aliases
+	  if (!isset($props[$eid])) $props[$eid] = [];		// Result array $props has 'eid' element undefined? Create it
+	  if (!isset($props[$eid][$oid])) $props[$eid][$oid] = [];	// Result array $props has 'oid' of 'eid' element undefined? Create it
+	  
+	  switch ($eid)
 		 {
-		  $arrayEIdOId[$eid] = [];
-		  if ($eid != 0) $sqlElementList .= ',eid'.$j['eid']; // Collect elements list to use from sql query
+		  case '0': // Parse zero element that defines styles for new, title, selection and exact objects
+		       if ($oid == '0')
+		          {
+			   if (key_exists('collapse', $arr)) $props[$eid][$oid]['collapse'] = '';
+			   if (key_exists('tablestyle', $arr)) $props[$eid][$oid]['tablestyle'] = $arr['tablestyle'];
+			  }
+		       if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
+		       break;
+		  case 'id': // Parse service elements that defines styles and x-y coordinates for selection and exact objects
+		  case 'version':
+		  case 'owner':
+		  case 'datetime':
+		  case 'lastversion':
+		       if ((intval($oid) == 0 || intval($oid) == TITLEOBJECTID || intval($oid) == NEWOBJECTID || intval($oid) >= STARTOBJECTID) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
+		          {
+			   $props[$eid][$oid] = ['x' => $arr['x'], 'y' => $arr['y']];
+			   if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
+			   if (intval($oid) == TITLEOBJECTID) switch ($eid)
+			      {
+			       case 'id':
+			    	    $props[$eid][$oid]['title'] = 'Id';
+				    $props[$eid][$oid]['hint'] = 'Object identificator';
+				    break;
+			       case 'version':
+			    	    $props[$eid][$oid]['title'] = 'Version';
+				    $props[$eid][$oid]['hint'] = 'Object version number';
+				    break;
+			       case 'owner':
+			    	    $props[$eid][$oid]['title'] = 'Owner';
+				    $props[$eid][$oid]['hint'] = 'User created object version';
+				    break;
+			       case 'datetime':
+			    	    $props[$eid][$oid]['title'] = 'Date and time';
+				    $props[$eid][$oid]['hint'] = 'Date and time object version was created';
+				    break;
+			       case 'lastversion':
+			    	    $props[$eid][$oid]['title'] = 'Last version';
+				    $props[$eid][$oid]['hint'] = 'Last version flag means actual object version';
+				    break;
+			      }
+			  }
+		       break;
+		  default: // Parse all other numeric elements that defines styles, x-y coordinates, collapse capability and 'startevent' event for new, title, selection and exact objects
+		       if (!key_exists($eid, $allElementsArray)) break;
+		       if (key_exists('startevent', $arr)) $props[$eid][$oid]['startevent'] = $arr['startevent'];
+		       if (gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
+		          {
+			   $props[$eid][$oid]['x'] = $arr['x'];
+			   $props[$eid][$oid]['y'] = $arr['y'];
+			   if (key_exists('collapse', $arr)) $props[$eid][$oid]['collapse'] = '';
+			   if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
+			   if (intval($oid) == TITLEOBJECTID)
+			      {
+			       $props[$eid][$oid]['title'] = $allElementsArray[$eid]['element1']['data'];
+			       $props[$eid][$oid]['hint'] = $allElementsArray[$eid]['element2']['data'];
+			      }
+			   if (intval($oid) == NEWOBJECTID) $props[$eid][$oid]['hint'] = "Table cell to input new object data for element id: $eid";
+			  }
 		 }
-	      if ($eid != 0) $arrayEIdOId[$eid][$oid] = $j; // Fill eidoid array with parsed json string
-	       else $arrayEIdOId[$eid][$oid] = $j['style']; // Fill eidoid array with style property
-	     }
-         }
- 
- return $sqlElementList;
+	 }
 }
 
 function NewOD($db)
@@ -1008,7 +956,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element1']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'Database', ";
+	 $alertstring .= "'Database'";
 	 $input['data']['dialog']['Database'] = $odprops['dialog']['Database'];
 	}
     }
@@ -1016,7 +964,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element1']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'Database', ";
+	 $alertstring .= "'Database'";
 	 $input['data']['dialog']['Database'] = $odprops['dialog']['Database'];
 	}
     }
@@ -1026,7 +974,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element3']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'Element', ";
+	 $alertstring .= "'Element'";
 	 $input['data']['dialog']['Element'] = $odprops['dialog']['Element'];
 	}
     }
@@ -1034,7 +982,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element3']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'Element', ";
+	 $alertstring .= "'Element'";
 	 $input['data']['dialog']['Element'] = $odprops['dialog']['Element'];
 	}
     }
@@ -1044,7 +992,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element5']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'View', ";
+	 $alertstring .= "'View'";
 	 $input['data']['dialog']['View'] = $odprops['dialog']['View'];
 	}
     }
@@ -1052,7 +1000,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element5']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'View', ";
+	 $alertstring .= "'View'";
 	 $input['data']['dialog']['View'] = $odprops['dialog']['View'];
 	}
     }
@@ -1062,7 +1010,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element7']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'Rule', ";
+	 $alertstring .= "'Rule'";
 	 $input['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
 	}
     }
@@ -1070,7 +1018,7 @@ function EditOD($db)
     {
      if ($dbPermissions['element7']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
 	{
-	 $alertstring .= "'Rule', ";
+	 $alertstring .= "'Rule'";
 	 $input['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
 	}
     }
@@ -1082,7 +1030,7 @@ function EditOD($db)
 
  // Return result		    
  if ($alertstring === '') return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
- return ['cmd' => 'INFO', 'alert' => "You're not allowed to change next OD properties: ".$alertstring."so they remain unchanged!", 'sidebar' => getODVNamesForSidebar($db)];
+ return ['cmd' => 'INFO', 'alert' => "You're not allowed to change ".$alertstring." properties!", 'sidebar' => getODVNamesForSidebar($db)];
 }
 
 function getUserId($db, $user)
