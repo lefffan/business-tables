@@ -3,13 +3,13 @@
 try {
      require_once 'eroc.php';
      //createDefaultDatabases($db);
-     //loog(session_get_cookie_params());
-     //loog($_SERVER);
-     //loog(PHP_VERSION_ID);
+     //lg(session_get_cookie_params());
+     //lg($_SERVER);
+     //lg(PHP_VERSION_ID);
     }
 catch (PDOException $e)
     {
-     loog($e);
+     lg($e);
      echo json_encode(['cmd' => 'INFO', 'error' => $e->getMessage()]);
      exit;
     }
@@ -58,7 +58,7 @@ try {
 	     exit;
 	    }
 	}
-     else if (!isset($_SESSION['h']) || !password_verify(getUserPass($db, $_SESSION['u']), $_SESSION['h']))
+      else if (!isset($_SESSION['h']) || !password_verify(getUserPass($db, $_SESSION['u']), $_SESSION['h']))
 	     {
 	      unset($_SESSION['u']);
 	      $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
@@ -69,26 +69,40 @@ try {
 
      switch ($input['cmd'])
 	    {
-	    case 'OBTAINMAIN':
-	    case 'GETMAIN':
-	    case 'START':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS);
-		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
-		     $output['OD'] = $OD;
-		     $output['OV'] = $OV;
-		     $output['sidebar'] = getODVNamesForSidebar($db);
-		  if ($input['cmd'] === 'START') 
+	     case 'GETMAINSTART':
+	     case 'GETMAIN':
+		  Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS);
+		  $output = [ 'OD' => $OD, 'OV' => $OV, 'sidebar' => getODVNamesForSidebar($db) ];
+		  if ($input['cmd'] === 'GETMAINSTART') 
 		     {
 	    	      $customization = getUserCustomization($db, $_SESSION['u']);
 		      $output['log'] = "User '".getUserName($db, $_SESSION['u'])."' has started application!";
 		     }
-		     break;
-		case 'GETMENU':
-		     $output = ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
-		     break;
+		  if (isset($error) || isset($alert))
+		     {
+		      $output['cmd'] = 'INFO';
+		      isset($error) ? $output['error'] = $error : $output['alert'] = $alert;
+		      break;
+		     }
+		  if (isset($objectSelectionParamsDialog))
+		     {
+		      $output['cmd'] = 'DIALOG';
+		      $output['data'] = $objectSelectionParamsDialog;
+		      break;
+		     }
+		  if ($error = getMainFieldData($db))
+		     {
+		      $output['cmd'] = 'INFO';
+		      $output['error'] = $error;
+		      break;
+		     }
+		  $output['cmd'] = 'REFRESH';
+		  $output['data'] = $objectTable;
+		  $output['props'] = $props;
+		  break;
+	     case 'GETMENU':
+		  $output = ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
+		  break;
 	    case 'LOGOUT':
 		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has logged out!"];
 		  unset($_SESSION['u']);
@@ -124,8 +138,12 @@ try {
 		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 		      else if ($odid == 1 && $oid == STARTOBJECTID) $output = ['cmd' => 'INFO', 'alert' => 'System account cannot be deleted!'];
 		      else if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-		      else if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
+		      else
+		        {
+			 if ($input['objectSelection']) $objectSelection = $input['objectSelection'];
+			 if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
+		          else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
+			}
 		     $output['OD'] = $OD;
 		     $output['OV'] = $OV;
 		     break;
@@ -145,6 +163,7 @@ try {
 				    if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
 				   }
 		     InsertObject($db);
+		     if ($input['objectSelection']) $objectSelection = $input['objectSelection'];
 		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
 		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
 		     $output['OD'] = $OD;
@@ -168,6 +187,29 @@ try {
 			     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
 			      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
 			      else $output = NewOD($db);
+			     break;
+			    }
+			  else if ($input['data']['flags']['_callback'] === 'GETMAIN')
+			    {
+			     $objectSelectionParamsDialog = $input['data'];
+			     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS);
+			     $output = [ 'OD' => $OD, 'OV' => $OV, 'sidebar' => getODVNamesForSidebar($db) ];
+			     if (isset($error) || isset($alert))
+		    		{
+		    		 $output['cmd'] = 'INFO';
+		    		 isset($error) ? $output['error'] = $error : $output['alert'] = $alert;
+		    		 break;
+		    		}
+			     if ($error = getMainFieldData($db))
+		    		{
+		    		 $output['cmd'] = 'INFO';
+		    		 $output['error'] = $error;
+		    		 break;
+		    		}
+			     $output['cmd'] = 'REFRESH';
+			     $output['data'] = $objectTable;
+			     $output['props'] = $props;
+			     $output['objectSelection'] = $objectSelection;
 			     break;
 			    }
 			}
@@ -228,7 +270,7 @@ try {
      
 catch (PDOException $e)
     {
-     loog($e);
+     lg($e);
      switch ($input['cmd'])
     	    {
 	     case 'Edit Database Structure':
@@ -251,7 +293,7 @@ catch (PDOException $e)
 		case 'GETMENU':
 			 echo json_encode(['cmd' => 'INFO', 'alert' => 'Failed to read sidebar OD list: '.$e->getMessage()]);
 		break;
-		case 'OBTAINMAIN':
+		case 'GETMAINSTART':
 		case 'GETMAIN':
 		     echo json_encode(['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => 'Failed to get OD data: '.$e->getMessage()]);
 		     break;

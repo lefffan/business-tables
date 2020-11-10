@@ -17,7 +17,7 @@ let box = selectExpandedDiv = null, boxDiv, expandedDiv;
 let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let user = cmd = activeOD = activeOV = '';
+let objectSelection = user = cmd = activeOD = activeOV = '';
 let sidebar = {};
 let focusElement = {};
 /*---------------------------------------------------------------------------*/
@@ -180,7 +180,7 @@ window.onload = function()
      warning("Cookie flag 'httponly' should be set!");
      return;
     }
- cmd = 'START';
+ cmd = 'GETMAINSTART';
  callController();
 }
 
@@ -222,135 +222,104 @@ function drawSidebar(data)
  sidebar = data;
 }	 
 
+function SetOEPosition(props, oid, eid, n, q, object = {})
+{
+ let x, y, oe, oidnum = Number(oid);
+ 
+ // CHeck specified object element start event
+ if (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') eidstr = 'eid' + eid;
+  else eidstr = eid;
+ if ((oidnum === NEWOBJECTID || oidnum >= STARTOBJECTID) && props[eid][oid] && eid != eidstr && cmd === 'GETMAIN')
+ if (props[eid][oid]['startevent'] === 'DBLCLICK') focusElement = { oId: oid, eId: eid, cmd: 'DBLCLICK' };
+  else if (oidnum >= STARTOBJECTID && props[eid][oid]['startevent'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['startevent'].length > 8)
+	  focusElement = { oId: oid, eId: eid, cmd: 'KEYPRESS', data: props[eid][oid]['startevent'].substr(8) };
+
+ // Check props correctness
+ if (object.lastversion != '1' || !props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') 
+    if (oidnum != TITLEOBJECTID && oid != NEWOBJECTID && props[eid]['0']) oid = '0';
+ if (!props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') return;
+ oe = props[eid][oid];
+ 
+ // Calculate specified object element x,y table coordinates
+ try { x = Math.trunc(eval(oe.x)); y = Math.trunc(eval(oe.y)); }
+ catch { return `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; }
+ if (isNaN(x) || isNaN(y)) return `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`;
+ if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
+    return `Some elements coordiantes (view '${activeOV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
+    
+ // Calculate main table width and height
+ mainTableWidth = Math.max(mainTableWidth, x + 1);
+ mainTableHeight = Math.max(mainTableHeight, y + 1);
+ 
+ // Fill main table cell with oid, eid and hint from props (for TITLEOBJECTID and NEWOBJECTID only)
+ // mainTable[y][x] = { oId, eId, realobject, data, hint, description, collapse, style }
+ // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x, y }
+ // props[0][0] = { style, tablestyle, collapse }
+ if (mainTable[y] === undefined) mainTable[y] = [];
+ mainTable[y][x] = { oId: oidnum, eId: eid };
+ if (oe['hint']) mainTable[y][x]['hint'] = oe['hint'];
+ 
+ // Fill main table cell with data 
+ if (oidnum === TITLEOBJECTID) mainTable[y][x]['data'] = oe['title'];
+ if (oidnum === NEWOBJECTID) mainTable[y][x]['data'] = '';
+ if (oidnum >= STARTOBJECTID)
+    {
+     mainTable[y][x]['version'] = object.version;
+     (object.lastversion === '1' && object.version != '0') ? mainTable[y][x]['realobject'] = true : mainTable[y][x]['realobject'] = false;
+     if (eid === eidstr) // If element id is 'id', 'version', 'owner', 'datetime' or 'lastversion'
+         {
+	  mainTable[y][x]['data'] = object[eidstr];
+	 }
+      else
+         {
+	  //--------------Set object element collapse property-----------------
+	  if ((props[eid][oidnum] && props[eid][oidnum].collapse != undefined) || (props[eid]['0'] && props[eid]['0'].collapse != undefined) ||
+	      (props['0'] && props['0'][oidnum] && props['0'][oidnum].collapse != undefined)) mainTable[y][x]['collapse'] = '';
+	  //--------------Parse object data to JSON and fetch data (from value), hint and description-------------------
+	  try   { object = JSON.parse(object[eidstr]); }
+	  catch { object = {}; }
+	  if (object === null || object === undefined) object = {};
+	  typeof object.value === 'string' ? mainTable[y][x]['data'] = object.value : mainTable[y][x]['data'] = '';
+	  if (typeof object.hint === 'string') mainTable[y][x]['hint'] = object.hint;
+	  if (typeof object.description === 'string') mainTable[y][x]['description'] = object.description;
+	  mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, object);
+	 }
+    }
+ if (oidnum === NEWOBJECTID || mainTable[y][x]['realobject'])
+    {
+     if (objectTable[oidnum] === undefined) objectTable[oidnum] = {};
+     objectTable[oidnum][eid] = { x: x, y: y };
+    }
+ if (mainTable[y][x]['style'] === undefined) mainTable[y][x]['style'] = ElementStyleFetch(props, eid, oidnum);
+}
+
 function drawMain(data, props)
 {
- let n, oid, eid, eidstr, q = data.length, warningtext, json, x, y, cell, lastversion;
- let attributes, rowHTML = '<table><tbody>';
- let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '';
+ let oid, eid, n, q = data.length, warningtext, cell, result, attributes;
+ let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
+ 
+ // Init some important vars such as tables, focus element and etc..
  mainTable = [];
  objectTable = {};
  focusElement = {};
  mainTableWidth = mainTableHeight = 0;
 
- for (n in data) // Go through every row in data with var 'n' as a sequence number
- for (eidstr in data[n]) // Go through every element in a data row
+ // Parse all props elements, to place all objects of that elements
+ for (eid in props)
      {
-      n = Number(n);
-      if (eidstr.substr(0, 3) === 'eid') eid = Number(eidstr.substr(3)); // Convert 'eid<num>' to '<num>'
-       else eid = eidstr; // Otherwise set it as it is (for 'id', 'version', 'owner', 'datetime', 'lastversion')
-      if (typeof props[eid] != 'object') continue; // If current element id is absent in props array - continue
-      
-      //---------------Title object handle----------------
-      if (props[eid][String(TITLEOBJECTID)] != undefined)
-         {
-          try { x = Math.trunc(eval(props[eid][String(TITLEOBJECTID)].x)); y = Math.trunc(eval(props[eid][String(TITLEOBJECTID)].y)); }
-          catch { x = null; warningtext = `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; }
-	  if (x != null && !isNaN(x) && !isNaN(y))
-    	  if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
-	     {
-	      warningtext = `Some elements coordiantes (view '${activeOV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
-	     }
-	   else
-	     {
-              mainTableWidth = Math.max(mainTableWidth, x + 1);
-              mainTableHeight = Math.max(mainTableHeight, y + 1);
-	      if (mainTable[y] === undefined) mainTable[y] = [];
-	      mainTable[y][x] = { oId: TITLEOBJECTID, eId: eid, data: props[eid][String(TITLEOBJECTID)]['title'], lastversion: '1', style: ElementStyleFetch(props, eid, String(TITLEOBJECTID)) };
-	      if (props[eid][String(TITLEOBJECTID)]['hint']) mainTable[y][x]['hint'] = props[eid][String(TITLEOBJECTID)]['hint'];
-	      if (objectTable[mainTable[y][x].oId] === undefined) objectTable[mainTable[y][x].oId] = {};
-	      objectTable[mainTable[y][x].oId][mainTable[y][x].eId] = { x: x, y: y };
-	     }
-	  // Remove specified element title object prop, in case of absent 'n' and 'q' variables should be used only once
-	  if (!(/n|q/.test(props[eid][String(TITLEOBJECTID)].x)) && !(/n|q/.test(props[eid][String(TITLEOBJECTID)].y))) props[eid][String(TITLEOBJECTID)] = undefined;
-	 }
-      //---------------New object handle----------------
-      if (props[eid][String(NEWOBJECTID)] != undefined)
-         {
-          try { x = Math.trunc(eval(props[eid][String(NEWOBJECTID)].x)); y = Math.trunc(eval(props[eid][String(NEWOBJECTID)].y)); }
-          catch { x = null; warningtext = `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; }
-	  if (x != null && !isNaN(x) && !isNaN(y))
-    	  if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
-	     {
-	      warningtext = `Some elements coordiantes (view '${activeOV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
-	     }
-	   else
-	     {
-              mainTableWidth = Math.max(mainTableWidth, x + 1);
-              mainTableHeight = Math.max(mainTableHeight, y + 1);
-	      if (mainTable[y] === undefined) mainTable[y] = [];
-	      mainTable[y][x] = { oId: NEWOBJECTID, eId: eid, data: '', lastversion: '1', style: ElementStyleFetch(props, eid, String(NEWOBJECTID)) };
-	      if (props[eid][String(NEWOBJECTID)]['hint']) mainTable[y][x]['hint'] = props[eid][String(NEWOBJECTID)]['hint'];
-	      if (objectTable[mainTable[y][x].oId] === undefined) objectTable[mainTable[y][x].oId] = {};
-	      objectTable[mainTable[y][x].oId][mainTable[y][x].eId] = { x: x, y: y };
-	     }
-	  //---------------User object startevent handle----------------
-          if (eid != eidstr && cmd === 'OBTAINMAIN' && typeof props[eid][NEWOBJECTID] === 'object')
-	  if (props[eid][NEWOBJECTID]['startevent'] === 'DBLCLICK') focusElement = { oId: NEWOBJECTID, eId: eid, "cmd": 'DBLCLICK' };
-	  // Remove specified element new object prop, should be used only once
-	  props[eid][String(NEWOBJECTID)] = undefined;
-	 }
+      oid = String(NEWOBJECTID);
+      if (result = SetOEPosition(props, oid, eid, 0, q)) warningtext = result;
+      props[eid][oid] = undefined; // Remove specified element new object prop, should be used only once
 	 
-      //---------------Calculate last version propery---------------
-      lastversion = '0';
-      if (data[n].lastversion === '1' && data[n].version != '0') lastversion = '1';
-      //---------------User object startevent handle----------------
-      if (eid != eidstr && cmd === 'OBTAINMAIN' && typeof props[eid][data[n].id] === 'object' && lastversion === '1' && typeof props[eid][data[n].id]['startevent'] === 'string')
-      if (props[eid][data[n].id]['startevent'] === 'DBLCLICK')
-         focusElement = { oId: Number(data[n].id), eId: eid, "cmd": 'DBLCLICK' };
-       else if (props[eid][data[n].id]['startevent'].substr(0, 8) === 'KEYPRESS' && props[eid][data[n].id]['startevent'].length > 8)
-	 focusElement = { oId: Number(data[n].id), eId: eid, "cmd": 'KEYPRESS', "data": props[eid][data[n].id]['startevent'].substr(8) };
-      //---------------User object handle----------------
-      oid = null;
-      if (lastversion === '1' && typeof props[eid][data[n].id] === 'object' && props[eid][data[n].id].x != undefined && props[eid][data[n].id].y != undefined) oid = data[n].id;
-       else if (typeof props[eid]['0'] === 'object' && props[eid]['0'].x != undefined && props[eid]['0'].y != undefined) oid = '0';
-      if (oid === null) continue;
-      
-      try { x = Math.trunc(eval(props[eid][oid].x)); y = Math.trunc(eval(props[eid][oid].y)); }
-      catch { warningtext = `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; continue; }
-      if (isNaN(x) || isNaN(y)) continue;
-      if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
-	 {
-	  warningtext = `Some elements coordiantes (view '${activeOV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
-	  continue;
-	 }
-      mainTableWidth = Math.max(mainTableWidth, x + 1);
-      mainTableHeight = Math.max(mainTableHeight, y + 1);
-      
-      // mainTable[y][x] = { oId, eId, lastversion, data, hint, description, collapse, style }
-      // objectTable[oid][eid] = { x, y } objectTable[oid][0][id|version|owner|datetime|lastversion] = { x, y }
-      // props[0][0] = { style, tablestyle, collapse }
-      if (mainTable[y] === undefined) mainTable[y] = [];
-      if (eid == eidstr) // If element id is 'id', 'version', 'owner', 'datetime' or 'lastversion'
-         {
-	  mainTable[y][x] = { oId: Number(data[n].id), eId: eid, data: data[n][eid], lastversion: lastversion, version: data[n].version };
-          if (lastversion === '1')
-	     {
-	      if (objectTable[mainTable[y][x].oId] === undefined) objectTable[mainTable[y][x].oId] = {};
-	      objectTable[mainTable[y][x].oId][eidstr] = { x: x, y: y };
-	     }
-	 }
-       else
-         {
-	  mainTable[y][x] = { oId: Number(data[n].id), eId: eid, lastversion: lastversion, version: data[n].version };
-          if (lastversion === '1')
-	     {
-	      if (objectTable[mainTable[y][x].oId] === undefined) objectTable[mainTable[y][x].oId] = {};
-	      objectTable[mainTable[y][x].oId][mainTable[y][x].eId] = { x: x, y: y };
-	     }
-	  try   { json = JSON.parse(data[n][eidstr]); }
-	  catch { json = {}; }
-	  if (json === null || json === undefined) json = {};
-	  //--------------Get element data, hint and description-----------------
-	  typeof json.value === 'string' ? mainTable[y][x]['data'] = json.value : mainTable[y][x]['data'] = '';
-	  if (typeof json.hint === 'string') mainTable[y][x]['hint'] = json.hint;
-	  if (typeof json.description === 'string') mainTable[y][x]['description'] = json.description;
-	  //--------------Get element style-----------------
-	  mainTable[y][x]['style'] = ElementStyleFetch(props, eid, data[n].id, json);
-	  //--------------Get object elements collapse property-----------------
-	  if ((typeof props[eid][data[n].id] === 'object' && props[eid][data[n].id].collapse != undefined) ||
-	      (typeof props[eid]['0'] === 'object' && props[eid]['0'].collapse != undefined) ||
-	      (props['0'] && typeof props['0'][data[n].id] === 'object' && props['0'][data[n].id].collapse != undefined)) mainTable[y][x]['collapse'] = '';
-	 }
+      oid = String(TITLEOBJECTID);
+      if (result = SetOEPosition(props, oid, eid, 0, q)) warningtext = result;
+      if (props[eid][oid] && !(/n|q/.test(props[eid][oid].x)) && !(/n|q/.test(props[eid][oid].y))) props[eid][oid] = undefined; // Remove specified element title object prop, in case of absent 'n' and 'q' variables this object element placement is used only once
+	 
+      for (n in data)
+	  {
+	   if (n != '0' && (result = SetOEPosition(props, oid, eid, Number(n), q))) warningtext = result;
+	   if (result = SetOEPosition(props, data[n].id, eid, Number(n), q, data[n])) warningtext = result;
+	  }
      }
      
  // Handle some errors
@@ -435,13 +404,13 @@ function drawMain(data, props)
     }
 }
 
-function ElementStyleFetch(props, eid, oid, json = {})
+function ElementStyleFetch(props, eid, oid, oe = {})
 {
  let style = '';
  if (typeof props[eid]['0'] === 'object') style = MergeStyleRules(props[eid]['0'].style);
  if (props['0'] && typeof props['0'][oid] === 'object') style = MergeStyleRules(style, props['0'][oid].style);
  if (typeof props[eid][oid] === 'object') style = MergeStyleRules(style, props[eid][oid].style);
- if (typeof json.style === 'string') style = MergeStyleRules(style, json.style);
+ if (typeof oe.style === 'string') style = MergeStyleRules(style, oe.style);
  return style;
 }
 
@@ -516,19 +485,19 @@ function eventHandler(event)
 	      break;
 	 case 'dblclick':
 	      if (!box && event.target.contentEditable != 'true')
-	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].lastversion === '1' && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
-	      if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
-	    	 {
-		  cmd = 'DBLCLICK';
-		  callController();
-		 }
-	       else if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID) // 'if' condition should be removed in the future
+	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
+	      if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
 		 {
 	    	  focusElement.td.contentEditable = 'true';
 		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
 		  event.target.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
 	    	  focusElement.td.focus();
 		  event.preventDefault();
+		 }
+	       else if (mainTable[focusElement.y][focusElement.x].realobject)
+	    	 {
+		  cmd = 'DBLCLICK';
+		  callController();
 		 }
 	      break;
 	 case 'mousedown':
@@ -552,6 +521,7 @@ function eventHandler(event)
 		      cmd = 'CONFIRM';
 		      callController(box);
 		     }
+		   else if (box['flags']['_callback'] === 'GETMAIN') displayMainError(`View '${activeOV}' output was canceled`, true);
 		  HideBox();
 		  break;
 		 }
@@ -671,7 +641,7 @@ function eventHandler(event)
 		     activeOV = event.target.innerHTML;
 		     drawSidebar(sidebar);
 		    }
-		 cmd = 'OBTAINMAIN';
+		 cmd = 'GETMAIN';
 		 callController();
 		 break;
 		}
@@ -692,7 +662,7 @@ function eventHandler(event)
 		         activeOV = event.target.nextSibling.innerHTML;
 		         drawSidebar(sidebar);
 			}
-		     cmd = 'OBTAINMAIN';
+		     cmd = 'GETMAIN';
 		     callController();
 		    }
 		 break;
@@ -776,7 +746,7 @@ function eventHandler(event)
 			   break;
 		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
 		    	   if (focusElement.td && focusElement.td.contentEditable != 'true')
-			   if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].lastversion === '1' && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
+			   if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
 			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
 		           if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
 			      {
@@ -813,6 +783,7 @@ function controllerCmdHandler(input)
      styleUI();
     }
  if (input.sidebar) drawSidebar(input.sidebar);
+ if (input.objectSelection) objectSelection = input.objectSelection;
 
  switch (input.cmd)
 	{
@@ -877,9 +848,9 @@ function controllerCmdHandler(input)
 	}
 }
 
-function displayMainError(error, resetOV = true)
+function displayMainError(errormsg, resetOV = true)
 {
- mainDiv.innerHTML = '<h1>' + error + '</h1>';
+ mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
  if (resetOV) activeOD = activeOV = '';
  mainTableRemoveEventListeners();
 }
@@ -1005,11 +976,11 @@ function callController(data)
 	 case 'New Object Database':
 	 case 'Edit Database Structure':
 	 case 'GETMENU':
+	 case 'GETMAINSTART':
 	 case 'GETMAIN':
-	 case 'OBTAINMAIN':
-	 case 'START':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
+	      if (cmd === 'GETMAIN') objectSelection = '';
 	      break;
 	 case 'Element description':
 	      let msg = '';
@@ -1029,8 +1000,8 @@ function callController(data)
 			    else
 			      {
 			       msg += '\nObject version: ' + mainTable[focusElement.y][focusElement.x].version;
-			       if (mainTable[focusElement.y][focusElement.x].lastversion === '0') msg += '\nActual version: no\n\n';
-			        else msg += '\nActual version: yes\n\n';
+			       if (mainTable[focusElement.y][focusElement.x].realobject) msg += '\nActual version: yes\n\n';
+			        else msg += '\nActual version: no\n\n';
 			      }
 		     }
 	      //--------------Add description to the result message---------------
@@ -1051,10 +1022,14 @@ function callController(data)
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
+	      if (objectSelection) object['objectSelection'] = objectSelection;
 	      break;
 	 case 'Delete Object':
-	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].lastversion === '1' && mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID)
-	         object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId };
+	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject)
+	         { 
+		  object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId };
+		  if (objectSelection) object['objectSelection'] = objectSelection;
+		 }
 	      break;
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
@@ -1413,7 +1388,7 @@ function collapseMainTable(undefinedCellCollapse) // Function removes collapse f
 	   {
 	    if (disp > 0 && mainTable[row] != undefined)
 	       for (col = 0; col < mainTableWidth; col++)
-		   if (mainTable[row][col] != undefined && mainTable[row][col].lastversion === '1')
+		   if (mainTable[row][col] != undefined && mainTable[row][col].realobject)
 		      objectTable[mainTable[row][col].oId][mainTable[row][col].eId].y -= disp;
 	    row++;
 	   }
@@ -1450,7 +1425,7 @@ function collapseMainTable(undefinedCellCollapse) // Function removes collapse f
 	 else // Otherwise (in case of no collpase) correct current column 'x' coordinate on displacement value and go to next column
 	   {
 	    if (disp > 0) for (row = 0; row < mainTableHeight; row++)
-	       if (mainTable[row] != undefined && mainTable[row][col] != undefined && mainTable[row][col].lastversion === '1')
+	       if (mainTable[row] != undefined && mainTable[row][col] != undefined && mainTable[row][col].realobject)
 		  objectTable[mainTable[row][col].oId][mainTable[row][col].eId].x -= disp;
 	    col++;
 	   }
@@ -1482,14 +1457,14 @@ function ShowContextmenu(event)
     {
      CellBorderToggleSelect(focusElement.td, event.target);
      if (!mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x]) innerHTML = mainDefaultContext;
-      else if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID && mainTable[focusElement.y][focusElement.x].lastversion === '1') innerHTML = mainObjectContext;
+      else if (mainTable[focusElement.y][focusElement.x].realobject) innerHTML = mainObjectContext;
        else innerHTML = mainTitleObjectContext;
     }
  // Context menu event has been generated by keyboard (event.which != 3) and any element is selected? Display appropriate context menu
   else if (focusElement.td != undefined && event.which != 3)
     {
      if (!mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x]) innerHTML = mainDefaultContext;
-      else if (mainTable[focusElement.y][focusElement.x].oId >= STARTOBJECTID && mainTable[focusElement.y][focusElement.x].lastversion === '1') innerHTML = mainObjectContext;
+      else if (mainTable[focusElement.y][focusElement.x].realobject) innerHTML = mainObjectContext;
        else innerHTML = mainTitleObjectContext;
     }
     

@@ -39,7 +39,7 @@ function rmSQLinjectionChars($str) // Function removes dangerous chars such as: 
  return str_replace(';', '', str_replace('"', '', str_replace("'", '', str_replace("%", '', $str))));
 }
 
-function loog($arg) // Function saves input $arg to error.log
+function lg($arg) // Function saves input $arg to error.log
 {
  file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
  file_put_contents('error.log', "\n-------------------------------END LOG-------------------------------\n", FILE_APPEND);
@@ -370,24 +370,30 @@ function Check($db, $flags)
 	      $allElementsArray[$id] = $profiles[$profile];
 	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $uniqElementsArray[$id] = '';
 	     }
-     ksort($allElementsArray, SORT_NUMERIC);	 
+     ksort($allElementsArray, SORT_NUMERIC);
     }
     
  if ($flags & GET_OBJECT_VIEWS)
     {
-     global $elementSelectionJSONList;
-
+     global $elementSelectionJSONList, $objectSelection, $objectsPerPage, $objectSelectionParamsDialog;
+     
      // Get odname $OD view section
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$odid'");
      $query->execute();
-     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+     if (count($viewProfiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
 
      // Move on. Get specified view JSON element selection (what elements should be displayed and how)
-     $elementSelectionJSONList = json_decode($profiles[0][0], true);
-     if (!isset($elementSelectionJSONList[$OV]['element5']['data'])) return $error = 'Please create/select Object View!';
+     $viewProfiles = json_decode($viewProfiles[0][0], true);
+     if (!isset($viewProfiles[$OV]['element5']['data'])) return $error = 'Please create/select Object View!';
+
+     // Fetch object selection query string and params
+     if (($objectSelection = trim($viewProfiles[$OV]['element3']['data'])) === '') $objectSelection = 'WHERE lastversion=1 AND version!=0';
+      else GetObjectSelection($db);
+     
+     // Fetch objects per page and object selection query string
      
      // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-     if (($elementSelectionJSONList = trim($elementSelectionJSONList[$OV]['element5']['data'])) === '')
+     if (($elementSelectionJSONList = trim($viewProfiles[$OV]['element5']['data'])) === '')
         {
          $x = 0;
          foreach ($allElementsArray as $id => $value)
@@ -452,14 +458,14 @@ function Check($db, $flags)
     	     case 'NEWOD':
 	          if (getUserODAddPermission($db, $_SESSION['u']) != '+Allow user to add Object Databases|') return $alert = "You're not allowed to add Object Databases!";
 		  break;
-	     case 'OBTAINMAIN':
+	     case 'GETMAINSTART':
 	     case 'GETMAIN':
 	     case 'DELETEOBJECT':
 	     case 'INIT':
 	     case 'KEYPRESS':
 	     case 'DBLCLICK':
 	     case 'CONFIRM':
-	          if (($input['cmd'] === 'OBTAINMAIN' || $input['cmd'] === 'GETMAIN') && ($input['OD'] === '' || $input['OV'] === '')) return;
+	          if (($input['cmd'] === 'GETMAINSTART' || $input['cmd'] === 'GETMAIN') && ($input['OD'] === '' || $input['OV'] === '')) return;
 		  
 		  if (!isset($OD) || !isset($OV) || !isset($odid)) return $alert = "You're not allowed to modify this Object View!";
 		     
@@ -479,7 +485,7 @@ function Check($db, $flags)
 		      if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
 		         return $error = "You're not allowed to display or modify this Object View!";
 		     }
-		  if ($input['cmd'] === 'OBTAINMAIN' || $input['cmd'] === 'GETMAIN') return;
+		  if ($input['cmd'] === 'GETMAIN' || $input['cmd'] === 'GETMAINSTART') return;
 		  
 		  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp")))
 		     {
@@ -758,18 +764,19 @@ function CreateNewObjectVersion($db)
 
 function getMainFieldData($db)
 {
- global $objectTable, $odid, $props;
+ global $objectTable, $odid, $props, $objectSelection;
  $elementQueryString = '';
  
  // No any element defined?
  setElementSelectionIds();
  foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
  if ($elementQueryString === '') return "Specified view '$OV' (database '$OD') has no elements defined!";
-
+     
  // Object list selection. No page specified - OV refresh is requested so get 1st page and count page number. Page is specified - get the page data and
  // if object selection is empty recount count page number and get last page.
- $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` WHERE lastversion=1 AND version!=0");
+ //$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` WHERE lastversion=1 AND version!=0");
  //$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid`");
+ $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` $objectSelection");
  $query->execute();
  $objectTable = $query->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -1115,6 +1122,74 @@ function getLoginDialogData()
 	 'buttons' => ['LOGIN' => ' '],
 	 'flags'   => ['_callback' => 'LOGIN', 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
 	];
+}
+
+function GetObjectSelection($db)
+{
+ global $OD, $OV, $objectSelection, $objectSelectionParamsDialog;
+ 
+ $i = -1;
+ $objectSelectionParams = [];
+ 
+ // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
+ while  (++$i < strlen($objectSelection)) // = [:param][position]
+     if ($objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
+	{
+	 if (isset($newparam))
+	    { 
+	     if (!isset($objectSelectionParams[$newparam])) $objectSelectionParams[$newparam] = [];
+	     $objectSelectionParams[$newparam][$newindex] = false;
+	    }
+	 if ($objectSelection[$i] === ':')
+	    {
+	     $newparam = ':';
+	     $newindex = $i;
+	    }
+	  else $newparam = NULL;
+	}
+      else if (isset($newparam)) $newparam .= $objectSelection[$i];
+
+ // Finish and retrieve last param in case of $newparam set
+ if (isset($newparam))
+    { 
+     if (!isset($objectSelectionParams[$newparam])) $objectSelectionParams[$newparam] = [];
+     $objectSelectionParams[$newparam][$newindex] = false;
+    }
+    
+ // Param :user does exist? Replace substring :user in $objectSelection
+ if (isset($objectSelectionParams[':user']))
+    {
+     $user = getUserName($db, $_SESSION['u']);
+     foreach ($objectSelectionParams[':user'] as $key => $value) $objectSelection = substr_replace($objectSelection, $user, $key, 5);
+     unset($objectSelectionParams[':user']);
+    }
+    
+ // $objectSelectionParams array is empty? Unset $objectSelectionParamsDialog, remain objectSelection unchanged and return
+ if (!(count($objectSelectionParams) > 0))
+    {
+     unset($objectSelectionParamsDialog);
+     return;
+    }
+
+ // Init $objectSelectionParamsDialog in case of empty content
+ if (!isset($objectSelectionParamsDialog)) $objectSelectionParamsDialog =
+    [
+     'title'   => "Object View '$OV' parameters",
+     'dialog'  => ['pad' => ['profile' => []]],
+     'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
+     'flags'   => ['_callback' => 'GETMAIN', 'callback' => json_encode(['OD' => $OD, 'OV' => $OV]), 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
+    ];
+
+ // Replace params in $objectSelection to its values from dialog or rebuild $objectSelectionParamsDialog to pass it to client side to get all params 
+ foreach ($objectSelectionParams as $param => $valeu)
+      if (!isset($objectSelectionParamsDialog['dialog']['pad']['profile'][$param]))
+    	 {
+	  $objectSelectionParamsDialog['dialog']['pad']['profile'][$param] = ['head' => "\n".str_replace('_', ' ', substr($param, 1)).':', 'type' => 'text'];
+	 }
+       else foreach ($valeu as $key => $value)
+         {
+	  $objectSelection = substr_replace($objectSelection, $objectSelectionParamsDialog['dialog']['pad']['profile'][$param]['data'], $key, strlen($param));
+	 }
 }
 
 function defaultCustomizationDialogJSON()

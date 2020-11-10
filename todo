@@ -1,29 +1,38 @@
-October 2020:
-- test (id, owner, datetime, version or lastversion), startevent, style, collapse
-
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+November 2020:
+- System call CALLOV, select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
 - Object_selection in object selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
-    SELECT <element_sleection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
+    SELECT <element_selection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
     if selection count is zero - do SELECT wthout LIMIT and return last page
     #user - user/group requested OV data
     {question string to retreive string value from dialog box}
+    
 - Single click OV requests corresponded OV, in case of current OV refresh - current page is used, in case of new OV - page 1 is used
   pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go.
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
-- System call CALLOV
-- Object_selection to OD rule section
-- status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
-  if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
-- help context menu for all help (conception, handler, keyboard/mouse..), dontforget to add to help that all log atr directed to browser console in chrome ctrl+shift+c in FF - F12
-- log in aparent OD
 
-November 2020:
+- Object_selection to OD rule section
+- Check oid object selection existence in CHECK_OID
+- help context menu for all help (conception, handler, keyboard/mouse..)
+- log in aparent OD
+- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+
+- crete default tables apparent php executed file
+- Handlers are apparent php executed files
+
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by SLAVA
 - 	emulate chat and helpdesk (Autorefresh OV, for example, for chats)
 -	System calls and its object views: LINK
 -	Object process SCHEDULER. Handlers are executed by built-in system user.
+ 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
+	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
+	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, so how the system will react on this situation?
+	   Real example 29/10/2020 - I called 'user customization' then dbclicked edit cell - diaog box and content editable actions pop up and work together!!
+	2. status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
+	   if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
+	3. To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user!
+	 
 
 December 2020:
 - System calls and its object views: LOCATION.
@@ -38,10 +47,6 @@ December 2020:
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-- User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
-  Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
-  What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, so how the system will react on this situation?
-  Real example 29/10/2020 - I called 'user customization' then dbclicked edit cell - diaog box and content editable actions pop up and work together!!
 - firefox up/down and left/right arrows scroll page
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
