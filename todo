@@ -1,5 +1,5 @@
 November 2020:
-- System call CALLOV, select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
+- System call CALLOV (GETMAIN proc to function), select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
 - Object_selection in object selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
     SELECT <element_selection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
     if selection count is zero - do SELECT wthout LIMIT and return last page
@@ -13,19 +13,12 @@ November 2020:
 - Object_selection to OD rule section
 - Check oid object selection existence in CHECK_OID
 - help context menu for all help (conception, handler, keyboard/mouse..)
-- log in aparent OD
+- log in aparent OD (add log OD to default db creation)
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
 
-- crete default tables apparent php executed file
-- Handlers are apparent php executed files
-
-- telnet function by SLAVA
-- snmp function by SLAVA
-- diagnostic function by SLAVA
-- 	emulate chat and helpdesk (Autorefresh OV, for example, for chats)
--	System calls and its object views: LINK
--	Object process SCHEDULER. Handlers are executed by built-in system user.
- 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
+- Object process SCHEDULER. Handlers are executed by built-in system user.
+	0. Handlers are apparent php executed files
+	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
 	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, so how the system will react on this situation?
 	   Real example 29/10/2020 - I called 'user customization' then dbclicked edit cell - diaog box and content editable actions pop up and work together!!
@@ -35,36 +28,42 @@ November 2020:
 	 
 
 December 2020:
-- System calls and its object views: LOCATION.
+- emulate chat and helpdesk (Autorefresh OV, for example, for chats)
+- System calls and its object views: LINK
+- System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release  setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
   These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
 - System call NEWOBJECT (to create object by user handlers)
-- Object view PIECHART and GRAPH
-- Other estimated "TODO" at the end of this todo file and think other features to make Boss edit opeations comfortable
-- single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags)
-  multi cell selecting - what should i copy? Plain text or excel table?:)
-  want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
-  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-- firefox up/down and left/right arrows scroll page
-- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
+- single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
-- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
-- User can paste whole object then insert it to the OD not set it through INIT command - just copy the object
-- Paraga mail functional
-- see through all OD properties dialog box and try to check/release their all features
-- Feedback and finish https://bakhirev.biz/book/#MmlJN
-- remove selected objects by single action (udalyat' videlennie ob'ekty razom)
 - Operations:
   Switch ip, switch description, switch location,
   60 ports (description), for every port: type (uplink,downlink,free,service,client),
-  diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing)
+  diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
   In INFO scheme find mac on every switch in OV
   In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
-
-
-
+- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
+  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+  Linux to docker, secure php.ini, optimize mysql to highload app
+  
+Later:
+- telnet function by SLAVA
+- snmp function by SLAVA
+- diagnostic function by SLAVA
+- Object view PIECHART and GRAPH
+- System calls and its object views: LOCATION.
+- multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
+- firefox up/down and left/right arrows scroll page
+- Feedback and finish https://bakhirev.biz/book/#MmlJN
+- Paraga mail functional and ask Hramcova analitiku po helpdesku
+- extra analitics on 'element description' - kol-vo obektov in OD, kol-vo pages and etc..
+- Other estimated "TODO" at the end of this todo file and think other features to make Boss edit opeations comfortable
+- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
+- see through all OD properties dialog box and try to check/release their all features
+- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
+- USer can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+- Set new object flag (for example small digit in red scope) before OD name and/or html page title
 
 Client, controller and element-handler interaction:
 ------Client (browser) input event------	-------Controller------							------Element handler------
@@ -237,3 +236,17 @@ What to check in relibe auth
 3. Browser and server time doesn't match
 4. Relogin after SESSIONLIFETIME even browser hasn't ever closed
 ------------------------------------------------------------
+
+
+
+
+web components
+js
+1 framework
+youtube sobes voprosy
+git
+form html tag
+VS Code on youtube
+roadmap also on youtube
+C:\!\sobes
+see zametki v telefone

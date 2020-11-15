@@ -518,10 +518,11 @@ function eventHandler(event)
 		      box.buttons = {};
 		      box.buttons[event.target.innerHTML] = '';
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      cmd = 'CONFIRM';
+		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd'];
+		       else cmd = 'CONFIRM';
 		      callController(box);
 		     }
-		   else if (box['flags']['_callback'] === 'GETMAIN') displayMainError(`View '${activeOV}' output was canceled`, true);
+		   else if (box['flags'] && box['flags']['cmd'] === 'GETMAIN') displayMainError(`View '${activeOV}' output was canceled`, true);
 		  HideBox();
 		  break;
 		 }
@@ -677,7 +678,8 @@ function eventHandler(event)
 		      box.buttons = {};
 		      box.buttons[btn] = '';
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      cmd = 'CONFIRM';
+		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd'];
+		       else cmd = 'CONFIRM';                                             
 		      callController(box);
 		      HideBox();
 		      return;
@@ -1010,7 +1012,7 @@ function callController(data)
 	      //--------------Add x and y coordinates to the result message---------------
 	      msg += `Table cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}`;
 	      //--------------Display result message in warning box---------------
-	      warning(msg);
+	      warning(msg, 'Element description');
 	      break;
 	 case 'Help':
 	      box = help;
@@ -1031,6 +1033,7 @@ function callController(data)
 		  if (objectSelection) object['objectSelection'] = objectSelection;
 		 }
 	      break;
+	 case 'LOGIN':
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
@@ -1088,7 +1091,7 @@ function ShowBox()
  /*			  "display_single_pad" - set this flag to display pad block in case of single one			*/
  /*			  "display_single_profile" - set this flag to display profile select in case of single one		*/
  /*			  "callback" - any callback string element handler to pass without changes at CONFIRM event		*/
- /*			  "_callback" - controller reserved property								*/
+ /*			  "cmd" - initial command to return to the controller							*/
  /*******************************************************************************************************************************/
  if (typeof box !== 'object') return;
  let inner = getInnerDialog();

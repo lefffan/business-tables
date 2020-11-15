@@ -24,6 +24,7 @@ const CHECK_ACCESS			= 0b01000000;
 const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
 const SESSIONLIFETIME			= 36000;
+const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
@@ -32,7 +33,7 @@ $db->exec("ALTER DATABASE ".DATABASENAME." CHARACTER SET = utf8mb4 COLLATE = utf
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 session_start();
-setcookie(session_name(), session_id(), time() + SESSIONLIFETIME, '', $_SERVER['HTTP_HOST'], false, true);
+if (isset($_SERVER['HTTP_HOST'])) setcookie(session_name(), session_id(), time() + SESSIONLIFETIME, '', $_SERVER['HTTP_HOST'], false, true);
     
 function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
 {
@@ -152,7 +153,7 @@ function adjustODProperties($data, $db, $id)
  $data['title'] = 'Edit Object Database Structure';
  $data['buttons'] = ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'];
  if (!isset($data['flags'])) $data['flags'] = [];
- $data['flags']['_callback'] = 'EDITOD';
+ $data['flags']['cmd'] = 'Edit Database Structure';
  return $data;
 }					
 
@@ -196,96 +197,6 @@ function initNewODDialogElements()
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+No action|Warning|Confirm|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
 		    'element4' => ['type' => 'textarea', 'head' => 'Rule expression', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
-}
-
-function createDefaultDatabases($db)
-{
- /***********Create OD list data sql table if not exists*************************/
- $query = $db->prepare("CREATE TABLE IF NOT EXISTS `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
- $query->execute();
- 
- /***********Default OD 'Users' existence check*************************/
- $query = $db->prepare("SELECT odname FROM `$` WHERE odname='Users'");
- $query->execute();
- if (isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) return;
- 
- /***********Default OD 'Users' creating*************************/
- global $newProperties, $newPermissions, $newElement, $newView, $newRule;
- initNewODDialogElements();
- $newProperties['element1']['data'] = 'Users';
- $userOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['_callback' => 'EDITOD', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
-
- $newView['element1']['data'] = 'All users';
- $userOD['dialog']['View']['All users'] = $newView;
-
- $newElement['element1']['data'] = 'User';
- $newElement['element2']['data'] = "\nDouble click the username to change the password and other user properties";
- $newElement['element3']['data'] = UNIQELEMENTTYPE;
- $newElement['element3']['readonly'] = '';
- $newElement['element4']['data'] = 'user.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK", "account": {"prop": "value"}, "odaddperm": {"prop": "odaddperm"}, "groups": {"prop": "groups"} }';
- $userOD['dialog']['Element']['User - element id1'] = $newElement;
-
- $newElement['element1']['data'] = 'Name';
- $newElement['element2']['data'] = '';
- $newElement['element3']['data'] = 'unique';
- $newElement['element3']['readonly'] = '';
- $newElement['element4']['data'] = 'text.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
- $userOD['dialog']['Element']['Name - element id2'] = $newElement;
-
- $newElement['element1']['data'] = 'Telephone';
- $newElement['element2']['data'] = '';
- $newElement['element3']['data'] = 'unique';
- $newElement['element3']['readonly'] = '';
- $newElement['element4']['data'] = 'text.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
- $userOD['dialog']['Element']['Telephone - element id3'] = $newElement;
-
- $newElement['element1']['data'] = 'Email';
- $newElement['element2']['data'] = '';
- $newElement['element3']['data'] = 'unique';
- $newElement['element3']['readonly'] = '';
- $newElement['element4']['data'] = 'text.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
- $userOD['dialog']['Element']['Email - element id4'] = $newElement;
-
- $newElement['element1']['data'] = 'Comment';
- $newElement['element2']['data'] = '';
- $newElement['element3']['data'] = 'unique';
- $newElement['element3']['readonly'] = '';
- $newElement['element4']['data'] = 'text.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK"}'."\n".'{"event": "KEYPRESS"}';
- $userOD['dialog']['Element']['Comment - element id5'] = $newElement;
-
- $newElement['element1']['data'] = 'Customization';
- $newElement['element2']['data'] = "\nDouble click appropriate cell to change color, font, background and other properties for the specified user";
- $newElement['element3']['data'] = 'unique';
- $newElement['element3']['readonly'] = '';
- $newElement['element4']['data'] = 'customization.php';
- $newElement['element5']['data'] = '{"event":"INIT"}'."\n".'{"event": "DBLCLICK", "dialog": {"prop": "dialog"}}';
- $userOD['dialog']['Element']['Customization - element id6'] = $newElement;
-
- $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
- $query->execute([':odprops' => json_encode($userOD)]);
-
- /***********Creating Object Database (uniq instance)*************************/
- $query = $db->prepare("create table `uniq_1` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
- $query->execute();
- $query = $db->prepare("ALTER TABLE `uniq_1` ADD eid1 BLOB(65535), ADD UNIQUE(eid1(".USERSTRINGMAXCHAR."))");
- $query->execute();
- 
- /***********Creating Object Database (actual data instance)*************************/
- $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
- $query->execute();
- global $odid, $allElementsArray, $uniqElementsArray, $output;
- $odid = '1';
- $allElementsArray = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
- $uniqElementsArray = ['1' => ''];
- $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
- InsertObject($db, 'system');
- $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
- InsertObject($db, 'system');
 }
 
 function getODVNamesForSidebar($db)
@@ -375,7 +286,7 @@ function Check($db, $flags)
     
  if ($flags & GET_OBJECT_VIEWS)
     {
-     global $elementSelectionJSONList, $objectSelection, $objectsPerPage, $objectSelectionParamsDialog;
+     global $elementSelection, $objectSelection, $objectsPerPage;
      
      // Get odname $OD view section
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$odid'");
@@ -387,20 +298,19 @@ function Check($db, $flags)
      if (!isset($viewProfiles[$OV]['element5']['data'])) return $error = 'Please create/select Object View!';
 
      // Fetch object selection query string and params
-     if (($objectSelection = trim($viewProfiles[$OV]['element3']['data'])) === '') $objectSelection = 'WHERE lastversion=1 AND version!=0';
-      else GetObjectSelection($db);
+     $objectSelection = GetObjectSelection($db, $viewProfiles[$OV]['element3']['data'], $objectSelection);
      
      // Fetch objects per page and object selection query string
      
      // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-     if (($elementSelectionJSONList = trim($viewProfiles[$OV]['element5']['data'])) === '')
+     if (($elementSelection = trim($viewProfiles[$OV]['element5']['data'])) === '')
         {
          $x = 0;
          foreach ($allElementsArray as $id => $value)
     	         {
-	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
-		  $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n+2"}'."\n";
-	          $elementSelectionJSONList .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
+	          $elementSelection .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
+		  $elementSelection .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "n+2"}'."\n";
+	          $elementSelection .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
 	          $x++;
 	    	 }
 	}
@@ -455,7 +365,6 @@ function Check($db, $flags)
      switch ($input['cmd'])
     	    {
     	     case 'New Object Database':
-    	     case 'NEWOD':
 	          if (getUserODAddPermission($db, $_SESSION['u']) != '+Allow user to add Object Databases|') return $alert = "You're not allowed to add Object Databases!";
 		  break;
 	     case 'GETMAINSTART':
@@ -783,7 +692,7 @@ function getMainFieldData($db)
 
 function setElementSelectionIds()
 {
- global $props, $elementSelectionJSONList, $allElementsArray;
+ global $props, $elementSelection, $allElementsArray;
  $props = [];
  
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
@@ -804,7 +713,7 @@ function setElementSelectionIds()
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  
  
- foreach (preg_split("/\n/", $elementSelectionJSONList) as $value)
+ foreach (preg_split("/\n/", $elementSelection) as $value)
       if ($arr = json_decode($value, true, 2))
 	 {
 	  $arr = cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent', 'tablestyle']); // Retrieve correct values only
@@ -1120,76 +1029,60 @@ function getLoginDialogData()
 	 'title'   => 'Login',
 	 'dialog'  => ['pad' => ['profile' => ['element1' => ['head' => "\nUsername", 'type' => 'text'], 'element2' => ['head' => 'Password', 'type' => 'password']]]],
 	 'buttons' => ['LOGIN' => ' '],
-	 'flags'   => ['_callback' => 'LOGIN', 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
+	 'flags'   => ['cmd' => 'LOGIN', 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
 	];
 }
 
-function GetObjectSelection($db)
+function GetObjectSelection($db, $objectSelection, $paramValues = NULL)
 {
- global $OD, $OV, $objectSelection, $objectSelectionParamsDialog;
+ global $OD, $OV;
  
+ // Check input paramValues array and add reserved :user parameter value
+ if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
  $i = -1;
- $objectSelectionParams = [];
+ $len = strlen($objectSelection);
+ if (gettype($paramValues) != 'array') $paramValues = [];
+  else $title = "View '$OV' parameters has been changed, try it again!";
+ $paramValues[':user'] = getUserName($db, $_SESSION['u']);
+ $isDialog = false;
+ $objectSelectionNew = '';
  
  // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
- while  (++$i < strlen($objectSelection)) // = [:param][position]
-     if ($objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
+ while  (++$i <= $len)
+     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
 	{
 	 if (isset($newparam))
-	    { 
-	     if (!isset($objectSelectionParams[$newparam])) $objectSelectionParams[$newparam] = [];
-	     $objectSelectionParams[$newparam][$newindex] = false;
-	    }
-	 if ($objectSelection[$i] === ':')
+	 if (isset($paramValues[$newparam]))
 	    {
-	     $newparam = ':';
-	     $newindex = $i;
+	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $paramValues[$newparam]];
+	     if (!$isDialog) $objectSelectionNew .= $paramValues[$newparam];
 	    }
-	  else $newparam = NULL;
+	  else
+	    {
+	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
+	     $isDialog = true;
+	    }
+	 if ($i === $len) break;
+	 $newparam = NULL;
+	 if ($objectSelection[$i] === ':') $newparam = ':';
+	  else $objectSelectionNew .= $objectSelection[$i];
 	}
       else if (isset($newparam)) $newparam .= $objectSelection[$i];
+      else $objectSelectionNew .= $objectSelection[$i];
 
- // Finish and retrieve last param in case of $newparam set
- if (isset($newparam))
-    { 
-     if (!isset($objectSelectionParams[$newparam])) $objectSelectionParams[$newparam] = [];
-     $objectSelectionParams[$newparam][$newindex] = false;
-    }
-    
- // Param :user does exist? Replace substring :user in $objectSelection
- if (isset($objectSelectionParams[':user']))
-    {
-     $user = getUserName($db, $_SESSION['u']);
-     foreach ($objectSelectionParams[':user'] as $key => $value) $objectSelection = substr_replace($objectSelection, $user, $key, 5);
-     unset($objectSelectionParams[':user']);
-    }
-    
- // $objectSelectionParams array is empty? Unset $objectSelectionParamsDialog, remain objectSelection unchanged and return
- if (!(count($objectSelectionParams) > 0))
-    {
-     unset($objectSelectionParamsDialog);
-     return;
-    }
-
- // Init $objectSelectionParamsDialog in case of empty content
- if (!isset($objectSelectionParamsDialog)) $objectSelectionParamsDialog =
-    [
-     'title'   => "Object View '$OV' parameters",
-     'dialog'  => ['pad' => ['profile' => []]],
-     'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
-     'flags'   => ['_callback' => 'GETMAIN', 'callback' => json_encode(['OD' => $OD, 'OV' => $OV]), 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
-    ];
-
- // Replace params in $objectSelection to its values from dialog or rebuild $objectSelectionParamsDialog to pass it to client side to get all params 
- foreach ($objectSelectionParams as $param => $valeu)
-      if (!isset($objectSelectionParamsDialog['dialog']['pad']['profile'][$param]))
-    	 {
-	  $objectSelectionParamsDialog['dialog']['pad']['profile'][$param] = ['head' => "\n".str_replace('_', ' ', substr($param, 1)).':', 'type' => 'text'];
-	 }
-       else foreach ($valeu as $key => $value)
-         {
-	  $objectSelection = substr_replace($objectSelection, $objectSelectionParamsDialog['dialog']['pad']['profile'][$param]['data'], $key, strlen($param));
-	 }
+ //  In case of no dialog - return object selection string
+ if (!$isDialog) return $objectSelectionNew;
+ 
+ // Otherwise return dialog array
+ if (!isset($title)) $title = "Object View '$OV' parameters";
+ return [
+	 'title'   => $title,
+	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
+	 'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
+	 'flags'   => ['cmd' => 'GETMAIN',
+		       'callback' => json_encode(['OD' => $OD, 'OV' => $OV]),
+		       'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
+	];
 }
 
 function defaultCustomizationDialogJSON()
