@@ -43,95 +43,65 @@ try {
 		      $objectSelection = [];
 		      foreach ($input['data']['dialog']['pad']['profile'] as $key => $value) $objectSelection[$key] = $value['data'];
 		     }
-		  Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS);
-		  $output = [ 'OD' => $OD, 'OV' => $OV, 'sidebar' => getODVNamesForSidebar($db) ];
 		  if ($input['cmd'] === 'GETMAINSTART') 
 		     {
 	    	      $customization = getUserCustomization($db, $_SESSION['u']);
-		      $output['log'] = "User '".getUserName($db, $_SESSION['u'])."' has started application!";
+		      $log = "User '".getUserName($db, $_SESSION['u'])."' has started application!";
 		     }
-		  if (isset($error) || isset($alert))
-		     {
-		      $output['cmd'] = 'INFO';
-		      isset($error) ? $output['error'] = $error : $output['alert'] = $alert;
-		      break;
-		     }
-		  if (gettype($objectSelection) === 'array')
-		     {
-		      $output['cmd'] = 'DIALOG';
-		      $output['data'] = $objectSelection;
-		      break;
-		     }
-		  if ($error = getMainFieldData($db))
-		     {
-		      $output['cmd'] = 'INFO';
-		      $output['error'] = $error;
-		      break;
-		     }
-		  $output['cmd'] = 'REFRESH';
-		  $output['data'] = $objectTable;
-		  $output['props'] = $props;
-		  if (isset($input['data']['dialog']['pad']['profile'])) $output['objectSelection'] = $objectSelection;
+		  if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) break;
+		  if (gettype($objectSelection) === 'array') $output = ['cmd' => 'DIALOG', 'data' => $objectSelection];
+		   else if (!($error = getMainFieldData($db)))
+		    	   {
+			    $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
+			    if (isset($input['data']['dialog']['pad']['profile'])) $output['objectSelection'] = $objectSelection;
+			   }
 		  break;
 	     case 'GETMENU':
-		  $output = ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
+		  $output = ['cmd' => ''];
+		  $sidebar = getODVNamesForSidebar($db);
 		  break;
-	    case 'LOGOUT':
-		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'log' => "User '".getUserName($db, $_SESSION['u'])."' has logged out!"];
+	     case 'LOGOUT':
+		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+		  $log = "User '".getUserName($db, $_SESSION['u'])."' has logged out!";
 		  unset($_SESSION['u']);
 		  break;
-	    case 'New Object Database':
-		  Check($db, CHECK_ACCESS);
-		  if (isset($error) || isset($alert))
-		     {
-		      $output['cmd'] = 'INFO';
-		      isset($error) ? $output['error'] = $error : $output['alert'] = $alert;
-		      break;
-		     }
+	     case 'New Object Database':
+		  if (Check($db, CHECK_ACCESS)) break;
 		  if (!isset($input['data']))
 		     {
 	              initNewODDialogElements();
 		      $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
-		      break;
 		     }
-		  $output = NewOD($db);
+		   else $output = NewOD($db);
 		  break;
-	    case 'Edit Database Structure':
+	     case 'Edit Database Structure':
 		  if (isset($input['data']))
 		  if (gettype($input['data']) === 'string')
 		     {
  		      $query = $db->prepare("SELECT odprops FROM `$` WHERE odname=:odname");
 		      $query->execute([':odname' => $input['data']]);
-		      $odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true);
-				 if ($odprops)
-				    {
-				     $odprops['flags']['callback'] = $input['data'];
-				     $odprops['title'] .= " - '".$input['data']."'";
-				     $output = ['cmd' => 'DIALOG', 'data' => $odprops];
-				    }
-				 else $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$input[data]' Object Database properties!"];
+		      if ($odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true))
+			 {
+			  $odprops['flags']['callback'] = $input['data'];
+			  $odprops['title'] .= " - '".$input['data']."'";
+			  $output = ['cmd' => 'DIALOG', 'data' => $odprops];
+			 }
+		       else $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$input[data]' Object Database properties!"];
 		     }
 		   else if (gettype($input['data']) === 'array') $output = EditOD($db);
 		  break;
-		case 'DELETEOBJECT':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_ACCESS);
-		     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-		      else if ($odid == 1 && $oid == STARTOBJECTID) $output = ['cmd' => 'INFO', 'alert' => 'System account cannot be deleted!'];
-		      else if ($alert = DeleteObject($db)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-		      else
-		        {
-			 if (isset($input['objectSelection'])) $objectSelection = $input['objectSelection'];
-			 if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		          else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
-			}
-		     $output['OD'] = $OD;
-		     $output['OV'] = $OV;
-		     break;
+	     case 'DELETEOBJECT':
+		  if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_ACCESS)) break;
+		  
+		  if ($odid == 1 && $oid == STARTOBJECTID) $output = ['cmd' => 'INFO', 'alert' => 'System account cannot be deleted!'];
+		   else if (!($alert = DeleteObject($db)))
+		    	   {
+			    if (isset($input['objectSelection'])) $objectSelection = $input['objectSelection'];
+			    if (!($error = getMainFieldData($db))) $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
+		    	   }
+		  break;
 		case 'INIT':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_ACCESS);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
+		     if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_ACCESS)) break;
 		     
 		     // Handle all elements of a new object
 		     $output = [];
@@ -144,19 +114,15 @@ try {
 				    if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
 				   }
 		     InsertObject($db);
+		     unset($output);
 		     if (isset($input['objectSelection'])) $objectSelection = $input['objectSelection'];
-		     if ($error = getMainFieldData($db)) $output = ['cmd' => 'INFO', 'error' => $error];
-		      else $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
-		     $output['OD'] = $OD;
-		     $output['OV'] = $OV;
+		     if (!($error = getMainFieldData($db))) $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
 		     break;
 		case 'CUSTOMIZATION':
 		case 'KEYPRESS':
 		case 'DBLCLICK':
 		case 'CONFIRM':
-		     Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID | CHECK_ACCESS);
-		     if (isset($error)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => $error]; break; }
-		     if (isset($alert)) { $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => $alert]; break; }
+		     if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID | CHECK_ACCESS)) break;
 			    
 		     if ($input['cmd'] === 'CUSTOMIZATION' && $_SESSION['u'] == $input['oId'] && isset($input['data']['dialog']['pad']['misc customization']['element5']['data']))
 		     if ($input['data']['dialog']['pad']['misc customization']['element5']['data'] != '' && ($uid = getUserId($db, $input['data']['dialog']['pad']['misc customization']['element5']['data'])) && $uid != $_SESSION['u'])
@@ -198,30 +164,49 @@ try {
 					  $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
 					 }
 				      break;
-				 case 'CALLVIEW':
-				      if (isset($output[$eid]['data']) && is_array($output[$eid]['data']))
+				 case 'CALL':
+				      if (isset($output[$eid]['data']) && is_array($output[$eid]['data']) && isset($OD) && isset($OV))
 				         {
-					  if (isset($objectSelectionParamsDialog)) $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
-					   else {}
-					 }
+					  if (!isset($output[$eid]['data']['OD'])) $input['OD'] = $OD; else $input['OD'] = $output[$eid]['data']['OD'];
+					  if (!isset($output[$eid]['data']['OV'])) $input['OV'] = $OV; else $input['OV'] = $output[$eid]['data']['OV'];
+					  if (isset($output[$eid]['data']['Params'])) $objectSelection = $output[$eid]['data']['Params'];
+					  $input['cmd'] = 'GETMAIN';
+		    			  if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) break;
+					  if (gettype($objectSelection) === 'array') $output = ['cmd' => 'DIALOG', 'data' => $objectSelection];
+					   else if (!($error = getMainFieldData($db)))
+		    				   {
+						    $output = ['cmd' => 'REFRESH', 'data' => $objectTable, 'props' => $props];
+						    if (isset($input['data']['dialog']['pad']['profile'])) $output['objectSelection'] = $objectSelection;
+						   }
+				         }
 				      break;
 				 default:
 				      $output = ['cmd' => ''];
 				}
-			 $output['OD'] = $OD;
-			 $output['OV'] = $OV;
 			 break;
 			}
 		     $output = ['cmd' => ''];
 		     break;
 		default:
-	          $output = ['cmd' => 'INFO', 'log' => 'Controller report: unknown event "'.$input['cmd'].'" received from the client!'];
+	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the client!'];
 		}
 		
-     if (!isset($output)) $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown error!'];
+     if (!isset($output) || !isset($output['cmd']))
+     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+       else $output = ['cmd' => 'INFO', 'alert' => 'Controller reports unknown error!'];
+     if (isset($log)) $output['log'] = $log;
+     
+     if (isset($OD)) $output['OD'] = $OD;
+     if (isset($OV)) $output['OV'] = $OV;
      if (isset($_SESSION['u'])) $output['user'] = getUserName($db, $_SESSION['u']);
      if (isset($customization)) $output['customization'] = $customization;
+     if (isset($sidebar)) $output['sidebar'] = $sidebar;
      echo json_encode($output);
+     
+     if (isset($output['log'])) {} // Log $output['log'] message
+     if (isset($output['alert'])) {} // Log $output['alert'] message
+     if (isset($output['error'])) {} // Log $output['error'] message
     }
      
 catch (PDOException $e)

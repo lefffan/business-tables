@@ -213,7 +213,7 @@ function getODVNamesForSidebar($db)
 	  $arr[$value['odname']] = [];
 	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
 	  $query->execute();
-	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view' && substr($key, 0, 1) != '_')
+	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view') // && substr($key, 0, 1) != '_')
 		  {
 		   if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
 		      { if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') continue; }
@@ -235,7 +235,7 @@ function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys
 
 function Check($db, $flags)
 {
- global $OD, $OV, $input, $alert, $error;
+ global $input, $OD, $OV, $alert, $error, $sidebar;
  
  if ($flags & CHECK_OD_OV)
     {
@@ -245,7 +245,8 @@ function Check($db, $flags)
      if (!isset($input['OD']) || !isset($input['OV'])) return $error = 'Incorrect Object Database/View!';
  
      // Check any OD for the current user
-     if (count(getODVNamesForSidebar($db)) == 0) return $error = 'Please create Object Database first!';
+     $sidebar = getODVNamesForSidebar($db);
+     if (count($sidebar) == 0) return $error = 'Please create Object Database first!';
 
      // Empty value OD/OV check
      $OD = $input['OD'];
@@ -255,7 +256,7 @@ function Check($db, $flags)
      // Check $OD existence and get its id
      $query = $db->prepare("SELECT id FROM $ WHERE odname='$OD'");
      $query->execute();
-     if (count($odid = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+     if (count($odid = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$OD' Object View '$OV' not found!";
      $odid = $odid[0][0];
     }
 
@@ -267,12 +268,12 @@ function Check($db, $flags)
      // Get odname $OD element section
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$odid'");
      $query->execute();
-     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$OD' Object View '$OV' not found!";
 
      // Decode element profiles array form OD props, remove 'New element' section and check elements existence
      $profiles = json_decode($profiles[0][0], true);
      unset($profiles['New element']);
-     if (!is_array($profiles) || !count($profiles)) return $error = "Object Database '$OD' has no elements exist!";
+     if (!is_array($profiles) || !count($profiles)) return $error = "Database '$OD' has no elements exist!";
 
      // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
      foreach ($profiles as $profile => $value)
@@ -291,11 +292,11 @@ function Check($db, $flags)
      // Get odname $OD view section
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$odid'");
      $query->execute();
-     if (count($viewProfiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = 'Please create/select Object View!';
+     if (count($viewProfiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$OD' Object View '$OV' not found!";
 
      // Move on. Get specified view JSON element selection (what elements should be displayed and how)
      $viewProfiles = json_decode($viewProfiles[0][0], true);
-     if (!isset($viewProfiles[$OV]['element5']['data'])) return $error = 'Please create/select Object View!';
+     if (!isset($viewProfiles[$OV]['element5']['data'])) return $error = "Database '$OD' Object View '$OV' not found!";
 
      // Fetch object selection query string and params
      $objectSelection = GetObjectSelection($db, $viewProfiles[$OV]['element3']['data'], $objectSelection);
@@ -314,6 +315,7 @@ function Check($db, $flags)
 	          $x++;
 	    	 }
 	}
+     else if ($elementSelection === '*') {}
     }
     
  if ($flags & SET_CMD_DATA)
@@ -323,7 +325,7 @@ function Check($db, $flags)
      // Check browser event (cmd) data to be valid and return alert in case of undefined data for KEYPRESS and CONFIRM events
      $cmd = $input['cmd'];
      if (isset($input['data'])) $data = $input['data'];
-      else if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return $alert = 'Controller report: undefined browser event data!';
+      else if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return $alert = 'Undefined client event data!';
     }
  
  if (($flags & CHECK_OID) && $cmd != 'INIT')
@@ -438,6 +440,10 @@ function Handler($handler, $input)
 	     if (isset($output['value']) && strlen($output['value']) > ELEMENTDATAVALUEMAXCHAR) $output['value'] = substr($output['value'], 0, ELEMENTDATAVALUEMAXCHAR);
 	     return $output;
 	    }
+	 // Then CALL command
+	 if ($output['cmd'] === 'CALL')
+	 if (!isset($output['data'])) return ['cmd' => $output['cmd']];
+	  else if (gettype($output['data']) === 'array') return ['cmd' => $output['cmd'], 'data' => $output['data']];
 	}
     }
  return ['cmd' => 'UNDEFINED'];

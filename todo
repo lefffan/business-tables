@@ -1,23 +1,23 @@
 November 2020:
-- System call CALLOV (GETMAIN proc to function), select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
-- Object_selection in object selection (expression_filter) (eval or regexp {Usefull regexp explanation https://proglib.io/p/learn-regex/})
-    SELECT <element_selection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
-    if selection count is zero - do SELECT wthout LIMIT and return last page
-    #user - user/group requested OV data
-    {question string to retreive string value from dialog box}
+- Element description -> Description, add OD/OV name, in case of hidden OV started with char '_' note it, object selection, objects per page, table with and height
+- * as object selection shows table with user date owner etc..
+- System call CALLOV
+- select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
+  sql dates compare, selection of requestwhich status are less than one day for a example
+  SELECT <element_selection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
+
+- log in aparent OD (add log OD to default db creation)
     
 - Single click OV requests corresponded OV, in case of current OV refresh - current page is used, in case of new OV - page 1 is used
+  if selection count is zero - do SELECT wthout LIMIT and return last page
   pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go.
   object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
 
-- Object_selection to OD rule section
-- Check oid object selection existence in CHECK_OID
+- Object_selection to OD rule section and check oid object selection existence in CHECK_OID
 - help context menu for all help (conception, handler, keyboard/mouse..)
-- log in aparent OD (add log OD to default db creation)
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const
 
 - Object process SCHEDULER. Handlers are executed by built-in system user.
-	0. Handlers are apparent php executed files
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
 	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, so how the system will react on this situation?

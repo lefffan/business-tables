@@ -123,14 +123,9 @@ function lg(...data)
 
 function loog(...data)
 {
- const now = new Date();
- let accountInfo = '';
- if (user) accountInfo = "Account '" + user + "', ";
- data.forEach((value) => console.log(accountInfo + now.toLocaleString() + ': ' + value));
-}
-
-function looog(...data)
-{
+ let add = new Date().toLocaleString() + ':';
+ if (user) add = "Account '" + user + "', " + add;
+ lg(add);
  data.forEach((value) => console.dir(value));
 }
 
@@ -141,7 +136,7 @@ function Hujax(url, callback, requestBody)
 		 body: JSON.stringify(requestBody) }).then(function(response) {
 			    if (response.ok) response.json().then(callback);
 			     else displayMainError('Request failed with response ' + response.status + ': ' + response.statusText); })
-							    .catch (function(error) { console.log('Ajax request error: ', error); });
+							    .catch (function(error) { lg('Ajax request error: ', error); });
  return true;
 }
 
@@ -766,25 +761,24 @@ function controllerCmdHandler(input)
 {
  if (input.cmd === undefined)
     {
-     warning('Browser reports undefined controller message!');
-     loog('Browser reports undefined controller message!');
-     return;
-    }
- if (input.OV != undefined && input.OD != undefined && input.cmd != 'INFO' && (input.OD != activeOD || input.OV != activeOV))
-    {
-     loog("Server response doesn't match current Object View!");
+     warning('Undefined server message!');
+     lg('Undefined server message!');
      return;
     }
 
- if (input.log) loog(input.log); 
- if (input.user) user = input.user;
-  else user = '';
  if (input.customization)
     {
      uiProfileSet(input.customization);
      styleUI();
     }
+ if (input.OD != undefined && input.OV != undefined)
+    {
+     activeOD = input.OD;
+     activeOV = input.OV;
+    }
  if (input.sidebar) drawSidebar(input.sidebar);
+ if (input.log) lg(input.log); 
+ if (input.user) user = input.user; else user = '';
  if (input.objectSelection) objectSelection = input.objectSelection;
 
  switch (input.cmd)
@@ -833,20 +827,20 @@ function controllerCmdHandler(input)
 	 case 'INFO':
 	      if (input.alert)
 	         {
-		  loog(input.alert);
+		  lg(input.alert);
 		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) warning(input.alert);
 		 }
 	      if (input.error)
 	         {
-		  if (activeOD != '') loog(input.error);
+		  if (activeOD != '') lg(input.error);
 		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) displayMainError(input.error);
 		 }
 	      break;
 	 case '':
 	      break;
 	 default:
-	      warning("Unknown controller message '" + input.cmd + "'");
-	      loog("Unknown controller message '" + input.cmd + "'");
+	      lg("Unknown server message '" + input.cmd + "'!");
+	      warning("Unknown server message '" + input.cmd + "'!");
 	}
 }
 
@@ -1012,7 +1006,7 @@ function callController(data)
 	      //--------------Add x and y coordinates to the result message---------------
 	      msg += `Table cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}`;
 	      //--------------Display result message in warning box---------------
-	      warning(msg, 'Element description');
+	      warning(msg, 'Description');
 	      break;
 	 case 'Help':
 	      box = help;
@@ -1048,7 +1042,7 @@ function callController(data)
 	 default:
 	      if (cmd.substr(0, 7) != 'Logout ')
 		 {
-		  loog("Undefined application message: '" + cmd + "'!");
+		  lg("Undefined application message: '" + cmd + "'!");
 		  warning("Undefined application message: '" + cmd + "'!");
 		  return;
 		 }
