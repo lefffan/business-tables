@@ -35,7 +35,7 @@ const uiProfile = {
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "", "font": "0.9em Lato, Helvetica;" },
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
-		  "main field table": { "target": "table", "margin": "10px;" },
+		  "main field table": { "target": "table", "margin": "0px;" },
 		  "main field table cursor cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "", "text-align": "center" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "", "text-align": "center" },
@@ -1031,6 +1031,7 @@ function callController(data)
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
+	 case 'CUSTOMIZATION':
 	      object = { "cmd": cmd };
 	      if (focusElement.td && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
 	         {

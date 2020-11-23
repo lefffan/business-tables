@@ -10,8 +10,9 @@ try {
      $input = json_decode(file_get_contents("php://input"), true);
      if (!isset($input['cmd'])) $input = ['cmd' => '']; // Set empty cmd in case of undefined or exit?
      
+     if ($input['cmd'] != 'LOGOUT') // Always perform check user auth except logout context menu push event
      if (!isset($_SESSION["u"]) || !isset($_SESSION['h']) || !password_verify(getUserPass($db, $_SESSION['u']), $_SESSION['h'])) // User is unauthenticated or password has been changed?
-     if ($input['cmd'] === 'LOGIN' && ($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' && ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user)))) // Login dialog evet occured and user/pass are not empty and correct
+     if ($input['cmd'] === 'LOGIN' && ($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' && ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user)))) // Login dialog evet occured and user/pass are correct and not empty
 	{
 	 $_SESSION['u'] = $uid;
 	 $_SESSION['h'] = password_hash($hash, PASSWORD_DEFAULT);
@@ -21,16 +22,21 @@ try {
 	     $output = ['cmd' => 'INFO', 'alert' => "User '$user' has logged in!", 'user' => $user];
 	     if (isset($customization)) $output['customization'] = $customization;
 	     echo json_encode($output);
+	     AddLogMessage($db, $output['alert'], 'info');
 	     exit;
 	    }
 	 $input = $input['data']['flags']['callback'];
+	 if ($input['cmd'] === 'Edit Database Structure' && gettype($input['data']) != 'string') exit; // Disallow OD dialog overwrite its data after session timeout
 	}
-      else
+      else // Login dialog evet occured, but user/pass are empty or wrong
         {    
 	 $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
 	 if ($input['cmd'] != 'LOGIN' || isset($input['data']['flags']['callback'])) $output['data']['flags']['callback'] = $input;
-	 if ($input['cmd'] === 'LOGIN') $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong passowrd or username, please try again!\n\nUsername";
+	 if ($input['cmd'] === 'LOGIN') $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong password or username, please try again!\n\nUsername";
 	 echo json_encode($output);
+	 if (isset($user))
+	 if ($user === '') AddLogMessage($db, 'Wrong passowrd or username', 'info');
+	  else AddLogMessage($db, "Wrong passowrd or username '$user'", 'info');
 	 exit;
 	}
 	
@@ -84,6 +90,7 @@ try {
 			 {
 			  $odprops['flags']['callback'] = $input['data'];
 			  $odprops['title'] .= " - '".$input['data']."'";
+			  ksort($odprops['dialog'], SORT_STRING);
 			  $output = ['cmd' => 'DIALOG', 'data' => $odprops];
 			 }
 		       else $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$input[data]' Object Database properties!"];
@@ -204,9 +211,9 @@ try {
      if (isset($sidebar)) $output['sidebar'] = $sidebar;
      echo json_encode($output);
      
-     if (isset($output['log'])) {} // Log $output['log'] message
-     if (isset($output['alert'])) {} // Log $output['alert'] message
-     if (isset($output['error'])) {} // Log $output['error'] message
+     if (isset($output['log'])) { AddLogMessage($db, $output['log'], 'info'); } // Log $output['log'] message
+     if (isset($output['alert'])) { AddLogMessage($db, $output['alert'], 'alert'); } // Log $output['alert'] message
+     if (isset($output['error'])) { if (!isset($OD) || $OD != '') AddLogMessage($db, $output['error']); } // Log $output['error'] message
     }
      
 catch (PDOException $e)

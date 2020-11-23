@@ -70,6 +70,7 @@ $userOD['dialog']['Element']['Customization - element id6'] = $newElement;
 
 $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
 $query->execute([':odprops' => json_encode($userOD)]);
+$query->closeCursor();
 
 // Create Object Database (uniq instance)
 $query = $db->prepare("create table `uniq_1` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -90,3 +91,37 @@ InsertObject($db, 'system');
 
 $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
 InsertObject($db, 'system');
+
+// Create default OD 'Logs'
+initNewODDialogElements();
+$newProperties['element1']['data'] = 'Logs';
+$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+$logOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+
+$newView['element1']['data'] = 'All logs';
+$newView['element5']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}'."\n".'{"eid":"2", "oid":"2", "x":"3", "y":"0"}'."\n".'{"eid":"2", "x":"3", "y":"n+1"}';
+$newView['element8']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+$logOD['dialog']['View']['All logs'] = $newView;
+
+$newElement['element1']['data'] = 'Message type';
+$newElement['element2']['data'] = '';
+$newElement['element3']['data'] = 'unique';
+$newElement['element3']['readonly'] = '';
+$logOD['dialog']['Element']['Message text - element id1'] = $newElement;
+
+$newElement['element1']['data'] = 'Message text';
+$newElement['element2']['data'] = '';
+$newElement['element3']['data'] = 'unique';
+$newElement['element3']['readonly'] = '';
+$logOD['dialog']['Element']['Message type - element id2'] = $newElement;
+
+$query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Logs',:odprops)");
+$query->execute([':odprops' => json_encode($logOD)]);
+
+// Create Object Database (uniq instance)
+$query = $db->prepare("create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+$query->execute();
+ 
+// Create Object Database (actual data instance)
+$query = $db->prepare("create table `data_2` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, eid2 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+$query->execute();

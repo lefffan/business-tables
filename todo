@@ -250,3 +250,38 @@ VS Code on youtube
 roadmap also on youtube
 C:\!\sobes
 see zametki v telefone
+
+
+
+
+
+
+WHERE (select datetime from data_1 WHERE owner='system')>0;
+IAM: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':user'
+e: *
+test obj sel: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':input_user'
+test el sel:
+{"ollapse":""}
+{"eid":"1", "oid":"2", "x":"0", "y":"0", "style":"color: white;"}
+{"eid":"1", "oid":"1", "x":"0", "y":"1", "style":"color: red;"}
+{"eid":"1", "x":"0", "y":"n+3"}
+
+{"eid":"2", "oid":"1", "x":"1", "y":"1", "tartevent":"DBLCLICK"}
+{"eid":"2", "oid":"2", "x":"1", "y":"0"}
+{"eid":"2", "x":"1", "y":"n+3"}
+
+{"eid":"3", "oid":"1", "x":"2", "y":"1"}
+{"eid":"3", "oid":"2", "x":"2", "y":"0"}
+{"eid":"3", "x":"2", "y":"n+3", "collaps":""}
+
+{"eid":"datetime", "oid":"1", "x":"3", "y":"1"}
+{"eid":"datetime", "oid":"2", "x":"3", "y":"0"}
+{"eid":"datetime", "x":"3", "y":"n+3"}
+
+{"eid":"owner", "oid":"1", "x":"4", "y":"1"}
+{"eid":"owner", "oid":"2", "x":"4", "y":"0"}
+{"eid":"owner", "x":"4", "y":"n+3"}
+
+{"eid":"version", "oid":"1", "x":"5", "y":"1"}
+{"eid":"version", "oid":"2", "x":"5", "y":"0"}
+{"eid":"version", "x":"5", "y":"n+3"}
