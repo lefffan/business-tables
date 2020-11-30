@@ -3,11 +3,12 @@ const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
+const DEFAULTOBJECTSPERPAGE = 50;
+const MAXOBJECTSPERPAGE = 3000;
 const range = document.createRange();   
 const selection = window.getSelection();
-const mainObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Element description</div><div class="contextmenuItems">Help</div>';
-const mainTitleObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Element description</div><div class="contextmenuItems">Help</div>';
-const mainDefaultContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems greyContextMenuItem">Element description</div><div class="contextmenuItems">Help</div>';
+const mainObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
+const mainContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
 const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 /*------------------------------VARIABLES------------------------------------*/
@@ -17,7 +18,8 @@ let box = selectExpandedDiv = null, boxDiv, expandedDiv;
 let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let objectSelection = user = cmd = activeOD = activeOV = '';
+let user = cmd = activeOD = activeOV = '';
+let page, pageNum, objectsPerPage, objectsOnThePage, paramsOV;
 let sidebar = {};
 let focusElement = {};
 /*---------------------------------------------------------------------------*/
@@ -108,7 +110,7 @@ const uiProfile = {
 		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
 		  "none show": { "target": ".noneshow", "visibility": "visible;" },
 		  // Misc
-		  "misc customization": { "objects per page": "50", "next page bottom reach": "", "previous page top reach": "", "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" }
+		  "misc customization": { "objects per page": String(DEFAULTOBJECTSPERPAGE), "next page bottom reach": "", "previous page top reach": "", "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" }
 		  };
 //lg(JSON.stringify(uiProfile));
 const style = document.createElement('style');	// Create style DOM element
@@ -182,33 +184,32 @@ window.onload = function()
 function drawSidebar(data)
 {
  if (typeof data != 'object') return;
- let ovlistHTML, sidebarHTML = '';
+ let text, ovlistHTML, sidebarHTML = '';
  
  for (let od in data)
      {
-     // Set wrap status (empty string key) to true for default or to old instance of sidebar OD wrap status
-     if (sidebar[od] === undefined || sidebar[od][''] === undefined) data[od][''] = true;
-      else data[od][''] = sidebar[od][''];
+      // Set wrap status (empty string key) to true for default or to old instance of sidebar OD wrap status
+      (sidebar[od] === undefined || sidebar[od][''] === undefined) ? data[od][''] = true : data[od][''] = sidebar[od][''];
       
-     // Create OV names list with active OV check 
-     ovlistHTML = '';
-     for (let ov in data[od]) if (ov != '')
-	 {
-	  if (activeOD === od && activeOV === ov) ovlistHTML += '<tr class="itemactive"><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
-	   else ovlistHTML += '<tr><td class="wrap"></td><td class="sidebar-ov">' + ov + '</td><td style="display: none;">' + od + '</td></tr>';
-	 }
+      // Create OV names list with active OV check 
+      ovlistHTML = '';
+      for (let ov in data[od]) if (ov != '' && ov.substr(0, 1) != '_')
+    	  {
+	   (activeOD === od && activeOV === ov) ? text = ' class="itemactive"' : text = '';
+	   ovlistHTML += `<tr${text}><td class="wrap"></td><td class="sidebar-ov" data-od="${od}" data-ov="${ov}">${ov}</td></tr>`;
+	  }
 
-     // Draw wrap icon
-     if (ovlistHTML === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
-      else if (data[od][''] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
-       else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
+      // Draw wrap icon
+      if (ovlistHTML === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
+       else if (data[od][''] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
+        else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
 
-     // Insert OD name
-     sidebarHTML += '<td class="sidebar-od">' + od + '</td><td style="display: none;"></td></tr>';
+      // Insert OD name
+      sidebarHTML += `<td class="sidebar-od" data-od="${od}">${od}</td></tr>`;
      
-     // Insert OV names list if OD is unwrapped
-     if (data[od][''] === false) sidebarHTML += ovlistHTML;
-    }
+      // Insert OV names list if OD is unwrapped
+      if (data[od][''] === false) sidebarHTML += ovlistHTML;
+     }
 
  // Push calculated html text to sidebar div
  sidebarHTML != '' ? sidebarDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>' : sidebarDiv.innerHTML = '';
@@ -298,7 +299,8 @@ function drawMain(data, props)
  objectTable = {};
  focusElement = {};
  mainTableWidth = mainTableHeight = 0;
-
+ objectsOnThePage = q;
+ 
  // Parse all props elements, to place all objects of that elements
  for (eid in props)
      {
@@ -517,7 +519,7 @@ function eventHandler(event)
 		       else cmd = 'CONFIRM';
 		      callController(box);
 		     }
-		   else if (box['flags'] && box['flags']['cmd'] === 'GETMAIN') displayMainError(`View '${activeOV}' output was canceled`, true);
+		   else if (box['flags'] && box['flags']['cmd'] === 'GETMAIN') displayMainError(`View '${activeOV}' output was canceled`);
 		  HideBox();
 		  break;
 		 }
@@ -620,49 +622,29 @@ function eventHandler(event)
 		  break;
 		 }
 	      HideContextmenu();
-		//--------------OD item mouse click? Wrap/unwrap OV list--------------
-	      if (event.target.classList.contains('sidebar-od'))
+	      //--------------OD item (or wrap icon before) mouse click? Wrap/unwrap OV list--------------
+	      let next = event.target;
+	      if (event.target.classList.contains('wrap')) next = next.nextSibling;
+	       else next = event.target;
+	      if (event.target.classList.contains('sidebar-od') || next.classList.contains('sidebar-od'))
 		 {
-		  if (sidebar[cmd = event.target.innerHTML][''] != undefined) sidebar[cmd][''] = !sidebar[cmd][''];
+		  if (event.target.classList.contains('sidebar-od')) next = event.target;
+		  if (Object.keys(sidebar[next.dataset.od]).length < 2) break;
+		  if (sidebar[cmd = next.dataset.od][''] != undefined) sidebar[cmd][''] = !sidebar[cmd][''];
 		  cmd = 'GETMENU';
 		  callController();
 		  break;
-		}
-		//--------------OV item mouse click? Open OV in main field--------------
-	      if (event.target.classList.contains('sidebar-ov'))
-		{
-		 if (activeOD != event.target.nextSibling.innerHTML || activeOV != event.target.innerHTML)
-		    {
-		     activeOD = event.target.nextSibling.innerHTML;
-		     activeOV = event.target.innerHTML;
-		     drawSidebar(sidebar);
-		    }
-		 cmd = 'GETMAIN';
-		 callController();
-		 break;
-		}
-		//--------------Mouse click on wrap icon? OD item sidebar line wraps/unwraps ov list, OV item sidebar line opens OV in main field--------------
-	     if (event.target.classList.contains('wrap'))
-		{
-		 if (event.target.nextSibling.classList.contains('sidebar-od') && Object.keys(sidebar[event.target.nextSibling.innerHTML]).length > 1)
-		    { 
-		     sidebar[cmd = event.target.nextSibling.innerHTML][''] = !sidebar[cmd][''];
-		     cmd = 'GETMENU';
-		     callController();
-		    }
-		 if (event.target.nextSibling.classList.contains('sidebar-ov'))
-		    {
-		     if (activeOD != event.target.nextSibling.nextSibling.innerHTML || activeOV != event.target.nextSibling.innerHTML)
-		        {
-			 activeOD = event.target.nextSibling.nextSibling.innerHTML;
-		         activeOV = event.target.nextSibling.innerHTML;
-		         drawSidebar(sidebar);
-			}
-		     cmd = 'GETMAIN';
-		     callController();
-		    }
-		 break;
-		}
+		 }
+	      //------------OV item (or wrap icon before) mouse click? Open OV in main field------------
+	      if (event.target.classList.contains('sidebar-ov') || next.classList.contains('sidebar-ov'))
+		 {
+		  if (event.target.classList.contains('sidebar-ov')) next = event.target;
+		  activeOD = next.dataset.od;
+		  activeOV = next.dataset.ov;
+		  cmd = 'GETMAIN';
+		  callController();
+		  break;
+		 }
 	      //--------------Mouse click on main field table?--------------
 	      if (event.target.tagName == 'TD') CellBorderToggleSelect(focusElement.td, event.target);
 	      break;
@@ -779,7 +761,6 @@ function controllerCmdHandler(input)
  if (input.sidebar) drawSidebar(input.sidebar);
  if (input.log) lg(input.log); 
  if (input.user) user = input.user; else user = '';
- if (input.objectSelection) objectSelection = input.objectSelection;
 
  switch (input.cmd)
 	{
@@ -822,6 +803,9 @@ function controllerCmdHandler(input)
 	      if (input.alert) warning(input.alert);
 	      break;
 	 case 'REFRESH':
+	      paramsOV = input.paramsOV;
+	      page = input.page;
+	      pageNum = input.pageNum;
 	      drawMain(input.data, input.props);
 	      break;
 	 case 'INFO':
@@ -976,35 +960,41 @@ function callController(data)
 	 case 'GETMAIN':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
-	      if (cmd === 'GETMAIN') objectSelection = '';
+	      if (cmd === 'GETMAINSTART' || cmd === 'GETMAIN') object['objectsPerPage'] = objectsPerPage;
 	      break;
-	 case 'Element description':
-	      let msg = '';
+	 case 'Description':
+	      let cell, hidden = msg = '';
 	      //--------------Add object and element information to the result message---------------
-	      switch (mainTable[focusElement.y][focusElement.x].oId)
+	      if (focusElement.td != undefined && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && (cell = mainTable[focusElement.y][focusElement.x]) && cell.oId)
+	      switch (cell.oId)
 	    	     {
 		      case NEWOBJECTID:
-		           if (Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
-			      msg = 'Table cell to input new object data for element id: ' + mainTable[focusElement.y][focusElement.x].eId + '\n\n';
+		           if (Number(cell.eId) > 0) msg = 'Cursor table cell is input new object data for element id: ' + cell.eId;
 			   break;
 		      case TITLEOBJECTID:
-			   msg = 'Object title for element id: ' + mainTable[focusElement.y][focusElement.x].eId + '\n\n';
+			   msg = 'Cursor table cell is title for element id: ' + cell.eId;
 			   break;
 		      default:
-			   msg = 'Object id: ' + mainTable[focusElement.y][focusElement.x].oId + '\nElement id: ' + mainTable[focusElement.y][focusElement.x].eId;
-			   if (mainTable[focusElement.y][focusElement.x].version === '0') msg += '\nObject version: object has been deleted\n\n';
-			    else
+			   msg = 'Cursor table cell object id: ' + cell.oId + '\nCursor table cell element id: ' + cell.eId;
+			   if (cell.version != '0')
 			      {
-			       msg += '\nObject version: ' + mainTable[focusElement.y][focusElement.x].version;
-			       if (mainTable[focusElement.y][focusElement.x].realobject) msg += '\nActual version: yes\n\n';
-			        else msg += '\nActual version: no\n\n';
+			       msg += '\nObject version: ' + cell.version + '\nActual version: ';
+			       cell.realobject ? msg += 'yes' : msg += 'no';
+			       break;
 			      }
+			   msg += '\nObject version: object has been deleted';
 		     }
 	      //--------------Add description to the result message---------------
-	      if (typeof mainTable[focusElement.y][focusElement.x].description === 'string')
-		 msg += 'Element description property:\n' + mainTable[focusElement.y][focusElement.x].description + '\n\n';
-	      //--------------Add x and y coordinates to the result message---------------
-	      msg += `Table cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}`;
+	      if (cell && typeof cell.description === 'string') msg += '\n\nElement description property:\n' + cell.description;
+	      //--------Add x and y coordinates to the result message-------------
+	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}\n\n`;
+	      //--------------------Add database and view info--------------------
+	      if (activeOV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
+	      msg += `Object Database: ${activeOD}\nObject View${hidden}: ${activeOV}\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}\nObjects on the page: ${objectsOnThePage}\nObjects per page: ${objectsPerPage}`;
+	      //--------------Add part of sql string object selection-------------
+	      let parammsg = '', count = 1;
+	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];
+	      if (parammsg != '') msg += '\n\nObject View input parameters:' + parammsg;
 	      //--------------Display result message in warning box---------------
 	      warning(msg, 'Description');
 	      break;
@@ -1014,18 +1004,14 @@ function callController(data)
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "data": {} };
+	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV, objectsPerPage: objectsPerPage };
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
-	      if (objectSelection) object['objectSelection'] = objectSelection;
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject)
-	         { 
-		  object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId };
-		  if (objectSelection) object['objectSelection'] = objectSelection;
-		 }
+		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId, 'paramsOV': paramsOV, objectsPerPage: objectsPerPage };
 	      break;
 	 case 'LOGIN':
 	 case 'CONFIRM':
@@ -1438,32 +1424,24 @@ function ShowContextmenu(event)
  if (event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-od'))
     {
      innerHTML = sidebarODContext;
-     data = event.target.nextSibling.innerHTML;
+     data = event.target.nextSibling.dataset.od;
     }
  // Context event on OD item? Display OD context menu
   else if (event.target.classList.contains('sidebar-od'))
     { 
      innerHTML = sidebarODContext;
-     data = event.target.innerHTML;
+     data = event.target.dataset.od;
     }
  // Context event on OV item, on wrap icon cell with OV item or on sidebar empty area? Display OV context menu
   else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('sidebar')) innerHTML = sidebarOVContext;
- // Application context menu on main field empty area? Display mainDefaultContext context menu
-  else if ((event.target === mainDiv && activeOV != '') || event.target === mainTablediv) innerHTML = mainDefaultContext;
- // Application context menu on main field table? Display appropriate context menu
-  else if (event.target.tagName === 'TD')
+ // Application context menu on main field empty area? Display mainContext context menu
+  else if ((event.target === mainDiv && activeOV != '') || event.target === mainTablediv) innerHTML = mainContext;
+ // Application context menu on main field table or has been generated by keyboard (event.which != 3) and any element is selected? Display appropriate context menu
+  else if (event.target.tagName === 'TD' || (focusElement.td != undefined && event.which != 3))
     {
-     CellBorderToggleSelect(focusElement.td, event.target);
-     if (!mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x]) innerHTML = mainDefaultContext;
-      else if (mainTable[focusElement.y][focusElement.x].realobject) innerHTML = mainObjectContext;
-       else innerHTML = mainTitleObjectContext;
-    }
- // Context menu event has been generated by keyboard (event.which != 3) and any element is selected? Display appropriate context menu
-  else if (focusElement.td != undefined && event.which != 3)
-    {
-     if (!mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x]) innerHTML = mainDefaultContext;
-      else if (mainTable[focusElement.y][focusElement.x].realobject) innerHTML = mainObjectContext;
-       else innerHTML = mainTitleObjectContext;
+     if (event.target.tagName === 'TD') CellBorderToggleSelect(focusElement.td, event.target);
+     if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject) innerHTML = mainObjectContext;
+      else innerHTML = mainContext;
     }
     
  if (innerHTML != undefined)
@@ -1629,6 +1607,9 @@ function uiProfileSet(customization)
       if (customization[selector]['element0'] != undefined && customization[selector]['element0']['target'] != undefined)
          uiProfile[selector]['target'] = customization[selector]['element0']['target'];
      }
+     
+ if (!(objectsPerPage = Number(uiProfile['misc customization']['objects per page']))) objectsPerPage = DEFAULTOBJECTSPERPAGE;
+  else if (objectsPerPage > MAXOBJECTSPERPAGE) objectsPerPage = MAXOBJECTSPERPAGE;
 }
 
 const help = { title: 'Help', dialog:  { "System description": { profile: { element: { head:

@@ -5,17 +5,17 @@ November 2020:
 - select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
   sql dates compare, selection of requestwhich status are less than one day for a example
   SELECT <element_selection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
-
 - log in aparent OD (add log OD to default db creation)
-    
+
 - Single click OV requests corresponded OV, in case of current OV refresh - current page is used, in case of new OV - page 1 is used
   if selection count is zero - do SELECT wthout LIMIT and return last page
   pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go.
-  object page number (0 or undefinded - max obj per page), next page redirect bottom scroll;
+  object page number (0 or undefinded - max obj per page), next page redirect bottom scroll; Don't forget to output it in description context menu
+// Object list selection. No page specified - OV refresh is requested so get 1st page and count page number. Page is specified - get the page data and 
+// if object selection is empty recount count page number and get last page.                                                                           
 
 - Object_selection to OD rule section and check oid object selection existence in CHECK_OID
 - help context menu for all help (conception, handler, keyboard/mouse..)
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
 
 - Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
@@ -28,6 +28,7 @@ November 2020:
 	 
 
 December 2020:
+- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
 - emulate chat and helpdesk (Autorefresh OV, for example, for chats)
 - System calls and its object views: LINK
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release  setki.xls)
@@ -256,6 +257,9 @@ see zametki v telefone
 
 
 
+
+$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` WHERE lastversion=1 AND version!=0");
+$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid`");                                   
 WHERE (select datetime from data_1 WHERE owner='system')>0;
 IAM: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':user'
 e: *
@@ -285,3 +289,40 @@ test el sel:
 {"eid":"version", "oid":"1", "x":"5", "y":"1"}
 {"eid":"version", "oid":"2", "x":"5", "y":"0"}
 {"eid":"version", "x":"5", "y":"n+3"}
+
+
+
+
+
+
+
+
+
+const mainObjectContext = '                                               
+<div class="contextmenuItems">New Object</div>                            
+<div class="contextmenuItems">Delete Object</div>                         
+<div class="contextmenuItems">Description</div>                           
+<div class="contextmenuItems">Help</div>';                                
+const mainTitleObjectContext = '                                          
+<div class="contextmenuItems">New Object</div>                            
+<div class="contextmenuItems greyContextMenuItem">Delete Object</div>     
+<div class="contextmenuItems">Description</div>                           
+<div class="contextmenuItems">Help</div>';                                
+const mainDefaultContext = '                                              
+<div class="contextmenuItems">New Object</div>                            
+<div class="contextmenuItems greyContextMenuItem">Delete Object</div>     
+<div class="contextmenuItems greyContextMenuItem">Description</div>       
+<div class="contextmenuItems">Help</div>';                                
+
+
+
+REFRESH cmd from the controller also sends current page and page number that is corrected as an answer on client GETMAIN message
+-Also page and pageNum should be reset in DisplaymainError function - what is it for?
+
+objectsOnThePage is set in DrawMain and output objectsOnThePage in the description
+
+- objectsPerPage and other props (like next page bottom reach and etc..) are set in uiProfileSet function as an answer to the cutomization and should be added some info in uiProfile array
+objectsPerPage should be output in description
+-objectsPerPage should be transfered to the controller
+
+

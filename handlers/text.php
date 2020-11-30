@@ -21,7 +21,7 @@ if (isset($input['event'])) switch($input['event'])
 		      break;
 		 case 123: // F12 key
 		      //$output = json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Operations', 'OV'=>'Operations', 'Params'=>[':input_user'=>'root']]]);
-		      $output = json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Users', 'OV'=>'test', 'Params'=>[':input_user'=>'root']]]);
+		      $output = json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Users', 'OV'=>'_qq', 'Params'=>[':input_user'=>'']]]);
 		      break;
 		 default:
 		      $output = json_encode(['cmd' => 'EDIT', 'data' => $input['data']['string']]);
