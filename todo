@@ -1,70 +1,90 @@
-November 2020:
-- Element description -> Description, add OD/OV name, in case of hidden OV started with char '_' note it, object selection, objects per page, table with and height
-- * as object selection shows table with user date owner etc..
-- System call CALLOV
-- select id from data_1  where (select eid3->>'$.value' from data_1 where eid3->>'$.value'=1) + (select eid3->>'$.value' from data_1 where eid3->>'$.value'=3) > 4 group by id;
-  sql dates compare, selection of requestwhich status are less than one day for a example
-  SELECT <element_selection> FROM data_N <object_selection> LIMIT a, b (a - from record number, b - quantity)
-- log in aparent OD (add log OD to default db creation)
-
-- Single click OV requests corresponded OV, in case of current OV refresh - current page is used, in case of new OV - page 1 is used
-  if selection count is zero - do SELECT wthout LIMIT and return last page
-  pages on last context menu item in little squares < 1 2 .. 10 11 >; '..' is a independent div that is contenteditable on mouse click for the page to go.
-  object page number (0 or undefinded - max obj per page), next page redirect bottom scroll; Don't forget to output it in description context menu
-// Object list selection. No page specified - OV refresh is requested so get 1st page and count page number. Page is specified - get the page data and 
-// if object selection is empty recount count page number and get last page.                                                                           
-
+December 2020:
 - Object_selection to OD rule section and check oid object selection existence in CHECK_OID
 - help context menu for all help (conception, handler, keyboard/mouse..)
-
+  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
 - Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
-	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, so how the system will react on this situation?
+	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, 
+	   so how the system will react on this situation?
 	   Real example 29/10/2020 - I called 'user customization' then dbclicked edit cell - diaog box and content editable actions pop up and work together!!
 	2. status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 	   if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 	3. To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user!
-	 
+- System calls and its object views: LINK	 
 
-December 2020:
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const
+Janury 2021:
 - emulate chat and helpdesk (Autorefresh OV, for example, for chats)
-- System calls and its object views: LINK
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release  setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
   These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
-- System call NEWOBJECT (to create object by user handlers)
 - single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
-- Operations:
-  Switch ip, switch description, switch location,
-  60 ports (description), for every port: type (uplink,downlink,free,service,client),
-  diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
-  In INFO scheme find mac on every switch in OV
-  In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   Linux to docker, secure php.ini, optimize mysql to highload app
   
-Later:
+February 2021:
 - telnet function by SLAVA
 - snmp function by SLAVA
-- diagnostic function by SLAVA
+- diagnostic function by me
 - Object view PIECHART and GRAPH
 - System calls and its object views: LOCATION.
 - multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
 - firefox up/down and left/right arrows scroll page
-- Feedback and finish https://bakhirev.biz/book/#MmlJN
-- Paraga mail functional and ask Hramcova analitiku po helpdesku
-- extra analitics on 'element description' - kol-vo obektov in OD, kol-vo pages and etc..
-- Other estimated "TODO" at the end of this todo file and think other features to make Boss edit opeations comfortable
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - see through all OD properties dialog box and try to check/release their all features
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
-- USer can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+- User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+- Feedback and finish https://bakhirev.biz/book/#MmlJN
+
+--------------Doubt features--------------------------------------------------------------
 - Set new object flag (for example small digit in red scope) before OD name and/or html page title
+- System call NEWOBJECT (to create object by user handlers)
+- Export OV data to xls, pdf or txt file
+- Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
+- User defined element handler on other langs, not only php, for a example -  python: new.ph or php: new.php
+- OD Dialog Box - OD icon, OV icon, OV shortcut key
+- Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
+- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
+- Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
+- Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
+- Predefined system messages can be displayed on other languages
+- not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
+- Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
+- style/hint/description edit for text.php? The problem is that style/hint/description data should be transmitted automatically,
+  and it is hard to insert style/hint/description props to every element in OD properties dialog
+- fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
+- event json can send not only current objects elements, but other objects of current OD and other objects of another OD
+- Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
+- In case of no pagination should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
+-----------------------------Emulation-------------------------------------------------------
+- Corp chat
+- Corp book
+- Any request app (Helpdesk, Jira)
+- MRTG
+- Zabbix
+- CRM
+- ACS
+- Any  accounting system (may be billing)
+- Some excel functions
+- Voting
+- Any statistic/analitycs
+- Setki.xls
+- Operations.xls
+  Switch ip, switch description, switch location,
+  60 ports (description), for every port: type (uplink,downlink,free,service,client),
+  diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
+  In INFO scheme find mac on every switch in OV
+  In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
+- Paraga mail functional and ask Hramcova analitiku po helpdesku
+------------------------------------------------------------------------------------------
+
+
+
+
+
 
 Client, controller and element-handler interaction:
 ------Client (browser) input event------	-------Controller------							------Element handler------
@@ -138,22 +158,6 @@ Controller to the element handler:
 
 
 
--------------------------Doubt features---------------------------------------------------
-- Export OV data to xls, pdf or txt file
-- Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
-- User defined element handler on other langs, not only php, for a example -  python: new.ph or php: new.php
-- OD Dialog Box - OD icon, OV icon, OV shortcut key, 
-- Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
-- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
-- Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
-- Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
-- Predefined system messages can be displayed on other languages
-- not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
-- Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
-- style/hint/description edit for text.php? The problem is that style/hint/description data should be transmitted automatically,
-  and it is hard to insert style/hint/description props to every element in OD properties dialog
-- fool protection by not allowing to block all users from changing DB props, so noone can add/delete/change views, elements and rules.
-- event json can send not only current objects elements, but other objects of current OD and other objects of another OD
 ---------------------Source code requirement-------------------------------------------------------
 - formatting                                                   
 - error behaviour (no object, no elements, no items, etc..)    
@@ -166,20 +170,6 @@ Controller to the element handler:
 - array to []
 - sql commands with big letters
 - remove useless loog
------------------------------Emulation-------------------------------------------------------
-- Corp chat
-- Corp book
-- Any request app (Helpdesk, Jira)
-- MRTG
-- Zabbix
-- CRM
-- ACS
-- Any  accounting system (may be billing)
-- Some excel functions
-- Voting
-- Any statistic/analitycs
-- Setki.xls
-- Operations.xls
 -----------------------------------WIKI-----------------------------------------------------
 interface examples:
 - https://qna.habr.com/q/281940
@@ -326,3 +316,9 @@ objectsPerPage should be output in description
 -objectsPerPage should be transfered to the controller
 
 
+start transaction
+add uniq 'hui'
+
+in paralell 2nd transaction add uniq 'hui' and commit
+
+then commit 1st transaction

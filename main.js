@@ -4,7 +4,6 @@ const NEWOBJECTID = 1;
 const TITLEOBJECTID = 2;
 const STARTOBJECTID = 3;
 const DEFAULTOBJECTSPERPAGE = 50;
-const MAXOBJECTSPERPAGE = 3000;
 const range = document.createRange();   
 const selection = window.getSelection();
 const mainObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
@@ -19,7 +18,7 @@ let tooltipTimerId, undefinedcellRuleIndex;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
 let user = cmd = activeOD = activeOV = '';
-let page, pageNum, objectsPerPage, objectsOnThePage, paramsOV;
+let objectsOnThePage, paramsOV;
 let sidebar = {};
 let focusElement = {};
 /*---------------------------------------------------------------------------*/
@@ -88,7 +87,7 @@ const uiProfile = {
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Effects and animation
-/*blur(3px)*/	  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5)" },
+		  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5)" }, // or blur(3px)
 		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
 		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
 		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
@@ -112,7 +111,8 @@ const uiProfile = {
 		  // Misc
 		  "misc customization": { "objects per page": String(DEFAULTOBJECTSPERPAGE), "next page bottom reach": "", "previous page top reach": "", "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" }
 		  };
-//lg(JSON.stringify(uiProfile));
+		  
+//lg(JSON.stringify(uiProfile));		// Output uiProfile array to te console to use it as a default customization configuration
 const style = document.createElement('style');	// Create style DOM element
 styleUI();					// Style default user inteface profile
 document.head.appendChild(style);		// Append document style tag
@@ -804,8 +804,6 @@ function controllerCmdHandler(input)
 	      break;
 	 case 'REFRESH':
 	      paramsOV = input.paramsOV;
-	      page = input.page;
-	      pageNum = input.pageNum;
 	      drawMain(input.data, input.props);
 	      break;
 	 case 'INFO':
@@ -960,7 +958,6 @@ function callController(data)
 	 case 'GETMAIN':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
-	      if (cmd === 'GETMAINSTART' || cmd === 'GETMAIN') object['objectsPerPage'] = objectsPerPage;
 	      break;
 	 case 'Description':
 	      let cell, hidden = msg = '';
@@ -990,7 +987,7 @@ function callController(data)
 	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}\n\n`;
 	      //--------------------Add database and view info--------------------
 	      if (activeOV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
-	      msg += `Object Database: ${activeOD}\nObject View${hidden}: ${activeOV}\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}\nObjects on the page: ${objectsOnThePage}\nObjects per page: ${objectsPerPage}`;
+	      msg += `Object Database: ${activeOD}\nObject View${hidden}: ${activeOV}\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}\nObjects on the page: ${objectsOnThePage}`;
 	      //--------------Add part of sql string object selection-------------
 	      let parammsg = '', count = 1;
 	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];
@@ -1004,14 +1001,14 @@ function callController(data)
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV, objectsPerPage: objectsPerPage };
+	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV };
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject)
-		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId, 'paramsOV': paramsOV, objectsPerPage: objectsPerPage };
+		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId, 'paramsOV': paramsOV };
 	      break;
 	 case 'LOGIN':
 	 case 'CONFIRM':
@@ -1607,9 +1604,8 @@ function uiProfileSet(customization)
       if (customization[selector]['element0'] != undefined && customization[selector]['element0']['target'] != undefined)
          uiProfile[selector]['target'] = customization[selector]['element0']['target'];
      }
-     
- if (!(objectsPerPage = Number(uiProfile['misc customization']['objects per page']))) objectsPerPage = DEFAULTOBJECTSPERPAGE;
-  else if (objectsPerPage > MAXOBJECTSPERPAGE) objectsPerPage = MAXOBJECTSPERPAGE;
+ //if (!(objectsPerPage = Number(uiProfile['misc customization']['objects per page']))) objectsPerPage = DEFAULTOBJECTSPERPAGE;
+ // else if (objectsPerPage > MAXOBJECTSPERPAGE) objectsPerPage = MAXOBJECTSPERPAGE;
 }
 
 const help = { title: 'Help', dialog:  { "System description": { profile: { element: { head:

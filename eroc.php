@@ -25,7 +25,6 @@ const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
 const SESSIONLIFETIME			= 36000;
 const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
-const DEFAULTOBJECTSPERPAGE		= 50;
 
 error_reporting(E_ALL);
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, 'root', '123');
@@ -202,9 +201,11 @@ function initNewODDialogElements()
 
 function getODVNamesForSidebar($db)
 {
+ global $currentuser;
+ 
  if (!isset($_SESSION['u'])) return [];
  $groups = getUserGroups($db, $_SESSION['u']); // Get current user group list
- $groups[] = getUserName($db, $_SESSION['u']); // and add username at the end of array
+ $groups[] = $currentuser; // and add username at the end of array
 
  $arr = [];
  $query = $db->prepare("SELECT odname FROM `$`");
@@ -236,7 +237,7 @@ function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys
 
 function Check($db, $flags)
 {
- global $input, $OD, $OV, $paramsOV, $sidebar, $alert, $error;
+ global $input, $OD, $OV, $paramsOV, $sidebar, $alert, $error, $currentuser;
 
  if ($flags & CHECK_OD_OV)
     {
@@ -290,7 +291,7 @@ function Check($db, $flags)
     
  if ($flags & GET_OBJECT_VIEWS)
     {
-     global $elementSelection, $objectSelection, $objectsPerPage, $page;
+     global $elementSelection, $objectSelection;
      
      // Get odname $OD view section
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$odid'");
@@ -304,11 +305,6 @@ function Check($db, $flags)
      // Fetch object selection query string
      $objectSelection = $viewProfiles[$OV]['element3']['data'];
      
-     // Fetch objects per page and client requested page
-     if (isset($input['objectsPerPage'])) $objectsPerPage = $input['objectsPerPage'];
-      else $objectsPerPage = DEFAULTOBJECTSPERPAGE;
-     if (isset($input['page'])) $page = $input['page'];
-      
      // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
      if (($elementSelection = trim($viewProfiles[$OV]['element5']['data'])) === '' || $elementSelection === '*' || $elementSelection === '**' || $elementSelection === '***')
         {
@@ -332,7 +328,7 @@ function Check($db, $flags)
     {
      global $cmd, $data;
 
-     // Check browser event (cmd) data to be valid and return alert in case of undefined data for KEYPRESS and CONFIRM events
+     // Check client event (cmd) data to be valid and return alert in case of undefined data for KEYPRESS and CONFIRM events
      $cmd = $input['cmd'];
      if (isset($input['data'])) $data = $input['data'];
       else if ($cmd === 'KEYPRESS' || $cmd === 'CONFIRM') return $alert = 'Undefined client event data!';
@@ -346,13 +342,10 @@ function Check($db, $flags)
      if (!isset($input['oId']) || $input['oId'] < STARTOBJECTID) return $alert = 'Incorrect object identificator value!';
      if (($oid = $input['oId']) === STARTOBJECTID && $odid == 1 && $cmd === 'DELETEOBJECT') return $alert = 'System account cannot be deleted!';
      
-     // Check database object existence
+     // Check database object existence -> Check oid object selection existence
      $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
      $query->execute();
      if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object with id=$oid doesn't exist!\nPlease refresh Object View";
-     
-     // Check oid object selection existence
-     // ...
     }
 
  if (($flags & CHECK_EID) && $cmd != 'INIT')
@@ -395,7 +388,7 @@ function Check($db, $flags)
 		  if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "You're not allowed to modify this Object View!";
 		  $View = json_decode($View[0][0], true)[$OV];	// Set current view array data
 		  $groups = getUserGroups($db, $_SESSION['u']); // Get current user group list
-		  $groups[] = getUserName($db, $_SESSION['u']); // and add username at the end of array
+		  $groups[] = $currentuser; // and add username at the end of array
 		  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
 		     {
 		      if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
@@ -460,6 +453,8 @@ function Handler($handler, $input)
 
 function parseJSONEventData($db, $JSONs, $event, $id)
 {
+ global $currentuser;
+ 
  foreach (preg_split("/\n/", $JSONs) as $line) // Split json list and parse its lines to find specified event
       if (($json = json_decode($line, true)) && isset($json['event']) && $json['event'] === $event) // Event match?
          {
@@ -481,7 +476,7 @@ function parseJSONEventData($db, $JSONs, $event, $id)
  if (isset($eventArray))
     {
      global $allElementsArray;
-     $eventArray['user'] = getUserName($db, $_SESSION['u']);
+     $eventArray['user'] = $currentuser;
      $eventArray['title'] = $allElementsArray[$id]['element1']['data'];
      return $eventArray;
     }
@@ -545,7 +540,7 @@ function getElementJSON($db, $elementId, $version = NULL)
 
 function InsertObject($db, $owner = NULL)
 {
- global $odid, $allElementsArray, $uniqElementsArray, $output;
+ global $odid, $allElementsArray, $uniqElementsArray, $output, $currentuser;
 
  $query = $values = '';
  $params = [];
@@ -561,7 +556,7 @@ function InsertObject($db, $owner = NULL)
  $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
  $query->execute($params);
  
- // Get 
+ // Get last inserted object id
  $query = $db->prepare("SELECT LAST_INSERT_ID()");
  $query->execute();
  // Generate new PDO exception in case of non correct last insert id value               
@@ -571,7 +566,7 @@ function InsertObject($db, $owner = NULL)
      throw new PDOException('Incorrect new object id value!', 0);
     }
 
- if (!isset($owner)) $owner = getUserName($db, $_SESSION['u']);
+ if (!isset($owner)) $owner = $currentuser;
  $query = 'id,version,owner';
  $params = [':id' => $newId, ':version' => '1', ':owner' => $owner];
  $values = ':id,:version,:owner';
@@ -590,7 +585,7 @@ function InsertObject($db, $owner = NULL)
 
 function DeleteObject($db)
 {
- global $odid, $oid, $alert;
+ global $odid, $oid, $alert, $currentuser;
  
  $db->beginTransaction();
  $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
@@ -604,91 +599,76 @@ function DeleteObject($db)
  $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1");
  $query->execute();
  $query = $db->prepare("INSERT INTO `data_$odid` (id,version,lastversion,owner) VALUES ($oid,0,1,:owner)");
- $query->execute([':owner' => getUserName($db, $_SESSION['u'])]);
+ $query->execute([':owner' => $currentuser]);
  $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$oid");
  $query->execute();
  $db->commit();
 }
 
-function CreateNewObjectVersion($db)
+function WriteElement($db, $oid, $eid, $version)
 {
- global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output;
- 
- // Start transaction, select last existing (non zero) version of the object and block the corresponded row
- $db->beginTransaction();
- $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
- $query->execute();
-    
- // Get selected version, check the result and calculate next version of the object to be created
- $version = $query->fetchAll(PDO::FETCH_NUM);
- // No rows found? Return an error
- if (count($version) === 0)
+ global $uniqElementsArray, $odid, $output;
+
+ if (!isset($output[$eid]['cmd']) || ($output[$eid]['cmd'] != 'SET' && $output[$eid]['cmd'] != 'RESET')) // No element new version exist, so wrote
     {
-     $db->rollBack();
-     return "Object with id=$oid not found!\nPlease refresh Object View";
+     $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
+     $query->execute([':json' => getElementJSON($db, $eid, $version - 1)]);
+     unset($output[$eid]);
+     return;
     }
- $version = intval($version[0][0]) + 1;
-
- // Unset last flag of the object current version and insert new object version with empty data
- $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1; INSERT INTO `data_$odid` (id,owner,version,lastversion) VALUES ($oid,:owner,$version,1)");
- $query->execute([':owner' => getUserName($db, $_SESSION['u'])]);
- $query->closeCursor();
-
- // Update current object uniq element if exist and commit the transaction, so the new version is created.
- if (isset($uniqElementsArray[$eid]) && isset($output[$eid]['value']))
+  else if (isset($uniqElementsArray[$eid]) && isset($output[$eid]['value'])) // Update current object uniq element if exist and commit the transaction, so the new version is created.
     {
      $query = $db->prepare("UPDATE `uniq_$odid` SET eid$eid=:value WHERE id=$oid");
      $query->execute([':value' => $output[$eid]['value']]);
     }
- $db->commit();
- 
+
  // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
- if ($output[$eid]['cmd'] === 'SET' && gettype($elementData = getElementArray($db, $eid, $version - 1)) === 'array') $output[$eid] = array_replace($elementData, $output[$eid]);
+ if ($output[$eid]['cmd'] === 'SET' && gettype($oldData = getElementArray($db, $eid, $version - 1)) === 'array') $output[$eid] = array_replace($oldData, $output[$eid]);
  $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
  $query->execute([':json' => json_encode($output[$eid])]);
+}
+
+function CreateNewObjectVersion($db)
+{
+ global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output, $currentuser;
  
- foreach ($allElementsArray as $id => $profile) if ($id != $eid)
+ //--------------Start transaction, select last existing (non zero) version of the object and block the corresponded row---------------
+ $db->beginTransaction();
+ $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
+ $query->execute();
+ // Get selected version, check the result and calculate next version of the object to be created
+
+ $version = $query->fetchAll(PDO::FETCH_NUM);
+ // No rows found? Return an error
+ if (count($version) === 0) { $db->rollBack(); return "Object with id=$oid not found!\nPlease refresh Object View"; }
+ // Increment version to use it as a new version of the object
+ $version = intval($version[0][0]) + 1;
+ 
+ // Unset last flag of the object current version and insert new object version with empty data
+ $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1; INSERT INTO `data_$odid` (id,owner,version,lastversion) VALUES ($oid,:owner,$version,1)");
+ $query->execute([':owner' => $currentuser]);
+ $query->closeCursor();
+ $db->commit();
+ //------------------------------------------------------------------------------------------------------------------------------------
+ 
+ //------------Empty object version is created, so start new transaction and write all object elements handler result data-------------
+ $db->beginTransaction();
+ WriteElement($db, $oid, $eid, $version); // First write element data that initiated SET/RESET command
+ foreach ($allElementsArray as $id => $profile) if ($id != $eid) // Second - write all other elemtnts data as answers to the ONCHANGE command
 	 {
-	  $json = NULL;
-	  ///////////////////////////
-          if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
-	     {
-	      $output[$id] = Handler($handlerName, json_encode($eventArray));
-	      if (isset($uniqElementsArray[$id]) && isset($output[$id]['value']))
-	         {
-	          try {
-		       $query = $db->prepare("UPDATE `uniq_$odid` SET eid$id=:value WHERE id=$oid");
-		       $query->execute([':value' => $output[$id]['value']]);
-		      }
-	    	  catch (PDOException $e)
-	              {
-		       unset($output[$id]);
-		      }
-	         }
-	      if (!isset($output[$id]) || ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET'))
-	         {
-		  $json = getElementJSON($db, $id, $version - 1);
-		 }
-	       else
-	         {
-	          if ($output[$id]['cmd'] === 'SET' && gettype($elementData = getElementArray($db, $id, $version - 1)) === 'array') $output[$id] = array_replace($elementData, $output[$id]);
-	          if (($json = json_encode($output[$id])) === false) $json = NULL;
-	         }
-	     }
-	  ////////////////////////
-	  if (!isset($json)) $json = getElementJSON($db, $id, $version - 1);
-	  if (isset($json))
-	     {
-	      $query = $db->prepare("UPDATE `data_$odid` SET eid$id=:json WHERE id=$oid AND version=$version");
-	      $query->execute([':json' => $json]);
-	     }
-	   else unset($output[$id]);
+	  $output[$id] = NULL;
+	  if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
+	     $output[$id] = Handler($handlerName, json_encode($eventArray));
+	  try { WriteElement($db, $oid, $id, $version); }
+	  catch (PDOException $e) { unset($output[$id]); }
 	 }
+ $db->commit();
+ //------------------------------------------------------------------------------------------------------------------------------------
 }
 
 function getMainFieldData($db)
 {
- global $OD, $OV, $odid, $props, $objectSelection, $paramsOV, $output, $error, $objectsPerPage, $page, $pageNum;
+ global $OD, $OV, $odid, $props, $objectSelection, $paramsOV, $output, $error;
 
  // Get object selection query string, in case of array as a return result send dialog to the client to fetch up object selection params
  $objectSelection = GetObjectSelection($db, $objectSelection);
@@ -706,49 +686,21 @@ function getMainFieldData($db)
  if ($elementQueryString === '') return $error = "Specified view '$OV' (database '$OD') has no elements defined!";
      
  // Return OV refresh command to the client with object selection sql query result as a main field data
- if (!isset($page))
-    {
-     $query = $db->prepare("SELECT count(id) FROM `data_$odid` $objectSelection");
-     $query->execute();
-     $count = $query->fetchAll(PDO::FETCH_ASSOC);
-
-    }
- $offset = ($page - 1) * $objectsPerPage;
- $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` $objectSelection LIMIT $objectsPerPage OFFSET $offset");
+ $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` $objectSelection");
  $query->execute();
- $data = $query->fetchAll(PDO::FETCH_ASSOC);
- if (!count($data))
-    {
-     $query = $db->prepare("SELECT count FROM `data_$odid` $objectSelection");
-     $query->execute();
-     $count = $query->fetchAll(PDO::FETCH_ASSOC);
-     if (!isset($count[0][0])) return $output = ['cmd' => 'INFO', 'error' => 'Object Database count error!'];
-     $count = intval($count);
-     if ($count > 0)
-        {
-	 if (($count % $objectsPerPage) == 0)
-	    {
-	     $offset = $count / $objectsPerPage;
-	    }
-	  else {}
-	 $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` $objectSelection LIMIT $objectsPerPage OFFSET $offset");
-	 $query->execute();
-	 $data = $query->fetchAll(PDO::FETCH_ASSOC);
-	}
-    }
- $output = ['cmd' => 'REFRESH', 'data' => $data, 'props' => $props, 'paramsOV' => $paramsOV];
+ $output = ['cmd' => 'REFRESH', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'paramsOV' => $paramsOV];
 }
 
 function GetObjectSelection($db, $objectSelection)
 {
- global $paramsOV;
+ global $paramsOV, $currentuser;
  
  // Check input paramValues array and add reserved :user parameter value
  if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
  $i = -1;
  $len = strlen($objectSelection);
  if (gettype($paramsOV) != 'array') $paramsOV = [];
- $paramsOV[':user'] = getUserName($db, $_SESSION['u']);
+ $paramsOV[':user'] = $currentuser;
  $isDialog = false;
  $objectSelectionNew = '';
  
@@ -929,7 +881,7 @@ function NewOD($db)
 		
 function EditOD($db)		
 {
- global $input;
+ global $input, $currentuser;
  
  // Get dialog old and new OD name
  $newodname = CheckODString($input['data']['dialog']['Database']['Properties']['element1']['data']);
@@ -968,7 +920,7 @@ function EditOD($db)
  // Check current OD permissions to fetch new OD data from dialog box - $input['data']['dialog']['Database']['Permissions'])..
  $alertstring = '';
  $groups = getUserGroups($db, $_SESSION['u']); // Get current user group list
- $groups[] = getUserName($db, $_SESSION['u']); // and add username at the end of array
+ $groups[] = $currentuser; // and add username at the end of array
  
  // Check 'Database' pad change permissions
  if ($input['data']['dialog']['Database'] != $odprops['dialog']['Database'])
@@ -1152,11 +1104,8 @@ function defaultCustomizationDialogJSON()
 {
  // To transfer uiProfile from main.js: get uiProfile JSON from console by "console.log(JSON.stringify(uiProfile))" and put it json_decode below.
  // Don't forget to escape single quotes by "\'"
- // $uiProfile = json_decode('{"body":{"target":"body","background-color":"#343E54;"},"sidebar":{"target":".sidebar","background-color":"rgb(17,101,176);","border-radius":"5px;","color":"#9FBDDF;","width":"13%;","height":"90%;","left":"4%;","top":"5%;","scrollbar-color":"#1E559D #266AC4;","scrollbar-width":"thin;","box-shadow":"4px 4px 5px #222;"},"sidebar wrap icon":{"wrap":"&#9658;","unwrap":"&#9660;"},"sidebar wrap cell":{"target":".wrap","font-size":"70%;","padding":"3px 5px;"},"sidebar item active":{"target":".itemactive","background-color":"#4578BF;","color":"#FFFFFF;","font":"1.1em Lato, Helvetica;"},"sidebar item hover":{"target":".sidebar tr:hover","background-color":"#4578BF;","cursor":"pointer;"},"sidebar object database":{"target":".sidebar-od","padding":"3px 5px 3px 0px;","margin":"0px;","color":"","width":"100%;","font":"1.1em Lato, Helvetica;"},"sidebar object view":{"target":".sidebar-ov","padding":"2px 5px 2px 10px;","margin":"0px;","color":"","font":"0.9em Lato, Helvetica;"},"main field":{"target":".main","width":"76%;","height":"90%;","left":"18%;","top":"5%;","border-radius":"5px;","background-color":"#EEE;","scrollbar-color":"#CCCCCC #FFFFFF;","box-shadow":"4px 4px 5px #111;"},"main field table":{"target":"table","margin":"0px;"},"main field table cursor cell":{"outline":"rgb(252,141,114) auto 1px","shadow":"aaaaaaaaaaaaaa0 0 5px rgba(100,0,0,0.5)"},"main field table title cell":{"target":".titlecell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"#CCC;","font":"","text-align":"center"},"main field table newobject cell":{"target":".newobjectcell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"rgb(191,255,191);","font":"","text-align":"center"},"main field table data cell":{"target":".datacell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"","font":"12px/14px arial;","text-align":"center"},"main field table undefined cell":{"target":".undefinedcell","padding":"10px;","border":"1px solid #999;","background":"rgb(255,235,235);"},"main field table mouse pointer":{"target":".main table tbody tr td:not([contenteditable=true])","cursor":"cell;"},"main field message":{"target":".main h1","color":"#BBBBBB;"},"scrollbar":{"target":"::-webkit-scrollbar","width":"8px;","height":"8px;"},"context menu":{"target":".contextmenu","width":"240px;","background-color":"#F3F3F3;","color":"#1166aa;","border":"solid 1px #dfdfdf;","box-shadow":"1px 1px 2px #cfcfcf;","font-family":"sans-serif;","font-size":"16px;","font-weight":"300;","line-height":"1.5;","padding":"12px 0;"},"context menu item":{"target":".contextmenuItems","margin-bottom":"4px;","padding-left":"10px;"},"context menu item cursor":{"target":".contextmenuItems:hover:not(.greyContextMenuItem)","cursor":"pointer;"},"context menu item active":{"target":".activeContextMenuItem","color":"#fff;","background-color":"#0066aa;"},"context menu item grey":{"target":".greyContextMenuItem","color":"#dddddd;"},"hint":{"target":".hint","background-color":"#CAE4B6;","color":"#7E5A1E;","border":"none;","padding":"5px;"},"box":{"target":".box","background-color":"rgb(233,233,233);","color":"#1166aa;","border-radius":"5px;","border":"solid 1px #dfdfdf;","box-shadow":"2px 2px 4px #cfcfcf;"},"dialog box title":{"target":".title","background-color":"rgb(209,209,209);","color":"#555;","border":"#000000;","border-radius":"5px 5px 0 0;","font":"bold .9em Lato, Helvetica;","padding":"5px;"},"dialog box pad":{"target":".pad","background-color":"rgb(223,223,223);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":".9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box active pad":{"target":".activepad","background-color":"rgb(209,209,209);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":"bold .9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box pad bar":{"target":".padbar","background-color":"transparent;","border":"none;","padding":"4px;","margin":"10px 0 15px 0;"},"dialog box divider":{"target":".divider","background-color":"transparent;","margin":"5px 10px 5px 10px;","height":"0px;","border-bottom":"1px solid #CCC;","border-top-color":"transparent;","border-left-color":"transparent;","border-right-color":"transparent;"},"dialog box button":{"target":".button","background-color":"#13BB72;","border":"none;","padding":"10px;","margin":"10px;","border-radius":"5px;","font":"bold 12px Lato, Helvetica;","color":"white;"},"dialog box button and pad hover":{"target":".button:hover, .pad:hover","cursor":"pointer;","background":"","color":"","border":""},"dialog box element headers":{"target":".element-headers","margin":"5px 5px 5px 5px;","font":".9em Lato, Helvetica;","color":"#555;","text-shadow":"none;"},"dialog box help icon":{"target":".help-icon","padding":"1px;","font":".9em Lato, Helvetica;","color":"#555;","background":"#FF0;","border-radius":"40%;"},"dialog box help icon hover":{"target":".help-icon:hover","padding":"1px;","font":"bold 1em Lato, Helvetica;","color":"black;","background":"#E8E800;","cursor":"pointer;","border-radius":"40%;"},"dialog box select":{"target":".select","background-color":"rgb(243,243,243);","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 5px 10px;","outline":"none;","border":"1px solid #777;","padding":"0px 0px 0px 0px;","overflow":"auto;","max-height":"10em;","scrollbar-width":"thin;","min-width":"10em;","width":"auto;","display":"inline-block;"},"dialog box select option":{"target":".select > div","padding":"2px 20px 2px 5px;","margin":"0px;"},"dialog box select option hover":{"target":".select:not([type*=\'o\']) > div:hover","background-color":"rgb(209,209,209);","color":""},"dialog box select option selected":{"target":".selected","background-color":"rgb(209,209,209);","color":"#fff;"},"dialog box select option expanded":{"target":".expanded","margin":"0px !important;","position":"absolute;"},"dialog box radio":{"target":"input[type=radio]","background":"transparent;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"20%;","width":"1.2em;","height":"1.2em;"},"dialog box radio checked":{"target":"input[type=radio]:checked::after","content":"","color":"white;"},"dialog box radio checked background":{"target":"input[type=radio]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box radio label":{"target":"input[type=radio] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box checkbox":{"target":"input[type=checkbox]","background":"#f3f3f3;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"50%;","width":"1.2em;","height":"1.2em;"},"dialog box checkbox checked":{"target":"input[type=checkbox]:checked::after","content":"","color":"white;"},"dialog box checkbox checked background":{"target":"input[type=checkbox]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box checkbox label":{"target":"input[type=checkbox] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box input text":{"target":"input[type=text]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"none;","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input password":{"target":"input[type=password]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input textarea":{"target":"textarea","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"misc customization":{"objects per page":"50","next page bottom reach":"","previous page top reach":"","force next user scheme":"","mouseover hint timer in msec":"1000"},"effects":{"hint":"hotnews","contextmenu":"rise","box":"slideup","select":"rise","box filter":"grayscale(0.5)"},"hotnews hide":{"target":".hotnewshide","visibility":"hidden;","transform":"scale(0) rotate(0deg);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"hotnews show":{"target":".hotnewsshow","visibility":"visible;","transform":"scale(1) rotate(720deg);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"fade hide":{"target":".fadehide","visibility":"hidden;","opacity":"0;","transition":"all .5s;","-webkit-transition":"all .5s;"},"fade show":{"target":".fadeshow","visibility":"visible;","opacity":"1;","transition":"opacity .5s;","-webkit-transition":"opacity .5s;"},"grow hide":{"target":".growhide","visibility":"hidden;","transform":"scale(0);","transition":"all .4s;","-webkit-transition":"all .4s;"},"grow show":{"target":".growshow","visibility":"visible;","transform":"scale(1);","transition":"transform .4s;","-webkit-transition":"transform .4s;"},"slideleft hide":{"target":".slidelefthide","visibility":"hidden;","transform":"translate(1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideleft show":{"target":".slideleftshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"all .4s cubic-bezier(.06,1.24,0,.98);"},"slideright hide":{"target":".sliderighthide","visibility":"hidden;","transform":"translate(-1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideright show":{"target":".sliderightshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slideup hide":{"target":".slideuphide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideup show":{"target":".slideupshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slidedown hide":{"target":".slidedownhide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slidedown show":{"target":".slidedownshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"fall hide":{"target":".fallhide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(2);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"fall show":{"target":".fallshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"rise hide":{"target":".risehide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(0);","transition":"all .2s cubic-bezier(.38,1.02,.69,.97);","-webkit-transition":"all .2s cubic-bezier(.38,1.02,.69,.97);"},"rise show":{"target":".riseshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","transition":"transform .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"none hide":{"target":".nonehide","visibility":"hidden;"},"none show":{"target":".noneshow","visibility":"visible;"}}', true);
  $uiProfile = json_decode('{"body":{"target":"body","background-color":"#343E54;"},"sidebar":{"target":".sidebar","background-color":"rgb(17,101,176);","border-radius":"5px;","color":"#9FBDDF;","width":"13%;","height":"90%;","left":"4%;","top":"5%;","scrollbar-color":"#1E559D #266AC4;","scrollbar-width":"thin;","box-shadow":"4px 4px 5px #222;"},"sidebar wrap icon":{"wrap":"&#9658;","unwrap":"&#9660;"},"sidebar wrap cell":{"target":".wrap","font-size":"70%;","padding":"3px 5px;"},"sidebar item active":{"target":".itemactive","background-color":"#4578BF;","color":"#FFFFFF;","font":"1.1em Lato, Helvetica;"},"sidebar item hover":{"target":".sidebar tr:hover","background-color":"#4578BF;","cursor":"pointer;"},"sidebar object database":{"target":".sidebar-od","padding":"3px 5px 3px 0px;","margin":"0px;","color":"","width":"100%;","font":"1.1em Lato, Helvetica;"},"sidebar object view":{"target":".sidebar-ov","padding":"2px 5px 2px 10px;","margin":"0px;","color":"","font":"0.9em Lato, Helvetica;"},"main field":{"target":".main","width":"76%;","height":"90%;","left":"18%;","top":"5%;","border-radius":"5px;","background-color":"#EEE;","scrollbar-color":"#CCCCCC #FFFFFF;","box-shadow":"4px 4px 5px #111;"},"main field table":{"target":"table","margin":"0px;"},"main field table cursor cell":{"outline":"red auto 1px","shadow":"0 0 5px rgba(100,0,0,0.5)"},"main field table title cell":{"target":".titlecell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"#CCC;","font":"","text-align":"center"},"main field table newobject cell":{"target":".newobjectcell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"rgb(191,255,191);","font":"","text-align":"center"},"main field table data cell":{"target":".datacell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"","font":"12px/14px arial;","text-align":"center"},"main field table undefined cell":{"target":".undefinedcell","padding":"10px;","border":"1px solid #999;","background":"rgb(255,235,235);"},"main field table mouse pointer":{"target":".main table tbody tr td:not([contenteditable=true])","cursor":"cell;"},"main field message":{"target":".main h1","color":"#BBBBBB;"},"scrollbar":{"target":"::-webkit-scrollbar","width":"8px;","height":"8px;"},"context menu":{"target":".contextmenu","width":"240px;","background-color":"#F3F3F3;","color":"#1166aa;","border":"solid 1px #dfdfdf;","box-shadow":"1px 1px 2px #cfcfcf;","font-family":"sans-serif;","font-size":"16px;","font-weight":"300;","line-height":"1.5;","padding":"12px 0;"},"context menu item":{"target":".contextmenuItems","margin-bottom":"4px;","padding-left":"10px;"},"context menu item cursor":{"target":".contextmenuItems:hover:not(.greyContextMenuItem)","cursor":"pointer;"},"context menu item active":{"target":".activeContextMenuItem","color":"#fff;","background-color":"#0066aa;"},"context menu item grey":{"target":".greyContextMenuItem","color":"#dddddd;"},"hint":{"target":".hint","background-color":"#CAE4B6;","color":"#7E5A1E;","border":"none;","padding":"5px;"},"box":{"target":".box","background-color":"rgb(233,233,233);","color":"#1166aa;","border-radius":"5px;","border":"solid 1px #dfdfdf;","box-shadow":"2px 2px 4px #cfcfcf;"},"dialog box title":{"target":".title","background-color":"rgb(209,209,209);","color":"#555;","border":"#000000;","border-radius":"5px 5px 0 0;","font":"bold .9em Lato, Helvetica;","padding":"5px;"},"dialog box pad":{"target":".pad","background-color":"rgb(223,223,223);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":".9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box active pad":{"target":".activepad","background-color":"rgb(209,209,209);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":"bold .9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box pad bar":{"target":".padbar","background-color":"transparent;","border":"none;","padding":"4px;","margin":"10px 0 15px 0;"},"dialog box divider":{"target":".divider","background-color":"transparent;","margin":"5px 10px 5px 10px;","height":"0px;","border-bottom":"1px solid #CCC;","border-top-color":"transparent;","border-left-color":"transparent;","border-right-color":"transparent;"},"dialog box button":{"target":".button","background-color":"#13BB72;","border":"none;","padding":"10px;","margin":"10px;","border-radius":"5px;","font":"bold 12px Lato, Helvetica;","color":"white;"},"dialog box button and pad hover":{"target":".button:hover, .pad:hover","cursor":"pointer;","background":"","color":"","border":""},"dialog box element headers":{"target":".element-headers","margin":"5px 5px 5px 5px;","font":".9em Lato, Helvetica;","color":"#555;","text-shadow":"none;"},"dialog box help icon":{"target":".help-icon","padding":"1px;","font":".9em Lato, Helvetica;","color":"#555;","background":"#FF0;","border-radius":"40%;"},"dialog box help icon hover":{"target":".help-icon:hover","padding":"1px;","font":"bold 1em Lato, Helvetica;","color":"black;","background":"#E8E800;","cursor":"pointer;","border-radius":"40%;"},"dialog box select":{"target":".select","background-color":"rgb(243,243,243);","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 5px 10px;","outline":"none;","border":"1px solid #777;","padding":"0px 0px 0px 0px;","overflow":"auto;","max-height":"10em;","scrollbar-width":"thin;","min-width":"10em;","width":"auto;","display":"inline-block;"},"dialog box select option":{"target":".select > div","padding":"2px 20px 2px 5px;","margin":"0px;"},"dialog box select option hover":{"target":".select:not([type*=\'o\']) > div:hover","background-color":"rgb(209,209,209);","color":""},"dialog box select option selected":{"target":".selected","background-color":"rgb(209,209,209);","color":"#fff;"},"dialog box select option expanded":{"target":".expanded","margin":"0px !important;","position":"absolute;"},"dialog box radio":{"target":"input[type=radio]","background":"transparent;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"20%;","width":"1.2em;","height":"1.2em;"},"dialog box radio checked":{"target":"input[type=radio]:checked::after","content":"","color":"white;"},"dialog box radio checked background":{"target":"input[type=radio]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box radio label":{"target":"input[type=radio] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box checkbox":{"target":"input[type=checkbox]","background":"#f3f3f3;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"50%;","width":"1.2em;","height":"1.2em;"},"dialog box checkbox checked":{"target":"input[type=checkbox]:checked::after","content":"","color":"white;"},"dialog box checkbox checked background":{"target":"input[type=checkbox]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box checkbox label":{"target":"input[type=checkbox] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box input text":{"target":"input[type=text]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"none;","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input password":{"target":"input[type=password]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input textarea":{"target":"textarea","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"effects":{"hint":"hotnews","contextmenu":"rise","box":"slideup","select":"rise","box filter":"grayscale(0.5)"},"hotnews hide":{"target":".hotnewshide","visibility":"hidden;","transform":"scale(0) rotate(0deg);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"hotnews show":{"target":".hotnewsshow","visibility":"visible;","transform":"scale(1) rotate(720deg);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"fade hide":{"target":".fadehide","visibility":"hidden;","opacity":"0;","transition":"all .5s;","-webkit-transition":"all .5s;"},"fade show":{"target":".fadeshow","visibility":"visible;","opacity":"1;","transition":"opacity .5s;","-webkit-transition":"opacity .5s;"},"grow hide":{"target":".growhide","visibility":"hidden;","transform":"scale(0);","transition":"all .4s;","-webkit-transition":"all .4s;"},"grow show":{"target":".growshow","visibility":"visible;","transform":"scale(1);","transition":"transform .4s;","-webkit-transition":"transform .4s;"},"slideleft hide":{"target":".slidelefthide","visibility":"hidden;","transform":"translate(1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideleft show":{"target":".slideleftshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"all .4s cubic-bezier(.06,1.24,0,.98);"},"slideright hide":{"target":".sliderighthide","visibility":"hidden;","transform":"translate(-1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideright show":{"target":".sliderightshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slideup hide":{"target":".slideuphide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideup show":{"target":".slideupshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slidedown hide":{"target":".slidedownhide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slidedown show":{"target":".slidedownshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"fall hide":{"target":".fallhide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(2);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"fall show":{"target":".fallshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"rise hide":{"target":".risehide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(0);","transition":"all .2s cubic-bezier(.38,1.02,.69,.97);","-webkit-transition":"all .2s cubic-bezier(.38,1.02,.69,.97);"},"rise show":{"target":".riseshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","transition":"transform .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"none hide":{"target":".nonehide","visibility":"hidden;"},"none show":{"target":".noneshow","visibility":"visible;"},"misc customization":{"objects per page":"50","next page bottom reach":"","previous page top reach":"","Force to use next user customization (empty or non-existent user - current is used)":"","mouseover hint timer in msec":"1000"}}', true);
  $dialog = ['pad' => []];
- //$dialog['pad']['Scheme'] = ['element2' => ['type' => 'text', 'head' => 'Force to use next user customization (empty or non-existent user - current is used):', 'data' => '', 'line' => '']];
- //$title = 'Customize css selector properties below:';
  
  foreach ($uiProfile as $profile => $value)
 	 {

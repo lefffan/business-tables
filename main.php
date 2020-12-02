@@ -27,6 +27,7 @@ try {
 	    }
 	 $input = $input['data']['flags']['callback'];
 	 if ($input['cmd'] === 'Edit Database Structure' && gettype($input['data']) != 'string') exit; // Disallow OD dialog overwrite its data after session timeout
+	 if ($input['cmd'] === 'LOGIN') $input = ['cmd' => 'GETMAINSTART', 'OD' => '', 'OV' => ''];
 	}
       else // Login dialog evet occured, but user/pass are empty or wrong
         {    
@@ -38,6 +39,7 @@ try {
 	  else LogMessage($db, "Wrong passowrd or username '$user'", 'info');
 	 exit;
 	}
+     if (isset($_SESSION['u'])) $currentuser = getUserName($db, $_SESSION['u']);
 	
      switch ($input['cmd'])
 	    {
@@ -62,8 +64,12 @@ try {
 		  break;
 	     case 'LOGOUT':
 		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
-		  $log = "User '".getUserName($db, $_SESSION['u'])."' has logged out!";
-		  unset($_SESSION['u']);
+		  if (isset($_SESSION['u'])) unset($_SESSION['u']);
+		  if (isset($currentuser))
+		     {
+		      $log = "User $currentuser has logged out!";
+		      $currentuser = NULL;
+		     }
 		  break;
 	     case 'New Object Database':
 		  if (Check($db, CHECK_ACCESS)) break;
@@ -179,18 +185,6 @@ try {
 	     default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the client!'];
 	    }
-		
-     if (!isset($output['cmd']))
-     if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
-      else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-       else $output = ['cmd' => ''];
-     if (isset($log)) $output['log'] = $log;
-     
-     if (isset($OD)) $output['OD'] = $OD;
-     if (isset($OV)) $output['OV'] = $OV;
-     if (isset($_SESSION['u'])) $output['user'] = getUserName($db, $_SESSION['u']);
-     if (isset($customization)) $output['customization'] = $customization;
-     if (isset($sidebar)) $output['sidebar'] = $sidebar;
     }
      
 catch (PDOException $e)
@@ -209,71 +203,73 @@ catch (PDOException $e)
 		      $query = $db->prepare("DROP TABLE IF EXISTS `data_$odid`; DROP TABLE IF EXISTS `uniq_$odid`");
 		      $query->execute();
 		     }
-		  if (preg_match("/already exist/", $msg) === 1 || preg_match("/Duplicate entry/", $msg) === 1)
-		     $output = ['cmd' => 'INFO', 'alert' => 'Failed to add new object database: OD name or data tables already exist!'];
-		   else
-		     $output = ['cmd' => 'INFO', 'alert' => "Failed to add new object database: $msg"];
+		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to add new OD: database name or its tables already exist!';
+		   else $alert = "Failed to add new OD: $msg";
 		  break;
 	     case 'Edit Database Structure':
-	    	  if (gettype($input['data']) === 'string') $output = ['cmd' => 'INFO', 'alert' => "Failed to get OD properties: $msg"];
-		   else $output = ['cmd' => 'INFO', 'alert' => "Failed to write OD properties: $msg"];
+	    	  if (gettype($input['data']) === 'string') $alert = "Failed to get OD properties: $msg";
+		   else $alert = "Failed to write OD properties: $msg";
 	          break;
 	     case 'GETMENU':
-		  $output = ['cmd' => 'INFO', 'alert' => "Failed to read sidebar OD list: $msg"];
+		  $alert = "Failed to read sidebar OD list: $msg";
 		  break;
 	     case 'GETMAINSTART':
 	     case 'GETMAIN':
-		  $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'error' => "Failed to get OD data: $msg"];
+		  $alert = "Failed to get OD data: $msg";
 		  break;
 	     case 'DELETEOBJECT':
-		  $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => "Failed to delete object: $msg"];
+		  $alert = "Failed to delete object: $msg";
 		  break;
 	     case 'INIT':
-		  if (preg_match("/Duplicate entry/", $msg) === 1)
-		     $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to add new object: unique elements duplicate entry!'];
-		   else
-		     $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => "Failed to add new object: $msg"];
+		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to add new object: unique elements duplicate entry!';
+		   else $alert = "Failed to add new object: $msg";
 		  break;
 	     case 'KEYPRESS':
 	     case 'DBLCLICK':
-		  if (preg_match("/Duplicate entry/", $msg) === 1)
-		     $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => 'Failed to write object data: unique elements duplicate entry!'];
-		   else
-		     $output = ['cmd' => 'INFO', 'OD' => $OD, 'OV' => $OV, 'alert' => "Failed to write object data: $msg"];
-		  break;
 	     case 'CONFIRM':
 		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
 		   else $alert = "Failed to write object data: $msg";
-		  if (isset($eid))
+		  if ($input['cmd'] === 'CONFIRM' && isset($eid))
 		     {
 		      $undo = getElementArray($db, $eid);
 		      if (!isset($undo)) $undo = ['value' => ''];
-		      $output = ['cmd' => 'SET', 'OD' => $OD, 'OV' => $OV, 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert];
-		      break;
+		      $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert];
 		     }
-		  $output = ['cmd' => 'INFO', 'alert' => $alert];
 		  break;
 	     default:
-		  echo json_encode(['cmd' => 'INFO', 'error' => "Controller unknown error: $msg"]);
+		  echo json_encode(['cmd' => 'INFO', 'error' => "Controller unknown error: '$msg'"]);
 		  exit;
 	    }
     }
-    
-// Echo result
-echo json_encode($output);
 
+// Check output command
+if (!isset($output['cmd']))
+if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
+ else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
+  else $output = ['cmd' => ''];
+
+// Add some data tou output result     
+if (isset($log))		$output['log'] = $log;
+if (isset($OD))			$output['OD'] = $OD;
+if (isset($OV))			$output['OV'] = $OV;
+if (isset($currentuser))	$output['user'] = $currentuser;
+if (isset($customization))	$output['customization'] = $customization;
+if (isset($sidebar))		$output['sidebar'] = $sidebar;
+    
 // Exception occured and active transaction does exist? Roll it back to allow save corresponded log message to the database
 if (isset($msg) && $db->inTransaction()) $db->rollBack();
 
-// Get current user and build part of the log message
-if (isset($_SESSION['u'])) $user = getUserName($db, $_SESSION['u']);
-if (!isset($user)) $user = '';
-if ($user != '') $user = "['$user']";
-if (isset($OD) && $OD != '') $user .= "[OD '$OD']";
-if (isset($OV) && $OV != '') $user .= "[OV '$OV']";
-if ($user != '') $user .= ': ';
+// Echo output result
+echo json_encode($output);
 
-// Log message
-if (isset($output['log'])) { LogMessage($db, $user.$output['log'], 'info'); } // Log $output['log'] message
-if (isset($output['alert'])) { LogMessage($db, $user.$output['alert'], 'alert'); } // Log $output['alert'] message
-if (isset($output['error'])) { if (!isset($OD) || $OD != '') LogMessage($db, $user.$output['error']); } // Log $output['error'] message
+// Get current user and build part of the log message
+$prefix = '';
+if (isset($currentuser))	$prefix .= "['$currentuser']";
+if (isset($OD) && $OD != '')	$prefix .= "[OD '$OD']";
+if (isset($OV) && $OV != '')	$prefix .= "[OV '$OV']";
+if ($prefix != '')		$prefix .= ': ';
+
+// Log the message
+if (isset($output['log']))					LogMessage($db, $prefix.$output['log'], 'info');
+if (isset($output['alert']))					LogMessage($db, $prefix.$output['alert'], 'alert');
+if (isset($output['error']) && (!isset($OD) || $OD != ''))	LogMessage($db, $prefix.$output['error']);
