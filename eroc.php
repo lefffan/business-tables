@@ -630,7 +630,7 @@ function WriteElement($db, $oid, $eid, $version)
 
 function CreateNewObjectVersion($db)
 {
- global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output, $currentuser;
+ global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output, $currentuser, $alert;
  
  //--------------Start transaction, select last existing (non zero) version of the object and block the corresponded row---------------
  $db->beginTransaction();
@@ -640,7 +640,7 @@ function CreateNewObjectVersion($db)
 
  $version = $query->fetchAll(PDO::FETCH_NUM);
  // No rows found? Return an error
- if (count($version) === 0) { $db->rollBack(); return "Object with id=$oid not found!\nPlease refresh Object View"; }
+ if (count($version) === 0) { $db->rollBack(); return $alert = "Object with id=$oid not found!\nPlease refresh Object View"; }
  // Increment version to use it as a new version of the object
  $version = intval($version[0][0]) + 1;
  

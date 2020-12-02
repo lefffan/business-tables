@@ -65,11 +65,9 @@ try {
 	     case 'LOGOUT':
 		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
 		  if (isset($_SESSION['u'])) unset($_SESSION['u']);
-		  if (isset($currentuser))
-		     {
-		      $log = "User $currentuser has logged out!";
-		      $currentuser = NULL;
-		     }
+		  if (!isset($currentuser)) break;
+		  $log = "User $currentuser has logged out!";
+		  $currentuser = NULL;
 		  break;
 	     case 'New Object Database':
 		  if (Check($db, CHECK_ACCESS)) break;
@@ -136,51 +134,40 @@ try {
 		  if ($input['cmd'] === 'CUSTOMIZATION') $cmd = 'CONFIRM';
 		  
 		  // Search input cmd event and call the appropriate handler
-		  if (($handlerName = $allElementsArray[$eid]['element4']['data']) != '' && $eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))
-		     {
-		      if (isset($data)) $eventArray['data'] = $data;
-		      $output = [$eid => Handler($handlerName, json_encode($eventArray))];
-		      switch ($output[$eid]['cmd']) // Process handler answer by the controller
-			     {
-				 case 'SET':
-				 case 'RESET':
-				      if (!($alert = CreateNewObjectVersion($db)))
-				         {
-			        	  foreach ($output as $id => $value) if (!isset($props[$id])) unset($output[$id]);
-			        	  isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
-					  $query = $db->prepare("SELECT id,version,owner,datetime,lastversion FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
-					  $query->execute();
-					  foreach ($query->fetchAll(PDO::FETCH_ASSOC)[0] as $id => $value) $output['data'][$id] = $value;
-					  break;
-					 }
-				      $output = ['cmd' => 'INFO', 'alert' => $alert];
-				      break;
-				 case 'EDIT':
-				      isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
-				      break;
-				 case 'ALERT':
-				      isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
-				      break;
-				 case 'DIALOG':
-				      if (isset($output[$eid]['data']) && is_array($output[$eid]['data']))
-				         {
-					  if (isset($output[$eid]['data']['flags']['cmd']) && $handlerName != 'customization.php') unset($output[$eid]['data']['flags']['cmd']);
-					  $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
-					 }
-				      break;
-				 case 'CALL':
-				      if (isset($output[$eid]['data']) && is_array($output[$eid]['data']) && isset($OD) && isset($OV))
-				         {
-					  $input = ['cmd' => 'GETMAIN', 'paramsOV' => []];
-					  if (isset($output[$eid]['data']['Params'])) $input['paramsOV'] = $output[$eid]['data']['Params'];
-					  if (!isset($output[$eid]['data']['OD'])) $input['OD'] = $OD; else $input['OD'] = $output[$eid]['data']['OD'];
-					  if (!isset($output[$eid]['data']['OV'])) $input['OV'] = $OV; else $input['OV'] = $output[$eid]['data']['OV'];
-					  $output = ['cmd' => 'CALL'];
-					  if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) getMainFieldData($db);
-				         }
-				      break;
-			     }
-		     }
+		  if (($handlerName = $allElementsArray[$eid]['element4']['data']) === '' || !($eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))) break;
+		  if (isset($data)) $eventArray['data'] = $data;
+		  $output = [$eid => Handler($handlerName, json_encode($eventArray))];
+		  switch ($output[$eid]['cmd']) // Process handler answer by the controller
+			 {
+			  case 'SET':
+			  case 'RESET':
+			       if (CreateNewObjectVersion($db)) break;
+			       foreach ($output as $id => $value) if (!isset($props[$id])) unset($output[$id]);
+			       isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
+			       $query = $db->prepare("SELECT id,version,owner,datetime,lastversion FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
+			       $query->execute();
+			       foreach ($query->fetchAll(PDO::FETCH_ASSOC)[0] as $id => $value) $output['data'][$id] = $value;
+			       break;
+			  case 'EDIT':
+			       isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
+			       break;
+			  case 'ALERT':
+			       isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
+			       break;
+			  case 'DIALOG':
+			       if (!isset($output[$eid]['data']) || !is_array($output[$eid]['data'])) break;
+			       if (isset($output[$eid]['data']['flags']['cmd']) && $handlerName != 'customization.php') unset($output[$eid]['data']['flags']['cmd']);
+			       $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
+			       break;
+			  case 'CALL':
+			       if (!isset($output[$eid]['data']) || !is_array($output[$eid]['data']) || !isset($OD) || !isset($OV)) break;
+			       $input = ['cmd' => 'GETMAIN', 'paramsOV' => []];
+			       if (isset($output[$eid]['data']['Params'])) $input['paramsOV'] = $output[$eid]['data']['Params'];
+			       if (!isset($output[$eid]['data']['OD'])) $input['OD'] = $OD; else $input['OD'] = $output[$eid]['data']['OD'];
+			       if (!isset($output[$eid]['data']['OV'])) $input['OV'] = $OV; else $input['OV'] = $output[$eid]['data']['OV'];
+			       $output = ['cmd' => 'CALL'];
+			       if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) getMainFieldData($db);
+			 }
 		  break;
 	     default:
 	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the client!'];
