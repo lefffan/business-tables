@@ -1,5 +1,11 @@
 December 2020:
 - Object_selection to OD rule section and check oid object selection existence in CHECK_OID
+start transaction
+add uniq 'hui'
+
+in paralell 2nd transaction add uniq 'hui' and commit
+
+then commit 1st transaction
 - help context menu for all help (conception, handler, keyboard/mouse..)
   Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
 - Object process SCHEDULER. Handlers are executed by built-in system user.
@@ -316,9 +322,3 @@ objectsPerPage should be output in description
 -objectsPerPage should be transfered to the controller
 
 
-start transaction
-add uniq 'hui'
-
-in paralell 2nd transaction add uniq 'hui' and commit
-
-then commit 1st transaction
