@@ -10,7 +10,7 @@ const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 16;
 const ELEMENTPROFILENAMEADDSTRING	= 'element id';
 const UNIQKEYCHARLENGTH			= 300;
-const UNIQELEMENTTYPE			= '+unique';
+const UNIQELEMENTTYPE			= '+unique|';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
 const STARTOBJECTID			= 3;
@@ -559,13 +559,8 @@ function InsertObject($db, $owner = NULL)
  // Get last inserted object id
  $query = $db->prepare("SELECT LAST_INSERT_ID()");
  $query->execute();
- // Generate new PDO exception in case of non correct last insert id value               
- if (intval($newId = $query->fetch(PDO::FETCH_NUM)[0]) < STARTOBJECTID)
-    {
-     $db->rollBack();
-     throw new PDOException('Incorrect new object id value!', 0);
-    }
-
+ $newId = $query->fetch(PDO::FETCH_NUM)[0];
+ 
  if (!isset($owner)) $owner = $currentuser;
  $query = 'id,version,owner';
  $params = [':id' => $newId, ':version' => '1', ':owner' => $owner];
@@ -602,6 +597,7 @@ function DeleteObject($db)
  $query->execute([':owner' => $currentuser]);
  $query = $db->prepare("DELETE FROM `uniq_$odid` WHERE id=$oid");
  $query->execute();
+
  $db->commit();
 }
 
@@ -609,7 +605,7 @@ function WriteElement($db, $oid, $eid, $version)
 {
  global $uniqElementsArray, $odid, $output;
 
- if (!isset($output[$eid]['cmd']) || ($output[$eid]['cmd'] != 'SET' && $output[$eid]['cmd'] != 'RESET')) // No element new version exist, so wrote
+ if (!isset($output[$eid]['cmd']) || ($output[$eid]['cmd'] != 'SET' && $output[$eid]['cmd'] != 'RESET')) // No element new version exist, so write previous version
     {
      $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
      $query->execute([':json' => getElementJSON($db, $eid, $version - 1)]);
@@ -653,7 +649,29 @@ function CreateNewObjectVersion($db)
  
  //------------Empty object version is created, so start new transaction and write all object elements handler result data-------------
  $db->beginTransaction();
- WriteElement($db, $oid, $eid, $version); // First write element data that initiated SET/RESET command
+ try { 
+      WriteElement($db, $oid, $eid, $version); // First write element data that initiated SET/RESET command
+     }
+ catch (PDOException $e)
+     {
+      lg($e);                 
+      $db->rollBack();
+      $db->beginTransaction();
+      $query = $db->prepare("SELECT lastversion FROM `data_$odid` WHERE id=$oid AND version=$version FOR UPDATE");
+      $query->execute();
+      if ($query->fetchAll(PDO::FETCH_NUM)[0][0] === '1')
+         {
+	  $query = $db->prepare("UPDATE `data_$odid` SET lastversion=1 WHERE id=$oid AND version=".strval($version-1));
+	  $query->execute();
+	 }
+      if (preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
+       else $alert = "Failed to write object data: $msg";                                                                         
+      SetUndoOutput($db, $oid, $eid, $alert);
+      $query = $db->prepare("DELETE FROM `data_$odid` WHERE id=$oid AND version=$version");
+      $query->execute();
+      $db->commit();
+      return true;
+     }
  foreach ($allElementsArray as $id => $profile) if ($id != $eid) // Second - write all other elemtnts data as answers to the ONCHANGE command
 	 {
 	  $output[$id] = NULL;
@@ -664,6 +682,41 @@ function CreateNewObjectVersion($db)
 	 }
  $db->commit();
  //------------------------------------------------------------------------------------------------------------------------------------
+}
+
+function ProcessRules($db, $odid, $oid)
+{
+ /*if ($result = ProcessRules($db, $odid, $oid))
+    {
+    }*/
+ //retreive old verion value in case of uniq conflict and reset last version to the previous object
+ //ProcessRules in CreateNewObjectVersion and insertobject functions
+
+ // Get rule section json data
+ $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Rule') FROM $ WHERE id='$odid'");
+ $query->execute();
+ if (count($Rules = $query->fetchAll(PDO::FETCH_NUM)) == 0) return;
+
+ // Move on. Decoding json data
+ $Rules = json_decode($Rules[0][0], true);
+ if (gettype($Rules) != 'array') return;
+ unset($Rules['New rule']);
+ 
+ // Process non empty expression rules one by one
+ foreach ($Rules as $key => $value)
+	 {
+	  if (($expression = trim($value['element4']['data'])) === '') continue;
+	  $message = $value['element2']['data'];
+	  $action = $value['element3']['data'];
+	  $action = substr($action, strpos($action, '+') + 1, strpos($action, '|', strpos($action, '+') + 1) - strpos($action, '+') - 1);
+	  $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid and id IN (SELECT id FROM `data_$odid` WHERE $expression)");
+	  $query->execute();
+	  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
+	     {
+	      if ($action === 'No action') return;
+	      return ['name' => $key, 'message' => $message, 'action' => $action, 'expression' => $expression];
+	     }
+	 }
 }
 
 function getMainFieldData($db)
@@ -1098,6 +1151,16 @@ function LogMessage($db, $message, $type = 'error')
  $uniqElementsArray = [];
  $output = ['1' => ['cmd' => 'RESET', 'value' => $type], '2' => ['cmd' => 'RESET', 'value' => $message]];
  InsertObject($db, 'system');
+}
+
+function SetUndoOutput($db, $oid, $eid, $alert = NULL)
+{
+ global $output;
+ 
+ $undo = getElementArray($db, $eid);
+ if (!isset($undo)) $undo = ['value' => ''];
+ $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo]];
+ if (isset($alert)) $output['alert'] = $alert;
 }
 
 function defaultCustomizationDialogJSON()

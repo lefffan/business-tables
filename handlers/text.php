@@ -28,6 +28,6 @@ if (isset($input['event'])) switch($input['event'])
 		}
 	 break;
     case 'CONFIRM':
-	 if (isset($input['data']))  $output = json_encode(['cmd' => 'RESET', 'value' => $input['data'], '_alert' => 'WTF????']);
+	 if (isset($input['data']))  $output = json_encode(['cmd' => 'SET', 'value' => $input['data'], '_alert' => 'WTF????']);
 	 break;
    }

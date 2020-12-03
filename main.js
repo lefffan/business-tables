@@ -987,7 +987,7 @@ function callController(data)
 	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}\n\n`;
 	      //--------------------Add database and view info--------------------
 	      if (activeOV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
-	      msg += `Object Database: ${activeOD}\nObject View${hidden}: ${activeOV}\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}\nObjects on the page: ${objectsOnThePage}`;
+	      msg += `Object Database: ${activeOD}\nObject View${hidden}: ${activeOV} (${objectsOnThePage} objects)\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}`;
 	      //--------------Add part of sql string object selection-------------
 	      let parammsg = '', count = 1;
 	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];

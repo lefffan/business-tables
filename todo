@@ -1,14 +1,10 @@
 December 2020:
-- Object_selection to OD rule section and check oid object selection existence in CHECK_OID
-start transaction
-add uniq 'hui'
-
-in paralell 2nd transaction add uniq 'hui' and commit
-
-then commit 1st transaction
-- help context menu for all help (conception, handler, keyboard/mouse..)
-  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
-- Object process SCHEDULER. Handlers are executed by built-in system user.
+- socket conception instead of ajax request, so emulate chat (Autorefresh OV, for example, for chats) via autoedit new cell just like start_command in element sel
+  Del deletes new cell text
+  Log unknown handler name, for a example, text.ph
+  On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
+  catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
+  Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
 	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, 
@@ -17,24 +13,26 @@ then commit 1st transaction
 	2. status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 	   if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 	3. To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user!
+- Object_selection to OD rule section
+  Check objects to match view current selection on process client commands?
+- help context menu for all help (conception, handler, keyboard/mouse..)
+  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
 - System calls and its object views: LINK	 
 
 Janury 2021:
-- emulate chat and helpdesk (Autorefresh OV, for example, for chats)
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release  setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
   These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
 - single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-- On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   Linux to docker, secure php.ini, optimize mysql to highload app
-  
-February 2021:
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by me
+  
+February 2021:
 - Object view PIECHART and GRAPH
 - System calls and its object views: LOCATION.
 - multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
@@ -261,6 +259,12 @@ IAM: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':user'
 e: *
 test obj sel: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':input_user'
 test el sel:
+
+{"event":"INIT"}
+{"event": "DBLCLICK"}
+{"event": "KEYPRESS"}
+
+
 {"ollapse":""}
 {"eid":"1", "oid":"2", "x":"0", "y":"0", "style":"color: white;"}
 {"eid":"1", "oid":"1", "x":"0", "y":"1", "style":"color: red;"}

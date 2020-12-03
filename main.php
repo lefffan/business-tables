@@ -167,10 +167,13 @@ try {
 			       if (!isset($output[$eid]['data']['OV'])) $input['OV'] = $OV; else $input['OV'] = $output[$eid]['data']['OV'];
 			       $output = ['cmd' => 'CALL'];
 			       if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) getMainFieldData($db);
+			       break;
+			  default:
+			       if ($cmd === 'CONFIRM') SetUndoOutput($db, $oid, $eid);
 			 }
 		  break;
 	     default:
-	          $output = ['cmd' => 'INFO', 'alert' => 'Controller report: unknown event "'.$input['cmd'].'" received from the client!'];
+	          $output = ['cmd' => 'INFO', 'alert' => "Controller report: unknown event '".$input['cmd']."' received from the client!"];
 	    }
     }
      
@@ -202,7 +205,7 @@ catch (PDOException $e)
 		  break;
 	     case 'GETMAINSTART':
 	     case 'GETMAIN':
-		  $alert = "Failed to get OD data: $msg";
+		  $error = "Failed to get OD data: $msg";
 		  break;
 	     case 'DELETEOBJECT':
 		  $alert = "Failed to delete object: $msg";
@@ -211,17 +214,12 @@ catch (PDOException $e)
 		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to add new object: unique elements duplicate entry!';
 		   else $alert = "Failed to add new object: $msg";
 		  break;
+	     case 'LOGOUT':
+	     case 'CUSTOMIZATION':
 	     case 'KEYPRESS':
 	     case 'DBLCLICK':
 	     case 'CONFIRM':
-		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
-		   else $alert = "Failed to write object data: $msg";
-		  if ($input['cmd'] === 'CONFIRM' && isset($eid))
-		     {
-		      $undo = getElementArray($db, $eid);
-		      if (!isset($undo)) $undo = ['value' => ''];
-		      $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo], 'alert' => $alert];
-		     }
+		  $alert = "Client event '".$input['cmd']."' unknown error: $msg";
 		  break;
 	     default:
 		  echo json_encode(['cmd' => 'INFO', 'error' => "Controller unknown error: '$msg'"]);
