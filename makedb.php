@@ -1,8 +1,8 @@
 <?php
 
-require_once 'eroc.php';
+// Be aware of removing old ODs by using that script
 
-global $newProperties, $newPermissions, $newElement, $newView, $newRule, $odid, $allElementsArray, $uniqElementsArray, $output;
+require_once 'core.php';
 
 // Old shit should be dropped
 $query = $db->prepare("drop database ".DATABASENAME."; create database ".DATABASENAME."; use ".DATABASENAME);

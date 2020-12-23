@@ -2,7 +2,8 @@
 
 try {
      require_once 'eroc.php';
-
+     
+     //require_once 'websocket.php';
      //lg(session_get_cookie_params());
      //lg($_SERVER);
      //lg(PHP_VERSION_ID);

@@ -1,10 +1,27 @@
 December 2020:
-- socket conception instead of ajax request, so emulate chat (Autorefresh OV, for example, for chats) via autoedit new cell just like start_command in element sel
-  Del deletes new cell text
+- Socket conception:
+  catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
+  socket rate limit https://javascript.info/websocket#rate-limiting
+  _SESSION -> info[]
+  when editing OD props - if dialog elements/views/rules doesn't exist in props in db, then?
+  load all OD info at server script start
+  CHeck authorization at someones else changes the pass or session timeout
+  INIT -> NEWOBJECT
+  keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
+  One element event (KEYPRESS, DBLCLICK, CONFIRM..) - on line in edit OD
+  
+- Del deletes new cell text, mouse one click edit new cell
   Log unknown handler name, for a example, text.ph
   On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
-  catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
-  Object process SCHEDULER. Handlers are executed by built-in system user.
+  
+- Object_selection to OD rule section
+  Check objects to match view current selection on process client commands?
+
+- help context menu for all help (conception, handler, keyboard/mouse..)
+  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
+
+Janury 2021:
+- Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
 	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, 
@@ -13,13 +30,7 @@ December 2020:
 	2. status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 	   if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 	3. To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user!
-- Object_selection to OD rule section
-  Check objects to match view current selection on process client commands?
-- help context menu for all help (conception, handler, keyboard/mouse..)
-  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
 - System calls and its object views: LINK	 
-
-Janury 2021:
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release  setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
   These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
@@ -28,6 +39,8 @@ Janury 2021:
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   Linux to docker, secure php.ini, optimize mysql to highload app
+  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
+  use array_key_last([]); instead of end([]); and 
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by me
@@ -37,22 +50,19 @@ February 2021:
 - System calls and its object views: LOCATION.
 - multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
 - firefox up/down and left/right arrows scroll page
-- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
-- see through all OD properties dialog box and try to check/release their all features
-- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
+- see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
 - User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
 - Feedback and finish https://bakhirev.biz/book/#MmlJN
 
 --------------Doubt features--------------------------------------------------------------
+- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
+- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - Set new object flag (for example small digit in red scope) before OD name and/or html page title
 - System call NEWOBJECT (to create object by user handlers)
 - Export OV data to xls, pdf or txt file
 - Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
-- User defined element handler on other langs, not only php, for a example -  python: new.ph or php: new.php
 - OD Dialog Box - OD icon, OV icon, OV shortcut key
 - Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
-- dblclick refresh, single click no, all OV (and its pages) stored in array OD={ odname: {ovname[pagenum].objectTable|mainTable, wrapped} }
-- Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
 - Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
 - Predefined system messages can be displayed on other languages
 - not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
@@ -63,6 +73,7 @@ February 2021:
 - event json can send not only current objects elements, but other objects of current OD and other objects of another OD
 - Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
 - In case of no pagination should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
+- Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
 -----------------------------Emulation-------------------------------------------------------
 - Corp chat
 - Corp book
@@ -71,7 +82,7 @@ February 2021:
 - Zabbix
 - CRM
 - ACS
-- Any  accounting system (may be billing)
+- Any accounting system (may be billing)
 - Some excel functions
 - Voting
 - Any statistic/analitycs
@@ -179,6 +190,13 @@ interface examples:
 - https://qna.habr.com/q/281940
 - https://htmlacademy.ru/blog/video/shorts/short-4
 - table column resize https://codepen.io/barring/pen/ZNObZg
+Search JSON values:
+- https://dev.mysql.com/doc/refman/8.0/en/json-search-functions.html
+- https://proselyte.net/tutorials/sql/nested-queries/
+- https://codetown.ru/sql/vlozhennye-zaprosy/
+- https://site-do.ru/db/sql4.php
+Secure:
+- Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
 -------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
 const range = document.createRange();   
 const selection = window.getSelection();
@@ -245,7 +263,8 @@ VS Code on youtube
 roadmap also on youtube
 C:\!\sobes
 see zametki v telefone
-
+CORS
+get and POST differentional
 
 
 
@@ -326,3 +345,14 @@ objectsPerPage should be output in description
 -objectsPerPage should be transfered to the controller
 
 
+at start:
+- client call login dialog
+
+at end login dialog:
+- create new websocket connection
+- wait for an answer: success (user logged in), fail (wrong pass or socket connection refused)
+
+at any action:
+- ping/pong: websocket alive - everything's good, not alive - login dialog
+
+php threads: https://phpprofi.ru/blogs/post/55

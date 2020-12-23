@@ -10,11 +10,12 @@ const mainObjectContext = '<div class="contextmenuItems">New Object</div><div cl
 const mainContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
 const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
+const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
 /*------------------------------VARIABLES------------------------------------*/
 let contextmenu, contextmenuDiv;
 let hint, hintDiv;
 let box = selectExpandedDiv = null, boxDiv, expandedDiv;
-let tooltipTimerId, undefinedcellRuleIndex;
+let tooltipTimerId, undefinedcellRuleIndex, socket;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
 let user = cmd = activeOD = activeOV = '';
@@ -167,7 +168,14 @@ window.onload = function()
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
  
- if (!navigator.cookieEnabled)
+ socket = new WebSocket(SOCKETADDR);
+ socket.onmessage = controllerCmdHandler;
+ cmd = 'GETMAIN';
+ socket.onopen = callController;
+ socket.onerror = () => warning("The server connection is down! Please refresh the page to reconnect the server");
+ socket.onclose = () => warning("The server connection is down! Please refresh the page to reconnect the server");
+ 
+ /*if (!navigator.cookieEnabled)
     {
      warning('To make application work properly please enable Cookies!');
      return;
@@ -176,9 +184,16 @@ window.onload = function()
     {
      warning("Cookie flag 'httponly' should be set!");
      return;
-    }
- cmd = 'GETMAINSTART';
- callController();
+    }*/
+ /*------------------Web sockets: 1-here, 2-const, 3-let, 4,5-context menu description and help------------------*/
+ //socket = new WebSocket(SOCKETADDR);
+ //socket.onmessage = controllerCmdHandler;
+ 
+ //socket.onopen = function() { socket.send('Connection established with ' + SOCKETADDR); };
+ //socket.onmessage = function(event) { lg('Server responce: ' + event.data); };
+ //socket.onerror = function(event) { lg('Web socket error occured'); };
+ //socket.onclose = function(event) { lg(`Web socket connection was closed with clean status: ${event.wasClean}, event code: ${event.code}, reason: ${event.reason}`); };
+ /*--------------------------------------------------------------------------------------------------------------*/
 }
 
 function drawSidebar(data)
@@ -631,7 +646,7 @@ function eventHandler(event)
 		  if (event.target.classList.contains('sidebar-od')) next = event.target;
 		  if (Object.keys(sidebar[next.dataset.od]).length < 2) break;
 		  if (sidebar[cmd = next.dataset.od][''] != undefined) sidebar[cmd][''] = !sidebar[cmd][''];
-		  cmd = 'GETMENU';
+		  cmd = 'GETSIDEBAR';
 		  callController();
 		  break;
 		 }
@@ -741,26 +756,12 @@ function eventHandler(event)
 
 function controllerCmdHandler(input)
 {
- if (input.cmd === undefined)
-    {
-     warning('Undefined server message!');
-     lg('Undefined server message!');
-     return;
-    }
-
- if (input.customization)
-    {
-     uiProfileSet(input.customization);
-     styleUI();
-    }
- if (input.OD != undefined && input.OV != undefined)
-    {
-     activeOD = input.OD;
-     activeOV = input.OV;
-    }
- if (input.sidebar) drawSidebar(input.sidebar);
- if (input.log) lg(input.log); 
- if (input.user) user = input.user; else user = '';
+ input = JSON.parse(input.data);
+ if (input.cmd === undefined)				{ warning('Undefined server message!'); return; }
+ if (input.customization)				{ uiProfileSet(input.customization); styleUI(); }
+ if (input.OD != undefined && input.OV != undefined)	{ activeOD = input.OD; activeOV = input.OV; }
+ if (input.sidebar)					{ drawSidebar(input.sidebar); }
+ input.user ? user = input.user : user = '';
 
  switch (input.cmd)
 	{
@@ -806,28 +807,19 @@ function controllerCmdHandler(input)
 	      paramsOV = input.paramsOV;
 	      drawMain(input.data, input.props);
 	      break;
-	 case 'INFO':
-	      if (input.alert)
-	         {
-		  lg(input.alert);
-		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) warning(input.alert);
-		 }
-	      if (input.error)
-	         {
-		  if (activeOD != '') lg(input.error);
-		  if (input.OV === undefined || input.OD === undefined || (input.OD === activeOD && input.OV === activeOV)) displayMainError(input.error);
-		 }
-	      break;
 	 case '':
 	      break;
 	 default:
-	      lg("Unknown server message '" + input.cmd + "'!");
-	      warning("Unknown server message '" + input.cmd + "'!");
+	      input = { alert: "Unknown server message '" + input.cmd + "'!" };
 	}
+ if (input.log) lg(input.log); 
+ if (input.error) displayMainError(input.error);
+ if (input.alert) warning(input.alert);
 }
 
 function displayMainError(errormsg, resetOV = true)
 {
+ lg(errormsg);
  mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
  if (resetOV) activeOD = activeOV = '';
  mainTableRemoveEventListeners();
@@ -953,8 +945,7 @@ function callController(data)
 	{
 	 case 'New Object Database':
 	 case 'Edit Database Structure':
-	 case 'GETMENU':
-	 case 'GETMAINSTART':
+	 case 'GETSIDEBAR':
 	 case 'GETMAIN':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
@@ -993,7 +984,7 @@ function callController(data)
 	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];
 	      if (parammsg != '') msg += '\n\nObject View input parameters:' + parammsg;
 	      //--------------Display result message in warning box---------------
-	      warning(msg, 'Description');
+	      warning(msg, 'Description', false);
 	      break;
 	 case 'Help':
 	      box = help;
@@ -1001,7 +992,7 @@ function callController(data)
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV };
+	      object = { "cmd": 'NEWOBJECT', "data": {}, 'paramsOV': paramsOV };
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
@@ -1026,7 +1017,6 @@ function callController(data)
 	 default:
 	      if (cmd.substr(0, 7) != 'Logout ')
 		 {
-		  lg("Undefined application message: '" + cmd + "'!");
 		  warning("Undefined application message: '" + cmd + "'!");
 		  return;
 		 }
@@ -1037,7 +1027,9 @@ function callController(data)
     {
      object.OD = activeOD;
      object.OV = activeOV;
-     Hujax("main.php", controllerCmdHandler, object);
+     try { socket.send(JSON.stringify(object)); }
+     catch { warning("The server connection is down! Please refresh the page to reconnect the server"); }
+     if (socket.readyState === 3) warning("The server connection is down! Please refresh the page to reconnect the server");
     }
 }
 
@@ -1561,9 +1553,10 @@ function escapeHTMLTags(string)
  return string.replace(/</g,"&lt;").replace(/"/g,"&quot;");
 }
 
-function warning(text, title)
+function warning(text, title, log = true)
 {
  if (typeof text != 'string') text = 'Undefined warning message!';
+ if (log) lg(text);
  if (typeof title != 'string') title = 'Warning';
  box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
  ShowBox();
@@ -1608,7 +1601,9 @@ function uiProfileSet(customization)
  // else if (objectsPerPage > MAXOBJECTSPERPAGE) objectsPerPage = MAXOBJECTSPERPAGE;
 }
 
-const help = { title: 'Help', dialog:  { "System description": { profile: { element: { head:
+const help = { title: 'Help', dialog: {
+
+"System description": { profile: { element: { head:
 `Tabels application is a set of custom data tables the user can interact many different ways.
 Every table consists of identical objects, which, in turn, are set of user defined elements.
 Table data of itself is called Object Database (OD) and can be changed or created by
@@ -1619,13 +1614,14 @@ should be displayed and how (see element selection help section).
 OV allows users to operate specified objects many different ways and display its data 
 generated by binded to elements appropriate handlers. Simple OV is a classic table with
 object list in 'y' order and its elements in 'x' order, so Object Database is similar to
-any SQL database, where objects are rows and elements are fields.
+any SQL database, where objects are rows and elements are its fields.
 
 Element data represents itself JSON data type and stored in SQL database with that type.
 Element JSON data can be managed by appropriate built-in or user defined element
-handlers (see element handler help section).`
-	    		  }}},
-			  "Object Selection": { profile: { element: { head:
+handlers (see element element events section).`
+}}},
+
+"Object Selection": { profile: { element: { head:
 `Logical expression based on elements and its values is used to match the given object. Expression format:
     (<id[ver]>|user|<string>[<operator>]..)..
     id            Object element id (format $id) or its title (format $"my_title" or $'my_title').
@@ -1635,7 +1631,7 @@ handlers (see element handler help section).`
 		  first char '@' before the quoted string makes the system to retrieve text or regular
 		  expression from dialog box user input with the <string> text comment.
 		  Also no qouted predefined strings such as #user (determines username that selection
-		  function applying to) or #undef (id, ver or user/group doesn't exist; string of itself
+		  function applying to) or #undef (id, ver or user/group does not exist; string of itself
 		  has false logical value) can be used.
     operator  	  Compare operations: =  !=  ==  !==  =>  <=  <  >. Double char '==' construction means
 		  exact match, whereas single '=' matches "consists of" case.
@@ -1654,8 +1650,9 @@ handlers (see element handler help section).`
 		  (<id>|<string>|<operator> ..) ..
 		  Absent field or blank expression selects last available version, any digit value -
 		  exact version number.`
-	    		  }}},
-			  "Keyboard/Mouse": { profile: { element: { head:
+}}},
+
+"Keyboard/Mouse": { profile: { element: { head:
 `  - CTRL with left button click on any object element opens new browser tab with the element text as url*
   - CTRL with arrow left/right key set table cursor to the left/right end of the table*
   - CTRL with Home/End key set table cursor to the upper/lower end of the table
@@ -1679,32 +1676,57 @@ handlers (see element handler help section).`
     to fit the content.
   
 * will be available in a future releases`
-	    		  }}},
-			  "Element events": { profile: { element: { head:
-`JSON strings (one by line) to pass to the element handler when specified event (in self-titled property) occurs. Format:
-{"event": "<event name>", "data": "<event data>", "oid": "<object id>", "user": "<username>", "header":"<header>", "<property>": "<user string|json string>"}
-<event name> - property is mandatory and represents external event such as:
-  KEYPRESS (occurs when the keyboard input is registered for letters, digits, space and non symbol keys: F2, F12, INS, DEL),
+}}},
+
+"Element events": { profile: { element: { head:
+`Element events occur on user interaction with real object element on active table cell (mouse double clicking or keypressing), adding
+new object, changing the object and other object processes, see below. For any element event - specified element handler is called.
+Arguments for the handler, its command line name and other properties are defined in Object Database structure dialog (you can call it
+via appropriate context menu) on 'Element' tab. Handler arguments are set of JSON strings (one by line), one JSON - one element event.
+
+Incorrect JSON string or JSON with undefined event name property will be ignored. JSON format is:
+{"event": "<event name>", "data": "", "user": "", "oid": "", "title": "", "arg1": "<user or json string>", "arg2": "<user or json string>", ..}
+{"event": "<event name>", "arg1": "<user string | json string | {event|data|user|oid|title}>", "arg2": "---||---", ..}
+
+/*<data|user|oid|title>*/
+"event" - property is mandatory and represents element event names such as:
+    KEYPRESS (occurs when the keyboard input is registered for letters, digits, space and non symbol keys: F2, F12, INS, DEL),
     DBLCLICK (left button mouse double click),
-      CONFIRM (callback event occurs when dialog box or cell content editable data returns to the handler to be confirmed after the user has finished
-        dialog/edit process. Event is sent automatically with no args by default),
-	  INIT (object event occurs when the new object is being created),
-	    CHANGE (object event occurs after one of object elements has been changed by handler command SET or RESET, see handler section help).
-	      Error strings or JSON strings with undefined <event name> will be ignored.
-	      <event data> - property is set automatically by the controller with specified event data.
-	        For KEYPRESS it will be the key code or the string in case of text paste operation.
-		  For CONFIRM it will be editable text data or DIALOG handler command format json data, see handler section help.
-		    For INIT it will be new element cell text from OV new object table cells.
-		      For two other events DBLCLICK and CHANGE this property is undefined.
-		      <oid>, <user> and <header> properties are object id the specified event occurs on, user initiated the event and element header respectively.
-		        Properties are set automatically by the controller. Two events (KEYPRESS, DBLCLICK) that can be emulated by scheduler are initiated by 'system' user.
-			<any property> is any user defined properties that serve to pass any user defined string to the handler with one exception below.
-			  In case of json formated string - controller interprets this string as a certain object element property value that should be drawn and passed to the handler.
-			    JSON string format: {"OD": "<OD name>", "OV": "<OV name>", "oid": "<object id>", "eid": "<element id>", "prop": "<element JSON data property name>"}
-			      In case of "OD", "OV", "oId" or "eId" omitted - current Object Database/View and object/element id values are used. Property "prop" is mandatory.
-			        Object element JSON data should contain "prop" property, otherwise empty string value to pass to the handler is used.`
-	    		  }}}
-	    	        },
-	       buttons: { "&nbsp;   OK   &nbsp;": "" },
-	       flags:   { esc: "", style: "min-width: 700px; min-height: 600px;" }
-	     };
+    CONFIRM (callback event occurs when dialog box or cell content editable data returns to the handler to be confirmed after the user has finished dialog/edit process. Event is sent automatically if omitted),
+    INIT (occurs when the new object has been created for every element of that object),
+    CHANGE (occurs after one of elements has been changed by handler command SET or RESET, see handler answer commands below).
+"data" - this property is set automatically by the controller with specified event data.
+    For KEYPRESS it will be the key code or some text data in case of paste operation.
+    For INIT it will be new element cell text from OV new object table cells.
+    For CONFIRM it will be editable text data (as a result of EDIT handler answer command) or JSON fromat data (as a result of DIALOG handler answer command).
+    For two other events DBLCLICK and CHANGE this property is undefined.
+"user", "oid", "title" - are object id the specified event occurs on, user initiated the event and element header respectively.
+    Properties are set automatically by the controller. Two events (KEYPRESS, DBLCLICK) that can be emulated by scheduler are initiated by 'system' user.
+"arg1", "arg2".. - these properties are user defined properties. Its values with the props above act as arguments to pass to the
+    handler via next command line: <handler name> <event name> <event data> <user> <oid> <title> <arg1> <arg2> ..
+    <argN> are any user defined strings, but since they are in JSON format they are replaced by the value the JSON points to:
+    {"OD": "<OD name>", "OV": "<OV name>", "oid": "<object id>", "eid": "<element id>", "prop": "<property name>"}
+    Thus, these JSONs will be replaced  by the element JSON data property name ("prop") of object id ("oid") and element id
+    ("eid") of Object Database ("OD") and Object View ("OV"). In case of "OD", "OV", "oId" or "eId" omitted - current Object Database/View
+    and object/element id values are used. Property "prop" is mandatory, so empty string is used in case of absent or nonexistent "prop".
+
+Simple example - one of object Database (OD) consists of two elements: 'ip' (eid1) and 'ping' (eid2). User root wants to see the element1 ip address ping result by double clicking on element2 table cell.
+Handler name is 'ping.sh' and JSON event string is: {"event": "DBLCLICK", "arg1": '{"eid": "1", "prop": "value"}'}
+Therefore the command line to execute the handler is: ping.sh DBLCLICK '' root 1 'ping diagnostic' 'ip address'
+Script ping.sh may look like:
+#!/bin/sh
+$res = 'ping $6'
+echo '{"cmd": "SET", "cmd": ""}'`
+}}},
+
+"Handler commands": { profile: { element: { head:
+`To make controller prosess handler result data each handler should output JSON with next format:
+{"cmd": "<cmd name>", "data": "<event data>", "user": "", "oid": "", "title": "", "arg1": "<user or json string>", "arg2": "<user or json string>", ..}
+DIALOG - JSON string that calls dialog box on the client side with next format:
+`
+}}}
+},
+
+buttons: { "&nbsp;   OK   &nbsp;": "" },
+flags:   { esc: "", style: "min-width: 700px; min-height: 600px;" }
+};
