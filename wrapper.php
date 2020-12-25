@@ -6,23 +6,30 @@
 
 require_once 'core.php';
 
-/*$cid		= $_SERVER['argv'][1];
+$cid		= $_SERVER['argv'][1];
 $user		= $_SERVER['argv'][2];
 $ODid		= $_SERVER['argv'][3];
 $oid		= $_SERVER['argv'][4];
 $eid		= $_SERVER['argv'][5];
 $event		= $_SERVER['argv'][6];
-$data		= json_decode($_SERVER['argv'][7], true);
+$data		= $_SERVER['argv'][7];
 $allElements	= json_decode($_SERVER['argv'][8], true);
 $output = [];
-//lg($_SERVER['argv']);
-//exec("nohup /usr/local/apache2/htdocs/a.sh > /dev/null 2>&1 & echo $!", $output);
 
-if ($cmdline = trim($allElements[$eid]['element4']['data']) === '') exit;*/
-$json = '{"d":""}';
-$cmdline = "hui-hui123456<data>'$json'";
+
+switch($event)
+      {
+       case 'DBLCLICK': $cmdline = trim($allElements[$eid]['element4']['data']); break;
+       case 'KEYPRESS': $cmdline = trim($allElements[$eid]['element5']['data']); break;
+       case 'INIT': $cmdline = trim($allElements[$eid]['element6']['data']); break;
+       case 'CONFIRM': $cmdline = trim($allElements[$eid]['element7']['data']); break;
+       case 'CHANGE': $cmdline = trim($allElements[$eid]['element8']['data']); break;
+       default: exit;
+      }
+
+if ($cmdline === '') exit;
 $i = -1;
-$qoute = $cmd = '';
+$cmd = '';
 $len = strlen($cmdline);
 
 while (++$i < $len) switch ($cmdline[$i])
@@ -43,6 +50,7 @@ while (++$i < $len) switch ($cmdline[$i])
     	    if (($j = strpos($cmdline, '>', $i + 1)) !== false && (($match = substr($cmdline, $i + 1, $j - $i - 1)) === 'data' || $match === 'user' || $match === 'oid' || $match === 'title')) // Check for <data|user|oid|title> match
 	       {	
 	        $i = $j;
+		if ($match === 'data') $cmd .= "'$data'"; elif ($match === 'data') $cmd .= "'$user'";
 		$cmd .= 'huyax';
     		break;
 	       }
@@ -50,9 +58,7 @@ while (++$i < $len) switch ($cmdline[$i])
 	    $cmd .= $cmdline[$i];
       }
 
-echo $cmd;    
-echo "\n";
-
+lg($cmd);
 
 /*		  if (($handlerName = $allElementsArray[$eid]['element4']['data']) === '' || !($eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $input['cmd'], $eid))) break;
 		  if (isset($data)) $eventArray['data'] = $data;

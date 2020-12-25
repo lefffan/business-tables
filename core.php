@@ -67,11 +67,11 @@ function adjustODProperties($db, $data, $ODid)
 	     {
 	      $eid = strval($eid);
 	      $db->beginTransaction();
-	      $query = $db->prepare("ALTER TABLE `data_$id` DROP COLUMN eid$eid");
+	      $query = $db->prepare("ALTER TABLE `data_$ODid` DROP COLUMN eid$eid");
 	      $query->execute();
 	      if ($value['element3']['data'] === UNIQELEMENTTYPE)
 		 {
-		  $query = $db->prepare("ALTER TABLE `uniq_$id` DROP COLUMN eid$eid");
+		  $query = $db->prepare("ALTER TABLE `uniq_$ODid` DROP COLUMN eid$eid");
 		  $query->execute();
 		 }
 	      unset($data['dialog']['Element'][$key]);		// Element name, description and handler file are empty? Remove element.
@@ -100,14 +100,13 @@ function adjustODProperties($db, $data, $ODid)
      $name = $data['dialog']['Element']['New element']['element1']['data'];
      if (strlen($name) > ELEMENTPROFILENAMEMAXCHAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
      $eid = strval($eidmax + 1);
-     $id = strval($id);
      // Add object element column to database
      $db->beginTransaction();
-     $query = $db->prepare("ALTER TABLE `data_$id` ADD eid$eid JSON");
+     $query = $db->prepare("ALTER TABLE `data_$ODid` ADD eid$eid JSON");
      $query->execute();
      if ($data['dialog']['Element']['New element']['element3']['data'] === UNIQELEMENTTYPE)
         {
-         $query = $db->prepare("ALTER TABLE `uniq_$id` ADD eid$eid BLOB(65535), ADD UNIQUE(eid$eid(".UNIQKEYCHARLENGTH."))");
+         $query = $db->prepare("ALTER TABLE `uniq_$ODid` ADD eid$eid BLOB(65535), ADD UNIQUE(eid$eid(".UNIQKEYCHARLENGTH."))");
 	 $query->execute();
 	}
      $data['dialog']['Element'][$name.' - '.ELEMENTPROFILENAMEADDSTRING.$eid] = $data['dialog']['Element']['New element'];
@@ -151,7 +150,7 @@ function adjustODProperties($db, $data, $ODid)
 
 function initNewODDialogElements()
 {
- global $newDatabase, $newProperties, $newPermissions, $newElement, $newView, $newRule;
+ global $newProperties, $newPermissions, $newElement, $newView, $newRule;
  
  $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'line' => '', 'help' => "To remove database without recovery - set empty database name string and its description.<br>Remove all elements (see 'Element' tab) also."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
@@ -168,30 +167,15 @@ function initNewODDialogElements()
 		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
 
- $newDatabase	 = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - set empty database name string and its description.<br>Remove all elements (see 'Element' tab) also."],
-		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Emtpy, undefined or zero value - no limit.', 'data' => ''],
-		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Emtpy, undefined or zero value - no limit.', 'data' => ''],
-		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.'],
-
-		    'element6' => ['type' => 'radio', 'data' => 'allowed users/groups list to edit this database properties (disallowed for others)|+disallowed list (allowed for others)', 'help'=>'hui'],
-		    'element7' => ['type' => 'textarea', 'h ead' => 'List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties<br>', 'data' => '', 'line' => ''],
-		    
-		    'element8' => ['type' => 'radio', 'data' => 'allowed users/groups list to add/edit objects elements (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element9' => ['type' => 'textarea', 'h ead' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements', 'data' => '', 'line' => ''],
-		    
-		    'element10' => ['type' => 'radio', 'data' => 'allowed users/groups list to add/edit object views (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element11' => ['type' => 'textarea', 'h ead' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views', 'data' => '', 'line' => ''],
-		    
-		    'element12' => ['type' => 'radio', 'data' => 'allowed users/groups list to add/edit database rules (disallowed for others)|+disallowed list (allowed for others)'],
-		    'element13' => ['type' => 'textarea', 'h ead' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
-
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element4' => ['type' => 'text', 'head' => 'Server side element event handler file that processes incoming user defined events (see event section below):', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'JSON format event list', 'data' => '', 'line' => '', 'help' => 'Event JSON string (one per line) is a JSON to pass to the element handler as an input argument<br>when specified event occurs. JSONs properties:<br>"event" - event to be processed by the handler, JSONs with undefined event are ignored<br>"user" - user initiated event (automatically set by controller)<br>"eid" - element id (automatically set by controller)<br>"header" - element header (automatically set by controller)<br>Additionally some custom properties can be defined - its string values are sent to the handler<br>without changes with one exception - JSON formated value is replaced by element JSON data.<br>Format of the value: {"eid": "&lt;element id>", "prop": "&lt;element property>"}<br>where "prop" - element property, which value points to the specified by element &lt;eid> JSON data<br>property to be retrieved. In case of "eid" omitted - current element id value is used.<br>In the example below handler on mouse double click event gets JSON<br>with two custom properties. First property value is "test", second value -<br>json element data property "value" of current object element identificator 1:<br>{ "event": "DBLCLICK", "abc": "test", "def": {"eid": "1", "prop": "value"} }'],
-		    'element6' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
+		    'element4' => ['type' => 'text', 'head' => "Command line to process 'mouse double click' event:", 'data' => '', 'line' => ''],
+		    'element5' => ['type' => 'text', 'head' => "Command line to process 'key press' event:", 'data' => '', 'line' => ''],
+		    'element6' => ['type' => 'text', 'head' => "Command line to process 'init' event:", 'data' => '', 'line' => ''],
+		    'element7' => ['type' => 'text', 'head' => "Command line to process 'confirm' event:", 'data' => '', 'line' => ''],
+		    'element8' => ['type' => 'text', 'head' => "Command line to process 'object change' event:", 'data' => '', 'line' => ''],
+		    'element9' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
 	
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
@@ -329,7 +313,7 @@ function Check($db, $flags)
 	}
     }
 
- if (($flags & CHECK_OID) && $input['cmd'] != 'INIT')
+ if (($flags & CHECK_OID) && $input['cmd'] != 'NEWOBJECT')
     {
      global $oid;
      
@@ -343,7 +327,7 @@ function Check($db, $flags)
      if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object with id=$oid doesn't exist!\nPlease refresh Object View";
     }
 
- if (($flags & CHECK_EID) && $input['cmd'] != 'INIT')
+ if (($flags & CHECK_EID) && $input['cmd'] != 'NEWOBJECT')
     {
      global $eid;
      
@@ -365,7 +349,7 @@ function Check($db, $flags)
 	  break;
      case 'GETMAIN':
      case 'DELETEOBJECT':
-     case 'INIT':
+     case 'NEWOBJECT':
      case 'KEYPRESS':
      case 'DBLCLICK':
      case 'CONFIRM':

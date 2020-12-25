@@ -108,13 +108,6 @@ while (true)
 		    if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_OID | CHECK_ACCESS) && !DeleteObject($db)) getMainFieldData($db);
 		   }
 		   
-		// Context menu object delete event
-		else if ($input['cmd'] === 'NEWOBJECT')
-		   {
-		    if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS))
-		       exec(PHPBINARY." wrapper.php $cid '$client[auth]' 0 0 0 NEWOBJECT '".json_encode($input['data'])."' '".json_encode([])."' &");
-		   }
-		   
 		// Context menu new OD or its dialog apply data event
 		else if ($input['cmd'] === 'New Object Database')
 		   {
@@ -122,9 +115,7 @@ while (true)
 		    if ($input['data'] === '')
 		       {
 	    		initNewODDialogElements();
-			//$output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
-			$output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database',
-			'dialog'  => ['Database' => ['Properties' => $newDatabase], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', ' display_single_profile' => '']]];
+			$output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
 		       }
 		     else
 		       {
@@ -158,7 +149,7 @@ while (true)
 		   }
 		   
 		// Element event
-		else if ($input['cmd'] === 'CUSTOMIZATION' || $input['cmd'] === 'KEYPRESS' || $input['cmd'] === 'DBLCLICK' || $input['cmd'] === 'CONFIRM')
+		else if ($input['cmd'] === 'CUSTOMIZATION' || $input['cmd'] === 'KEYPRESS' || $input['cmd'] === 'DBLCLICK' || $input['cmd'] === 'CONFIRM' || $input['cmd'] === 'INIT')
 		   {
 		    if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS))
 		       {
@@ -168,14 +159,17 @@ while (true)
 		         else
 		    	   $customization = $input['data']['dialog'];
 			if ($input['cmd'] === 'CUSTOMIZATION') $input['cmd'] = 'CONFIRM';
-			exec(PHPBINARY." wrapper.php $cid '$client[auth]' $client[ODid] $oid $eid $input[cmd] '".json_encode($input['data'])."' '".json_encode($allElementsArray)."' &");
+			if ($input['cmd'] === 'INIT') $oid = $eid = 0;
+			if (gettype($input['data']) === 'string') { $type = 'string'; $data = str_replace("'", "'".'"'."'".'"'."'", $input['data']); }
+			 else { $type = 'json'; $data = json_encode($input['data'], JSON_HEX_APOS | JSON_HEX_QUOT); }
+			exec(PHPBINARY." wrapper.php $cid '$client[auth]' $client[ODid] $oid $eid $type $input[cmd] '$data' '".json_encode($allElementsArray, JSON_HEX_APOS | JSON_HEX_QUOT)."' &");
 		       }
 		   }
 		   
 		// Unknown client event
 		else $alert = "Controller report: unknown event '$input[cmd]' received from the client $ipport!";
 	       }
-		 
+	       
 	 /***********************************************************************************************/
 	 catch (PDOException $e)
 	       {
@@ -205,7 +199,7 @@ while (true)
 	    		       case 'DELETEOBJECT':
 	    			    $alert = "Failed to delete object: $msg";
 	        		    break;
-	    		       case 'NEWOBJECT':
+	    		       case 'INIT':
 			    	    preg_match("/Duplicate entry/", $msg) === 1 ? $alert = 'Failed to add new object: unique elements duplicate entry!' : $alert = "Failed to add new object: $msg";
 	        		    break;
 			       case 'CUSTOMIZATION':

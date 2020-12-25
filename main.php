@@ -1,5 +1,13 @@
 <?php
 
+require_once 'core.php';
+const PHPBINARY                         = '/usr/local/bin/php';
+$a = "\\\'";
+$j = '{"a":"b'.$a.'"}';
+//lg(json_encode(['c'=>'d']));
+exec(PHPBINARY." wrapper.php '$j'");
+exit;
+
 try {
      require_once 'eroc.php';
      

@@ -9,6 +9,7 @@ December 2020:
   INIT -> NEWOBJECT
   keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
   One element event (KEYPRESS, DBLCLICK, CONFIRM..) - on line in edit OD
+  PHPBINARY from phpinfo()
   
 - Del deletes new cell text, mouse one click edit new cell
   Log unknown handler name, for a example, text.ph
@@ -74,6 +75,7 @@ February 2021:
 - Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
 - In case of no pagination should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
 - Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
+- Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
 -----------------------------Emulation-------------------------------------------------------
 - Corp chat
 - Corp book
@@ -356,3 +358,5 @@ at any action:
 - ping/pong: websocket alive - everything's good, not alive - login dialog
 
 php threads: https://phpprofi.ru/blogs/post/55
+
+echo '\'{"a":"b"}\'' | php ./wrapper.php

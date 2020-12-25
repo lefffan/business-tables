@@ -745,7 +745,8 @@ function eventHandler(event)
 		           if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
 			      {
 			       cmd = 'KEYPRESS';
-			       callController({string: event.key, code: event.keyCode});
+			       //callController({string: event.key, code: event.keyCode});
+			       callController(event.key);
 			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
 			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
 			      }
@@ -992,7 +993,7 @@ function callController(data)
 	      break;
 	 case 'New Object':
 	      if (objectTable === undefined) break;
-	      object = { "cmd": 'NEWOBJECT', "data": {}, 'paramsOV': paramsOV };
+	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV };
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
