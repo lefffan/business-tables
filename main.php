@@ -1,269 +1,208 @@
 <?php
 
 require_once 'core.php';
-const PHPBINARY                         = '/usr/local/bin/php';
-$a = "\\\'";
-$j = '{"a":"b'.$a.'"}';
-//lg(json_encode(['c'=>'d']));
-exec(PHPBINARY." wrapper.php '$j'");
-exit;
 
-try {
-     require_once 'eroc.php';
-     
-     //require_once 'websocket.php';
-     //lg(session_get_cookie_params());
-     //lg($_SERVER);
-     //lg(PHP_VERSION_ID);
-     //lg(gettype([]));
-     $input = json_decode(file_get_contents("php://input"), true);
-     if (!isset($input['cmd'])) $input = ['cmd' => '']; // Set empty cmd in case of undefined or exit?
+error_reporting(E_ALL);	// Report all errors
+set_time_limit(0);	// set script execution time to unlimited value
+ob_implicit_flush();	// Turn implicit system buffer flushing on 
 
-     if ($input['cmd'] != 'LOGOUT') // Always perform check user auth except logout context menu push event
-     if (!isset($_SESSION["u"]) || !isset($_SESSION['h']) || !password_verify(getUserPass($db, $_SESSION['u']), $_SESSION['h'])) // User is unauthenticated or password has been changed?
-     if ($input['cmd'] === 'LOGIN' && ($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' && ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user)))) // Login dialog evet occured and user/pass are correct and not empty
-	{
-	 $_SESSION['u'] = $uid;
-	 $_SESSION['h'] = password_hash($hash, PASSWORD_DEFAULT);
-	 $customization = getUserCustomization($db, $uid);
-	 if (!isset($input['data']['flags']['callback']))
-	    {
-	     $output = ['cmd' => 'INFO', 'alert' => "User '$user' has logged in!", 'user' => $user];
-	     if (isset($customization)) $output['customization'] = $customization;
-	     echo json_encode($output);
-	     LogMessage($db, $output['alert'], 'info');
-	     exit;
-	    }
-	 $input = $input['data']['flags']['callback'];
-	 if ($input['cmd'] === 'Edit Database Structure' && gettype($input['data']) != 'string') exit; // Disallow OD dialog overwrite its data after session timeout
-	 if ($input['cmd'] === 'LOGIN') $input = ['cmd' => 'GETMAINSTART', 'OD' => '', 'OV' => ''];
-	}
-      else // Login dialog evet occured, but user/pass are empty or wrong
-        {    
-	 $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
-	 if ($input['cmd'] != 'LOGIN' || isset($input['data']['flags']['callback'])) $output['data']['flags']['callback'] = $input;
-	 if ($input['cmd'] === 'LOGIN') $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong password or username, please try again!\n\nUsername";
-	 echo json_encode($output);
-	 if (isset($user)) if ($user === '') LogMessage($db, 'Empty username login attempt', 'info');
-	  else LogMessage($db, "Wrong passowrd or username '$user'", 'info');
-	 exit;
-	}
-     if (isset($_SESSION['u'])) $currentuser = getUserName($db, $_SESSION['u']);
-	
-     switch ($input['cmd'])
-	    {
-	     case 'GETMAINSTART':
-	     case 'GETMAIN':
-	          if (isset($input['data']['dialog']['pad']['profile']))
-		     {
-		      $input['paramsOV'] = [];
-		      foreach ($input['data']['dialog']['pad']['profile'] as $key => $value) $input['paramsOV'][$key] = $value['data'];
-		     }
-		  if ($input['cmd'] === 'GETMAINSTART') 
-		     {
-	    	      $customization = getUserCustomization($db, $_SESSION['u']);
-		      if (isset($_SERVER["HTTP_USER_AGENT"])) $log = 'Application has started on '.$_SERVER['HTTP_USER_AGENT'];
-		       else $log = 'Application has been started';
-		     }
-		  if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) getMainFieldData($db);
-		  break;
-	     case 'GETMENU':
-		  $output = ['cmd' => ''];
-		  $sidebar = getODVNamesForSidebar($db);
-		  break;
-	     case 'LOGOUT':
-		  $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
-		  if (isset($_SESSION['u'])) unset($_SESSION['u']);
-		  if (!isset($currentuser)) break;
-		  $log = "User $currentuser has logged out!";
-		  $currentuser = NULL;
-		  break;
-	     case 'New Object Database':
-		  if (Check($db, CHECK_ACCESS)) break;
-		  if (!isset($input['data']))
-		     {
-	              initNewODDialogElements();
-		      $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
-		      break;
-		     }
-		  $output = NewOD($db);
-		  break;
-	     case 'Edit Database Structure':
-		  if (!isset($input['data'])) break;
-		  
-		  $odname = $input['data'];
-		  if (gettype($odname) === 'string')
-		     {
- 		      $query = $db->prepare("SELECT odprops FROM `$` WHERE odname=:odname");
-		      $query->execute([':odname' => $odname]);
-		      if ($odprops = json_decode($query->fetch(PDO::FETCH_NUM)[0], true))
-			 {
-			  $odprops['flags']['callback'] = $odname;
-			  $odprops['title'] .= " - '$odname'";
-			  ksort($odprops['dialog'], SORT_STRING);
-			  $output = ['cmd' => 'DIALOG', 'data' => $odprops];
-			  break;
-			 }
-		      $output = ['cmd' => 'INFO', 'alert' => "Unable to get '$odname' Object Database properties!"];
-		      break;
-		     }
-		     
-		  if (gettype($odname) === 'array') $output = EditOD($db);
-		  break;
-	     case 'DELETEOBJECT':
-		  if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_ACCESS)) break;
-		  if (!DeleteObject($db)) getMainFieldData($db);
-		  break;
-	     case 'INIT':
-		  if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_ACCESS)) break;
-		  //------------------Handle all elements of a new object------------------
-		  $output = [];
-		  foreach ($allElementsArray as $id => $profile)
-		       if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], $cmd, $id)))
-		    	  {
-			   $eventArray['data'] = isset($data[$id]) ? $data[$id] : '';
-			   $output[$id] = Handler($handlerName, json_encode($eventArray));
-			   if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
-			  }
-		  InsertObject($db);
-		  //-----------------------------------------------------------------------
-		  getMainFieldData($db);
-		  break;
-	     case 'CUSTOMIZATION':
-	     case 'KEYPRESS':
-	     case 'DBLCLICK':
-	     case 'CONFIRM':
-		  if (Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | SET_CMD_DATA | CHECK_OID | CHECK_EID | CHECK_ACCESS)) break;
-			    
-		  if ($input['cmd'] === 'CUSTOMIZATION' && $_SESSION['u'] == $input['oId'] && isset($input['data']['dialog']['pad']['misc customization']['element5']['data']))
-		  if ($input['data']['dialog']['pad']['misc customization']['element5']['data'] != '' && ($uid = getUserId($db, $input['data']['dialog']['pad']['misc customization']['element5']['data'])) && $uid != $_SESSION['u'])
-		     $customization = getUserCustomization($db, $uid, true);
-		   else
-		     $customization = $input['data']['dialog'];
-		  if ($input['cmd'] === 'CUSTOMIZATION') $cmd = 'CONFIRM';
-		  
-		  // Search input cmd event and call the appropriate handler
-		  if (($handlerName = $allElementsArray[$eid]['element4']['data']) === '' || !($eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $cmd, $eid))) break;
-		  if (isset($data)) $eventArray['data'] = $data;
-		  $output = [$eid => Handler($handlerName, json_encode($eventArray))];
-		  switch ($output[$eid]['cmd']) // Process handler answer by the controller
-			 {
-			  case 'SET':
-			  case 'RESET':
-			       if (CreateNewObjectVersion($db)) break;
-			       foreach ($output as $id => $value) if (!isset($props[$id])) unset($output[$id]);
-			       isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
-			       $query = $db->prepare("SELECT id,version,owner,datetime,lastversion FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
-			       $query->execute();
-			       foreach ($query->fetchAll(PDO::FETCH_ASSOC)[0] as $id => $value) $output['data'][$id] = $value;
-			       break;
-			  case 'EDIT':
-			       isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
-			       break;
-			  case 'ALERT':
-			       isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
-			       break;
-			  case 'DIALOG':
-			       if (!isset($output[$eid]['data']) || !is_array($output[$eid]['data'])) break;
-			       if (isset($output[$eid]['data']['flags']['cmd']) && $handlerName != 'customization.php') unset($output[$eid]['data']['flags']['cmd']);
-			       $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
-			       break;
-			  case 'CALL':
-			       if (!isset($output[$eid]['data']) || !is_array($output[$eid]['data']) || !isset($OD) || !isset($OV)) break;
-			       $input = ['cmd' => 'GETMAIN', 'paramsOV' => []];
-			       if (isset($output[$eid]['data']['Params'])) $input['paramsOV'] = $output[$eid]['data']['Params'];
-			       if (!isset($output[$eid]['data']['OD'])) $input['OD'] = $OD; else $input['OD'] = $output[$eid]['data']['OD'];
-			       if (!isset($output[$eid]['data']['OV'])) $input['OV'] = $OV; else $input['OV'] = $output[$eid]['data']['OV'];
-			       $output = ['cmd' => 'CALL'];
-			       if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) getMainFieldData($db);
-			       break;
-			  default:
-			       if ($cmd === 'CONFIRM') SetUndoOutput($db, $oid, $eid);
-			 }
-		  break;
-	     default:
-	          $output = ['cmd' => 'INFO', 'alert' => "Controller report: unknown event '".$input['cmd']."' received from the client!"];
-	    }
-    }
-     
-catch (PDOException $e)
+if (false === ($mainsocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP))) { lg('Create socket connection error: '.socket_strerror(socket_last_error())); return; }
+if (false === socket_bind($mainsocket, IP, PORT)) { lg('Socket binding error: '.socket_strerror(socket_last_error())); return; }
+if (false === socket_listen($mainsocket)) { lg('Set socket option error: '.socket_strerror(socket_last_error())); return; }
+$socketarray = [$mainsocket];
+$clientsarray = [[]];
+
+while (true)
+{
+ $read = $socketarray; // Make copy of array of sockets
+ $write = $except = null;
+
+ if (socket_select($read, $write, $except, 0, SOCKETTIMEOUTUSEC) === false) // Waiting for the sockets accessable for reading without timeout
     {
-     lg($e);
-     $msg = $e->getMessage();
-     if (!isset($input['cmd'])) $input = ['cmd' => ''];
-     
-     switch ($input['cmd'])
-    	    {
-	     case 'New Object Database':
-		  if (isset($odid))
-		     {
-		      $query = $db->prepare("DELETE FROM `$` WHERE id=$odid");
-		      $query->execute();
-		      $query = $db->prepare("DROP TABLE IF EXISTS `data_$odid`; DROP TABLE IF EXISTS `uniq_$odid`");
-		      $query->execute();
-		     }
-		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to add new OD: database name or its tables already exist!';
-		   else $alert = "Failed to add new OD: $msg";
-		  break;
-	     case 'Edit Database Structure':
-	    	  if (gettype($input['data']) === 'string') $alert = "Failed to get OD properties: $msg";
-		   else $alert = "Failed to write OD properties: $msg";
-	          break;
-	     case 'GETMENU':
-		  $alert = "Failed to read sidebar OD list: $msg";
-		  break;
-	     case 'GETMAINSTART':
-	     case 'GETMAIN':
-		  $error = "Failed to get OD data: $msg";
-		  break;
-	     case 'DELETEOBJECT':
-		  $alert = "Failed to delete object: $msg";
-		  break;
-	     case 'INIT':
-		  if (preg_match("/Duplicate entry/", $msg) === 1) $alert = 'Failed to add new object: unique elements duplicate entry!';
-		   else $alert = "Failed to add new object: $msg";
-		  break;
-	     case 'LOGOUT':
-	     case 'CUSTOMIZATION':
-	     case 'KEYPRESS':
-	     case 'DBLCLICK':
-	     case 'CONFIRM':
-		  $alert = "Client event '".$input['cmd']."' unknown error: $msg";
-		  break;
-	     default:
-		  echo json_encode(['cmd' => 'INFO', 'error' => "Controller unknown error: '$msg'"]);
-		  exit;
-	    }
+     lg('Socket wait status error: '.socket_strerror(socket_last_error()));
+     return;
+    }
+	    
+ if (in_array($mainsocket, $read))
+    {
+     if (($newsocket = socket_accept($mainsocket)) && ($info = handshake($newsocket)))
+	{
+	 lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
+	 $socketarray[] = $newsocket;
+	 $clientsarray[] = ['auth' => NULL, 'authtime' => NULL, 'uid' => NULL, 'ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'OD' => '', 'OV' => ''];
+	}
+     unset($read[array_search($mainsocket, $read)]);
     }
 
-// Check output command
-if (!isset($output['cmd']))
-if (isset($error)) $output = ['cmd' => 'INFO', 'error' => $error];
- else if (isset($alert)) $output = ['cmd' => 'INFO', 'alert' => $alert];
-  else $output = ['cmd' => ''];
+ foreach($read as $socket)
+	{
+	 $client = &$clientsarray[$cid = array_search($socket, $socketarray)];
+	 $client['cid'] = $cid;
+	 $output = ['cmd' => ''];
+	 $ipport = $client['ip'].':'.$client['port'];
+	 $data = socket_read($socket, SOCKETREADMAXBYTES);
+	 $decoded = decode($data);
+	 $input = json_decode($decoded['payload'], true);
+	 if (gettype($input) === 'array' && !isset($input['data'])) $input['data'] = '';
+	 if (isset($input['cmd']) && $input['cmd'] != 'LOGIN' && !isset($client['auth'])) $input['cmd'] = 'LOGOUT';
 
-// Add some data tou output result     
-if (isset($log))		$output['log'] = $log;
-if (isset($OD))			$output['OD'] = $OD;
-if (isset($OV))			$output['OV'] = $OV;
-if (isset($currentuser))	$output['user'] = $currentuser;
-if (isset($customization))	$output['customization'] = $customization;
-if (isset($sidebar))		$output['sidebar'] = $sidebar;
-    
-// Exception occured and active transaction does exist? Roll it back to allow save corresponded log message to the database
-if (isset($msg) && $db->inTransaction()) $db->rollBack();
-
-// Echo output result
-echo json_encode($output);
-
-// Get current user and build part of the log message
-$prefix = '';
-if (isset($currentuser))	$prefix .= "['$currentuser']";
-if (isset($OD) && $OD != '')	$prefix .= "[OD '$OD']";
-if (isset($OV) && $OV != '')	$prefix .= "[OV '$OV']";
-if ($prefix != '')		$prefix .= ': ';
-
-// Log the message
-if (isset($output['log']))					LogMessage($db, $prefix.$output['log'], 'info');
-if (isset($output['alert']))					LogMessage($db, $prefix.$output['alert'], 'alert');
-if (isset($output['error']) && (!isset($OD) || $OD != ''))	LogMessage($db, $prefix.$output['error']);
+	 try {
+	      // Client close socet connection event or unknown command?
+	      if (false === $decoded || 'close' === $decoded['type'] || !isset($input['cmd']))
+		 {
+		  socket_shutdown($socket);
+		  socket_close($socket);
+		  $output['alert'] = "Client $ipport web socket connection closed due to undefined or close event";
+		  unset($socketarray[$cid]);
+		  unset($clientsarray[$cid]);
+		 }
+	       else switch ($input['cmd'])
+	    	 {
+		  case 'LOGIN': // Client context menu login dialog event. Check if user/pass are correct and not empty
+		       if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' &&  ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user))))
+		    	  {
+		    	   $output['customization'] = getUserCustomization($db, $uid);
+			   $client['auth'] = $user;
+			   $client['uid'] = $uid;
+			   $input['OD'] = $input['OV'] = '';
+			   $client['ODid'] = NULL;
+			   $output['alert'] = "User '$user' has logged in from $ipport!";
+			   Check($db, CHECK_OD_OV, $client, $input, $output);
+			   break;
+		    	  }
+		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+		       $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong password or username, please try again!\n\nUsername";
+		       $user ? $output['log'] = "Wrong passowrd or username '$user' from $ipport" : $output['log'] = "Empty username login attempt from $ipport";
+		       break;
+		  case 'LOGOUT': // Client context menu logout event or any other event from unauthorized client or pass change or timeout
+		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+		       if (isset($client['auth'])) $output['log'] = 'User '.$client['auth'].' has logged out!';
+		       $client['auth'] = NULL;
+		       break;
+		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
+		       Check($db, CHECK_OD_OV, $client, $input, $output);
+		       break;
+		  case 'CALL': // Client OD data fetch event
+		       if (!Check($db, CHECK_OD_OV, $client, $input, $output)) break;
+		       $client['params'] = [];
+		       if (isset($input['data']['dialog']['pad']['profile'])) // First convert input dialog data to object selection params data
+			  foreach ($input['data']['dialog']['pad']['profile'] as $key => $value) $client['params'][$key] = $value['data'];
+		       $output['cmd'] = 'CALL';
+		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
+		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
+		       break;
+		  case 'New Object Database':
+		       if (!Check($db, CHECK_ACCESS, $client, $input, $output)) break;
+		       if ($input['data'] === '')
+		          {
+	    		   initNewODDialogElements();
+			   $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
+			   break;
+		          }
+		       $output['cmd'] = 'New Object Database';
+		       $client['data'] = $input['data'];
+		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
+		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
+		       break;
+		  case 'Edit Database Structure':
+		       Check($db, NULL, $client, $input, $output);
+		       if (gettype($input['data']) === 'string')
+		    	  {
+ 			   $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
+			   $query->execute([':id' => $input['data']]);
+			   $odprops = $query->fetch(PDO::FETCH_NUM);
+			   $odname = $odprops[0];
+		    	   if ($odprops = json_decode($odprops[1], true))
+			      {
+			       $odprops['flags']['callback'] = $input['data'];
+			       $odprops['title'] .= " - '$odname' (id $input[data])";
+			       ksort($odprops['dialog'], SORT_STRING);
+			       $output = ['cmd' => 'DIALOG', 'data' => $odprops];
+			       break;
+			      }
+			   $output['alert'] = "Unable to get '$odname' Object Database properties!";
+			   break;
+			  }
+		       $output['cmd'] = 'Edit Database Structure';
+		       $client['data'] = $input['data'];
+		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
+		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
+		       break;
+		  case 'KEYPRESS':
+		  case 'DBLCLICK':
+		  case 'CONFIRM':
+		  case 'INIT':
+		  case 'DELETEOBJECT':
+		       if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $input, $output)) break;
+		       $client['data'] = $input['data'];
+		       //exec(PHPBINARY." wrapper.php $client[uid] $client[ODid] $client[OVid] '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+		       exec(PHPBINARY." wrapper.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+		       break;
+		  default:
+		       $output['alert'] = "Controller report: unknown client event '$input[cmd]'!";
+		 }
+	     }
+	 catch (PDOException $e)
+	     {
+	      lg($e);
+    	      $output['error'] = 'Controller error: '.$e->getMessage().'!';
+	     }
+	 
+	 // Write output result to the client socket
+	 if ($output != ['cmd' => ''] && isset($socketarray[$cid]))
+	    {
+	     if (isset($output['error'])) $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
+	     if (isset($client['auth'])) $output['user'] = $client['auth'];
+	     socket_write($socket, encode(json_encode($output)));
+	    }
+	}
+		
+ // Process queue events from sql table `$$`
+ $query = $db->prepare("SELECT * FROM `$$`");
+ $query->execute();
+ foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
+	 {
+	  $handler = json_decode($value['client'], true);
+	  //lg($handler);
+	  switch ($handler['cmd'])
+	         {
+		  case 'EDIT':
+		  case 'DIALOG':
+		  case 'SET':
+		       if (isset($socketarray[$client['cid']])) socket_write($socketarray[$handler['cid']], encode(json_encode($handler)));
+		       break;
+	    	  case 'CALL':
+		       $input = ['cmd' => 'CALL'] + $handler['data'];
+		       if (!isset($input['ODid']))
+		          {
+			   $input['ODid'] = '';
+			   $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
+			   $query->execute([':odname' => $input['OD']]);
+			   $output = $query->fetchAll(PDO::FETCH_NUM);
+			   if (isset($output[0][0])) $input['ODid'] = $output[0][0];
+			  }
+		       if (!isset($input['OVid']))
+		          {
+			   $input['OVid'] = '';
+			   $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
+			   $query->execute([':id' => $input['ODid']]);
+			   foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View)
+				if ($key != 'New view' && $key === $input['OV'])
+				   {
+				    $input['OVid'] = $View['element1']['id'];
+				    break;
+				   }
+			  }
+		       $output = ['cmd' => ''];
+		       if (!Check($db, CHECK_OD_OV, $handler, $input, $output)) break;
+		       $handler['params'] = $handler['data']['params'];
+		       unset($handler['data']);
+		       $output['cmd'] = 'CALL';
+		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
+		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($handler)]);
+		       break;
+	     }
+	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");
+	  $query->execute();
+	 }
+}

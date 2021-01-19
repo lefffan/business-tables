@@ -1,27 +1,26 @@
-December 2020:
-- Socket conception:
-  catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
-  socket rate limit https://javascript.info/websocket#rate-limiting
-  _SESSION -> info[]
-  when editing OD props - if dialog elements/views/rules doesn't exist in props in db, then?
-  load all OD info at server script start
-  CHeck authorization at someones else changes the pass or session timeout
-  INIT -> NEWOBJECT
-  keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
-  One element event (KEYPRESS, DBLCLICK, CONFIRM..) - on line in edit OD
-  PHPBINARY from phpinfo()
-  
+Janury 2021:
+- profile sort at custom dialog
+- no cmd in dialog confirm from usual handlers
+- Undo editing
+- NEWOBJECT AND DELETEOBKECT
+- keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
+- catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
+- when editing OD props - if dialog elements/views/rules doesn't exist in props in db, then?
+- CHeck authorization at someones else changes the pass or session timeout
+- SHOW VARIABLES LIKE "%wait%"; => wait_timeout=28800, 'message' => 'SQLSTATE[HY000]: General error: 2006 MySQL server has gone away'
 - Del deletes new cell text, mouse one click edit new cell
-  Log unknown handler name, for a example, text.ph
-  On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
-  
-- Object_selection to OD rule section
-  Check objects to match view current selection on process client commands?
-
+- Log unfound handler name, for a example, text.ph
+- On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
+- Object_selection to OD rule section + Check objects to match view current selection on process client commands?
 - help context menu for all help (conception, handler, keyboard/mouse..)
   Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
-
-Janury 2021:
+  remove "global" keyword to avoid shit-code
+  websocket.php -> server.php
+  divide core.php to make separate php file to be included in wrapper.php
+  _SESSION -> info[]
+  just not to be able to remove users and logs OD
+  
+February 2021:
 - Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
@@ -42,18 +41,20 @@ Janury 2021:
   Linux to docker, secure php.ini, optimize mysql to highload app
   ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
   use array_key_last([]); instead of end([]); and 
+  Problems of deploying - can i use mysql on commerisal base? Can i use sockets number more than 1024?
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by me
+- inner text in <td> can consists of <br>, <color> and <font> tags
   
-February 2021:
+March 2021:
 - Object view PIECHART and GRAPH
 - System calls and its object views: LOCATION.
 - multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
 - firefox up/down and left/right arrows scroll page
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
 - User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
-- Feedback and finish https://bakhirev.biz/book/#MmlJN
+- Feedback and finish https://bakhirev.biz/book/#MmlJN (for quick process require only constan.php with connect.php, not big core.php!)
 
 --------------Doubt features--------------------------------------------------------------
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
@@ -76,6 +77,8 @@ February 2021:
 - In case of no pagination should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
 - Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
 - Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
+- Define OV by id (not by name) to avoid client socket subscribed OV loss. For example, during client adding new object OV name has changed, so OV refresh command will not be passed due to subscribed and changed OV are unmatched
+- socket rate limit https://javascript.info/websocket#rate-limiting
 -----------------------------Emulation-------------------------------------------------------
 - Corp chat
 - Corp book
@@ -95,7 +98,10 @@ February 2021:
   diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
   In INFO scheme find mac on every switch in OV
   In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
+  Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
+  see client mac, cable length, errors and all other data the switch allows to monitor
 - Paraga mail functional and ask Hramcova analitiku po helpdesku
+- See functions on Slava's management system
 ------------------------------------------------------------------------------------------
 
 
@@ -360,3 +366,14 @@ at any action:
 php threads: https://phpprofi.ru/blogs/post/55
 
 echo '\'{"a":"b"}\'' | php ./wrapper.php
+
+
+
+
+Client(Browser) <-> Server(Controller) -> Handler(wrapper.php)
+
+handler_queue ($$.sql) view_queue ($$$.sql)
+
+
+
+

@@ -1,51 +1,24 @@
 <?php
 
-const APPDIR				= '/usr/local/apache2/htdocs/';
-const DATABASENAME			= 'OE8';
-const DATABASEUSER			= 'root';
-const DATABASEPASS			= '123';
-const PHPBINARY				= '/usr/local/bin/php';
-const MAXOBJECTS			= 100000;
-const ODSTRINGMAXCHAR			= 64;
-const USERSTRINGMAXCHAR			= '64';
-const USERPASSMINLENGTH			= '8';
-const HANDLERDIR			= 'handlers';
-const ELEMENTDATAVALUEMAXCHAR		= 10000;
-const ELEMENTPROFILENAMEMAXCHAR		= 16;
-const ELEMENTPROFILENAMEADDSTRING	= 'element id';
-const UNIQKEYCHARLENGTH			= 300;
-const UNIQELEMENTTYPE			= '+unique|';
-const NEWOBJECTID			= 1;
-const TITLEOBJECTID			= 2;
-const STARTOBJECTID			= 3;
-const CHECK_OD_OV			= 0b00000001;
-const GET_ELEMENT_PROFILES		= 0b00000010;
-const GET_OBJECT_VIEWS			= 0b00000100;
-const CHECK_DATA			= 0b00001000;
-const CHECK_OID				= 0b00010000;
-const CHECK_EID				= 0b00100000;
-const CHECK_ACCESS			= 0b01000000;
-const DEFAULTUSER			= 'root';
-const DEFAULTPASSWORD			= 'root';
-const SESSIONLIFETIME			= 36000;
-const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
-const IP				= '192.168.9.39';
-const PORT				= 7889;
+require_once 'const.php';
+require_once 'connect.php';
 
 function rmSQLinjectionChars($str) // Function removes dangerous chars such as: ; ' " %
 {
  return str_replace(';', '', str_replace('"', '', str_replace("'", '', str_replace("%", '', $str))));
 }
 
-function lg($arg) // Function saves input $arg to error.log
+function lg($arg, $title = 'LOG') // Function saves input $arg to error.log
 {
  if (gettype($arg) === 'string')
     {
+     echo "\n----------------------------".$title." START-------------------------------\n";
      echo $arg;
-     echo "\n-------------------------------END LOG-------------------------------\n";
+     echo "\n-----------------------------".$title." END-------------------------------\n";
     }
+ file_put_contents('error.log', "\n----------------------------".$title." START-------------------------------\n", FILE_APPEND);
  file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
- file_put_contents('error.log', "\n-------------------------------END LOG-------------------------------\n", FILE_APPEND);
+ file_put_contents('error.log', "\n-----------------------------".$title." END-------------------------------\n", FILE_APPEND);
 }
 
 function adjustODProperties($db, $data, $ODid)
@@ -55,17 +28,21 @@ function adjustODProperties($db, $data, $ODid)
  // Check some vars
  if (!isset($db, $ODid, $data['dialog']['Database']['Properties']['element1']['data'], $data['dialog']['Element']['New element'])) return NULL;
 
- // New element section handle
- $eidmax = 0;
+ // Element section handle
+ if (!isset($data['dialog']['Element']['New element']['element1']['data'])) return NULL;
+ $eidnew = strval($data['dialog']['Element']['New element']['element1']['id']);
  foreach ($data['dialog']['Element'] as $key => $value)
-      if ($key != 'New element') // Remove empty elements for non new element profile
 	 {
-	  $eid = intval(substr($key, strrpos($key, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
-	  $data['dialog']['Element'][$key]['element4']['data'] = trim($data['dialog']['Element'][$key]['element4']['data']);
-	  if ($eid > $eidmax) $eidmax = $eid; // Calculate max element id
-	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '')
+	  // Fetching element id
+	  $eid = strval($value['element1']['id']);
+	  // Remove element from db and dialog props in case of empty name, description and all hanlders
+	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '' && $value['element5']['data'] === '' && $value['element6']['data'] === '' && $value['element7']['data'] === '')
 	     {
-	      $eid = strval($eid);
+	      if ($key === 'New element')
+	         {
+		  unset($data['dialog']['Element'][$key]);
+		  continue;
+		 }
 	      $db->beginTransaction();
 	      $query = $db->prepare("ALTER TABLE `data_$ODid` DROP COLUMN eid$eid");
 	      $query->execute();
@@ -76,67 +53,76 @@ function adjustODProperties($db, $data, $ODid)
 		 }
 	      unset($data['dialog']['Element'][$key]);		// Element name, description and handler file are empty? Remove element.
 	      $db->commit();
+	      continue;
 	     }
-	   else
+	  // Limiting element title to ELEMENTDATAVALUEMAXCHAR as it is displayed as a regular element
+	  $element = &$data['dialog']['Element'][$key];
+	  if (strlen($element['element1']['data']) > ELEMENTDATAVALUEMAXCHAR) $element['element1']['data'] = substr($element['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR);
+	  // Calculating current element profile name
+	  $profile = trim($value['element1']['data']);
+	  if (strlen($profile) > ELEMENTPROFILENAMEMAXCHAR) $profile = substr($profile, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
+	  $profile .= ELEMENTPROFILENAMEADDSTRING.$eid.')';
+	  // Processing new element
+	  if ($key === 'New element')
 	     {
-	      $name = $value['element1']['data'];
-	      if (strlen($name) > ELEMENTPROFILENAMEMAXCHAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
-	      $name .= ' - '.ELEMENTPROFILENAMEADDSTRING.$eid;
-	      if ($name != $key)
-	         {
-		  $data['dialog']['Element'][$name] = $data['dialog']['Element'][$key];
-	          unset($data['dialog']['Element'][$key]);
+	      $element['element3']['readonly'] = '';
+	      $element['element3']['head'] .= ' (readonly)';
+    	      $db->beginTransaction();
+    	      $query = $db->prepare("ALTER TABLE `data_$ODid` ADD eid$eid JSON");
+    	      $query->execute();
+    	      if ($value['element3']['data'] === UNIQELEMENTTYPE)
+    		 {
+        	  $query = $db->prepare("ALTER TABLE `uniq_$ODid` ADD eid$eid BLOB(65535), ADD UNIQUE(eid$eid(".UNIQKEYCHARLENGTH."))");
+		  $query->execute();
 		 }
+    	      $db->commit();
+	      $data['dialog']['Element'][$key]['element1']['id'] = $eidnew;
+	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
+	      $eidnew = strval(intval($eidnew) + 1);
+	      continue;
+	     }
+	  // Processing element new profile
+	  if ($profile != $key)
+	     {
+	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
+	      unset($data['dialog']['Element'][$key]);
 	     }
 	 }
- // New element have been set? Create it
- if ($data['dialog']['Element']['New element']['element1']['data'] != '' || $data['dialog']['Element']['New element']['element2']['data'] != '' || $data['dialog']['Element']['New element']['element4']['data'] != '')
-    {
-     if (strlen($data['dialog']['Element']['New element']['element1']['data']) > ELEMENTDATAVALUEMAXCHAR/2)
-        $data['dialog']['Element']['New element']['element1']['data'] = substr($data['dialog']['Element']['New element']['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR/2);
-     $data['dialog']['Element']['New element']['element4']['data'] = trim($data['dialog']['Element']['New element']['element4']['data']);
-     $data['dialog']['Element']['New element']['element3']['readonly'] = '';
-     $data['dialog']['Element']['New element']['element3']['head'] .= ' (readonly)';
-     $name = $data['dialog']['Element']['New element']['element1']['data'];
-     if (strlen($name) > ELEMENTPROFILENAMEMAXCHAR) $name = substr($name, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
-     $eid = strval($eidmax + 1);
-     // Add object element column to database
-     $db->beginTransaction();
-     $query = $db->prepare("ALTER TABLE `data_$ODid` ADD eid$eid JSON");
-     $query->execute();
-     if ($data['dialog']['Element']['New element']['element3']['data'] === UNIQELEMENTTYPE)
-        {
-         $query = $db->prepare("ALTER TABLE `uniq_$ODid` ADD eid$eid BLOB(65535), ADD UNIQUE(eid$eid(".UNIQKEYCHARLENGTH."))");
-	 $query->execute();
-	}
-     $data['dialog']['Element'][$name.' - '.ELEMENTPROFILENAMEADDSTRING.$eid] = $data['dialog']['Element']['New element'];
-     $data['dialog']['Element']['New element'] = $newElement;
-     $db->commit();
-    }
-
+ $data['dialog']['Element']['New element'] = $newElement; // Reset 'New element' profile to default
+ $data['dialog']['Element']['New element']['element1']['id'] = $eidnew;
+ 
  // New view section handle
  if (!isset($data['dialog']['View']['New view']['element1']['data'])) return NULL;
- foreach ($data['dialog']['View'] as $key => $value)
-      if (!isset($value['element1']['data']) || !isset($value['element2']['data'])) return NULL; // Dialog 'View' pad corrupted?
-       else if ($value['element1']['data'] === '') unset($data['dialog']['View'][$key]);	 // View name is empty? Remove it
-       else if (isset($data['dialog']['View'][$value['element1']['data']])) $data['dialog']['View'][$key]['element1']['data'] = $key.''; // New view name already exists? Discard changes
-       else
-	 {
-	  $data['dialog']['View'][$value['element1']['data']] = $data['dialog']['View'][$key];	// Otherwise create new view with new view name
-	  unset($data['dialog']['View'][$key]);							// and remove old view
-	 }
+ $vidnew = strval($data['dialog']['View']['New view']['element1']['id']);
+ $viewpad = &$data['dialog']['View'];
+ foreach ($viewpad as $key => $value) if (!isset($value['element1']['data']) || !isset($value['element2']['data']) || $value['element1']['data'] === '') unset($data['dialog']['View'][$key]); // Dialog 'View' profile corrupted or view name is empty? Remove it
+ foreach ($viewpad as $key => $value) 
+	 if (isset($viewpad[$value['element1']['data']]))
+	    {
+	     $viewpad[$key]['element1']['data'] = $key.''; // New view name already exists? Discard changes
+	    }
+	  else
+	    {
+	     $vidnew = strval(intval($vidnew) + 1);
+	     $viewpad[$value['element1']['data']] = $viewpad[$key];	// Otherwise create new view with new view name
+	     unset($viewpad[$key]);					// and remove old view
+	    }
  $data['dialog']['View']['New view'] = $newView; // Reset 'New view' profile to default
- 
+ $data['dialog']['View']['New view']['element1']['id'] = $vidnew;
+
  // New rule section handle
  if (!isset($data['dialog']['Rule']['New rule']['element1']['data'])) return NULL;
- foreach ($data['dialog']['Rule'] as $key => $value)
-      if (!isset($value['element1']['data']) || !isset($value['element2']['data'])) return NULL; // Dialog 'Rule' pad corrupted?
-       else if ($value['element1']['data'] === '') unset($data['dialog']['Rule'][$key]);	 // Rule name is empty? Remove it
-       else if (isset($data['dialog']['Rule'][$value['element1']['data']])) $data['dialog']['Rule'][$key]['element1']['data'] = $key; // New rule name already exists? Discard changes
+ $rulepad = &$data['dialog']['Rule'];
+ foreach ($rulepad as $key => $value) if (!isset($value['element1']['data']) || !isset($value['element2']['data']) || $value['element1']['data'] === '') unset($data['dialog']['Rule'][$key]); // Dialog 'Rule' profile corrupted or rule name is empty? Remove it
+ foreach ($rulepad as $key => $value)
+      if (isset($rulepad[$value['element1']['data']]))
+         {
+	  $rulepad[$key]['element1']['data'] = $key.''; // New rule name already exists? Discard changes
+	 }
        else
 	 {
-	  $data['dialog']['Rule'][$value['element1']['data']] = $data['dialog']['Rule'][$key];	// Otherwise create new rule with new rule name
-	  unset($data['dialog']['Rule'][$key]);							// and remove old rule
+	  $rulepad[$value['element1']['data']] = $rulepad[$key];	// Otherwise create new rule with new rule name
+	  unset($rulepad[$key]);					// and remove old rule
 	 }
  $data['dialog']['Rule']['New rule'] = $newRule; // Reset 'New rule' profile to default
  
@@ -167,7 +153,7 @@ function initNewODDialogElements()
 		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
 		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
 
- $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
+ $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
 		    'element4' => ['type' => 'text', 'head' => "Command line to process 'mouse double click' event:", 'data' => '', 'line' => ''],
@@ -177,7 +163,7 @@ function initNewODDialogElements()
 		    'element8' => ['type' => 'text', 'head' => "Command line to process 'object change' event:", 'data' => '', 'line' => ''],
 		    'element9' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
 	
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'line' => '', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'line' => '', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
 		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Uplink scheme|Downlink scheme|Graph|Piechart|Map|', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
@@ -193,20 +179,21 @@ function initNewODDialogElements()
 		    'element4' => ['type' => 'textarea', 'head' => 'Rule expression', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
 }
 
-function getODVNamesForSidebar($db)
+function GetSidebar($db, $userid, $ODid, $OVid, $OD, $OV)
 {
- global $client;
- 
- $groups = getUserGroups($db, $client['uid']); // Get current user group list
- $groups[] = $client['auth']; // and add username at the end of array
+ $groups = getUserGroups($db, $userid);	// Get current user group list
+ $groups[] = getUserName($db, $userid);	// and add username at the end of array
 
- $arr = [];
- $query = $db->prepare("SELECT odname FROM `$`");
+ $sidebar = [];
+ $query = $db->prepare("SELECT id,odname FROM `$`");
  $query->execute();
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
-	  $arr[$value['odname']] = [];
-	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$value[odname]'");
+	  $name = $value['odname'];
+	  $id = intval($value['id']);
+	  $sidebar[$id] = ['name' => $name, 'view' => []];
+	  
+	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$name'");
 	  $query->execute();
 	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
 		  {
@@ -214,302 +201,184 @@ function getODVNamesForSidebar($db)
 		      { if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') continue; }
 		    else 
 		      { if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') continue; }
-		   $arr[$value['odname']][$key] = '';
+		   $sidebar[$id]['view'][intval($View['element1']['id'])] = $View['element1']['data'];
+		   if ($id === intval($ODid) && $View['element1']['id'] === $OVid) $sidebar[$id]['active'] = $OVid;
 		  }
 	 }
- return $arr;
+
+ if (count($sidebar) == 0)			return ['cmd' => '', 'sidebar' => $sidebar, 'error' => 'Please create Object Database first!'];
+ if ($ODid === '')				return ['cmd' => '', 'sidebar' => $sidebar, 'error' => 'Please create/select Object View!'];
+ if (!isset($sidebar[$ODid]['view'][$OVid]))	return ['cmd' => '', 'sidebar' => $sidebar, 'error' => "Database '$OD' or its View '$OV' not found!"];
+						return ['cmd' => '', 'sidebar' => $sidebar];
 }
 
-function cutKeys($arr, $keys) // Function cuts all keys of $array except of keys defined in $keys array element values
+function cutKeys(&$arr, $keys) // Function cuts all keys of array $arr except of keys defined in $keys array
 {
+ foreach ($arr as $key => $value) if (array_search($key, $keys) === false) unset($arr[$key]);
+}
+
+function CopyKeys(&$arr, $keys)
+{                                                                     
  $result = [];
- foreach ($keys as $value)
-	 if (key_exists($value, $arr)) $result[$value] = $arr[$value];
- return $result;
+ foreach ($keys as $value) if (isset($arr[$value])) $result[$value] = $arr[$value];
+ return $result;                                                      
 }
-
-function Check($db, $flags)
+	    
+function Check($db, $flags, &$client, &$input, &$output)
 {
- global $input, $client; 
- global $sidebar, $alert, $error;
+ $client['cmd'] = $input['cmd'];
 
  if ($flags & CHECK_OD_OV)
     {
      // Check input OD/OV vars existence
-     if (!isset($input['OD']) || !isset($input['OV'])) return $error = 'Incorrect Object Database/View!';
- 
-     // Check current user subscribed OD/OV existence
-     if (count($sidebar = getODVNamesForSidebar($db)) == 0) return $error = 'Please create Object Database first!';                         
-      else if (!isset($sidebar[$input['OD']], $sidebar[$input['OD']][$input['OV']])) return $error = 'Please create/select Object View!';
+     if (!isset($input['OD'], $input['OV'])) $input['OD'] = $input['OV'] = '';
+     if (!isset($input['ODid'], $input['OVid'])) $input['ODid'] = $input['OVid'] = '';
+     $output = GetSidebar($db, $client['uid'], $input['ODid'], $input['OVid'], $input['OD'], $input['OV']);
+     if (isset($output['error'])) return;
      
-     // Get OD id
-     $query = $db->prepare("SELECT id FROM $ WHERE odname='$input[OD]'");
-     $query->execute();
-     if (count($client['ODid'] = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$OD' Object View '$OV' not found!";
-     $client['ODid'] = $client['ODid'][0][0];
-     
-     // Set subscribed OD/OV to the current client
-     $client['OD'] = $input['OD'];
-     $client['OV'] = $input['OV'];
+     // Set subscribed input parameters to the current client
+     $client['ODid'] = $input['ODid'];
+     $client['OVid'] = $input['OVid'];
+     $client['OD']   = $output['sidebar'][ intval($input['ODid']) ]['name'];
+     $client['OV']   = $output['sidebar'][ intval($input['ODid']) ]['view'][ intval($input['OVid']) ];
     }
 
- if ($flags & GET_ELEMENT_PROFILES)
+ if ($flags & GET_ELEMENTS)
     {
-     global $allElementsArray, $uniqElementsArray;
-     $allElementsArray = $uniqElementsArray = [];
-
      // Get element section
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
-     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$client[OD]' Object View '$client[OV]' not found!";
-
-     // Decode element profiles array form OD props, remove 'New element' section and check elements existence
-     $profiles = json_decode($profiles[0][0], true);
-     unset($profiles['New element']);
-     if (!is_array($profiles) || !count($profiles)) return $error = "Database '$client[OD]' has no elements exist!";
+     if (count($elements = $query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!"; return; }
 
      // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
-     foreach ($profiles as $profile => $value)
+     $client['allelements'] = $client['uniqelements'] = [];
+     foreach (json_decode($elements[0][0], true) as $key => $value) if ($key != 'New element')
     	     {
-    	      $id = intval(substr($profile, strrpos($profile, ELEMENTPROFILENAMEADDSTRING) + strlen(ELEMENTPROFILENAMEADDSTRING)));  // Calculate current element id
-	      $allElementsArray[$id] = $profiles[$profile];
-	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $uniqElementsArray[$id] = '';
+	      $id = intval($value['element1']['id']); // Calculate current element id
+	      $client['allelements'][$id] = $value;
+	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $client['uniqelements'][$id] = '';
 	     }
-     ksort($allElementsArray, SORT_NUMERIC);
+     if (!count($client['allelements'])) { $output['error'] = "Database '$client[OD]' has no elements exist!"; return; }
+     ksort($client['allelements'], SORT_NUMERIC);
     }
     
- if ($flags & GET_OBJECT_VIEWS)
+ if ($flags & GET_VIEWS)
     {
-     global $elementSelection, $objectSelection;
-     
      // Get view section
+     unset($client['elementselection']);
+     unset($client['objectselection']);
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
-     if (count($profiles = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$client[OD]' Object View '$client[OV]' not found!";
-
-     // Move on. Get specified view JSON element selection (what elements should be displayed and how)
-     $profiles = json_decode($profiles[0][0], true);
-     if (!isset($profiles[$client['OV']]['element5']['data'])) return $error = "Database '$client[OD]' Object View '$client[OV]' not found!";
-
-     // Fetch object selection query string
-     $objectSelection = $profiles[$client['OV']]['element3']['data'];
-     
+     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $value)
+	  if ($value['element1']['id'] === $client['OVid'])
+    	     {
+	      $client['objectselection'] = trim($value['element3']['data']);
+	      $client['elementselection'] = trim($value['element5']['data']);
+	      break;
+	     }
+     if (!isset($client['elementselection'], $client['elementselection'])) { $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!"; return; }
      // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-     if (($elementSelection = trim($profiles[$client['OV']]['element5']['data'])) === '' || $elementSelection === '*' || $elementSelection === '**' || $elementSelection === '***')
+     if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
         {
          $x = 0;
 	 $startline = 'n+1';
-	 if ($elementSelection === '*' || $elementSelection === '***') $startline = 'n+2';
-	 $arr = $allElementsArray;
-	 if ($elementSelection === '**' || $elementSelection === '***') $arr = ['id' => '', 'version' => '', 'owner' => '', 'datetime' => ''] + $arr;
-	 $elementSelection = '';
+	 if ($client['elementselection'] === '*' || $client['elementselection'] === '***') $startline = 'n+2';
+	 $arr = $client['allelements'];
+	 if ($client['elementselection'] === '**' || $client['elementselection'] === '***') $arr = ['id' => '', 'version' => '', 'owner' => '', 'datetime' => ''] + $arr;
+	 $client['elementselection'] = '';
          foreach ($arr as $id => $value)
     	         {
-	          $elementSelection .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
-	          if ($startline === 'n+2') $elementSelection .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
-		  $elementSelection .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
+	          $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
+	          if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
+		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
 	          $x++;
 	    	 }
 	}
     }
 
- if (($flags & CHECK_OID) && $input['cmd'] != 'NEWOBJECT')
+ if ($flags & CHECK_OID)
+ if ($client['cmd'] === 'INIT')
     {
-     global $oid;
-     
+     $client['oId'] = 0;
+    }
+  else
+    {
      // Check object identificator value existence
-     if (!isset($input['oId']) || $input['oId'] < STARTOBJECTID) return $alert = 'Incorrect object identificator value!';
-     if (($oid = $input['oId']) === STARTOBJECTID && intval($client['ODid']) === 1 && $cmd === 'DELETEOBJECT') return $alert = 'System account cannot be deleted!';
+     if (!isset($input['oId']) || $input['oId'] < STARTOBJECTID) { $output['alert'] = 'Incorrect object identificator value!'; return; }
+     if (($client['oId']  = $input['oId']) === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT') { $output['alert'] = 'System account cannot be deleted!'; return; }
      
      // Check database object existence -> Check oid object selection existence
-     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0");
+     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0");
      $query->execute();
-     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) return $alert = "Object with id=$oid doesn't exist!\nPlease refresh Object View";
+     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['alert'] = "Please refresh Object View, object with id=$client[oId] doesn't exist!"; return; }
     }
 
- if (($flags & CHECK_EID) && $input['cmd'] != 'NEWOBJECT')
+ if ($flags & CHECK_EID)
+ if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
     {
-     global $eid;
-     
+     $client['oId'] = $client['eId'] = 0;
+    }
+  else
+    {
      // Check element identificator value existence
-     if (!isset($input['eId'])) return $alert = 'Incorrect element identificator value!';
-     $eid = $input['eId'];
-     
-     // Check element identificator database existence
-     if (!isset($allElementsArray[$eid])) return $alert = 'Incorrect element identificator value!';
+     if (!isset($input['eId'])) { $output['alert'] = 'Incorrect element identificator value!'; return; }
      
      // Check eid element selection existence
-     if (!isset(setElementSelectionIds()[strval($eid)])) return $alert = 'Please refresh object view, element selection has been changed!';
+     if (!isset(setElementSelectionIds($client)[strval($client['eId'] = $input['eId'])])) { $output['alert'] = "Please refresh Object View, specified element id doesn't exist!"; return; }
     }
 
- if ($flags & CHECK_ACCESS) switch ($input['cmd'])
+ if ($flags & CHECK_ACCESS) switch ($client['cmd'])
     {
      case 'New Object Database':
-	  if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|') return $alert = "You're not allowed to add Object Databases!";
+	  if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|') { $output['alert'] = "You're not allowed to add Object Databases!"; return; }
 	  break;
-     case 'GETMAIN':
+     case 'CALL':
      case 'DELETEOBJECT':
-     case 'NEWOBJECT':
+     case 'INIT':
      case 'KEYPRESS':
      case 'DBLCLICK':
      case 'CONFIRM':
 	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
 	  $query->execute();
-	  if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0) return $error = "Database '$client[OD]' Object View '$client[OV]' not found!";
+	  if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!"; return; }
 		  
-	  $View = json_decode($View[0][0], true)[$client['OV']];	// Set current view array data
-	  $groups = getUserGroups($db, $client['uid']);			// Get current user group list
-	  $groups[] = $client['auth'];					// and add username at the end of array
+	  $View = json_decode($View[0][0], true)[$client['OV']];// Set current view array data
+	  $groups = getUserGroups($db, $client['uid']);		// Get current user group list
+	  $groups[] = $client['auth'];				// and add username at the end of array
 	  
 	  // Check on 'display' permissions
 	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
 	     {
-	      if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') return $error = "You're not allowed to display or modify this Object View!";
+	      if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
 	     }
 	   else
 	     {
-	      if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') return $error = "You're not allowed to display or modify this Object View!";
+	      if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
 	     }
-	  // No need to check 'writable' permissions for displaying OV by GETMAIN event
-	  if ($input['cmd'] === 'GETMAIN') break;
+	  // No need to check 'writable' permissions for displaying OV by CALL event
+	  if ($client['cmd'] === 'CALL') break;
+	  
 	  // Check on 'writable' permissions 
 	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp")))
 	     {
-	      if ($View['element8']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') return $alert = "You're not allowed to modify this Object View!";
+	      if ($View['element8']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
 	     }
 	   else
 	     {
-	      if ($View['element8']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') return $alert = "You're not allowed to modify this Object View!";
+	      if ($View['element8']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
 	     }
 	  break;
     }
-}
-
-function Handler($handler, $input)
-{
- include './'.HANDLERDIR.'/'.$handler;
- if (isset($output))
-    {
-     $output = json_decode($output, true);
-     if (is_array($output) && isset($output['cmd']))
-        {
-	 // To avoid handler wrong behaviour check handler result and cut its unnecessary output data. First - EDIT and ALERT commands
-	 if ($output['cmd'] === 'EDIT' || (substr($output['cmd'], 0, 4) === 'EDIT' && intval(substr($output['cmd'], 4)) > 0) || $output['cmd'] === 'ALERT')
-	    if (isset($output['data']) && gettype($output['data']) === 'string') return ['cmd' => $output['cmd'], 'data' => $output['data']];
-	     else return ['cmd' => $output['cmd']];
-	 // Second - DIALOG command
-	 if ($output['cmd'] === 'DIALOG')
-	    if (is_array($output['data'])) return ['cmd' => $output['cmd'], 'data' => $output['data']];
-	     else return ['cmd' => $output['cmd']];
-	 // Third - SET and RESET commands
-	 if ($output['cmd'] === 'SET' || $output['cmd'] === 'RESET')
-	    {
-	     if (isset($output['value']) && gettype($output['value']) != 'string') unset($output['value']);
-	     if (isset($output['hint']) && gettype($output['hint']) != 'string') unset($output['hint']);
-	     if (isset($output['description']) && gettype($output['description']) != 'string') unset($output['description']);
-	     if (isset($output['alert']) && gettype($output['alert']) != 'string') unset($output['alert']);
-	     if (isset($output['value']) && strlen($output['value']) > ELEMENTDATAVALUEMAXCHAR) $output['value'] = substr($output['value'], 0, ELEMENTDATAVALUEMAXCHAR);
-	     return $output;
-	    }
-	 // Then CALL command
-	 if ($output['cmd'] === 'CALL')
-	 if (!isset($output['data'])) return ['cmd' => $output['cmd']];
-	  else if (gettype($output['data']) === 'array') return ['cmd' => $output['cmd'], 'data' => $output['data']];
-	}
-    }
- return ['cmd' => 'UNDEFINED'];
-}
-
-//{"event": "<name>", "data": "", "user": "", "oid": "", "title": "", "arg1": "<user or json string>", "arg2": "<user or json string>", ..}
-//{"event": "<event name>", "arg1": "<user string | json string | ${event|data|user|oid|title}>", "arg2": "---||---", ..}
-function GetHandlerArgs($db, $JSONs, $eventname, $eid)
-{
- global $client;
- $argstring = '';
  
- foreach (preg_split("/\n/", $JSONs) as $line) // Split json list and parse its lines to find specified event
-      if (($json = json_decode($line, true)) && isset($json['event']) && $json['event'] === $eventname) // Event match?
- foreach ($json as $prop => $value)
-         {
-	  switch($value)
-		{
-		 case '${event}':
-		      $argstring .= ' '.$eventname;
-		      break;
-		 case '${data}':
-		      $argstring .= ' '.$eventname;
-		      break;
-		 case '${user}':
-		      $argstring .= ' '.$eventname;
-		      break;
-		 case '${oid}':
-		      $argstring .= ' '.$eventname;
-		      break;
-		 case '${title}':
-		      $argstring .= ' '.$eventname;
-		      break;
-		 default:
-		      $argstring .= ' '.$eventname;
-		      break;
-		}
-	 }
-
-
- if (!isset($eventArray) && $event === 'CONFIRM') $eventArray = ['event' => 'CONFIRM'];
- if (isset($eventArray))
-    {
-     global $allElementsArray;
-     $eventArray['user'] = $currentuser;
-     $eventArray['title'] = $allElementsArray[$id]['element1']['data'];
-     return $eventArray;
-    }
+ return true;
 }
 
-function parseJSONEventData($db, $JSONs, $event, $id)
+function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
 {
- global $currentuser;
- 
- foreach (preg_split("/\n/", $JSONs) as $line) // Split json list and parse its lines to find specified event
-      if (($json = json_decode($line, true)) && isset($json['event']) && $json['event'] === $event) // Event match?
-         {
-	  $eventArray = ['event' => $event];
-          foreach ($json as $prop => $value) // Search non reserved array elements to pass them to result event array
-	       if ($prop != 'event' && $prop != 'data' && $prop != 'user' && $prop != 'title')
-	       if (gettype($value) === 'string')
-		  {
-		   $eventArray[$prop] = $value;
-		  }
-		else if (gettype($value) === 'array' && isset($value['prop']) && gettype($value['prop']) === 'string') // start here
-		  {
-		   isset($value['eid']) ? $eventArray[$prop] = getElementProperty($db, $value['eid'], $value['prop']) : $eventArray[$prop] = getElementProperty($db, $id, $value['prop']);
-		  }
-	  break;
-	 }
-	 
- if (!isset($eventArray) && $event === 'CONFIRM') $eventArray = ['event' => 'CONFIRM'];
- if (isset($eventArray))
-    {
-     global $allElementsArray;
-     $eventArray['user'] = $currentuser;
-     $eventArray['title'] = $allElementsArray[$id]['element1']['data'];
-     return $eventArray;
-    }
-}
+ if (!isset($ODid) || !isset($oid) || !isset($eid) || !isset($prop)) return NULL;
 
-function getElementProperty($db, $elementId, $prop, $version = NULL)
-{
- global $odid, $oid, $eid;
- if (!isset($elementId)) $elementId = $eid;
- return getElementPropStrict($db, $odid, $oid, $elementId, $prop, $version);
-}
-
-
-function getElementPropStrict($db, $odid, $oid, $eid, $prop, $version = NULL)
-{
- if (!isset($odid) || !isset($oid) || !isset($eid) || !isset($prop)) return NULL;
-
- if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
+ if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$ODid` WHERE id=$oid AND version='".strval($version)."'");
+  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$ODid` WHERE id=$oid AND lastversion=1 AND version!=0");
  $query->execute();
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
@@ -520,45 +389,35 @@ function getElementPropStrict($db, $odid, $oid, $eid, $prop, $version = NULL)
  return str_replace("\\\\", "\\", $result);
 }
 
-function getElementArray($db, $elementId, $version = NULL)
+function getElementArray($db, $ODid, $oid, $eid, $version = NULL)
 {
- global $odid, $oid, $eid;
- if (!isset($oid) || !isset($eid)) return NULL;
- if (!isset($elementId)) $elementId = $eid;
-
- if (isset($version)) $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
- $query->execute();
- 
- $result = $query->fetchAll(PDO::FETCH_NUM);
- if (!isset($result[0][0])) return NULL;
-
- return json_decode($result[0][0], true);
+ return json_decode(getElementJSON($db, $ODid, $oid, $eid, $version), true);
 }
 
-function getElementJSON($db, $elementId, $version = NULL)
+function getElementJSON($db, $ODid, $oid, $eid, $version = NULL)
 {
- global $odid, $oid, $eid;
- if (!isset($oid) || !isset($eid)) return NULL;
- if (!isset($elementId)) $elementId = $eid;
-
- if (isset($version)) $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT eid".strval($elementId)." FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
- $query->execute();
+ if (isset($version))
+    {
+     if (intval($version) === 0) return NULL;
+     $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND version='".strval($version)."'");
+     $query->execute();
+    }
+  else
+    {
+     $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND lastversion=1 AND version!=0");
+     $query->execute();
+    }
 
  $result = $query->fetchAll(PDO::FETCH_NUM);
- if (!isset($result[0][0])) return NULL;
- 
- return $result[0][0];
+ if (isset($result[0][0])) return $result[0][0];
+ return NULL;
 }
 
-function InsertObject($db, $owner = NULL)
+function InsertObject($db, &$client, &$output)
 {
- global $odid, $allElementsArray, $uniqElementsArray, $output, $currentuser;
-
  $query = $values = '';
  $params = [];
- foreach ($uniqElementsArray as $id => $value)
+ foreach ($client['uniqelements'] as $id => $value)
 	 {
 	  $query .= ",eid$id";
 	  $values .= ",:eid$id";
@@ -567,7 +426,7 @@ function InsertObject($db, $owner = NULL)
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
 
  $db->beginTransaction();
- $query = $db->prepare("INSERT INTO `uniq_$odid` ($query) VALUES ($values)");
+ $query = $db->prepare("INSERT INTO `uniq_$client[ODid]` ($query) VALUES ($values)");
  $query->execute($params);
  
  // Get last inserted object id
@@ -575,18 +434,17 @@ function InsertObject($db, $owner = NULL)
  $query->execute();
  $newId = $query->fetch(PDO::FETCH_NUM)[0];
  
- if (!isset($owner)) $owner = $currentuser;
- $query = 'id,version,owner';
- $params = [':id' => $newId, ':version' => '1', ':owner' => $owner];
+ $query = "id,version,owner";
+ $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
  $values = ':id,:version,:owner';
- foreach ($allElementsArray as $id => $profile) if (isset($output[$id]))
+ foreach ($client['allelements'] as $id => $profile) if (isset($output[$id]))
 	 if (($json = json_encode($output[$id])) !== false && isset($json))
 	    {
 	     $query .= ',eid'.strval($id);
 	     $params[':eid'.strval($id)] = $json;
 	     $values .= ",:eid".strval($id);
 	    }
- $query = $db->prepare("INSERT INTO `data_$odid` ($query) VALUES ($values)");
+ $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
  $query->execute($params);
  
  $db->commit();
@@ -614,89 +472,6 @@ function DeleteObject($db)
  $query->execute();
 
  $db->commit();
-}
-
-function WriteElement($db, $oid, $eid, $version)
-{
- global $uniqElementsArray, $odid, $output;
-
- if (!isset($output[$eid]['cmd']) || ($output[$eid]['cmd'] != 'SET' && $output[$eid]['cmd'] != 'RESET')) // No element new version exist, so write previous version
-    {
-     $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
-     $query->execute([':json' => getElementJSON($db, $eid, $version - 1)]);
-     unset($output[$eid]);
-     return;
-    }
-  else if (isset($uniqElementsArray[$eid]) && isset($output[$eid]['value'])) // Update current object uniq element if exist and commit the transaction, so the new version is created.
-    {
-     $query = $db->prepare("UPDATE `uniq_$odid` SET eid$eid=:value WHERE id=$oid");
-     $query->execute([':value' => $output[$eid]['value']]);
-    }
-
- // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
- if ($output[$eid]['cmd'] === 'SET' && gettype($oldData = getElementArray($db, $eid, $version - 1)) === 'array') $output[$eid] = array_replace($oldData, $output[$eid]);
- $query = $db->prepare("UPDATE `data_$odid` SET eid$eid=:json WHERE id=$oid AND version=$version");
- $query->execute([':json' => json_encode($output[$eid])]);
-}
-
-function CreateNewObjectVersion($db)
-{
- global $odid, $oid, $eid, $uniqElementsArray, $allElementsArray, $output, $currentuser, $alert;
- 
- //--------------Start transaction, select last existing (non zero) version of the object and block the corresponded row---------------
- $db->beginTransaction();
- $query = $db->prepare("SELECT version FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
- $query->execute();
- // Get selected version, check the result and calculate next version of the object to be created
-
- $version = $query->fetchAll(PDO::FETCH_NUM);
- // No rows found? Return an error
- if (count($version) === 0) { $db->rollBack(); return $alert = "Object with id=$oid not found!\nPlease refresh Object View"; }
- // Increment version to use it as a new version of the object
- $version = intval($version[0][0]) + 1;
- 
- // Unset last flag of the object current version and insert new object version with empty data
- $query = $db->prepare("UPDATE `data_$odid` SET lastversion=0 WHERE id=$oid AND lastversion=1; INSERT INTO `data_$odid` (id,owner,version,lastversion) VALUES ($oid,:owner,$version,1)");
- $query->execute([':owner' => $currentuser]);
- $query->closeCursor();
- $db->commit();
- //------------------------------------------------------------------------------------------------------------------------------------
- 
- //------------Empty object version is created, so start new transaction and write all object elements handler result data-------------
- $db->beginTransaction();
- try { 
-      WriteElement($db, $oid, $eid, $version); // First write element data that initiated SET/RESET command
-     }
- catch (PDOException $e)
-     {
-      lg($e);                 
-      $db->rollBack();
-      $db->beginTransaction();
-      $query = $db->prepare("SELECT lastversion FROM `data_$odid` WHERE id=$oid AND version=$version FOR UPDATE");
-      $query->execute();
-      if ($query->fetchAll(PDO::FETCH_NUM)[0][0] === '1')
-         {
-	  $query = $db->prepare("UPDATE `data_$odid` SET lastversion=1 WHERE id=$oid AND version=".strval($version-1));
-	  $query->execute();
-	 }
-      if (preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
-       else $alert = "Failed to write object data: $msg";                                                                         
-      SetUndoOutput($db, $oid, $eid, $alert);
-      $query = $db->prepare("DELETE FROM `data_$odid` WHERE id=$oid AND version=$version");
-      $query->execute();
-      $db->commit();
-      return true;
-     }
- foreach ($allElementsArray as $id => $profile) if ($id != $eid) // Second - write all other elemtnts data as answers to the ONCHANGE command
-	 {
-	  $output[$id] = NULL;
-	  if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], 'ONCHANGE', $id)))
-	     $output[$id] = Handler($handlerName, json_encode($eventArray));
-	  try { WriteElement($db, $oid, $id, $version); }
-	  catch (PDOException $e) { unset($output[$id]); }
-	 }
- $db->commit();
- //------------------------------------------------------------------------------------------------------------------------------------
 }
 
 function ProcessRules($db, $odid, $oid)
@@ -734,84 +509,10 @@ function ProcessRules($db, $odid, $oid)
 	 }
 }
 
-function getMainFieldData($db, $cmd = 'GETMAIN')
+function setElementSelectionIds(&$client)
 {
- global $client, $objectSelection, $output, $error;
-
- // Get object selection query string, in case of array as a return result send dialog to the client to fetch up object selection params
- $objectSelection = GetObjectSelection($db, $objectSelection, $client['data'], $client['auth']);
- if (gettype($objectSelection) === 'array')
-    {
-     if ($cmd != 'CALL' && $client['data'] != []) $objectSelection['title'] = 'View parameters has been changed, please try again!';
-     $output = ['cmd' => 'DIALOG', 'data' => $objectSelection];
-     return;
-    }
- 
- // Get element selection query string, in case of empty result return no element message as an error
- $elementQueryString = '';
- $props = setElementSelectionIds();
- foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
- if ($elementQueryString === '') return $error = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!";
-     
- // Return OV refresh command to the client with object selection sql query result as a main field data
- $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $objectSelection");
- $query->execute();
- $output = ['cmd' => 'REFRESH', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props];
-}
-
-function GetObjectSelection($db, $objectSelection, $paramsOV, $user)
-{
- // Check input paramValues array and add reserved :user parameter value
- if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
- $i = -1;
- $len = strlen($objectSelection);
- if (gettype($paramsOV) != 'array') $paramsOV = [];
- $paramsOV[':user'] = $user;
- $isDialog = false;
- $objectSelectionNew = '';
- 
- // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
- while  (++$i <= $len)
-     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
-	{
-	 if (isset($newparam))
-	 if (isset($paramsOV[$newparam]))
-	    {
-	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $paramsOV[$newparam]];
-	     if (!$isDialog) $objectSelectionNew .= $paramsOV[$newparam];
-	    }
-	  else
-	    {
-	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
-	     $isDialog = true;
-	    }
-	 if ($i === $len) break;
-	 $newparam = NULL;
-	 if ($objectSelection[$i] === ':') $newparam = ':';
-	  else $objectSelectionNew .= $objectSelection[$i];
-	}
-      else if (isset($newparam)) $newparam .= $objectSelection[$i];
-      else $objectSelectionNew .= $objectSelection[$i];
-
- //  In case of no dialog - return object selection string
- unset($paramsOV[':user']);
- if (!$isDialog) return $objectSelectionNew;
- 
- // Otherwise return dialog array
- return [
-	 'title'   => 'Object View parameters',
-	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
-	 'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
-	 'flags'   => ['cmd' => 'GETMAIN',
-		       'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
-	];
-}
-
-function setElementSelectionIds()
-{
- global $elementSelection, $allElementsArray;
  $props = [];
- 
+
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // |  \eid|                0                |              1..         	 | id,version,owner,datetime,lastversion |
  // |oid\  |                                 | 					 |					 |
@@ -830,10 +531,10 @@ function setElementSelectionIds()
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  
  
- foreach (preg_split("/\n/", $elementSelection) as $value)
+ foreach (preg_split("/\n/", $client['elementselection']) as $value)
       if ($arr = json_decode($value, true, 2))
 	 {
-	  $arr = cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent', 'tablestyle']); // Retrieve correct values only
+	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent', 'tablestyle']); // Retrieve correct values only
 	  if (!key_exists('eid', $arr)) $arr['eid'] = '0'; // Set 'eid' key default value to zero
 	  if (!key_exists('oid', $arr)) $arr['oid'] = '0'; // Set 'oid' key default value to zero
 
@@ -891,7 +592,7 @@ function setElementSelectionIds()
 			  }
 		       break;
 		  default: // Parse all other numeric elements that defines styles, x-y coordinates, collapse capability and 'startevent' event for new, title, selection and exact objects
-		       if (!key_exists($eid, $allElementsArray)) break;
+		       if (!key_exists($eid, $client['allelements'])) break;
 		       if (key_exists('startevent', $arr)) $props[$eid][$oid]['startevent'] = $arr['startevent'];
 		       if (gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
 		          {
@@ -901,8 +602,8 @@ function setElementSelectionIds()
 			   if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
 			   if (intval($oid) == TITLEOBJECTID)
 			      {
-			       $props[$eid][$oid]['title'] = $allElementsArray[$eid]['element1']['data'];
-			       $props[$eid][$oid]['hint'] = $allElementsArray[$eid]['element2']['data'];
+			       $props[$eid][$oid]['title'] = $client['allelements'][$eid]['element1']['data'];
+			       $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'];
 			      }
 			   if (intval($oid) == NEWOBJECTID) $props[$eid][$oid]['hint'] = "Table cell to input new object data for element id: $eid";
 			  }
@@ -910,167 +611,6 @@ function setElementSelectionIds()
 	 }
 	 
  return $props;
-}
-
-function CheckODString($odname)
-{
- return substr(str_replace("'", '', str_replace('"', '', trim(str_replace("\\", '', $odname)))), 0, ODSTRINGMAXCHAR);
-}
-
-function NewOD($db)
-{
- global $input;
- lg($input);
- // Get dialog OD name, cut it and check
- $odname = CheckODString($input['data']['dialog']['Database']['Properties']['element1']['data']);
- if ($odname === '') return $output = ['cmd' => 'INFO', 'alert' => 'Object Database name cannot be empty!'];
- $input['data']['dialog']['Database']['Properties']['element1']['data'] = $odname;
-
- initNewODDialogElements();
- // Inserting new OD name
- $query = $db->prepare("INSERT INTO `$` (odname) VALUES (:odname)");
- $query->execute([':odname' => $odname]);
- // Getting created properties id
- $query = $db->prepare("SELECT LAST_INSERT_ID()");
- $query->execute();
- $input['ODid'] = $id = $query->fetch(PDO::FETCH_NUM)[0];
- // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
- $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
- $query->execute();                                                                                                                                   
- // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
- $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
- $query->execute();
- // Insert new OD properties
- $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
- $query->execute([':odprops' => json_encode(adjustODProperties($db, $input['data'], $id))]);
-		    
- return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
-}
-		
-function EditOD($db)		
-{
- global $input, $client;
- 
- // Get dialog old and new OD name
- $newodname = CheckODString($input['data']['dialog']['Database']['Properties']['element1']['data']);
- $input['data']['dialog']['Database']['Properties']['element1']['data'] = $newodname;
- $oldodname = $input['data']['flags']['callback'];
- 
- // Getting old OD name id in `$`
- $query = $db->prepare("SELECT id, odprops FROM `$` WHERE odname=:odname");
- $query->execute([':odname' => $oldodname]);
- $ODid = $query->fetchAll(PDO::FETCH_NUM);
- if (isset($ODid[0][0]) && isset($ODid[0][1]))
-    {
-     $odprops = $ODid[0][1];
-     $ODid = $ODid[0][0];
-    }
-  else return $output = ['cmd' => '', 'alert' => "Failed to get Object Database properties!"];
- 
- // In case of empty OD name string try to remove current OD from the system
- if ($newodname === '')
- if ($input['data']['dialog']['Database']['Properties']['element2']['data'] === '' && count($input['data']['dialog']['Element']) === 1)
-    {
-     $query = $db->prepare("DELETE FROM `$` WHERE id=$ODid");
-     $query->execute();
-     $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$ODid`; DROP TABLE IF EXISTS `data_$ODid`");
-     $query->execute();
-     $query->closeCursor();
-     return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
-    }
-  else return $output = ['cmd' => '', 'alert' => "To remove Object Database (OD) - empty 'name' and 'description' OD fields and remove all elements (see 'Element' tab)"];
-
- // Decode current OD props
- $odprops = json_decode($odprops, true);
- if (isset($odprops['dialog']['Database']['Permissions'])) $dbPermissions = $odprops['dialog']['Database']['Permissions'];
-  else return $output = ['cmd' => '', 'alert' => "Failed to get Object Database properties!"];
-  
- // Check current OD permissions to fetch new OD data from dialog box - $input['data']['dialog']['Database']['Permissions'])..
- $alertstring = '';
- $groups = getUserGroups($db, $client['uid']); // Get current user group list
- $groups[] = $client['auth']; // and add username at the end of array
- 
- // Check 'Database' pad change permissions
- if ($input['data']['dialog']['Database'] != $odprops['dialog']['Database'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element2']['data'])), "strcmp")))
-    {
-     if ($dbPermissions['element1']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Database'";
-	 $input['data']['dialog']['Database'] = $odprops['dialog']['Database'];
-	}
-    }
-  else
-    {
-     if ($dbPermissions['element1']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Database'";
-	 $input['data']['dialog']['Database'] = $odprops['dialog']['Database'];
-	}
-    }
- // Check 'Element' pad change permissions
- if ($input['data']['dialog']['Element'] != $odprops['dialog']['Element'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element4']['data'])), "strcmp")))
-    {
-     if ($dbPermissions['element3']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Element'";
-	 $input['data']['dialog']['Element'] = $odprops['dialog']['Element'];
-	}
-    }
-  else
-    {
-     if ($dbPermissions['element3']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Element'";
-	 $input['data']['dialog']['Element'] = $odprops['dialog']['Element'];
-	}
-    }
- // Check 'View' pad change permissions
- if ($input['data']['dialog']['View'] != $odprops['dialog']['View'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element6']['data'])), "strcmp")))
-    {
-     if ($dbPermissions['element5']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'View'";
-	 $input['data']['dialog']['View'] = $odprops['dialog']['View'];
-	}
-    }
-  else
-    {
-     if ($dbPermissions['element5']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'View'";
-	 $input['data']['dialog']['View'] = $odprops['dialog']['View'];
-	}
-    }
- // Check 'Rule' pad change permissions
- if ($input['data']['dialog']['Rule'] != $odprops['dialog']['Rule'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element8']['data'])), "strcmp")))
-    {
-     if ($dbPermissions['element7']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Rule'";
-	 $input['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
-	}
-    }
-  else
-    {
-     if ($dbPermissions['element7']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Rule'";
-	 $input['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
-	}
-    }
-
- // Writing new properties
- initNewODDialogElements();
- $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=$ODid");
- $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($db, $input['data'], $ODid))]);
-
- // Return result		    
- if ($alertstring === '') return ['cmd' => '', 'sidebar' => getODVNamesForSidebar($db)];
- return ['cmd' => '', 'alert' => "You're not allowed to change ".$alertstring." properties!", 'sidebar' => getODVNamesForSidebar($db)];
 }
 
 function getUserId($db, $user)
@@ -1126,24 +666,19 @@ function getUserODAddPermission($db, $id)
   else return '';
 }
 
-function getUserCustomization($db, $oid, $current = false)
+function getUserCustomization($db, $uid)
 {
- // Check $id existence
- if (!isset($oid)) return;
- // Get current user JSON customization and decode it
- $customization = json_decode(getElementPropStrict($db, '1', $oid, '6', 'dialog'), true);
- // Wrong result data? Return NULL
- if (!isset($customization) || $customization === false || $customization === true || !is_array($customization) || !isset($customization['pad']['misc customization']['element5']['data'])) return;
- // Flag 'current' is set? Return current customization
- if ($current) return $customization;
- 
- // If current user customization forces to use another user customization, and the user does exist, and the user id doesn't point to itself - get it and return it
- if ($customization['pad']['misc customization']['element5']['data'] != '' && ($uid = getUserId($db, $customization['pad']['misc customization']['element5']['data'])) && strval($uid) != strval($id))
+ $customization = json_decode(getElementProp($db, '1', $uid, '6', 'dialog'), true); // Get current user JSON customization and decode it
+ if (!isset($customization['pad']['misc customization']['element5']['data'])) return; // Wrong result data? Return NULL
+
+ // If current user customization forces to use another user customization, and the user doesn't point to itself and does exist - get it
+ if (($forceuser = $customization['pad']['misc customization']['element5']['data']) != '')
     {
-     $customization = json_decode(getElementPropStrict($db, '1', $uid, '6', 'dialog'), true);
-     if (!isset($customization) || $customization === false || $customization === true || !is_array($customization) || !isset($customization['pad']['misc customization']['element5']['data'])) return;
+     $forceuser = getUserId($db, $forceuser);
+     if (isset($forceuser) && $uid != $forceuser) $forceuser = json_decode(getElementProp($db, '1', $forceuser, '6', 'dialog'), true);
+     if (isset($forceuser)) return $forceuser;
     }
- 
+
  return $customization;
 }
 
@@ -1157,26 +692,38 @@ function getLoginDialogData()
 	];
 }
 
-function LogMessage($db, $message, $type = 'error')
+function LogMessage($db, &$client, &$output)
 {
  return;
- global $odid, $allElementsArray, $uniqElementsArray, $output;
+ if (!isset($output['log']) && !isset($output['alert']) && !isset($output['error'])) return;
+ 
+ // Get current user and build part of the log message                                                      
+ $msg = '';                                      
+ if (isset($client['auth'])) $msg .= "['$client[auth]']";
+ if ($client['OD'] != '') $msg .= "[OD '$client[OD]'] [OV '$client[OV]']";
+ if ($msg != '') $msg .= ': ';
+							                                                                                                           
+ if (isset($output['log']))   { $msg .= $output['log'];   $type = 'info';  }
+ if (isset($output['alert'])) { $msg .= $output['alert']; $type = 'alert'; }
+ if (isset($output['error'])) { $msg .= $output['error']; $type = 'error'; }
+ 
+ //global $odid, $allElementsArray, $uniqElementsArray;
 
  $odid = '2';
  $allElementsArray = ['1' => '', '2' => ''];
  $uniqElementsArray = [];
- $output = ['1' => ['cmd' => 'RESET', 'value' => $type], '2' => ['cmd' => 'RESET', 'value' => $message]];
- InsertObject($db, 'system');
+ $output = ['1' => ['cmd' => 'RESET', 'value' => $type], '2' => ['cmd' => 'RESET', 'value' => $msg]];
+ //InsertObject($db, 'system');
 }
 
 function SetUndoOutput($db, $oid, $eid, $alert = NULL)
 {
- global $output;
+/* global $output;
  
  $undo = getElementArray($db, $eid);
  if (!isset($undo)) $undo = ['value' => ''];
  $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo]];
- if (isset($alert)) $output['alert'] = $alert;
+ if (isset($alert)) $output['alert'] = $alert;*/
 }
 
 function encode($payload, $type = 'text', $masked = false)
@@ -1348,31 +895,15 @@ function handshake($socket)
      return $info;
 }
 
-function defaultCustomizationDialogJSON()
+function GenerateRandomString($length = USERPASSMINLENGTH)
 {
- // To transfer uiProfile from main.js: get uiProfile JSON from console by "console.log(JSON.stringify(uiProfile))" and put it json_decode below.
- // Don't forget to escape single quotes by "\'"
- $uiProfile = json_decode('{"body":{"target":"body","background-color":"#343E54;"},"sidebar":{"target":".sidebar","background-color":"rgb(17,101,176);","border-radius":"5px;","color":"#9FBDDF;","width":"13%;","height":"90%;","left":"4%;","top":"5%;","scrollbar-color":"#1E559D #266AC4;","scrollbar-width":"thin;","box-shadow":"4px 4px 5px #222;"},"sidebar wrap icon":{"wrap":"&#9658;","unwrap":"&#9660;"},"sidebar wrap cell":{"target":".wrap","font-size":"70%;","padding":"3px 5px;"},"sidebar item active":{"target":".itemactive","background-color":"#4578BF;","color":"#FFFFFF;","font":"1.1em Lato, Helvetica;"},"sidebar item hover":{"target":".sidebar tr:hover","background-color":"#4578BF;","cursor":"pointer;"},"sidebar object database":{"target":".sidebar-od","padding":"3px 5px 3px 0px;","margin":"0px;","color":"","width":"100%;","font":"1.1em Lato, Helvetica;"},"sidebar object view":{"target":".sidebar-ov","padding":"2px 5px 2px 10px;","margin":"0px;","color":"","font":"0.9em Lato, Helvetica;"},"main field":{"target":".main","width":"76%;","height":"90%;","left":"18%;","top":"5%;","border-radius":"5px;","background-color":"#EEE;","scrollbar-color":"#CCCCCC #FFFFFF;","box-shadow":"4px 4px 5px #111;"},"main field table":{"target":"table","margin":"0px;"},"main field table cursor cell":{"outline":"red auto 1px","shadow":"0 0 5px rgba(100,0,0,0.5)"},"main field table title cell":{"target":".titlecell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"#CCC;","font":"","text-align":"center"},"main field table newobject cell":{"target":".newobjectcell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"rgb(191,255,191);","font":"","text-align":"center"},"main field table data cell":{"target":".datacell","padding":"10px;","border":"1px solid #999;","color":"black;","background":"","font":"12px/14px arial;","text-align":"center"},"main field table undefined cell":{"target":".undefinedcell","padding":"10px;","border":"1px solid #999;","background":"rgb(255,235,235);"},"main field table mouse pointer":{"target":".main table tbody tr td:not([contenteditable=true])","cursor":"cell;"},"main field message":{"target":".main h1","color":"#BBBBBB;"},"scrollbar":{"target":"::-webkit-scrollbar","width":"8px;","height":"8px;"},"context menu":{"target":".contextmenu","width":"240px;","background-color":"#F3F3F3;","color":"#1166aa;","border":"solid 1px #dfdfdf;","box-shadow":"1px 1px 2px #cfcfcf;","font-family":"sans-serif;","font-size":"16px;","font-weight":"300;","line-height":"1.5;","padding":"12px 0;"},"context menu item":{"target":".contextmenuItems","margin-bottom":"4px;","padding-left":"10px;"},"context menu item cursor":{"target":".contextmenuItems:hover:not(.greyContextMenuItem)","cursor":"pointer;"},"context menu item active":{"target":".activeContextMenuItem","color":"#fff;","background-color":"#0066aa;"},"context menu item grey":{"target":".greyContextMenuItem","color":"#dddddd;"},"hint":{"target":".hint","background-color":"#CAE4B6;","color":"#7E5A1E;","border":"none;","padding":"5px;"},"box":{"target":".box","background-color":"rgb(233,233,233);","color":"#1166aa;","border-radius":"5px;","border":"solid 1px #dfdfdf;","box-shadow":"2px 2px 4px #cfcfcf;"},"dialog box title":{"target":".title","background-color":"rgb(209,209,209);","color":"#555;","border":"#000000;","border-radius":"5px 5px 0 0;","font":"bold .9em Lato, Helvetica;","padding":"5px;"},"dialog box pad":{"target":".pad","background-color":"rgb(223,223,223);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":".9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box active pad":{"target":".activepad","background-color":"rgb(209,209,209);","border-left":"none;","border-right":"none;","border-top":"none;","border-bottom":"none;","padding":"5px;","margin":"0;","font":"bold .9em Lato, Helvetica;","color":"#57C;","border-radius":"5px 5px 0 0;"},"dialog box pad bar":{"target":".padbar","background-color":"transparent;","border":"none;","padding":"4px;","margin":"10px 0 15px 0;"},"dialog box divider":{"target":".divider","background-color":"transparent;","margin":"5px 10px 5px 10px;","height":"0px;","border-bottom":"1px solid #CCC;","border-top-color":"transparent;","border-left-color":"transparent;","border-right-color":"transparent;"},"dialog box button":{"target":".button","background-color":"#13BB72;","border":"none;","padding":"10px;","margin":"10px;","border-radius":"5px;","font":"bold 12px Lato, Helvetica;","color":"white;"},"dialog box button and pad hover":{"target":".button:hover, .pad:hover","cursor":"pointer;","background":"","color":"","border":""},"dialog box element headers":{"target":".element-headers","margin":"5px 5px 5px 5px;","font":".9em Lato, Helvetica;","color":"#555;","text-shadow":"none;"},"dialog box help icon":{"target":".help-icon","padding":"1px;","font":".9em Lato, Helvetica;","color":"#555;","background":"#FF0;","border-radius":"40%;"},"dialog box help icon hover":{"target":".help-icon:hover","padding":"1px;","font":"bold 1em Lato, Helvetica;","color":"black;","background":"#E8E800;","cursor":"pointer;","border-radius":"40%;"},"dialog box select":{"target":".select","background-color":"rgb(243,243,243);","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 5px 10px;","outline":"none;","border":"1px solid #777;","padding":"0px 0px 0px 0px;","overflow":"auto;","max-height":"10em;","scrollbar-width":"thin;","min-width":"10em;","width":"auto;","display":"inline-block;"},"dialog box select option":{"target":".select > div","padding":"2px 20px 2px 5px;","margin":"0px;"},"dialog box select option hover":{"target":".select:not([type*=\'o\']) > div:hover","background-color":"rgb(209,209,209);","color":""},"dialog box select option selected":{"target":".selected","background-color":"rgb(209,209,209);","color":"#fff;"},"dialog box select option expanded":{"target":".expanded","margin":"0px !important;","position":"absolute;"},"dialog box radio":{"target":"input[type=radio]","background":"transparent;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"20%;","width":"1.2em;","height":"1.2em;"},"dialog box radio checked":{"target":"input[type=radio]:checked::after","content":"","color":"white;"},"dialog box radio checked background":{"target":"input[type=radio]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box radio label":{"target":"input[type=radio] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box checkbox":{"target":"input[type=checkbox]","background":"#f3f3f3;","border":"1px solid #777;","font":".8em/1 sans-serif;","margin":"3px 5px 3px 10px;","border-radius":"50%;","width":"1.2em;","height":"1.2em;"},"dialog box checkbox checked":{"target":"input[type=checkbox]:checked::after","content":"","color":"white;"},"dialog box checkbox checked background":{"target":"input[type=checkbox]:checked","background":"#00a0df;","border":"1px solid #00a0df;"},"dialog box checkbox label":{"target":"input[type=checkbox] + label","color":"#57C;","font":".8em Lato, Helvetica;","margin":"0px 10px 0px 0px;"},"dialog box input text":{"target":"input[type=text]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"none;","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input password":{"target":"input[type=password]","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"dialog box input textarea":{"target":"textarea","margin":"0px 10px 5px 10px;","padding":"2px 5px;","background":"#f3f3f3;","border":"1px solid #777;","outline":"","color":"#57C;","border-radius":"5%;","font":".9em Lato, Helvetica;","width":"300px;"},"effects":{"hint":"hotnews","contextmenu":"rise","box":"slideup","select":"rise","box filter":"grayscale(0.5)"},"hotnews hide":{"target":".hotnewshide","visibility":"hidden;","transform":"scale(0) rotate(0deg);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"hotnews show":{"target":".hotnewsshow","visibility":"visible;","transform":"scale(1) rotate(720deg);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"fade hide":{"target":".fadehide","visibility":"hidden;","opacity":"0;","transition":"all .5s;","-webkit-transition":"all .5s;"},"fade show":{"target":".fadeshow","visibility":"visible;","opacity":"1;","transition":"opacity .5s;","-webkit-transition":"opacity .5s;"},"grow hide":{"target":".growhide","visibility":"hidden;","transform":"scale(0);","transition":"all .4s;","-webkit-transition":"all .4s;"},"grow show":{"target":".growshow","visibility":"visible;","transform":"scale(1);","transition":"transform .4s;","-webkit-transition":"transform .4s;"},"slideleft hide":{"target":".slidelefthide","visibility":"hidden;","transform":"translate(1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideleft show":{"target":".slideleftshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"all .4s cubic-bezier(.06,1.24,0,.98);"},"slideright hide":{"target":".sliderighthide","visibility":"hidden;","transform":"translate(-1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideright show":{"target":".sliderightshow","visibility":"visible;","transform":"translate(0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slideup hide":{"target":".slideuphide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slideup show":{"target":".slideupshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"slidedown hide":{"target":".slidedownhide","visibility":"hidden;","transform":"translate(0%, 1000%);","transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);","-webkit-transition":"all .4s cubic-bezier(1,-0.01,1,-0.09);"},"slidedown show":{"target":".slidedownshow","visibility":"visible;","transform":"translate(0%, 0%);","transition":"all .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"fall hide":{"target":".fallhide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(2);","opacity":"0;","transition":"all .4s;","-webkit-transition":"all .4s;"},"fall show":{"target":".fallshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","opacity":"1;","transition":".4s;","-webkit-transition":".4s;","-webkit-transition-property":"transform, opacity","transition-property":"transform, opacity"},"rise hide":{"target":".risehide","visibility":"hidden;","transform-origin":"left top;","transform":"scale(0);","transition":"all .2s cubic-bezier(.38,1.02,.69,.97);","-webkit-transition":"all .2s cubic-bezier(.38,1.02,.69,.97);"},"rise show":{"target":".riseshow","visibility":"visible;","transform-origin":"left top;","transform":"scale(1);","transition":"transform .4s cubic-bezier(.06,1.24,0,.98);","-webkit-transition":"transform .4s cubic-bezier(.06,1.24,0,.98);"},"none hide":{"target":".nonehide","visibility":"hidden;"},"none show":{"target":".noneshow","visibility":"visible;"},"misc customization":{"objects per page":"50","next page bottom reach":"","previous page top reach":"","Force to use next user customization (empty or non-existent user - current is used)":"","mouseover hint timer in msec":"1000"}}', true);
- $dialog = ['pad' => []];
+ $len = strlen($permittedchars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+ $randomstring = '';
  
- foreach ($uiProfile as $profile => $value)
-	 {
-	  $i = 1;
-	  $dialog['pad'][$profile] = [];
-	  if (isset($value['target']))
-	     {
-	      $dialog['pad'][$profile]['element0'] = ['head' => "CSS selector: '".$value['target']."'. Customize css selector properties below:", 'target' => $value['target']];
-	      $dialog['pad'][$profile]['element1'] = ['head' => ''];
-	     }
-	  foreach ($value as $key => $val) if ($key != 'target')
-		  {
-		   $i++;
-		   $dialog['pad'][$profile]['element'.strval($i)] = ['type' => 'text', 'head' => $key.':', 'data' => $val, 'line' => ''];
-		  }
-	 }
- return json_encode($dialog);
+ for ($i = 0; $i < $length; $i++) $randomstring .= $permittedchars[mt_rand(0, $len - 1)];
+ 
+ return $randomstring;
 }
-
 
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, DATABASEUSER, DATABASEPASS);
 $db->exec("SET NAMES UTF8");

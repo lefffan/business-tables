@@ -1,119 +1,210 @@
 <?php
 
-// The script is called by next php functions for NEWOBJECT event and other events respectively:
-// exec(PHPBINARY." wrapper.php $cid '$client[auth]' 0 0 0 NEWOBJECT '".json_encode($input['data'])."' '".json_encode([])."' &");
-// exec(PHPBINARY." wrapper.php $cid '$client[auth]' $client[ODid] $oid $eid $input[cmd] '".json_encode($input['data'])."' '".json_encode($allElementsArray)."' &");
-
 require_once 'core.php';
 
-$cid		= $_SERVER['argv'][1];
-$user		= $_SERVER['argv'][2];
-$ODid		= $_SERVER['argv'][3];
-$oid		= $_SERVER['argv'][4];
-$eid		= $_SERVER['argv'][5];
-$event		= $_SERVER['argv'][6];
-$data		= $_SERVER['argv'][7];
-$allElements	= json_decode($_SERVER['argv'][8], true);
-$output = [];
+CONST ARGVCLIENTINDEX = 1;
 
+function ParseHandlerResult(&$output, &$client)
+{
+ if (!isset($output[0]))
+    {
+     lg("Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') didn't return any data!");
+     return;
+    }
+ if ($result = json_decode($output[0], true)) $output = $result;
+  else $output = ['cmd' => 'SET', 'value' => implode("\n", $output)];
+  
+ if (!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET']) === false)
+    {
+     lg("Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') returned undefined json!");
+     lg($output);
+     return;
+    }
 
-switch($event)
-      {
-       case 'DBLCLICK': $cmdline = trim($allElements[$eid]['element4']['data']); break;
-       case 'KEYPRESS': $cmdline = trim($allElements[$eid]['element5']['data']); break;
-       case 'INIT': $cmdline = trim($allElements[$eid]['element6']['data']); break;
-       case 'CONFIRM': $cmdline = trim($allElements[$eid]['element7']['data']); break;
-       case 'CHANGE': $cmdline = trim($allElements[$eid]['element8']['data']); break;
-       default: exit;
+ switch ($output['cmd'])
+	{
+	 case 'EDIT':
+	      ConvertToString($output, ['data']);
+	      if (!isset($output['data'])) $output['data'] = NULL;
+	      if ($client['cmd'] === 'CHANGE') return;
+	      //cutKeys($output, ['cmd', 'data']);
+	      break;
+	 case 'ALERT':
+	      if (!isset($output['data']) || $client['cmd'] === 'CHANGE') return;
+	      if (!ConvertToString($output, ['data'])) return;
+	      //cutKeys($output, ['cmd', 'data']);
+	      break;
+	 case 'DIALOG':
+	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE') return;
+	      //cutKeys($output, ['cmd', 'data']);
+	      break;
+	 case 'CALL':
+	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE') return;
+	      //cutKeys($output, ['cmd', 'data']);
+	      cutKeys($output['data'], ['OD', 'OV', 'ODid', 'OVid', 'params']);
+	      ConvertToString($output['data'], ['OD', 'OV', 'ODid', 'OVid']);
+	      if (!isset($output['data']['params']) || gettype($output['data']['params']) != 'array') $output['data']['params'] = [];
+	      if (!isset($output['data']['ODid'], $output['data']['OD'])) { $output['data']['ODid'] = $client['ODid']; $output['data']['OD'] = $client['OD']; }
+	      if (!isset($output['data']['OVid'], $output['data']['OV'])) { $output['data']['OVid'] = $client['OVid']; $output['data']['OV'] = $client['OV']; }
+	      break;
+	 case 'SET':
+	 case 'RESET':
+	      ConvertToString($output, ['value', 'hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      break;
+	 default:
+	      return;
+	}
+    
+ return true;
+}    
+    
+function ConvertToString(&$arr, $keys, $limit = NULL)
+{
+ $result = true;
+ 
+ foreach ($keys as $key => $value) if (isset($arr[$value]))
+	 {
+	  if (gettype($arr[$value]) === 'integer') $arr[$value] = strval($arr[$value]);
+	   else if (gettype($arr[$value]) === 'array') $arr[$value] = json_encode($arr[$value]);
+	   else if (gettype($arr[$value]) != 'string') { unset($arr[$value]); $result = false; }
+	  if (isset($arr[$value]) && isset($limit) && strlen($arr[$value]) > $limit) $arr[$value] = substr($arr[$value], 0, $limit);
+	 }
+	 
+ return $result;
+}
+
+function WriteElement($db, &$client, &$output, $version)
+{
+ // No element new version set (by SET/RESET command), so write previous version
+ if (!isset($output['cmd']) || ($output['cmd'] != 'SET' && $output['cmd'] != 'RESET'))
+    {
+     $query = $db->prepare("UPDATE `data_$client[ODid]` SET eid$client[eId]=:json WHERE id=$client[oId] AND version=$version");
+     $query->execute([':json' => getElementJSON($db, $client['ODid'], $client['oId'], $client['eId'], $version - 1)]);
+     return;
+    }
+
+ // Update current object uniq element if exist
+ if (isset($client['uniqelements'][$client['eId']]) && isset($output['value']))
+    {
+     $query = $db->prepare("UPDATE `uniq_$client[ODid]` SET eid$client[eId]=:value WHERE id=$client[oId]");
+     $query->execute([':value' => $output['value']]);
+    }
+
+ // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
+ if ($output['cmd'] === 'SET' && gettype($oldData = getElementArray($db, $client['ODid'], $client['oId'], $client['eId'], $version - 1)) === 'array') $output = array_replace($oldData, $output);
+ $query = $db->prepare("UPDATE `data_$client[ODid]` SET eid$client[eId]=:json WHERE id=$client[oId] AND version=$version");
+ $query->execute([':json' => json_encode($output)]);
+ return true;
+}
+
+function GetCMD($db, &$client)
+{
+ $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'DBLCLICK', '5'=>'KEYPRESS', '6'=>'INIT', '7'=>'CONFIRM', '8'=>'CHANGE'])]['data']);
+ if (!($len = strlen($cmdline))) return '';
+ $i = -1;
+ $newcmdline = '';
+
+ while (++$i < $len)
+       {
+        switch ($add = $cmdline[$i])
+    	       {
+    	        case "'":
+    		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)) && isset($arr['prop']))
+	    	       {	
+	    		$i = $j;
+			$add = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], $arr['prop']);
+			if (!isset($add)) $add = '';
+			$add = "'".str_replace("'", "'".'"'."'".'"'."'", $add)."'";
+	    	       }
+		    break;
+    	       case "<":
+    		    if (($j = strpos($cmdline, '>', $i + 1)) !== false && (($match = substr($cmdline, $i + 1, $j - $i - 1)) === 'data' || $match === 'user' || $match === 'oid' || $match === 'title')) // Check for <data|user|oid|title> match
+	    	       {	
+			$i = $j;
+			if ($match === 'data') $add = $client['data'];
+			 else if ($match === 'user') $add = $client['auth'];
+			 else if ($match === 'oid') $add = $client['oId'];
+			 else $add = $client['allelements'][$client['eId']]['element1']['data'];
+			$add = "'".str_replace("'", "'".'"'."'".'"'."'", $add)."'";
+	    	       }
+	      }
+       $newcmdline .= $add;
       }
 
-if ($cmdline === '') exit;
-$i = -1;
-$cmd = '';
-$len = strlen($cmdline);
+ return $newcmdline;
+}
 
-while (++$i < $len) switch ($cmdline[$i])
-      {
-       case "'":
-    	    if (($j = strpos($cmdline, "'", $i + 1)) !== false && json_decode(substr($cmdline, $i + 1, $j - $i - 1), true))
-	       {	
-	        $i = $j;
-		$cmd .= "'json'";
-    		break;
-	       }
-	     else
-	       {	
-		$cmd .= $cmdline[$i];
-    		break;
-	       }
-       case "<":
-    	    if (($j = strpos($cmdline, '>', $i + 1)) !== false && (($match = substr($cmdline, $i + 1, $j - $i - 1)) === 'data' || $match === 'user' || $match === 'oid' || $match === 'title')) // Check for <data|user|oid|title> match
-	       {	
-	        $i = $j;
-		if ($match === 'data') $cmd .= "'$data'"; elif ($match === 'data') $cmd .= "'$user'";
-		$cmd .= 'huyax';
-    		break;
-	       }
-       default:
-	    $cmd .= $cmdline[$i];
-      }
+$client	= json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
+if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
+ else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
 
-lg($cmd);
+if (($cmdline = GetCMD($db, $client)) === '') exit;
+$output = [$client['eId'] => []];
 
-/*		  if (($handlerName = $allElementsArray[$eid]['element4']['data']) === '' || !($eventArray = parseJSONEventData($db, $allElementsArray[$eid]['element5']['data'], $input['cmd'], $eid))) break;
-		  if (isset($data)) $eventArray['data'] = $data;
-		  $output = [$eid => Handler($handlerName, json_encode($eventArray))];
-		  switch ($output[$eid]['cmd']) // Process handler answer by the controller
-			 {
-			  case 'SET':
-			  case 'RESET':
-			       if (CreateNewObjectVersion($db)) break;
-			       foreach ($output as $id => $value) if (!isset($props[$id])) unset($output[$id]);
-			       isset($output[$eid]['alert']) ? $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output, 'alert' => $output[$eid]['alert']] : $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => $output];
-			       $query = $db->prepare("SELECT id,version,owner,datetime,lastversion FROM `data_$odid` WHERE id=$oid AND lastversion=1 AND version!=0");
-			       $query->execute();
-			       foreach ($query->fetchAll(PDO::FETCH_ASSOC)[0] as $id => $value) $output['data'][$id] = $value;
-			       break;
-			  case 'EDIT':
-			       isset($output[$eid]['data']) ? $output = ['cmd' => 'EDIT', 'data' => $output[$eid]['data'], 'oId' => $oid, 'eId' => $eid] : $output = ['cmd' => 'EDIT', 'oId' => $oid, 'eId' => $eid];
-			       break;
-			  case 'ALERT':
-			       isset($output[$eid]['data']) ? $output = ['cmd' => 'INFO', 'alert' => $output[$eid]['data']] : $output = ['cmd' => 'INFO', 'alert' => ''];
-			       break;
-			  case 'DIALOG':
-			       if (!isset($output[$eid]['data']) || !is_array($output[$eid]['data'])) break;
-			       if (isset($output[$eid]['data']['flags']['cmd']) && $handlerName != 'customization.php') unset($output[$eid]['data']['flags']['cmd']);
-			       $output = ['cmd' => 'DIALOG', 'data' => $output[$eid]['data']];
-			       break;
-			  case 'CALL':
-			       if (!isset($output[$eid]['data']) || !is_array($output[$eid]['data']) || !isset($OD) || !isset($OV)) break;
-			       $input = ['cmd' => 'GETMAIN', 'paramsOV' => []];
-			       if (isset($output[$eid]['data']['Params'])) $input['paramsOV'] = $output[$eid]['data']['Params'];
-			       if (!isset($output[$eid]['data']['OD'])) $input['OD'] = $OD; else $input['OD'] = $output[$eid]['data']['OD'];
-			       if (!isset($output[$eid]['data']['OV'])) $input['OV'] = $OV; else $input['OV'] = $output[$eid]['data']['OV'];
-			       $output = ['cmd' => 'CALL'];
-			       if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS)) getMainFieldData($db);
-			       break;
-			  default:
-			       if ($cmd === 'CONFIRM') SetUndoOutput($db, $oid, $eid);
-			 }
-			 
-			 
-/*		// Context menu object delete event
-		else if ($input['cmd'] === 'NEWOBJECT')
-		   {
-		    if (!Check($db, CHECK_OD_OV | GET_ELEMENT_PROFILES | GET_OBJECT_VIEWS | CHECK_ACCESS))
-		       {
-			$output = [];
-			foreach ($allElementsArray as $id => $profile)
-			if (($handlerName = $profile['element4']['data']) != '' && ($eventArray = parseJSONEventData($db, $profile['element5']['data'], $cmd, $id)))
-		    	   {
-			    $eventArray['data'] = isset($data[$id]) ? $data[$id] : '';
-			    $output[$id] = Handler($handlerName, json_encode($eventArray));
-			    if ($output[$id]['cmd'] != 'SET' && $output[$id]['cmd'] != 'RESET') unset($output[$id]);
-			   }
-		        InsertObject($db);
-			getMainFieldData($db);
-		       }
-		   }
-*/
+exec($cmdline, $output[$client['eId']]);
+if (!ParseHandlerResult($output[$client['eId']], $client)) exit;
+
+switch ($output[$client['eId']]['cmd'])
+       {
+        case 'DIALOG':
+        case 'CALL':
+        case 'EDIT':
+	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+	     $query->execute([':client' => json_encode(['cmd' => $output[$client['eId']]['cmd'], 'data' => $output[$client['eId']]['data'], 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid']], JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     break;
+        case 'ALERT':
+	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+	     $query->execute([':client' => json_encode(['cmd' => 'SET', 'data' => [], 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'alert' => $output[$client['eId']]['data'], 'cid' => $client['cid']], JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     break;
+        case 'SET':
+        case 'RESET':
+	     $excludeid = $client['eId'];
+	     foreach ($client['allelements'] as $eid => $profile) if ($eid != $excludeid)
+	    	     {
+		      $client['eId'] = $eid;
+		      $client['cmd'] = 'CHANGE';
+		      if (($cmd = GetCMD($db, $client)) === '') continue;
+		      $output[$eid] = [];
+		      exec($cmd, $output[$eid]);
+		      if (!ParseHandlerResult($output[$eid], $client)) $output[$eid] = [];
+		     }
+	     try {
+	          $db->beginTransaction();
+	          $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
+	          $query->execute();
+	          $version = $query->fetchAll(PDO::FETCH_NUM); // Get selected version
+	          if (count($version) === 0) throw new Exception("Please refresh Object View, object with id=$client[oId] doesn't exist!"); // No rows found? Return an error
+	          $version = intval($version[0][0]) + 1; // Increment version to use it as a new version of the object
+	          
+	          $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1"); // Unset last flag of the object current version and insert new object version with empty data
+	          $query->execute();
+	          $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,owner,version,lastversion) VALUES ($client[oId],:owner,$version,1)");
+	          $query->execute([':owner' => $client['auth']]);
+		  foreach ($client['allelements'] as $eid => $value)
+			  {
+			   $client['eId'] = $eid;
+			   if (!WriteElement($db, $client, $output[$eid], $version)) unset($output[$eid]);
+			  }
+	          $db->commit();
+		 }
+	     catch (PDOException $e)
+		 {
+		  lg($e);                 
+		  $db->rollBack();
+		  //if (preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
+		   //else $alert = "Failed to write object data: $msg";
+    		  //SetUndoOutput($db, $oid, $eid, $alert);
+    		 }
+	     foreach ($output as $eid => $value)
+	    	     foreach ($value as $prop => $valeu) if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
+	     $output = ['cmd' => 'SET', 'data' => $output, 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'cid' => $client['cid']];
+	     if (isset($output['data'][$excludeid]['alert'])) $output['alert'] = $output['data'][$excludeid]['alert'];
+	     if (strpos($cmdline, CUSTOMIZATIONPHPSCRIPT) === 0 && strval($client['uid']) === strval($client['oId']))
+	        {
+		 $output['customization'] = getUserCustomization($db, $client['uid']);
+		 if (!isset($output['customization'])) unset($output['customization']);
+		}
+	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+	     $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     break;
+       }

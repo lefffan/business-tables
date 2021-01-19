@@ -18,7 +18,7 @@ let box = selectExpandedDiv = null, boxDiv, expandedDiv;
 let tooltipTimerId, undefinedcellRuleIndex, socket;
 let mainDiv, sidebarDiv, mainTablediv;
 let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let user = cmd = activeOD = activeOV = '';
+let user = cmd = OD = OV = ODid = OVid = '';
 let objectsOnThePage, paramsOV;
 let sidebar = {};
 let focusElement = {};
@@ -169,11 +169,12 @@ window.onload = function()
  expandedDiv = document.querySelector('.expanded');
  
  socket = new WebSocket(SOCKETADDR);
- socket.onmessage = controllerCmdHandler;
- cmd = 'GETMAIN';
- socket.onopen = callController;
+ socket.onmessage = FromController;
+ cmd = 'CALL';
+ socket.onopen = CallController;
  socket.onerror = () => warning("The server connection is down! Please refresh the page to reconnect the server");
  socket.onclose = () => warning("The server connection is down! Please refresh the page to reconnect the server");
+
  
  /*if (!navigator.cookieEnabled)
     {
@@ -187,7 +188,7 @@ window.onload = function()
     }*/
  /*------------------Web sockets: 1-here, 2-const, 3-let, 4,5-context menu description and help------------------*/
  //socket = new WebSocket(SOCKETADDR);
- //socket.onmessage = controllerCmdHandler;
+ //socket.onmessage = FromController;
  
  //socket.onopen = function() { socket.send('Connection established with ' + SOCKETADDR); };
  //socket.onmessage = function(event) { lg('Server responce: ' + event.data); };
@@ -201,35 +202,44 @@ function drawSidebar(data)
  if (typeof data != 'object') return;
  let text, ovlistHTML, sidebarHTML = '';
  
- for (let od in data)
+ for (let odid in data)
      {
       // Set wrap status (empty string key) to true for default or to old instance of sidebar OD wrap status
-      (sidebar[od] === undefined || sidebar[od][''] === undefined) ? data[od][''] = true : data[od][''] = sidebar[od][''];
+      (sidebar[odid] === undefined || sidebar[odid]['wrap'] === undefined) ? data[odid]['wrap'] = true : data[odid]['wrap'] = sidebar[odid]['wrap'];
       
       // Create OV names list with active OV check 
       ovlistHTML = '';
-      for (let ov in data[od]) if (ov != '' && ov.substr(0, 1) != '_')
+      for (let ovid in data[odid]['view'])
     	  {
-	   (activeOD === od && activeOV === ov) ? text = ' class="itemactive"' : text = '';
-	   ovlistHTML += `<tr${text}><td class="wrap"></td><td class="sidebar-ov" data-od="${od}" data-ov="${ov}">${ov}</td></tr>`;
+	   text = '';
+	   if (data[odid]['active'] === ovid)
+	      {
+	       text = ' class="itemactive"';
+	       ODid = odid;
+	       OVid = ovid;
+	       OD = data[odid]['name'];
+	       OV = data[odid]['view'][ovid];
+	      }
+	   if (data[odid]['view'][ovid].substr(0, 1) != '_')
+	      ovlistHTML += `<tr${text}><td class="wrap"></td><td class="sidebar-ov" data-odid="${odid}" data-ovid="${ovid}" data-od="${data[odid]['name']}" data-ov="${data[odid]['view'][ovid]}">${data[odid]['view'][ovid]}</td></tr>`;
 	  }
 
       // Draw wrap icon
       if (ovlistHTML === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
-       else if (data[od][''] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
+       else if (data[odid]['wrap'] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
         else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
 
       // Insert OD name
-      sidebarHTML += `<td class="sidebar-od" data-od="${od}">${od}</td></tr>`;
+      sidebarHTML += `<td class="sidebar-od" data-odid="${odid}">${data[odid]['name']}</td></tr>`;
      
       // Insert OV names list if OD is unwrapped
-      if (data[od][''] === false) sidebarHTML += ovlistHTML;
+      if (data[odid]['wrap'] === false) sidebarHTML += ovlistHTML;
      }
 
  // Push calculated html text to sidebar div
  sidebarHTML != '' ? sidebarDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>' : sidebarDiv.innerHTML = '';
   
- // Reset sidebar with new data
+ // Reset sidebar to the new data
  sidebar = data;
 }	 
 
@@ -240,7 +250,7 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  // CHeck specified object element start event
  if (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') eidstr = 'eid' + eid;
   else eidstr = eid;
- if ((oidnum === NEWOBJECTID || oidnum >= STARTOBJECTID) && props[eid][oid] && eid != eidstr && cmd === 'GETMAIN')
+ if ((oidnum === NEWOBJECTID || oidnum >= STARTOBJECTID) && props[eid][oid] && eid != eidstr && cmd === 'CALL')
  if (props[eid][oid]['startevent'] === 'DBLCLICK') focusElement = { oId: oid, eId: eid, cmd: 'DBLCLICK' };
   else if (oidnum >= STARTOBJECTID && props[eid][oid]['startevent'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['startevent'].length > 8)
 	  focusElement = { oId: oid, eId: eid, cmd: 'KEYPRESS', data: props[eid][oid]['startevent'].substr(8) };
@@ -253,10 +263,10 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  
  // Calculate specified object element x,y table coordinates
  try { x = Math.trunc(eval(oe.x)); y = Math.trunc(eval(oe.y)); }
- catch { return `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; }
- if (isNaN(x) || isNaN(y)) return `Specified view '${activeOV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`;
+ catch { return `Specified view '${OV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; }
+ if (isNaN(x) || isNaN(y)) return `Specified view '${OV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`;
  if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
-    return `Some elements coordiantes (view '${activeOV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
+    return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
     
  // Calculate main table width and height
  mainTableWidth = Math.max(mainTableWidth, x + 1);
@@ -337,7 +347,7 @@ function drawMain(data, props)
  // Handle some errors
  if (!mainTableHeight)
     {
-     if (!warningtext) warningtext = `Specified view '${activeOV}' has no objects defined!<br>Please add some objects`;
+     if (!warningtext) warningtext = `Specified view '${OV}' has no objects defined!<br>Please add some objects`;
      displayMainError(warningtext, false);
      return;
     }
@@ -412,7 +422,7 @@ function drawMain(data, props)
      CellBorderToggleSelect(null, mainTablediv.rows[focusElement.y].cells[focusElement.x]);
      focusElement.td.focus();
      cmd = focusElement.cmd;
-     callController(focusElement.data);
+     CallController(focusElement.data);
     }
 }
 
@@ -487,7 +497,7 @@ function eventHandler(event)
 		       else
 		         {
 			  cmd = 'CONFIRM';
-			  callController(htmlCharsConvert(focusElement.td.innerHTML));
+			  CallController(htmlCharsConvert(focusElement.td.innerHTML));
 			 }
 		      // Main field table cell click?
 		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(focusElement.td, event.target);
@@ -509,7 +519,7 @@ function eventHandler(event)
 	       else if (mainTable[focusElement.y][focusElement.x].realobject)
 	    	 {
 		  cmd = 'DBLCLICK';
-		  callController();
+		  CallController();
 		 }
 	      break;
 	 case 'mousedown':
@@ -530,11 +540,10 @@ function eventHandler(event)
 		      box.buttons = {};
 		      box.buttons[event.target.innerHTML] = '';
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd'];
-		       else cmd = 'CONFIRM';
-		      callController(box);
+		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd']; else cmd = 'CONFIRM';
+		      CallController(box);
 		     }
-		   else if (box['flags'] && box['flags']['cmd'] === 'GETMAIN') displayMainError(`View '${activeOV}' output was canceled`);
+		   else if (box['flags'] && box['flags']['cmd'] === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
 		  HideBox();
 		  break;
 		 }
@@ -625,14 +634,14 @@ function eventHandler(event)
 		 {
 		  focusElement.td.contentEditable = 'false';
 		  cmd = 'CONFIRM';
-		  callController(htmlCharsConvert(focusElement.td.innerHTML));
+		  CallController(htmlCharsConvert(focusElement.td.innerHTML));
 		  break;
 		 }
 	      //--------------Mouse click on context menu item? Call controller with appropriate context menu item as a command--------------
 	      if (event.target.classList.contains('contextmenuItems'))
 		 {
 		  cmd = event.target.innerHTML;
-		  callController(contextmenu.data);
+		  CallController(contextmenu.data);
 		  HideContextmenu();
 		  break;
 		 }
@@ -640,24 +649,23 @@ function eventHandler(event)
 	      //--------------OD item (or wrap icon before) mouse click? Wrap/unwrap OV list--------------
 	      let next = event.target;
 	      if (event.target.classList.contains('wrap')) next = next.nextSibling;
-	       else next = event.target;
-	      if (event.target.classList.contains('sidebar-od') || next.classList.contains('sidebar-od'))
+	      if (next.classList.contains('sidebar-od'))
 		 {
-		  if (event.target.classList.contains('sidebar-od')) next = event.target;
-		  if (Object.keys(sidebar[next.dataset.od]).length < 2) break;
-		  if (sidebar[cmd = next.dataset.od][''] != undefined) sidebar[cmd][''] = !sidebar[cmd][''];
-		  cmd = 'GETSIDEBAR';
-		  callController();
+		  if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) break;
+		  sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];
+		  cmd = 'SIDEBAR';
+		  CallController();
 		  break;
 		 }
 	      //------------OV item (or wrap icon before) mouse click? Open OV in main field------------
-	      if (event.target.classList.contains('sidebar-ov') || next.classList.contains('sidebar-ov'))
+	      if (next.classList.contains('sidebar-ov'))
 		 {
-		  if (event.target.classList.contains('sidebar-ov')) next = event.target;
-		  activeOD = next.dataset.od;
-		  activeOV = next.dataset.ov;
-		  cmd = 'GETMAIN';
-		  callController();
+		  ODid = next.dataset.odid;
+		  OVid = next.dataset.ovid;
+		  OD = next.dataset.od;
+		  OV = next.dataset.ov;
+		  cmd = 'CALL';
+		  CallController();
 		  break;
 		 }
 	      //--------------Mouse click on main field table?--------------
@@ -672,7 +680,7 @@ function eventHandler(event)
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
 		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd'];
 		       else cmd = 'CONFIRM';                                             
-		      callController(box);
+		      CallController(box);
 		      HideBox();
 		      return;
 		     }
@@ -702,7 +710,7 @@ function eventHandler(event)
 			   moveCursor(0, 1, false);
 			   break;
 		      case 13: //Enter
-		           if (!contextmenu) // If context menu is not active,  try to move cursor down
+		           if (!contextmenu) // If context menu is not active, try to move cursor down
 			      {
 			       if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
 			          {
@@ -714,7 +722,7 @@ function eventHandler(event)
 			    else if (contextmenu.item) // If context menu item is active
 			      {
 			       cmd = contextmenu.item.innerHTML;
-			       callController(contextmenu.data);
+			       CallController(contextmenu.data);
 			       HideContextmenu();
 			      }
 			   break;
@@ -745,8 +753,7 @@ function eventHandler(event)
 		           if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
 			      {
 			       cmd = 'KEYPRESS';
-			       //callController({string: event.key, code: event.keyCode});
-			       callController(event.key);
+			       CallController({string: event.key, code: event.keyCode});
 			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
 			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
 			      }
@@ -755,14 +762,14 @@ function eventHandler(event)
 	}
 }
 
-function controllerCmdHandler(input)
+function FromController(json)
 {
- input = JSON.parse(input.data);
- if (input.cmd === undefined)				{ warning('Undefined server message!'); return; }
- if (input.customization)				{ uiProfileSet(input.customization); styleUI(); }
- if (input.OD != undefined && input.OV != undefined)	{ activeOD = input.OD; activeOV = input.OV; }
- if (input.sidebar)					{ drawSidebar(input.sidebar); }
+ try { input = JSON.parse(json.data); }
+ catch { input = json; }
+ 
+ if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
  input.user ? user = input.user : user = '';
+ if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
 
  switch (input.cmd)
 	{
@@ -771,7 +778,7 @@ function controllerCmdHandler(input)
 	      ShowBox();
 	      break;
 	 case 'EDIT':
-	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
+	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && focusElement.td.contentEditable != 'true')
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
 	          focusElement.td.contentEditable = 'true';
@@ -799,30 +806,138 @@ function controllerCmdHandler(input)
 			     mainTable[y][x].hint = input.data[eid]['hint'];
 			     mainTable[y][x].description = input.data[eid]['description'];
 			    }
-			  else mainTablediv.rows[y].cells[x].innerHTML = input.data[eid];
 			 CellBorderToggleSelect(null, focusElement.td, false);
 		        }
 	      if (input.alert) warning(input.alert);
 	      break;
-	 case 'REFRESH':
-	      paramsOV = input.paramsOV;
+	 case 'CALL':
+	      Hujax("view.php", FromController, input.data);
+	      break;
+	 case 'DRAW':
 	      drawMain(input.data, input.props);
+	      break;
+	 case 'New Object Database':
+	 case 'Edit Database Structure':
+	      Hujax("view.php", FromController, input.data);
 	      break;
 	 case '':
 	      break;
 	 default:
 	      input = { alert: "Unknown server message '" + input.cmd + "'!" };
 	}
- if (input.log) lg(input.log); 
- if (input.error) displayMainError(input.error);
- if (input.alert) warning(input.alert);
+	
+ if (input.sidebar)	drawSidebar(input.sidebar);
+ if (input.log)		lg(input.log); 
+ if (input.error)	displayMainError(input.error);
+ if (input.alert)	warning(input.alert);
+}
+
+function CallController(data)
+{
+ let object;
+ lg(cmd);
+ 
+ switch (cmd)
+	{
+	 case 'New Object Database':
+	      object = { "cmd": cmd };
+	      if (typeof data != 'string') object.data = data;
+	      break;
+	 case 'Edit Database Structure':
+	 case 'SIDEBAR':
+	 case 'CALL':
+	      object = { "cmd": cmd };
+	      if (data != undefined) object.data = data;
+	      break;
+	 case 'Description':
+	      let cell, hidden = msg = '';
+	      //--------------Add object and element information to the result message---------------
+	      if (focusElement.td != undefined && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && (cell = mainTable[focusElement.y][focusElement.x]) && cell.oId)
+	      switch (cell.oId)
+	    	     {
+		      case NEWOBJECTID:
+		           if (Number(cell.eId) > 0) msg = 'Cursor table cell is input new object data for element id: ' + cell.eId;
+			   break;
+		      case TITLEOBJECTID:
+			   msg = 'Cursor table cell is title for element id: ' + cell.eId;
+			   break;
+		      default:
+			   msg = 'Cursor table cell object id: ' + cell.oId + '\nCursor table cell element id: ' + cell.eId;
+			   if (cell.version != '0')
+			      {
+			       msg += '\nObject version: ' + cell.version + '\nActual version: ';
+			       cell.realobject ? msg += 'yes' : msg += 'no';
+			       break;
+			      }
+			   msg += '\nObject version: object has been deleted';
+		     }
+	      //--------------Add description to the result message---------------
+	      if (cell && typeof cell.description === 'string') msg += '\n\nElement description property:\n' + cell.description;
+	      //--------Add x and y coordinates to the result message-------------
+	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}\n\n`;
+	      //--------------------Add database and view info--------------------
+	      if (OV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
+	      msg += `Object Database: ${OD}\nObject View${hidden}: ${OV} (${objectsOnThePage} objects)\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}`;
+	      //--------------Add part of sql string object selection-------------
+	      let parammsg = '', count = 1;
+	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];
+	      if (parammsg != '') msg += '\n\nObject View input parameters:' + parammsg;
+	      //--------------Display result message in warning box---------------
+	      warning(msg, 'Description', false);
+	      break;
+	 case 'Help':
+	      box = help;
+	      ShowBox();
+	      break;
+	 case 'New Object':
+	      if (objectTable === undefined) break;
+	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV };
+	      if (objectTable[String(NEWOBJECTID)] != undefined)
+	         for (let eid in objectTable[String(NEWOBJECTID)])
+		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
+	      break;
+	 case 'Delete Object':
+	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject)
+		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId, 'paramsOV': paramsOV };
+	      break;
+	 case 'LOGIN':
+	 case 'CONFIRM':
+	 case 'DBLCLICK':
+	 case 'KEYPRESS':
+	      object = { "cmd": cmd };
+	      if (focusElement.td && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
+	         {
+	          object["oId"] = mainTable[focusElement.y][focusElement.x].oId;
+		  object["eId"] = mainTable[focusElement.y][focusElement.x].eId;
+		 }
+	      if (data != undefined) object.data = data;
+	      break;
+	 default:
+	      if (cmd.substr(0, 7) != 'Logout ')
+		 {
+		  warning("Undefined application message: '" + cmd + "'!");
+		  return;
+		 }
+	      object = { cmd: 'LOGOUT' };
+	}
+	
+ if (object)
+    {
+     object.OD = OD;
+     object.OV = OV;
+     object.ODid = ODid;
+     object.OVid = OVid;
+     try { socket.send(JSON.stringify(object)); }
+     catch { warning("The server connection is down! Please refresh the page to reconnect the server"); }
+     if (socket.readyState === 3) warning("The server connection is down! Please refresh the page to reconnect the server");
+    }
 }
 
 function displayMainError(errormsg, resetOV = true)
 {
  lg(errormsg);
  mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
- if (resetOV) activeOD = activeOV = '';
+ if (resetOV) OD = OV = ODid = OVid = '';
  mainTableRemoveEventListeners();
 }
 
@@ -937,103 +1052,6 @@ function rangeTest(a, b)
  return false;
 }
 
-function callController(data)
-{
- let object;
- lg(cmd);
- 
- switch (cmd)
-	{
-	 case 'New Object Database':
-	 case 'Edit Database Structure':
-	 case 'GETSIDEBAR':
-	 case 'GETMAIN':
-	      object = { "cmd": cmd };
-	      if (data != undefined) object.data = data;
-	      break;
-	 case 'Description':
-	      let cell, hidden = msg = '';
-	      //--------------Add object and element information to the result message---------------
-	      if (focusElement.td != undefined && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && (cell = mainTable[focusElement.y][focusElement.x]) && cell.oId)
-	      switch (cell.oId)
-	    	     {
-		      case NEWOBJECTID:
-		           if (Number(cell.eId) > 0) msg = 'Cursor table cell is input new object data for element id: ' + cell.eId;
-			   break;
-		      case TITLEOBJECTID:
-			   msg = 'Cursor table cell is title for element id: ' + cell.eId;
-			   break;
-		      default:
-			   msg = 'Cursor table cell object id: ' + cell.oId + '\nCursor table cell element id: ' + cell.eId;
-			   if (cell.version != '0')
-			      {
-			       msg += '\nObject version: ' + cell.version + '\nActual version: ';
-			       cell.realobject ? msg += 'yes' : msg += 'no';
-			       break;
-			      }
-			   msg += '\nObject version: object has been deleted';
-		     }
-	      //--------------Add description to the result message---------------
-	      if (cell && typeof cell.description === 'string') msg += '\n\nElement description property:\n' + cell.description;
-	      //--------Add x and y coordinates to the result message-------------
-	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}\n\n`;
-	      //--------------------Add database and view info--------------------
-	      if (activeOV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
-	      msg += `Object Database: ${activeOD}\nObject View${hidden}: ${activeOV} (${objectsOnThePage} objects)\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}`;
-	      //--------------Add part of sql string object selection-------------
-	      let parammsg = '', count = 1;
-	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];
-	      if (parammsg != '') msg += '\n\nObject View input parameters:' + parammsg;
-	      //--------------Display result message in warning box---------------
-	      warning(msg, 'Description', false);
-	      break;
-	 case 'Help':
-	      box = help;
-	      ShowBox();
-	      break;
-	 case 'New Object':
-	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV };
-	      if (objectTable[String(NEWOBJECTID)] != undefined)
-	         for (let eid in objectTable[String(NEWOBJECTID)])
-		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
-	      break;
-	 case 'Delete Object':
-	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject)
-		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId, 'paramsOV': paramsOV };
-	      break;
-	 case 'LOGIN':
-	 case 'CONFIRM':
-	 case 'DBLCLICK':
-	 case 'KEYPRESS':
-	 case 'CUSTOMIZATION':
-	      object = { "cmd": cmd };
-	      if (focusElement.td && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
-	         {
-	          object["oId"] = mainTable[focusElement.y][focusElement.x].oId;
-		  object["eId"] = mainTable[focusElement.y][focusElement.x].eId;
-		 }
-	      if (data != undefined) object.data = data;
-	      break;
-	 default:
-	      if (cmd.substr(0, 7) != 'Logout ')
-		 {
-		  warning("Undefined application message: '" + cmd + "'!");
-		  return;
-		 }
-	      object = { cmd: 'LOGOUT' };
-	}
-	
- if (object)
-    {
-     object.OD = activeOD;
-     object.OV = activeOV;
-     try { socket.send(JSON.stringify(object)); }
-     catch { warning("The server connection is down! Please refresh the page to reconnect the server"); }
-     if (socket.readyState === 3) warning("The server connection is down! Please refresh the page to reconnect the server");
-    }
-}
-
 function ShowBox()
 {
  /*******************************************************************************************************************************/
@@ -1095,8 +1113,12 @@ function ShowBox()
 	 mainDiv.style.filter = uiProfile["effects"]["box filter"];
 	 sidebarDiv.style.filter = uiProfile["effects"]["box filter"];
 	}
+     SetFirstDialogElementFocus();
     }
- else {box = null; }
+  else 
+    {
+     box = null;
+    }
 }
 
 function getInnerDialog()
@@ -1235,6 +1257,16 @@ function getInnerDialog()
      return '<div class="boxcontentwrapper"'+ contentStyle +'>' + inner + '</div>';
     }
  return '';
+}
+
+function SetFirstDialogElementFocus()
+{
+ for (let element of boxDiv.querySelectorAll('input, textarea'))
+  if (element.attributes.type.value === 'password' || element.attributes.type.value === 'text' || element.attributes.type.value === 'textarea')
+     {
+      element.focus();
+      break;
+     }
 }
 
 function saveDialogProfile()
@@ -1414,18 +1446,18 @@ function ShowContextmenu(event)
  if (event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-od'))
     {
      innerHTML = sidebarODContext;
-     data = event.target.nextSibling.dataset.od;
+     data = event.target.nextSibling.dataset.odid;
     }
  // Context event on OD item? Display OD context menu
   else if (event.target.classList.contains('sidebar-od'))
     { 
      innerHTML = sidebarODContext;
-     data = event.target.dataset.od;
+     data = event.target.dataset.odid;
     }
  // Context event on OV item, on wrap icon cell with OV item or on sidebar empty area? Display OV context menu
   else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('sidebar')) innerHTML = sidebarOVContext;
  // Application context menu on main field empty area? Display mainContext context menu
-  else if ((event.target === mainDiv && activeOV != '') || event.target === mainTablediv) innerHTML = mainContext;
+  else if ((event.target === mainDiv && OV != '') || event.target === mainTablediv) innerHTML = mainContext;
  // Application context menu on main field table or has been generated by keyboard (event.which != 3) and any element is selected? Display appropriate context menu
   else if (event.target.tagName === 'TD' || (focusElement.td != undefined && event.which != 3))
     {

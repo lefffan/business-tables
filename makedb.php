@@ -3,23 +3,36 @@
 // Be aware of removing old ODs by using that script
 
 require_once 'core.php';
+require_once HANDLERDIR.'customizationjson.php';
 
 // Old shit should be dropped
 $query = $db->prepare("drop database ".DATABASENAME."; create database ".DATABASENAME."; use ".DATABASENAME);
 $query->execute();
 
-// Create OD list data sql table
-$query = $db->prepare("CREATE TABLE `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(64) NOT NULL, odprops JSON, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+// Create OV request list sql table with next fields: id,time,ODid,OV
+$query = $db->prepare("CREATE TABLE `$$$` (id CHAR(".USERPASSMINLENGTH.") NOT NULL, time DATETIME DEFAULT NOW(), client JSON, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+$query->execute();
+
+// Create queue sql table with next fields: id,cid,ODid,OV,oid,eid,event
+$query = $db->prepare("CREATE TABLE `$$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, client JSON, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 $query->execute();
  
-// Create default OD 'Users'
+// Create OD list data sql table
+$query = $db->prepare("CREATE TABLE `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(".strval(ODSTRINGMAXCHAR).") NOT NULL, odprops JSON, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+$query->execute();
+ 
+//------------------------------------------Create default OD 'Users'------------------------------------------
 initNewODDialogElements();
 $newProperties['element1']['data'] = 'Users';
-$userOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+$userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+$userOD['dialog']['Element']['New element']['element1']['id'] = '7';
+$userOD['dialog']['View']['New view']['element1']['id'] = '2';
 
+$newView['element1']['id'] = '1';
 $newView['element1']['data'] = 'All users';
 $userOD['dialog']['View']['All users'] = $newView;
 
+$newElement['element1']['id'] = '1';
 $newElement['element1']['data'] = 'User';
 $newElement['element2']['data'] = "\nDouble click the username to change the password and other user properties";
 $newElement['element3']['data'] = UNIQELEMENTTYPE;
@@ -27,56 +40,67 @@ $newElement['element3']['readonly'] = '';
 $json1 = '{"prop": "value"}';
 $json2 = '{"prop": "odaddperm"}';
 $json3 = '{"prop": "groups"}';
-$newElement['element4']['data'] = "/usr/local/bin/php /usr/local/apache2/htdocs/handlers/user.php DBLCLICK $json1 $json2 $json3";
+$newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR."user.php DBLCLICK '$json1' '$json2' '$json3' <user>";
 $newElement['element5']['data'] = '';
-$newElement['element6']['data'] = 'php /usr/local/apache2/htdocs/handlers/user.php INIT <data>';
-$userOD['dialog']['Element']['User - element id1'] = $newElement;
+$newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php INIT <data>';
+$newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php CONFIRM <data>';
+$userOD['dialog']['Element']['User'] = $newElement;
 
+$newElement['element1']['id'] = '2';
 $newElement['element1']['data'] = 'Name';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
-$newElement['element4']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php DBLCLICK';
-$newElement['element5']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php KEYPRESS <data>';
-$newElement['element6']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php INIT <data>';
-$userOD['dialog']['Element']['Name - element id2'] = $newElement;
+$newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
+$newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
+$newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
+$newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+$userOD['dialog']['Element']['Name'] = $newElement;
 
+$newElement['element1']['id'] = '3';
 $newElement['element1']['data'] = 'Telephone';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
-$newElement['element4']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php DBLCLICK';
-$newElement['element5']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php KEYPRESS <data>';
-$newElement['element6']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php INIT <data>';
-$userOD['dialog']['Element']['Telephone - element id3'] = $newElement;
+$newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
+$newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
+$newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
+$newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+$userOD['dialog']['Element']['Telephone'] = $newElement;
 
+$newElement['element1']['id'] = '4';
 $newElement['element1']['data'] = 'Email';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
-$newElement['element4']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php DBLCLICK';
-$newElement['element5']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php KEYPRESS <data>';
-$newElement['element6']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php INIT <data>';
-$userOD['dialog']['Element']['Email - element id4'] = $newElement;
+$newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
+$newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
+$newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
+$newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+$userOD['dialog']['Element']['Email'] = $newElement;
 
+$newElement['element1']['id'] = '5';
 $newElement['element1']['data'] = 'Comment';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
-$newElement['element4']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php DBLCLICK';
-$newElement['element5']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php KEYPRESS <data>';
-$newElement['element6']['data'] = 'php /usr/local/apache2/htdocs/handlers/text.php INIT <data>';
-$userOD['dialog']['Element']['Comment - element id5'] = $newElement;
+$newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
+$newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
+$newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
+$newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+$userOD['dialog']['Element']['Comment'] = $newElement;
 
+$newElement['element1']['id'] = '6';
 $newElement['element1']['data'] = 'Customization';
 $newElement['element2']['data'] = "\nDouble click appropriate cell to change color, font, background and other properties for the specified user";
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
 $json = '{"prop": "dialog"}';
-$newElement['element4']['data'] = "php /usr/local/apache2/htdocs/handlers/customization.php DBLCLICK $json";
+$newElement['element4']['data'] = CUSTOMIZATIONPHPSCRIPT." DBLCLICK '$json'";
 $newElement['element5']['data'] = '';
-$newElement['element6']['data'] = 'php /usr/local/apache2/htdocs/handlers/customization.php INIT';
-$userOD['dialog']['Element']['Customization - element id6'] = $newElement;
+$newElement['element6']['data'] = CUSTOMIZATIONPHPSCRIPT.' INIT';
+$newElement['element7']['data'] = CUSTOMIZATIONPHPSCRIPT.' CONFIRM <data>';
+$userOD['dialog']['Element']['Customization'] = $newElement;
 
 $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
 $query->execute([':odprops' => json_encode($userOD)]);
@@ -93,37 +117,43 @@ $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, lastversion
 $query->execute();
 
 // Insert two objects (two users) to OD with id=1
-$odid = '1';
-$allElementsArray = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
-$uniqElementsArray = ['1' => ''];
+$client['auth'] = 'system';
+$client['ODid'] = '1';
+$client['allelements'] = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
+$client['uniqelements'] = ['1' => ''];
 $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
-InsertObject($db, 'system');
+InsertObject($db, $client, $output);
 
 $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
-InsertObject($db, 'system');
+InsertObject($db, $client, $output);
 
-// Create default OD 'Logs'
+//------------------------------------------Create default OD 'Logs'------------------------------------------
 initNewODDialogElements();
 $newProperties['element1']['data'] = 'Logs';
 $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
-$logOD = ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+$logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+$logOD['dialog']['Element']['New element']['element1']['id'] = '3';
+$logOD['dialog']['View']['New view']['element1']['id'] = '2';
 
+$newView['element1']['id'] = '1';
 $newView['element1']['data'] = 'All logs';
 $newView['element5']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}'."\n".'{"eid":"2", "oid":"2", "x":"3", "y":"0"}'."\n".'{"eid":"2", "x":"3", "y":"n+1"}';
 $newView['element8']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
 $logOD['dialog']['View']['All logs'] = $newView;
 
+$newElement['element1']['id'] = '1';
 $newElement['element1']['data'] = 'Message type';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
-$logOD['dialog']['Element']['Message text - element id1'] = $newElement;
+$logOD['dialog']['Element']['Message text'] = $newElement;
 
+$newElement['element1']['id'] = '2';
 $newElement['element1']['data'] = 'Message text';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
-$logOD['dialog']['Element']['Message type - element id2'] = $newElement;
+$logOD['dialog']['Element']['Message type'] = $newElement;
 
 $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Logs',:odprops)");
 $query->execute([':odprops' => json_encode($logOD)]);
