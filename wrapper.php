@@ -36,6 +36,7 @@ function ParseHandlerResult(&$output, &$client)
 	      break;
 	 case 'DIALOG':
 	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE') return;
+	      if ($client['ODid'] != '1' || ($client['eId'] != '1' && $client['eId'] != '6')) if (isset($output['data']['flags']['cmd'])) unset($output['data']['flags']['cmd']);
 	      //cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'CALL':
@@ -54,7 +55,7 @@ function ParseHandlerResult(&$output, &$client)
 	 default:
 	      return;
 	}
-    
+
  return true;
 }    
     

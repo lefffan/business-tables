@@ -63,6 +63,7 @@ switch ($event)
 			'dialog' => $data,
 			'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'],
 			'flags'  => ['style' => 'width: 600px; height: 600px;', 'esc' => '', 'padprofilehead' => ['pad' => "\n\nSelect customization"]]];
+
 	     echo json_encode(['cmd' => 'DIALOG', 'data' => $dialog]);
 	     break;
 	case 'CONFIRM':

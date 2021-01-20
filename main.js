@@ -26,7 +26,7 @@ let focusElement = {};
 // User interface default profile
 const uiProfile = {
 		  // Body
-		  "body": { "target": "body", "background-color": "#343E54;" },
+		  "application": { "target": "body", "background-color": "#343E54;" },
 		  // Sidebar
     		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
@@ -53,10 +53,10 @@ const uiProfile = {
 		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
-		  // Box types
+		  // Hint
 		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
-		  "box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;" },
 		  // Box interface elements
+		  "dialog box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;" },
 		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
 		  "dialog box pad": { "target": ".pad", "background-color": "rgb(223,223,223);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
 		  "dialog box active pad": { "target": ".activepad", "background-color": "rgb(209,209,209);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": "bold .9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
@@ -112,7 +112,7 @@ const uiProfile = {
 		  // Misc
 		  "misc customization": { "objects per page": String(DEFAULTOBJECTSPERPAGE), "next page bottom reach": "", "previous page top reach": "", "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" }
 		  };
-		  
+
 //lg(JSON.stringify(uiProfile));		// Output uiProfile array to te console to use it as a default customization configuration
 const style = document.createElement('style');	// Create style DOM element
 styleUI();					// Style default user inteface profile
@@ -623,7 +623,13 @@ function eventHandler(event)
 	      //--------------Dialog box events are processed and mouse click on grey menu item or on context menu but not menu item? Break!----------
 	      if (box || event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) break;
 	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
-	     if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
+	      if (focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
+		 {
+		  if (mainTable[focusElement.y][focusElement.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(focusElement.td.innerHTML));
+		   else mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(focusElement.td.innerHTML);
+		  focusElement.td.contentEditable = 'false';
+		 }
+	     /***if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
 	     if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
 		 {
 		  focusElement.td.contentEditable = 'false';
@@ -636,7 +642,7 @@ function eventHandler(event)
 		  cmd = 'CONFIRM';
 		  CallController(htmlCharsConvert(focusElement.td.innerHTML));
 		  break;
-		 }
+		 }***/
 	      //--------------Mouse click on context menu item? Call controller with appropriate context menu item as a command--------------
 	      if (event.target.classList.contains('contextmenuItems'))
 		 {

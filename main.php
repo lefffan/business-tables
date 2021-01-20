@@ -163,7 +163,6 @@ while (true)
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
 	  $handler = json_decode($value['client'], true);
-	  //lg($handler);
 	  switch ($handler['cmd'])
 	         {
 		  case 'EDIT':

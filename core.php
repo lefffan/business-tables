@@ -383,7 +383,6 @@ function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
  if (!isset($result[0][0])) return NULL;
- 
  $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
  $result = str_replace('\\"', '"', $result);
  return str_replace("\\\\", "\\", $result);

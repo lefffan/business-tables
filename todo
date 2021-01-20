@@ -1,5 +1,4 @@
 Janury 2021:
-- profile sort at custom dialog
 - no cmd in dialog confirm from usual handlers
 - Undo editing
 - NEWOBJECT AND DELETEOBKECT
@@ -40,7 +39,6 @@ February 2021:
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   Linux to docker, secure php.ini, optimize mysql to highload app
   ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
-  use array_key_last([]); instead of end([]); and 
   Problems of deploying - can i use mysql on commerisal base? Can i use sockets number more than 1024?
 - telnet function by SLAVA
 - snmp function by SLAVA
@@ -79,6 +77,7 @@ March 2021:
 - Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
 - Define OV by id (not by name) to avoid client socket subscribed OV loss. For example, during client adding new object OV name has changed, so OV refresh command will not be passed due to subscribed and changed OV are unmatched
 - socket rate limit https://javascript.info/websocket#rate-limiting
+- rise hide => effect rise hide in main.js for uiProfile
 -----------------------------Emulation-------------------------------------------------------
 - Corp chat
 - Corp book
