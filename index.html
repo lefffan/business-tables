@@ -162,6 +162,26 @@
 		  {
 		   z-index: 40;
 		  }
+	    .hotnewshide { visibility: hidden; transform: scale(0) rotate(0deg); opacity: 0; transition: all .4s; -webkit-transition: all .4s; }
+	    .hotnewsshow { visibility: visible; transform: scale(1) rotate(720deg); opacity: 1; transition: .4s; -webkit-transition: .4s; -webkit-transition-property: transform, opacity transition-property: transform, opacity }
+	    .fadehide { visibility: hidden; opacity: 0; transition: all .5s; -webkit-transition: all .5s; }
+	    .fadeshow { visibility: visible; opacity: 1; transition: opacity .5s; -webkit-transition: opacity .5s; }
+	    .growhide { visibility: hidden; transform: scale(0); transition: all .4s; -webkit-transition: all .4s; }
+	    .growshow { visibility: visible; transform: scale(1); transition: transform .4s; -webkit-transition: transform .4s; }
+	    .slidelefthide { visibility: hidden; transform: translate(1000%); transition: all .4s cubic-bezier(1,-0.01,1,-0.09); -webkit-transition: all .4s cubic-bezier(1,-0.01,1,-0.09); }
+	    .slideleftshow { visibility: visible; transform: translate(0%); transition: all .4s cubic-bezier(.06,1.24,0,.98); -webkit-transition: all .4s cubic-bezier(.06,1.24,0,.98); }
+	    .sliderighthide { visibility: hidden; transform: translate(-1000%); transition: all .4s cubic-bezier(1,-0.01,1,-0.09); -webkit-transition: all .4s cubic-bezier(1,-0.01,1,-0.09); }
+	    .sliderightshow { visibility: visible; transform: translate(0%); transition: all .4s cubic-bezier(.06,1.24,0,.98); -webkit-transition: transform .4s cubic-bezier(.06,1.24,0,.98); }
+	    .slideuphide { visibility: hidden; transform: translate(0%, 1000%); transition: all .4s cubic-bezier(1,-0.01,1,-0.09); -webkit-transition: all .4s cubic-bezier(1,-0.01,1,-0.09); }
+	    .slideupshow { visibility: visible; transform: translate(0%, 0%); transition: all .4s cubic-bezier(.06,1.24,0,.98); -webkit-transition: transform .4s cubic-bezier(.06,1.24,0,.98); }
+	    .slidedownhide { visibility: hidden; transform: translate(0%, 1000%); transition: all .4s cubic-bezier(1,-0.01,1,-0.09); -webkit-transition: all .4s cubic-bezier(1,-0.01,1,-0.09); }
+	    .slidedownshow { visibility: visible; transform: translate(0%, 0%); transition: all .4s cubic-bezier(.06,1.24,0,.98); -webkit-transition: transform .4s cubic-bezier(.06,1.24,0,.98); }
+	    .fallhide { visibility: hidden; transform-origin: left top; transform: scale(2); opacity: 0; transition: all .4s; -webkit-transition: all .4s; }
+	    .fallshow { visibility: visible; transform-origin: left top; transform: scale(1); opacity: 1; transition: .4s; -webkit-transition: .4s; -webkit-transition-property: transform, opacity transition-property: transform, opacity }
+	    .risehide { visibility: hidden; transform-origin: left top; transform: scale(0); transition: all .2s cubic-bezier(.38,1.02,.69,.97); -webkit-transition: all .2s cubic-bezier(.38,1.02,.69,.97); }
+	    .riseshow { visibility: visible; transform-origin: left top; transform: scale(1); transition: transform .4s cubic-bezier(.06,1.24,0,.98); -webkit-transition: transform .4s cubic-bezier(.06,1.24,0,.98); }
+	    .nonehide { visibility: hidden; }
+	    .noneshow { visibility: visible; }
 	</style>
     </head>
 

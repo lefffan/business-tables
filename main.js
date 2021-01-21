@@ -11,6 +11,7 @@ const mainContext = '<div class="contextmenuItems">New Object</div><div class="c
 const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
+const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
 /*------------------------------VARIABLES------------------------------------*/
 let contextmenu, contextmenuDiv;
 let hint, hintDiv;
@@ -48,15 +49,15 @@ const uiProfile = {
 		  // Scrollbar
 		  "scrollbar": { "target": "::-webkit-scrollbar", "width": "8px;", "height": "8px;" },
 		  // Context Menu
-		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-weight": "300;", "line-height": "1.5;", "padding": "12px 0;" },
+		  "context menu": { "target": ".contextmenu", "width": "240px;", "background-color": "#F3F3F3;", "color": "#1166aa;", "border": "solid 1px #dfdfdf;", "box-shadow": "1px 1px 2px #cfcfcf;", "font-family": "sans-serif;", "font-size": "16px;", "font-weight": "300;", "line-height": "1.5;", "padding": "12px 0;", "effect": "rise", "_effect": "Context menu " + EFFECTHELP },
 		  "context menu item": { "target": ".contextmenuItems", "margin-bottom": "4px;", "padding-left": "10px;" },
 		  "context menu item cursor": { "target": ".contextmenuItems:hover:not(.greyContextMenuItem)", "cursor": "pointer;" },
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Hint
-		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;" },
+		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;", "effect": "hotnews", "_effect": "Hint " + EFFECTHELP },
 		  // Box interface elements
-		  "dialog box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;" },
+		  "dialog box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;", "effect": "slideleft", "_effect": "Dialog box " + EFFECTHELP, "filter": "grayscale(0.5)", "_filter": "Application css style filter applied to the sidebar and main field.<br>For a example: 'grayscale(0.5)' or 'blur(3px)'. See appropriate css documentaion." },
 		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
 		  "dialog box pad": { "target": ".pad", "background-color": "rgb(223,223,223);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": ".9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
 		  "dialog box active pad": { "target": ".activepad", "background-color": "rgb(209,209,209);", "border-left": "none;", "border-right": "none;", "border-top": "none;", "border-bottom": "none;", "padding": "5px;", "margin": "0;", "font": "bold .9em Lato, Helvetica;", "color": "#57C;", "border-radius": "5px 5px 0 0;" },
@@ -68,7 +69,7 @@ const uiProfile = {
 		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
 		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
 		  //
-		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;" },
+		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
 		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "rgb(209,209,209);", "color": "" },
 		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
@@ -87,36 +88,13 @@ const uiProfile = {
 		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  // Effects and animation
-		  "effects": { "hint": "hotnews", "contextmenu": "rise", "box": "slideup", "select": "rise", "box filter": "grayscale(0.5)" }, // or blur(3px)
-		  "hotnews hide": { "target": ".hotnewshide", "visibility": "hidden;", "transform": "scale(0) rotate(0deg);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
-		  "hotnews show": { "target": ".hotnewsshow", "visibility": "visible;", "transform": "scale(1) rotate(720deg);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
-		  "fade hide": { "target": ".fadehide", "visibility": "hidden;", "opacity": "0;", "transition": "all .5s;", "-webkit-transition": "all .5s;" },
-		  "fade show": { "target": ".fadeshow", "visibility": "visible;", "opacity": "1;", "transition": "opacity .5s;", "-webkit-transition": "opacity .5s;" },
-		  "grow hide": { "target": ".growhide", "visibility": "hidden;", "transform": "scale(0);", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
-		  "grow show": { "target": ".growshow", "visibility": "visible;", "transform": "scale(1);", "transition": "transform .4s;", "-webkit-transition": "transform .4s;" },
-		  "slideleft hide": { "target": ".slidelefthide", "visibility": "hidden;", "transform": "translate(1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slideleft show": { "target": ".slideleftshow", "visibility": "visible;", "transform": "translate(0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "all .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "slideright hide": { "target": ".sliderighthide", "visibility": "hidden;", "transform": "translate(-1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slideright show": { "target": ".sliderightshow", "visibility": "visible;", "transform": "translate(0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "slideup hide": { "target": ".slideuphide", "visibility": "hidden;", "transform": "translate(0%, 1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slideup show": { "target": ".slideupshow", "visibility": "visible;", "transform": "translate(0%, 0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "slidedown hide": { "target": ".slidedownhide", "visibility": "hidden;", "transform": "translate(0%, 1000%);", "transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);", "-webkit-transition": "all .4s cubic-bezier(1,-0.01,1,-0.09);" },
-		  "slidedown show": { "target": ".slidedownshow", "visibility": "visible;", "transform": "translate(0%, 0%);", "transition": "all .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "fall hide": { "target": ".fallhide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(2);", "opacity": "0;", "transition": "all .4s;", "-webkit-transition": "all .4s;" },
-		  "fall show": { "target": ".fallshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "opacity": "1;", "transition": ".4s;", "-webkit-transition": ".4s;", "-webkit-transition-property": "transform, opacity", "transition-property": "transform, opacity" },
-		  "rise hide": { "target": ".risehide", "visibility": "hidden;", "transform-origin": "left top;", "transform": "scale(0);", "transition": "all .2s cubic-bezier(.38,1.02,.69,.97);", "-webkit-transition": "all .2s cubic-bezier(.38,1.02,.69,.97);" },
-		  "rise show": { "target": ".riseshow", "visibility": "visible;", "transform-origin": "left top;", "transform": "scale(1);", "transition": "transform .4s cubic-bezier(.06,1.24,0,.98);", "-webkit-transition": "transform .4s cubic-bezier(.06,1.24,0,.98);" },
-		  "none hide": { "target": ".nonehide", "visibility": "hidden;" },
-		  "none show": { "target": ".noneshow", "visibility": "visible;" },
 		  // Misc
-		  "misc customization": { "objects per page": String(DEFAULTOBJECTSPERPAGE), "next page bottom reach": "", "previous page top reach": "", "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" }
+		  "misc customization": { "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" },
 		  };
 
-//lg(JSON.stringify(uiProfile));		// Output uiProfile array to te console to use it as a default customization configuration
-const style = document.createElement('style');	// Create style DOM element
-styleUI();					// Style default user inteface profile
-document.head.appendChild(style);		// Append document style tag
+const style = document.createElement('style');			// Create style DOM element
+styleUI();							// Style default user inteface profile
+document.head.appendChild(style);				// Append document style tag
 /*---------------------------------------------------------------------------*/
 
 function lg(...data)
@@ -134,9 +112,9 @@ function loog(...data)
 
 function Hujax(url, callback, requestBody)
 {
- fetch(url, { method: 'POST',  
-		 headers: { 'Content-Type': 'application/json; charset=UTF-8'}, 
-		 body: JSON.stringify(requestBody) }).then(function(response) {
+ fetch(url, { method:	'POST',  
+	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'}, 
+	      body: 	JSON.stringify(requestBody) }).then(function(response) {
 			    if (response.ok) response.json().then(callback);
 			     else displayMainError('Request failed with response ' + response.status + ': ' + response.statusText); })
 							    .catch (function(error) { lg('Ajax request error: ', error); });
@@ -146,7 +124,7 @@ function Hujax(url, callback, requestBody)
 window.onload = function()
 {
  // Define document html and add appropriate event listeners for it
- document.body.innerHTML = '<div class="sidebar"></div><div class="main"></div><div class="contextmenu ' + uiProfile["effects"]["contextmenu"] + 'hide"></div><div class="hint ' + uiProfile["effects"]["hint"] + 'hide"></div><div class="box ' + uiProfile["effects"]["box"] + 'hide"></div><div class="select expanded ' + uiProfile["effects"]["select"] + 'hide"></div>';
+ document.body.innerHTML = '<div class="sidebar"></div><div class="main"></div><div class="contextmenu ' + uiProfile["context menu"]["effect"] + 'hide"></div><div class="hint ' + uiProfile["hint"]["effect"] + 'hide"></div><div class="box ' + uiProfile["dialog box"]["effect"] + 'hide"></div><div class="select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide"></div>';
  document.addEventListener('keydown', eventHandler);
  document.addEventListener('mousedown', eventHandler);
  document.addEventListener('contextmenu', eventHandler);
@@ -535,6 +513,7 @@ function eventHandler(event)
 	      //--------------Any dialog button event? Non empty button property value calls controller, then hide box anyway--------------
 	      if (event.target.classList.contains('button'))
 	         {
+		  if (!box) break;
 		  if (typeof box.buttons[event.target.innerHTML] === 'string' && box.buttons[event.target.innerHTML] != '' && box.buttons[event.target.innerHTML].charCodeAt(0) === 32)
 		     {
 		      box.buttons = {};
@@ -564,7 +543,7 @@ function eventHandler(event)
 		      box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"] = setOptionSelected(box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"], event.target.attributes.value.value);
 		     }
 		  // Hide expanded div and break;
-		  expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
+		  expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
 		  break;
 		 }
 	      //--------------Dialog box select interface element mouse down event?--------------
@@ -576,7 +555,7 @@ function eventHandler(event)
 			  case 'select-one':
 			       if ((/hide$/).test(expandedDiv.classList[2]) === false) // Expanded div visible? Hide it.
 				  {
-				   expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
+				   expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
 				   break;
 				  }
 			       let data, inner = '', count = 0;
@@ -598,7 +577,7 @@ function eventHandler(event)
 			       expandedDiv.innerHTML  = inner; // Fill expandedDiv with innerHTML
 			       expandedDiv.style.top  = selectExpandedDiv.offsetTop + boxDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position
 			       expandedDiv.style.left = selectExpandedDiv.offsetLeft + boxDiv.offsetLeft + 'px'; // Place expandedDiv left position
-			       expandedDiv.className  = 'select expanded ' + uiProfile["effects"]["select"] + 'show'; // Show expandedDiv
+			       expandedDiv.className  = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'show'; // Show expandedDiv
 			       break;
 			  case 'select-multiple':
 			       event.target.classList.toggle("selected");
@@ -609,7 +588,7 @@ function eventHandler(event)
 	      //--------------Expanded div still visible and non expanded div mouse click?--------------
 	      if ((/show$/).test(expandedDiv.classList[2]) === true && !event.target.classList.contains('expanded'))
 	         {
-		  expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
+		  expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
 		  break;
 		 }
 	      //--------------Non active pad is selected?--------------
@@ -617,7 +596,7 @@ function eventHandler(event)
 		 {
 		  saveDialogProfile();
 		  box.flags.pad = event.target.innerHTML; // Set event.target.innerHTML as a current pad
-		  ShowBox();			 // Redraw dialog
+		  ShowBox(); // Redraw dialog
 		  break;
 		 }
 	      //--------------Dialog box events are processed and mouse click on grey menu item or on context menu but not menu item? Break!----------
@@ -684,8 +663,7 @@ function eventHandler(event)
 		      box.buttons = {};
 		      box.buttons[btn] = '';
 		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd'];
-		       else cmd = 'CONFIRM';                                             
+		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd']; else cmd = 'CONFIRM';                                             
 		      CallController(box);
 		      HideBox();
 		      return;
@@ -743,7 +721,7 @@ function eventHandler(event)
 			      {
 			       // Expanded div visible? Hide it, otherwise hide dialog box
 			       if ((/show$/).test(expandedDiv.classList[2]) != true) HideBox();
-			        else expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
+			        else expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
 			      }
 			    else if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
 			      {
@@ -1112,14 +1090,11 @@ function ShowBox()
      boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%";
      boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%";
      // Show box div
-     boxDiv.className = 'box ' + uiProfile["effects"]['box'] + 'show';
+     boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'show';
      // Apply filters if exist
-     if (uiProfile["effects"]["box filter"])
-        {
-	 mainDiv.style.filter = uiProfile["effects"]["box filter"];
-	 sidebarDiv.style.filter = uiProfile["effects"]["box filter"];
-	}
-     SetFirstDialogElementFocus();
+     if (uiProfile["dialog box"]["filter"]) sidebarDiv.style.filter = mainDiv.style.filter = uiProfile["dialog box"]["filter"];
+     // Set focus on first text-input element
+     uiProfile["dialog box"]["effect"] === 'none' ? SetFirstDialogElementFocus() : boxDiv.addEventListener('transitionend', SetFirstDialogElementFocus);
     }
   else 
     {
@@ -1130,7 +1105,7 @@ function ShowBox()
 function getInnerDialog()
 {
  if (typeof box.dialog !== 'object') return '';
- let element, data, count = 0, inner = '';
+ let element, data, count = 0, readonly, inner = '';
  
  //------------------Creating current pad and profile if not exist------------------
  if (!box.flags) box.flags = {};
@@ -1233,8 +1208,7 @@ function getInnerDialog()
 	      case 'radio':
 		   if (data != '')
 		      {
-		       let readonly = '';
-		       if (element.readonly != undefined) readonly = ' disabled';
+		       element.readonly != undefined ? readonly = ' disabled' : readonly = '';
 		       for (data of data.split('|')) if (data != '')
 			  {
 			   const pos = data.search(/[^\+]/);
@@ -1245,12 +1219,12 @@ function getInnerDialog()
 		   break;
 	      case 'password':
 	      case 'text':
-	           if (element.readonly != undefined) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '" readonly>';
-		    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '">';
+	    	   element.readonly != undefined ? readonly = ' readonly' : readonly = '';
+		   inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '"' + readonly + '>';
 		   break;
 	      case 'textarea':
-		   if (element.readonly != undefined) inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '" readonly>' + data + '</textarea>';
-		    else inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '">' + data + '</textarea>';
+		   element.readonly != undefined ? readonly = ' readonly' : readonly = '';
+		   inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '"' + readonly + '>' + data + '</textarea>';
 		   break;
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';
@@ -1343,8 +1317,9 @@ function HideBox()
 {
  if (box)
     {
-     boxDiv.className = 'box ' + uiProfile["effects"]["box"] + 'hide';
-     expandedDiv.className = 'select expanded ' + uiProfile["effects"]["select"] + 'hide';
+     if (uiProfile["dialog box"]["effect"] != 'none') boxDiv.removeEventListener('transitionend', SetFirstDialogElementFocus);
+     boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'hide';
+     expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
      box = null;
      mainDiv.style.filter = 'none';
      sidebarDiv.style.filter = 'none';
@@ -1506,7 +1481,7 @@ function ShowContextmenu(event)
 	  else contextmenuDiv.style.top = event.clientY - contextmenuDiv.clientHeight + "px";
 	}
      // Show context menu
-     contextmenuDiv.className = 'contextmenu ' + uiProfile["effects"]["contextmenu"] + 'show';
+     contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'show';
     }
   else
     {
@@ -1518,7 +1493,7 @@ function HideContextmenu()
 {
  if (contextmenu)
     {
-     contextmenuDiv.className = 'contextmenu ' + uiProfile["effects"]["contextmenu"] + 'hide';
+     contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'hide';
      contextmenu = null;
     }
 }
@@ -1561,7 +1536,7 @@ function ShowHint(content, x, y)
  hintDiv.innerHTML = '<pre>' + content + '</pre>'; // Add content
  hintDiv.style.left = x + "px";
  hintDiv.style.top = y + "px";
- hintDiv.className = 'hint ' + uiProfile["effects"]["hint"] + 'show';
+ hintDiv.className = 'hint ' + uiProfile["hint"]["effect"] + 'show';
 }
 
 function HideHint()
@@ -1569,7 +1544,7 @@ function HideHint()
  if (hint)
     {
      clearTimeout(tooltipTimerId);                                              
-     hintDiv.className = 'hint ' + uiProfile["effects"]["hint"] + 'hide';
+     hintDiv.className = 'hint ' + uiProfile["hint"]["effect"] + 'hide';
      hint = null;
     }
 }
@@ -1609,6 +1584,20 @@ function isObjectEmpty(object, excludeProp)
  return true;
 }
 
+function uiProfileSet(customization)
+{
+ let selector, property;
+ customization = customization.pad;
+ 
+ for (selector in customization)
+     {
+      for (property in customization[selector]) if (property != 'element0' && property != 'element1')
+	  uiProfile[selector][customization[selector][property]['head'].slice(0, -1)] = customization[selector][property]['data'];
+      if (customization[selector]['element0'] != undefined && customization[selector]['element0']['target'] != undefined)
+         uiProfile[selector]['target'] = customization[selector]['element0']['target'];
+     }
+}
+
 function styleUI()
 {
  let element, key, inner = '';
@@ -1617,27 +1606,13 @@ function styleUI()
   if (uiProfile[element]["target"] != undefined)
      {
       inner += uiProfile[element]["target"] + " {";
-      for (key in uiProfile[element]) if (key != "target" && uiProfile[element][key] != "")
+      for (key in uiProfile[element]) if (key != 'target' && key != 'effect' && key != 'filter' && key.substr(0, 1) != '_' && uiProfile[element][key] != '')
           inner += key + ": " + uiProfile[element][key];
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }
  style.innerHTML = inner;
-}
-
-function uiProfileSet(customization)
-{
- let selector, property;
- customization = customization.pad;
  
- for (selector in customization) if (selector != 'Scheme')
-     {
-      for (property in customization[selector]) if (property != 'element0' && property != 'element1')
-	  uiProfile[selector][customization[selector][property]['head'].slice(0, -1)] = customization[selector][property]['data'];
-      if (customization[selector]['element0'] != undefined && customization[selector]['element0']['target'] != undefined)
-         uiProfile[selector]['target'] = customization[selector]['element0']['target'];
-     }
- //if (!(objectsPerPage = Number(uiProfile['misc customization']['objects per page']))) objectsPerPage = DEFAULTOBJECTSPERPAGE;
- // else if (objectsPerPage > MAXOBJECTSPERPAGE) objectsPerPage = MAXOBJECTSPERPAGE;
+ //lg(JSON.stringify(uiProfile).replace(/'/g, "\\'")); // Output uiProfile array to te console to use it as a default customization configuration
 }
 
 const help = { title: 'Help', dialog: {

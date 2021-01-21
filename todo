@@ -1,9 +1,9 @@
 Janury 2021:
-- no cmd in dialog confirm from usual handlers
-- Undo editing
+- remove uiprofile effects
 - NEWOBJECT AND DELETEOBKECT
 - keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
 - catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
+- Undo editing
 - when editing OD props - if dialog elements/views/rules doesn't exist in props in db, then?
 - CHeck authorization at someones else changes the pass or session timeout
 - SHOW VARIABLES LIKE "%wait%"; => wait_timeout=28800, 'message' => 'SQLSTATE[HY000]: General error: 2006 MySQL server has gone away'
@@ -77,7 +77,6 @@ March 2021:
 - Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
 - Define OV by id (not by name) to avoid client socket subscribed OV loss. For example, during client adding new object OV name has changed, so OV refresh command will not be passed due to subscribed and changed OV are unmatched
 - socket rate limit https://javascript.info/websocket#rate-limiting
-- rise hide => effect rise hide in main.js for uiProfile
 -----------------------------Emulation-------------------------------------------------------
 - Corp chat
 - Corp book

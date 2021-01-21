@@ -6,7 +6,6 @@ const DATABASEUSER			= 'root';
 const DATABASEPASS			= '123';
 const PHPBINARY				= '/usr/local/bin/php';
 const HANDLERDIR			= '/usr/local/apache2/htdocs/handlers/';
-const CUSTOMIZATIONPHPSCRIPT		= PHPBINARY.' '.HANDLERDIR.'customization.php';
 const IP				= '192.168.9.39';
 const PORT				= 7889;
 /*****************************************************************************************/
@@ -17,7 +16,7 @@ const OVSTRINGMAXCHAR			= 64;
 const USERSTRINGMAXCHAR			= '64';
 const USERPASSMINLENGTH			= '8';
 const SOCKETREADMAXBYTES		= 100000;
-const SOCKETTIMEOUTUSEC			= 200000;
+const SOCKETTIMEOUTUSEC			= 50000;
 const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 32;
 const ELEMENTPROFILENAMEADDSTRING	= ' (id';

@@ -668,10 +668,9 @@ function getUserODAddPermission($db, $id)
 function getUserCustomization($db, $uid)
 {
  $customization = json_decode(getElementProp($db, '1', $uid, '6', 'dialog'), true); // Get current user JSON customization and decode it
- if (!isset($customization['pad']['misc customization']['element5']['data'])) return; // Wrong result data? Return NULL
 
  // If current user customization forces to use another user customization, and the user doesn't point to itself and does exist - get it
- if (($forceuser = $customization['pad']['misc customization']['element5']['data']) != '')
+ if (($forceuser = $customization['pad']['misc customization']['element2']['data']) != '')
     {
      $forceuser = getUserId($db, $forceuser);
      if (isset($forceuser) && $uid != $forceuser) $forceuser = json_decode(getElementProp($db, '1', $forceuser, '6', 'dialog'), true);

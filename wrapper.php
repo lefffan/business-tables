@@ -200,7 +200,7 @@ switch ($output[$client['eId']]['cmd'])
 	    	     foreach ($value as $prop => $valeu) if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
 	     $output = ['cmd' => 'SET', 'data' => $output, 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'cid' => $client['cid']];
 	     if (isset($output['data'][$excludeid]['alert'])) $output['alert'] = $output['data'][$excludeid]['alert'];
-	     if (strpos($cmdline, CUSTOMIZATIONPHPSCRIPT) === 0 && strval($client['uid']) === strval($client['oId']))
+	     if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
 	        {
 		 $output['customization'] = getUserCustomization($db, $client['uid']);
 		 if (!isset($output['customization'])) unset($output['customization']);

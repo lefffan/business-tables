@@ -45,6 +45,17 @@ Controller JSON to the element handler is in $intput variable:
 
 require_once 'customizationjson.php';
 
+function lg($arg)
+{
+ file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
+ file_put_contents('error.log', "\n-------------------------------END LOG-------------------------------\n", FILE_APPEND);
+}
+
+function CheckEffect(&$effect)
+{
+ if (array_search($effect, ['hotnews', 'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise'], true) === false) $effect = 'none';
+}
+
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
 
@@ -68,6 +79,12 @@ switch ($event)
 	     break;
 	case 'CONFIRM':
 	     if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
+	     
+	     CheckEffect($data['dialog']['pad']['context menu']['element12']['data']);
+	     CheckEffect($data['dialog']['pad']['hint']['element6']['data']);
+	     CheckEffect($data['dialog']['pad']['dialog box']['element7']['data']);
+	     CheckEffect($data['dialog']['pad']['dialog box select']['element15']['data']);
+
 	     echo json_encode(['cmd' => 'SET', 'dialog' => json_encode($data['dialog'])]);
 	     break;
        }

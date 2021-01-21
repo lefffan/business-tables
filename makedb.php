@@ -96,10 +96,10 @@ $newElement['element2']['data'] = "\nDouble click appropriate cell to change col
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';
 $json = '{"prop": "dialog"}';
-$newElement['element4']['data'] = CUSTOMIZATIONPHPSCRIPT." DBLCLICK '$json'";
+$newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR."customization.php DBLCLICK '$json'";
 $newElement['element5']['data'] = '';
-$newElement['element6']['data'] = CUSTOMIZATIONPHPSCRIPT.' INIT';
-$newElement['element7']['data'] = CUSTOMIZATIONPHPSCRIPT.' CONFIRM <data>';
+$newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php INIT';
+$newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php CONFIRM <data>';
 $userOD['dialog']['Element']['Customization'] = $newElement;
 
 $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");

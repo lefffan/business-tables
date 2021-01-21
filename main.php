@@ -61,13 +61,13 @@ while (true)
 		  case 'LOGIN': // Client context menu login dialog event. Check if user/pass are correct and not empty
 		       if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' &&  ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user))))
 		    	  {
-		    	   $output['customization'] = getUserCustomization($db, $uid);
 			   $client['auth'] = $user;
 			   $client['uid'] = $uid;
 			   $input['OD'] = $input['OV'] = '';
 			   $client['ODid'] = NULL;
 			   $output['alert'] = "User '$user' has logged in from $ipport!";
 			   Check($db, CHECK_OD_OV, $client, $input, $output);
+		    	   $output['customization'] = getUserCustomization($db, $uid);
 			   break;
 		    	  }
 		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
