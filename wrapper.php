@@ -26,27 +26,26 @@ function ParseHandlerResult(&$output, &$client)
 	 case 'EDIT':
 	      ConvertToString($output, ['data']);
 	      if (!isset($output['data'])) $output['data'] = NULL;
-	      if ($client['cmd'] === 'CHANGE') return;
-	      //cutKeys($output, ['cmd', 'data']);
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
+	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'ALERT':
-	      if (!isset($output['data']) || $client['cmd'] === 'CHANGE') return;
+	      if (!isset($output['data']) || $client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
 	      if (!ConvertToString($output, ['data'])) return;
-	      //cutKeys($output, ['cmd', 'data']);
+	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'DIALOG':
-	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE') return;
+	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
 	      if ($client['ODid'] != '1' || ($client['eId'] != '1' && $client['eId'] != '6')) if (isset($output['data']['flags']['cmd'])) unset($output['data']['flags']['cmd']);
-	      //cutKeys($output, ['cmd', 'data']);
+	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'CALL':
-	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE') return;
-	      //cutKeys($output, ['cmd', 'data']);
-	      cutKeys($output['data'], ['OD', 'OV', 'ODid', 'OVid', 'params']);
-	      ConvertToString($output['data'], ['OD', 'OV', 'ODid', 'OVid']);
-	      if (!isset($output['data']['params']) || gettype($output['data']['params']) != 'array') $output['data']['params'] = [];
-	      if (!isset($output['data']['ODid'], $output['data']['OD'])) { $output['data']['ODid'] = $client['ODid']; $output['data']['OD'] = $client['OD']; }
-	      if (!isset($output['data']['OVid'], $output['data']['OV'])) { $output['data']['OVid'] = $client['OVid']; $output['data']['OV'] = $client['OV']; }
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
+	      cutKeys($output, ['cmd', 'OD', 'OV', 'ODid', 'OVid', 'params']);
+	      ConvertToString($output, ['OD', 'OV', 'ODid', 'OVid']);
+	      if (!isset($output['params']) || gettype($output['params']) != 'array') $output['params'] = [];
+	      if (!isset($output['ODid'], $output['OD'])) { $output['ODid'] = $client['ODid']; $output['OD'] = $client['OD']; }
+	      if (!isset($output['OVid'], $output['OV'])) { $output['OVid'] = $client['OVid']; $output['OV'] = $client['OV']; }
 	      break;
 	 case 'SET':
 	 case 'RESET':
@@ -136,11 +135,36 @@ function GetCMD($db, &$client)
 }
 
 $client	= json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
+$output = [];
+$_client = ['ODid' => $client['ODid'], 'OD' => $client['OD'], 'OVid' => $client['OVid'], 'OV' => $client['OV'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid'], 'uid' => $client['uid']];
+
+if ($client['cmd'] === 'INIT')
+   {
+    $data = $client['data'];
+    foreach ($client['allelements'] as $eid => $profile)
+    	    {
+	     $client['eId'] = $eid;
+	     if (isset($data[$eid])) $client['data'] = $data[$eid]; else $client['data'] = '';
+    	     $output[$eid] = [];
+    	     if (($cmdline = GetCMD($db, $client)) === '') continue;
+    	     exec($cmdline, $output[$eid]);
+    	     if (!ParseHandlerResult($output[$eid], $client)) unset($output[$eid]);
+    	    }
+    InsertObject($db, $client, $output);
+   }
+if ($client['cmd'] === 'DELETEOBJECT') DeleteObject($db, $client);
+if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
+   {
+    $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+    $query->execute([':client' => json_encode(['cmd' => 'CALL'] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+    exit;
+   }
+
 if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
  else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
 
 if (($cmdline = GetCMD($db, $client)) === '') exit;
-$output = [$client['eId'] => []];
+$output[$client['eId']] = [];
 
 exec($cmdline, $output[$client['eId']]);
 if (!ParseHandlerResult($output[$client['eId']], $client)) exit;
@@ -151,11 +175,11 @@ switch ($output[$client['eId']]['cmd'])
         case 'CALL':
         case 'EDIT':
 	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode(['cmd' => $output[$client['eId']]['cmd'], 'data' => $output[$client['eId']]['data'], 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid']], JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     $query->execute([':client' => json_encode($output[$client['eId']] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
 	     break;
         case 'ALERT':
 	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode(['cmd' => 'SET', 'data' => [], 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'alert' => $output[$client['eId']]['data'], 'cid' => $client['cid']], JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     $query->execute([':client' => json_encode(['cmd' => 'SET', 'data' => [], 'alert' => $output[$client['eId']]['data']] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
 	     break;
         case 'SET':
         case 'RESET':
@@ -164,9 +188,9 @@ switch ($output[$client['eId']]['cmd'])
 	    	     {
 		      $client['eId'] = $eid;
 		      $client['cmd'] = 'CHANGE';
-		      if (($cmd = GetCMD($db, $client)) === '') continue;
+		      if (($cmdline = GetCMD($db, $client)) === '') continue;
 		      $output[$eid] = [];
-		      exec($cmd, $output[$eid]);
+		      exec($cmdline, $output[$eid]);
 		      if (!ParseHandlerResult($output[$eid], $client)) $output[$eid] = [];
 		     }
 	     try {
@@ -198,7 +222,7 @@ switch ($output[$client['eId']]['cmd'])
     		 }
 	     foreach ($output as $eid => $value)
 	    	     foreach ($value as $prop => $valeu) if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
-	     $output = ['cmd' => 'SET', 'data' => $output, 'ODid' => $client['ODid'], 'OVid' => $client['OVid'], 'oId' => $client['oId'], 'cid' => $client['cid']];
+	     $output = ['cmd' => 'SET', 'data' => $output] + $_client;
 	     if (isset($output['data'][$excludeid]['alert'])) $output['alert'] = $output['data'][$excludeid]['alert'];
 	     if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
 	        {

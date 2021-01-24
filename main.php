@@ -2,9 +2,25 @@
 
 require_once 'core.php';
 
+function MakeViewCall($db, &$socket, &$client, $handler)
+{
+ $handler['uid'] = $client['uid'];
+ $handler['auth'] = $client['auth'];
+ if (!isset($handler['params'])) $handler['params'] = $client['params'];
+ 
+ $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
+ $query->execute([':id' => $handler['data'] = GenerateRandomString(), ':client' => json_encode($handler)]);
+ socket_write($socket, encode(json_encode($handler)));
+}
+
 error_reporting(E_ALL);	// Report all errors
 set_time_limit(0);	// set script execution time to unlimited value
 ob_implicit_flush();	// Turn implicit system buffer flushing on 
+
+$query = $db->prepare("DELETE FROM `$$`");
+$query->execute();
+$query = $db->prepare("DELETE FROM `$$$`");
+$query->execute();
 
 if (false === ($mainsocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP))) { lg('Create socket connection error: '.socket_strerror(socket_last_error())); return; }
 if (false === socket_bind($mainsocket, IP, PORT)) { lg('Socket binding error: '.socket_strerror(socket_last_error())); return; }
@@ -29,7 +45,7 @@ while (true)
 	{
 	 lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
 	 $socketarray[] = $newsocket;
-	 $clientsarray[] = ['auth' => NULL, 'authtime' => NULL, 'uid' => NULL, 'ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'OD' => '', 'OV' => ''];
+	 $clientsarray[] = ['auth' => NULL, 'authtime' => NULL, 'uid' => NULL, 'ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => ''];
 	}
      unset($read[array_search($mainsocket, $read)]);
     }
@@ -152,7 +168,7 @@ while (true)
 	 if ($output != ['cmd' => ''] && isset($socketarray[$cid]))
 	    {
 	     if (isset($output['error'])) $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
-	     if (isset($client['auth'])) $output['user'] = $client['auth'];
+	     if (isset($client['auth'])) $output['auth'] = $client['auth'];
 	     socket_write($socket, encode(json_encode($output)));
 	    }
 	}
@@ -167,40 +183,37 @@ while (true)
 	         {
 		  case 'EDIT':
 		  case 'DIALOG':
+		       if (isset($socketarray[$handler['cid']])) socket_write($socketarray[$handler['cid']], encode(json_encode($handler)));
+		       break;
 		  case 'SET':
-		       if (isset($socketarray[$client['cid']])) socket_write($socketarray[$handler['cid']], encode(json_encode($handler)));
+		       foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket)
+		    	       if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $clientsarray[$handler['cid']]['params']) socket_write($sock, encode(json_encode($handler)));
 		       break;
 	    	  case 'CALL':
-		       $input = ['cmd' => 'CALL'] + $handler['data'];
-		       if (!isset($input['ODid']))
+		       if (!isset($handler['ODid']))
 		          {
-			   $input['ODid'] = '';
 			   $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
-			   $query->execute([':odname' => $input['OD']]);
-			   $output = $query->fetchAll(PDO::FETCH_NUM);
-			   if (isset($output[0][0])) $input['ODid'] = $output[0][0];
+			   $query->execute([':odname' => $handler['OD']]);
+			   if (count($handler['ODid'] = $query->fetchAll(PDO::FETCH_NUM)) > 0) $handler['ODid'] = $handler['ODid'][0][0]; else $handler['ODid'] = '';
 			  }
-		       if (!isset($input['OVid']))
+		       if (!isset($handler['OVid']))
 		          {
-			   $input['OVid'] = '';
+			   $handler['OVid'] = '';
 			   $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
-			   $query->execute([':id' => $input['ODid']]);
+			   $query->execute([':id' => $handler['ODid']]);
 			   foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View)
-				if ($key != 'New view' && $key === $input['OV'])
-				   {
-				    $input['OVid'] = $View['element1']['id'];
-				    break;
-				   }
+				if ($key != 'New view' && $key === $handler['OV']) { $handler['OVid'] = $View['element1']['id']; break; }
 			  }
-		       $output = ['cmd' => ''];
-		       if (!Check($db, CHECK_OD_OV, $handler, $input, $output)) break;
-		       $handler['params'] = $handler['data']['params'];
-		       unset($handler['data']);
-		       $output['cmd'] = 'CALL';
-		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
-		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($handler)]);
+		       if (!Check($db, CHECK_OD_OV, $handler, $handler, $output)) break;
+		       if (isset($handler['params'])) // OV refresh due to handler call command
+		          {
+			   MakeViewCall($db, $socketarray[$handler['cid']], $clientsarray[$handler['cid']], $handler);
+			   break;
+			  }
+		       foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket) // OV refresh due to add/remove object operation
+		    	       if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $clientsarray[$handler['cid']]['params']) MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
 		       break;
-	     }
+		 }
 	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");
 	  $query->execute();
 	 }

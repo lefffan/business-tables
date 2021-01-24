@@ -27,7 +27,7 @@ let focusElement = {};
 // User interface default profile
 const uiProfile = {
 		  // Body
-		  "application": { "target": "body", "background-color": "#343E54;" },
+		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "" },
 		  // Sidebar
     		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
@@ -55,7 +55,7 @@ const uiProfile = {
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Hint
-		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;", "effect": "hotnews", "_effect": "Hint " + EFFECTHELP },
+		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;", "effect": "hotnews", "mouseover hint timer in msec": "1000", "_effect": "Hint " + EFFECTHELP },
 		  // Box interface elements
 		  "dialog box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;", "effect": "slideleft", "_effect": "Dialog box " + EFFECTHELP, "filter": "grayscale(0.5)", "_filter": "Application css style filter applied to the sidebar and main field.<br>For a example: 'grayscale(0.5)' or 'blur(3px)'. See appropriate css documentaion." },
 		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
@@ -88,8 +88,6 @@ const uiProfile = {
 		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  // Misc
-		  "misc customization": { "Force to use next user customization (empty or non-existent user - current is used)": "", "mouseover hint timer in msec": "1000" },
 		  };
 
 const style = document.createElement('style');			// Create style DOM element
@@ -444,7 +442,7 @@ function eventHandler(event)
 		     {
 		      hint = { x: x, y: y };
 		      clearTimeout(tooltipTimerId);
-		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), uiProfile['misc customization']['mouseover hint timer in msec']);
+		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), uiProfile['hint']['mouseover hint timer in msec']);
 		     }
 		 }
 	       else HideHint();
@@ -752,7 +750,7 @@ function FromController(json)
  catch { input = json; }
  
  if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
- input.user ? user = input.user : user = '';
+ input.auth ? user = input.auth : user = '';
  if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
 
  switch (input.cmd)
@@ -959,6 +957,7 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
      oldCell.style.outline = "none";
      oldCell.style.boxShadow = "none";
     }
+ if (!newCell) return;
  if (uiProfile['main field table cursor cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table cursor cell']['outline'];
  if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
  if (setFocusElement)
@@ -1606,7 +1605,8 @@ function styleUI()
   if (uiProfile[element]["target"] != undefined)
      {
       inner += uiProfile[element]["target"] + " {";
-      for (key in uiProfile[element]) if (key != 'target' && key != 'effect' && key != 'filter' && key.substr(0, 1) != '_' && uiProfile[element][key] != '')
+      for (key in uiProfile[element])
+       if (key != 'target' && key != 'effect' && key != 'filter' && key != 'Force to use next user customization (empty or non-existent user - option is ignored)' && key != 'mouseover hint timer in msec' && key.substr(0, 1) != '_' && uiProfile[element][key] != '')
           inner += key + ": " + uiProfile[element][key];
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }

@@ -305,7 +305,7 @@ function Check($db, $flags, &$client, &$input, &$output)
     {
      // Check object identificator value existence
      if (!isset($input['oId']) || $input['oId'] < STARTOBJECTID) { $output['alert'] = 'Incorrect object identificator value!'; return; }
-     if (($client['oId']  = $input['oId']) === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT') { $output['alert'] = 'System account cannot be deleted!'; return; }
+     if (($client['oId'] = $input['oId']) === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT') { $output['alert'] = 'System account cannot be deleted!'; return; }
      
      // Check database object existence -> Check oid object selection existence
      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0");
@@ -316,7 +316,7 @@ function Check($db, $flags, &$client, &$input, &$output)
  if ($flags & CHECK_EID)
  if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
     {
-     $client['oId'] = $client['eId'] = 0;
+     $client['eId'] = 0;
     }
   else
     {
@@ -399,14 +399,13 @@ function getElementJSON($db, $ODid, $oid, $eid, $version = NULL)
     {
      if (intval($version) === 0) return NULL;
      $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND version='".strval($version)."'");
-     $query->execute();
     }
   else
     {
      $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND lastversion=1 AND version!=0");
-     $query->execute();
     }
 
+ $query->execute();
  $result = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($result[0][0])) return $result[0][0];
  return NULL;
@@ -416,14 +415,17 @@ function InsertObject($db, &$client, &$output)
 {
  $query = $values = '';
  $params = [];
- foreach ($client['uniqelements'] as $id => $value)
+ 
+ // Prepare uniq elements query
+ foreach ($client['uniqelements'] as $eid => $value)
 	 {
-	  $query .= ",eid$id";
-	  $values .= ",:eid$id";
-	  isset($output[$id]['value']) ? $params[":eid$id"] = $output[$id]['value'] : $params[":eid$id"] = '';
+	  $query .= ",eid$eid";
+	  $values .= ",:eid$eid";
+	  isset($output[$eid]['value']) ? $params[":eid$eid"] = $output[$eid]['value'] : $params[":eid$eid"] = '';
 	 }
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
 
+ // Start transaction, insert uniq elements, calculate inserted object id and insert actual object to data_<ODid> sql table
  $db->beginTransaction();
  $query = $db->prepare("INSERT INTO `uniq_$client[ODid]` ($query) VALUES ($values)");
  $query->execute($params);
@@ -431,43 +433,40 @@ function InsertObject($db, &$client, &$output)
  // Get last inserted object id
  $query = $db->prepare("SELECT LAST_INSERT_ID()");
  $query->execute();
- $newId = $query->fetch(PDO::FETCH_NUM)[0];
+ $newId = $query->fetchAll(PDO::FETCH_NUM)[0][0];
  
- $query = "id,version,owner";
+ // Prepare actual elements query
+ $query  = "id,version,owner";
  $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
  $values = ':id,:version,:owner';
- foreach ($client['allelements'] as $id => $profile) if (isset($output[$id]))
-	 if (($json = json_encode($output[$id])) !== false && isset($json))
-	    {
-	     $query .= ',eid'.strval($id);
-	     $params[':eid'.strval($id)] = $json;
-	     $values .= ",:eid".strval($id);
-	    }
+ foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid])) !== false)
+	 {
+	  $query 		      .= ',eid'.strval($eid);
+	  $params[':eid'.strval($eid)] = $json;
+	  $values 		      .= ",:eid".strval($eid);
+	 }
  $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
  $query->execute($params);
- 
  $db->commit();
 }
 
-function DeleteObject($db)
+function DeleteObject($db, &$client)
 {
- global $client, $oid, $alert;
- 
  $db->beginTransaction();
- 
- $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0 FOR UPDATE");
+
+ $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
  $query->execute();
  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
     {
      $db->rollBack();
-     return $alert = "Object with id=$oid is already deleted!\nPlease refresh Object View";
+     return;
     }
 
- $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$oid AND lastversion=1");
+ $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1");
  $query->execute();
- $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,version,lastversion,owner) VALUES ($oid,0,1,:owner)");
+ $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,version,lastversion,owner) VALUES ($client[oId],0,1,:owner)");
  $query->execute([':owner' => $client['auth']]);
- $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$oid");
+ $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
  $query->execute();
 
  $db->commit();
@@ -670,10 +669,10 @@ function getUserCustomization($db, $uid)
  $customization = json_decode(getElementProp($db, '1', $uid, '6', 'dialog'), true); // Get current user JSON customization and decode it
 
  // If current user customization forces to use another user customization, and the user doesn't point to itself and does exist - get it
- if (($forceuser = $customization['pad']['misc customization']['element2']['data']) != '')
+ if (($forceuser = $customization['pad']['application']['element3']['data']) != '' && $forceuser != 'system' && ($forceuser = getUserId($db, $forceuser)))
+ if (isset($forceuser) && $uid != $forceuser)
     {
-     $forceuser = getUserId($db, $forceuser);
-     if (isset($forceuser) && $uid != $forceuser) $forceuser = json_decode(getElementProp($db, '1', $forceuser, '6', 'dialog'), true);
+     $forceuser = json_decode(getElementProp($db, '1', $forceuser, '6', 'dialog'), true);
      if (isset($forceuser)) return $forceuser;
     }
 

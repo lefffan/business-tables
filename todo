@@ -1,9 +1,8 @@
 Janury 2021:
-- remove uiprofile effects
-- NEWOBJECT AND DELETEOBKECT
 - keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
 - catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
 - Undo editing
+
 - when editing OD props - if dialog elements/views/rules doesn't exist in props in db, then?
 - CHeck authorization at someones else changes the pass or session timeout
 - SHOW VARIABLES LIKE "%wait%"; => wait_timeout=28800, 'message' => 'SQLSTATE[HY000]: General error: 2006 MySQL server has gone away'
@@ -375,3 +374,9 @@ handler_queue ($$.sql) view_queue ($$$.sql)
 
 
 
+Application on Macbook:
+192.168.9.39 -> 127.0.0.1 on main.js and main.php
+const PHPBINARY				= '/usr/bin/php';
+const HANDLERDIR			= '/Library/WebServer/Documents/handlers/';
+php ./makedb.php
+php ./main.php
