@@ -24,6 +24,7 @@ function lg($arg, $title = 'LOG') // Function saves input $arg to error.log
 function adjustODProperties($db, $data, $ODid)
 {
  global $newElement, $newView, $newRule;
+ initNewODDialogElements();
  
  // Check some vars
  if (!isset($db, $ODid, $data['dialog']['Database']['Properties']['element1']['data'], $data['dialog']['Element']['New element'])) return NULL;
@@ -689,38 +690,23 @@ function getLoginDialogData()
 	];
 }
 
-function LogMessage($db, &$client, &$output)
+function LogMessage($db, &$client, $log)
 {
- return;
- if (!isset($output['log']) && !isset($output['alert']) && !isset($output['error'])) return;
- 
- // Get current user and build part of the log message                                                      
- $msg = '';                                      
+ $msg = '';
  if (isset($client['auth'])) $msg .= "['$client[auth]']";
- if ($client['OD'] != '') $msg .= "[OD '$client[OD]'] [OV '$client[OV]']";
+ if (isset($client['OD']) && $client['OD'] != '') $msg .= "[OD '$client[OD]'] [OV '$client[OV]']";
  if ($msg != '') $msg .= ': ';
+ lg($msg .= $log);
 							                                                                                                           
- if (isset($output['log']))   { $msg .= $output['log'];   $type = 'info';  }
- if (isset($output['alert'])) { $msg .= $output['alert']; $type = 'alert'; }
- if (isset($output['error'])) { $msg .= $output['error']; $type = 'error'; }
+ if (isset($client['auth'])) $_client['auth'] = $client['auth']; else $_client['auth'] = 'system';
+ $_client['ODid'] = '2';
+ $_client['allelements'] = ['1' => ''];
+ $_client['uniqelements'] = [];
+ $output = ['1' => ['cmd' => 'RESET', 'value' => $msg]];
+ InsertObject($db, $_client, $output);
  
- //global $odid, $allElementsArray, $uniqElementsArray;
-
- $odid = '2';
- $allElementsArray = ['1' => '', '2' => ''];
- $uniqElementsArray = [];
- $output = ['1' => ['cmd' => 'RESET', 'value' => $type], '2' => ['cmd' => 'RESET', 'value' => $msg]];
- //InsertObject($db, 'system');
-}
-
-function SetUndoOutput($db, $oid, $eid, $alert = NULL)
-{
-/* global $output;
- 
- $undo = getElementArray($db, $eid);
- if (!isset($undo)) $undo = ['value' => ''];
- $output = ['cmd' => 'SET', 'oId' => $oid, 'data' => [$eid => $undo]];
- if (isset($alert)) $output['alert'] = $alert;*/
+ $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+ $query->execute([':client' => json_encode(['cmd' => 'CALL', 'ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs'], JSON_HEX_APOS | JSON_HEX_QUOT)]);
 }
 
 function encode($payload, $type = 'text', $masked = false)

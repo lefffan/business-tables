@@ -8,12 +8,8 @@ $event = $_SERVER['argv'][1];
 switch ($event)
        {
 	case 'INIT':
-	     if (!isset($_SERVER['argv'][2])) break;
-	        {
-		 echo json_encode(['cmd' => 'ALERT', 'data' => 'Incorrect input data!']);
-		 break;
-	        }
-	     echo json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), '_style' => 'color: green;', 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '']);
+	     if (isset($_SERVER['argv'][2]))
+		json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), '_style' => 'color: green;', 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '']);
 	     break;
 	case 'DBLCLICK':
 	     if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3], $_SERVER['argv'][4], $_SERVER['argv'][5])) break;

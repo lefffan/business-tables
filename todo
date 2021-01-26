@@ -1,24 +1,21 @@
-Janury 2021:
-- keep subscribed OD/OV (and current tasks) socket-array indexes in apparent array
-- catch block for createnewversion function because of a new socket conception (what data to return in case of editing cell)
-- Undo editing
-
-- when editing OD props - if dialog elements/views/rules doesn't exist in props in db, then?
+--------------Janury 2021--------------------------------------------------------------
 - CHeck authorization at someones else changes the pass or session timeout
+
 - SHOW VARIABLES LIKE "%wait%"; => wait_timeout=28800, 'message' => 'SQLSTATE[HY000]: General error: 2006 MySQL server has gone away'
 - Del deletes new cell text, mouse one click edit new cell
 - Log unfound handler name, for a example, text.ph
 - On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
+
 - Object_selection to OD rule section + Check objects to match view current selection on process client commands?
+
 - help context menu for all help (conception, handler, keyboard/mouse..)
   Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
-  remove "global" keyword to avoid shit-code
-  websocket.php -> server.php
   divide core.php to make separate php file to be included in wrapper.php
-  _SESSION -> info[]
   just not to be able to remove users and logs OD
-  
-February 2021:
+  try chat
+  focusElement -> cursor
+  MakeTDContentEditable(td, data)
+--------------February 2021--------------------------------------------------------------
 - Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
 	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
@@ -44,7 +41,7 @@ February 2021:
 - diagnostic function by me
 - inner text in <td> can consists of <br>, <color> and <font> tags
   
-March 2021:
+--------------March 2021--------------------------------------------------------------
 - Object view PIECHART and GRAPH
 - System calls and its object views: LOCATION.
 - multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
@@ -76,6 +73,11 @@ March 2021:
 - Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
 - Define OV by id (not by name) to avoid client socket subscribed OV loss. For example, during client adding new object OV name has changed, so OV refresh command will not be passed due to subscribed and changed OV are unmatched
 - socket rate limit https://javascript.info/websocket#rate-limiting
+- Make OD/OV array that consists of socket indexes that every OV of every OD are subscribed of. It is just to have quicker access on OV change to serve big amount of connects
+- Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
+- As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
+  So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG?
+  May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
 -----------------------------Emulation-------------------------------------------------------
 - Corp chat
 - Corp book

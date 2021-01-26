@@ -57,12 +57,12 @@ function CheckODString($odname)
 
 function NewOD($db, &$client)
 {
+ global $id;
+ 
  // Get dialog OD name, cut it and check
  $odname = CheckODString($client['data']['dialog']['Database']['Properties']['element1']['data']);
  if ($odname === '') return ['cmd' => '', 'alert' => 'Object Database name cannot be empty!'];
- 
  $client['data']['dialog']['Database']['Properties']['element1']['data'] = $odname;
- initNewODDialogElements();
 
  // Inserting new OD name
  $query = $db->prepare("INSERT INTO `$` (odname) VALUES (:odname)");
@@ -100,7 +100,7 @@ function EditOD($db, &$client)
  $query->execute([':id' => $id]);
  $oldodname = $query->fetchAll(PDO::FETCH_NUM);
  
- if (!isset($oldodname[0][0], $oldodname[0][1])) return ['cmd' => '', 'alert' => "Failed to get Object Database properties!"];
+ if (!isset($oldodname[0][0], $oldodname[0][1])) return ['cmd' => '', 'alert' => "Object Database has already been removed!"];
  $odprops = $oldodname[0][1];
  $oldodname = $oldodname[0][0];
  
@@ -121,7 +121,7 @@ function EditOD($db, &$client)
  // Decode current OD props
  $odprops = json_decode($odprops, true);
  if (isset($odprops['dialog']['Database']['Permissions'])) $dbPermissions = $odprops['dialog']['Database']['Permissions'];
-  else return ['cmd' => '', 'alert' => "Failed to get Object Database properties!"];
+  else return ['cmd' => '', 'alert' => "Failed to get Object Database '$oldodname' properties!"];
   
  // Check current OD permissions to fetch new OD data from dialog box - $client['data']['dialog']['Database']['Permissions'])..
  $groups = getUserGroups($db, $client['uid']); // Get current user group list
@@ -201,7 +201,6 @@ function EditOD($db, &$client)
     }
 
  // Writing new properties
- initNewODDialogElements();
  $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=:id");
  $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($db, $client['data'], $id)), ':id' => $id]);
 
@@ -211,18 +210,25 @@ function EditOD($db, &$client)
  return $output;
 }
 
-$input = json_decode(file_get_contents("php://input"), true);
-$query = $db->prepare("SELECT now()-time,client FROM `$$$` WHERE id='$input'");
-$query->execute();
-$client = $query->fetchAll(PDO::FETCH_NUM)[0];
-$query = $db->prepare("DELETE FROM `$$$` WHERE id='$input'");
-$query->execute();
+try {
+     $output = ['cmd' => ''];
+     $input = json_decode(file_get_contents("php://input"), true);
+     $query = $db->prepare("SELECT now()-time,client FROM `$$$` WHERE id='$input'");
+     $query->execute();
+     $client = $query->fetchAll(PDO::FETCH_NUM)[0];
+     $query = $db->prepare("DELETE FROM `$$$` WHERE id='$input'");
+     $query->execute();
+    }
+catch (PDOException $e)
+    {
+     exit;
+    }    
+
 if (intval($client[0]) > CALLTIMEOUT) { echo json_encode(['cmd' => '', 'alert' => 'Server call request timeout, please try again!']); exit; }
-
 $client = json_decode($client[1], true);
-$output = ['cmd' => ''];
 
-switch ($client['cmd'])
+try {
+     switch ($client['cmd'])
        {
         case 'CALL':
 	     if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $client, $output)) break;
@@ -256,6 +262,36 @@ switch ($client['cmd'])
 	     $output = EditOD($db, $client);
 	     break;
        }
-
+    }
+catch (PDOException $e)
+    {
+     lg($e);
+     $msg = $e->getMessage();
+     switch ($client['cmd'])
+    	    {
+    	     case 'CALL':
+	          $output = ['cmd' => '', 'alert' => "Failed to get Object View: $msg"];
+	    	  break;
+    	     case 'New Object Database':
+	    	  if (isset($id))
+		     {
+		      $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
+		      $query->execute();
+		      $query = $db->prepare("DROP TABLE IF EXISTS `data_$id`");
+		      $query->execute();
+		      $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$id`");
+		      $query->execute();
+		     }                                                                                                                         
+		  if (preg_match("/Duplicate entry/", $msg) === 1)
+		     $output = ['cmd' => '', 'alert' => 'Failed to add new Object Database: its name or tables already exist!'];
+		   else
+		     $output = ['cmd' => '', 'alert' => "Failed to add new Object Database: $msg"];
+	    	  break;
+    	     case 'Edit Database Structure':
+	          $output = ['cmd' => '', 'alert' => "Failed to write Object Database properties: $msg"];
+	    	  break;
+	    }                                                                            	     
+    }    
+    
 // Echo output result      
 echo json_encode($output);

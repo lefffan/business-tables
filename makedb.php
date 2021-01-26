@@ -132,24 +132,17 @@ initNewODDialogElements();
 $newProperties['element1']['data'] = 'Logs';
 $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
 $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
-$logOD['dialog']['Element']['New element']['element1']['id'] = '3';
+$logOD['dialog']['Element']['New element']['element1']['id'] = '2';
 $logOD['dialog']['View']['New view']['element1']['id'] = '2';
 
 $newView['element1']['id'] = '1';
 $newView['element1']['data'] = 'All logs';
-$newView['element5']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}'."\n".'{"eid":"2", "oid":"2", "x":"3", "y":"0"}'."\n".'{"eid":"2", "x":"3", "y":"n+1"}';
+$newView['element5']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}';
 $newView['element8']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
 $logOD['dialog']['View']['All logs'] = $newView;
 
 $newElement['element1']['id'] = '1';
-$newElement['element1']['data'] = 'Message type';
-$newElement['element2']['data'] = '';
-$newElement['element3']['data'] = 'unique';
-$newElement['element3']['readonly'] = '';
-$logOD['dialog']['Element']['Message text'] = $newElement;
-
-$newElement['element1']['id'] = '2';
-$newElement['element1']['data'] = 'Message text';
+$newElement['element1']['data'] = '            Log message            ';
 $newElement['element2']['data'] = '';
 $newElement['element3']['data'] = 'unique';
 $newElement['element3']['readonly'] = '';

@@ -81,8 +81,8 @@ while (true)
 			   $client['uid'] = $uid;
 			   $input['OD'] = $input['OV'] = '';
 			   $client['ODid'] = NULL;
-			   $output['alert'] = "User '$user' has logged in from $ipport!";
 			   Check($db, CHECK_OD_OV, $client, $input, $output);
+			   $output['log'] = "User '$user' has logged in from $ipport and user agent: ".$client['User-Agent']."!";
 		    	   $output['customization'] = getUserCustomization($db, $uid);
 			   break;
 		    	  }
@@ -121,7 +121,6 @@ while (true)
 		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
 		       break;
 		  case 'Edit Database Structure':
-		       Check($db, NULL, $client, $input, $output);
 		       if (gettype($input['data']) === 'string')
 		    	  {
  			   $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
@@ -136,10 +135,10 @@ while (true)
 			       $output = ['cmd' => 'DIALOG', 'data' => $odprops];
 			       break;
 			      }
-			   $output['alert'] = "Unable to get '$odname' Object Database properties!";
+			   $output['alert'] = "Object Database doesn't exist!";
 			   break;
 			  }
-		       $output['cmd'] = 'Edit Database Structure';
+		       $client['cmd'] = $output['cmd'] = $input['cmd'];
 		       $client['data'] = $input['data'];
 		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
 		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
@@ -155,18 +154,19 @@ while (true)
 		       exec(PHPBINARY." wrapper.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
 		  default:
-		       $output['alert'] = "Controller report: unknown client event '$input[cmd]'!";
+		       $output['log'] = $output['alert'] = "Controller report: unknown event '$input[cmd]' from client $ipport and user '$input[auth]'!";
 		 }
 	     }
 	 catch (PDOException $e)
 	     {
-	      lg($e);
-    	      $output['error'] = 'Controller error: '.$e->getMessage().'!';
+	      lg($msg = $e->getMessage());
+    	      $output['log'] = $output['alert'] = "Controller error: $msg!";
 	     }
 	 
 	 // Write output result to the client socket
 	 if ($output != ['cmd' => ''] && isset($socketarray[$cid]))
 	    {
+	     if (isset($output['log'])) LogMessage($db, $client, $output['log']);
 	     if (isset($output['error'])) $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
 	     if (isset($client['auth'])) $output['auth'] = $client['auth'];
 	     socket_write($socket, encode(json_encode($output)));
@@ -181,15 +181,39 @@ while (true)
 	  $handler = json_decode($value['client'], true);
 	  switch ($handler['cmd'])
 	         {
-		  case 'EDIT':
+		  case 'ALERT':
 		  case 'DIALOG':
-		       if (isset($socketarray[$handler['cid']])) socket_write($socketarray[$handler['cid']], encode(json_encode($handler)));
+		  case 'EDIT':
+		       $cid = $handler['cid'];
+		       if (isset($socketarray[$cid]) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+			  {
+			   if ($handler['cmd'] === 'ALERT') $handler = ['cmd' => '', 'alert' => $handler['data']];
+			   socket_write($socketarray[$cid], encode(json_encode($handler)));
+			  }
 		       break;
 		  case 'SET':
-		       foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket)
-		    	       if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $clientsarray[$handler['cid']]['params']) socket_write($sock, encode(json_encode($handler)));
+		       if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
+		       unset($handler['alert']);
+		       
+		       foreach ($socketarray as $cid => $sock)
+		    	       if ($sock != $mainsocket)
+			       if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+			       if (isset($alert) && $cid === $handler['cid'])
+				  socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
+				else
+				  socket_write($sock, encode(json_encode($handler)));
 		       break;
 	    	  case 'CALL':
+		       // OV refresh due to add/remove object event
+		       if (!isset($handler['params']))
+			  {
+			   foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket)
+				   if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
+				      MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
+			   break;
+			  }
+		  
+		       // OV refresh due to handler call command
 		       if (!isset($handler['ODid']))
 		          {
 			   $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
@@ -204,14 +228,8 @@ while (true)
 			   foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View)
 				if ($key != 'New view' && $key === $handler['OV']) { $handler['OVid'] = $View['element1']['id']; break; }
 			  }
-		       if (!Check($db, CHECK_OD_OV, $handler, $handler, $output)) break;
-		       if (isset($handler['params'])) // OV refresh due to handler call command
-		          {
-			   MakeViewCall($db, $socketarray[$handler['cid']], $clientsarray[$handler['cid']], $handler);
-			   break;
-			  }
-		       foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket) // OV refresh due to add/remove object operation
-		    	       if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $clientsarray[$handler['cid']]['params']) MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
+		       if (Check($db, CHECK_OD_OV, $handler, $handler, $output))
+		          MakeViewCall($db, $socketarray[$handler['cid']], $clientsarray[$handler['cid']], $handler);
 		       break;
 		 }
 	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");

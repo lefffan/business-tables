@@ -4,11 +4,12 @@ require_once 'core.php';
 
 CONST ARGVCLIENTINDEX = 1;
 
-function ParseHandlerResult(&$output, &$client)
+function ParseHandlerResult($db, &$output, &$client)
 {
  if (!isset($output[0]))
     {
-     lg("Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') didn't return any data!");
+     if ($client['cmd'] != 'INIT')
+        LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') didn't return any data!");
      return;
     }
  if ($result = json_decode($output[0], true)) $output = $result;
@@ -16,8 +17,7 @@ function ParseHandlerResult(&$output, &$client)
   
  if (!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET']) === false)
     {
-     lg("Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') returned undefined json!");
-     lg($output);
+     LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') returned undefined json!");
      return;
     }
 
@@ -26,21 +26,46 @@ function ParseHandlerResult(&$output, &$client)
 	 case 'EDIT':
 	      ConvertToString($output, ['data']);
 	      if (!isset($output['data'])) $output['data'] = NULL;
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	         { 
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'EDIT' command on object 'CHANGE' or 'INIT' event!");
+		  return;
+		 }
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'ALERT':
-	      if (!isset($output['data']) || $client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
-	      if (!ConvertToString($output, ['data'])) return;
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	         {
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'ALERT' command on object 'CHANGE' or 'INIT' event!");
+		  return;
+		 }
+	      if (!isset($output['data']) || !ConvertToString($output, ['data']))
+	         {
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] returned undefined 'ALERT' message!");
+		  return;
+		 }
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'DIALOG':
-	      if (!isset($output['data']) || gettype($output['data']) != 'array' || $client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	         {
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'DIALOG' command on object 'CHANGE' or 'INIT' event!");
+		  return;
+		 }
+	      if (!isset($output['data']) || gettype($output['data']) != 'array')
+	         {
+	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] returned incorrect 'DIALOG' command data!");
+		  return;
+		 }
 	      if ($client['ODid'] != '1' || ($client['eId'] != '1' && $client['eId'] != '6')) if (isset($output['data']['flags']['cmd'])) unset($output['data']['flags']['cmd']);
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'CALL':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT') return;
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	         {
+	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'CALL' command on object 'CHANGE' or 'INIT' event!");
+		  return;
+		 }
 	      cutKeys($output, ['cmd', 'OD', 'OV', 'ODid', 'OVid', 'params']);
 	      ConvertToString($output, ['OD', 'OV', 'ODid', 'OVid']);
 	      if (!isset($output['params']) || gettype($output['params']) != 'array') $output['params'] = [];
@@ -51,8 +76,6 @@ function ParseHandlerResult(&$output, &$client)
 	 case 'RESET':
 	      ConvertToString($output, ['value', 'hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
 	      break;
-	 default:
-	      return;
 	}
 
  return true;
@@ -134,52 +157,34 @@ function GetCMD($db, &$client)
  return $newcmdline;
 }
 
+// Init variables
 $client	= json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
+$_client = ['ODid' => $client['ODid'], 'OD' => $client['OD'], 'OVid' => $client['OVid'], 'OV' => $client['OV'], 'params' => $client['params'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid'], 'uid' => $client['uid']];
 $output = [];
-$_client = ['ODid' => $client['ODid'], 'OD' => $client['OD'], 'OVid' => $client['OVid'], 'OV' => $client['OV'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid'], 'uid' => $client['uid']];
 
-if ($client['cmd'] === 'INIT')
-   {
-    $data = $client['data'];
-    foreach ($client['allelements'] as $eid => $profile)
-    	    {
-	     $client['eId'] = $eid;
-	     if (isset($data[$eid])) $client['data'] = $data[$eid]; else $client['data'] = '';
-    	     $output[$eid] = [];
-    	     if (($cmdline = GetCMD($db, $client)) === '') continue;
-    	     exec($cmdline, $output[$eid]);
-    	     if (!ParseHandlerResult($output[$eid], $client)) unset($output[$eid]);
-    	    }
-    InsertObject($db, $client, $output);
-   }
-if ($client['cmd'] === 'DELETEOBJECT') DeleteObject($db, $client);
 if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
    {
-    $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-    $query->execute([':client' => json_encode(['cmd' => 'CALL'] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
-    exit;
+    $output[$client['eId']]['cmd'] = $client['cmd'];
    }
+ else
+   {
+    if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
+     else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
 
-if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
- else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
+    if (($cmdline = GetCMD($db, $client)) === '') exit;
+    $output[$client['eId']] = [];
 
-if (($cmdline = GetCMD($db, $client)) === '') exit;
-$output[$client['eId']] = [];
-
-exec($cmdline, $output[$client['eId']]);
-if (!ParseHandlerResult($output[$client['eId']], $client)) exit;
+    exec($cmdline, $output[$client['eId']]);
+    if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
+   }
 
 switch ($output[$client['eId']]['cmd'])
        {
         case 'DIALOG':
         case 'CALL':
         case 'EDIT':
-	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode($output[$client['eId']] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
-	     break;
         case 'ALERT':
-	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode(['cmd' => 'SET', 'data' => [], 'alert' => $output[$client['eId']]['data']] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     $output = $output[$client['eId']] + $_client;
 	     break;
         case 'SET':
         case 'RESET':
@@ -191,7 +196,7 @@ switch ($output[$client['eId']]['cmd'])
 		      if (($cmdline = GetCMD($db, $client)) === '') continue;
 		      $output[$eid] = [];
 		      exec($cmdline, $output[$eid]);
-		      if (!ParseHandlerResult($output[$eid], $client)) $output[$eid] = [];
+		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = [];
 		     }
 	     try {
 	          $db->beginTransaction();
@@ -214,14 +219,16 @@ switch ($output[$client['eId']]['cmd'])
 		 }
 	     catch (PDOException $e)
 		 {
-		  lg($e);                 
 		  $db->rollBack();
-		  //if (preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1) $alert = 'Failed to write object data: unique elements duplicate entry!';
-		   //else $alert = "Failed to write object data: $msg";
-    		  //SetUndoOutput($db, $oid, $eid, $alert);
+		  preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $msg = 'Failed to write object data: unique elements duplicate entry!' : $msg = "Failed to write object data: $msg";
+		  $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], 'value')]], 'alert' => $msg] + $_client;
+	    	  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+		  $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+		  exit;
     		 }
 	     foreach ($output as $eid => $value)
-	    	     foreach ($value as $prop => $valeu) if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
+	    	     foreach ($value as $prop => $valeu)
+		    	     if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
 	     $output = ['cmd' => 'SET', 'data' => $output] + $_client;
 	     if (isset($output['data'][$excludeid]['alert'])) $output['alert'] = $output['data'][$excludeid]['alert'];
 	     if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
@@ -229,7 +236,39 @@ switch ($output[$client['eId']]['cmd'])
 		 $output['customization'] = getUserCustomization($db, $client['uid']);
 		 if (!isset($output['customization'])) unset($output['customization']);
 		}
-	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     break;
+        case 'INIT':
+	     $data = $client['data'];
+	     foreach ($client['allelements'] as $eid => $profile)
+    		     {
+		      $client['eId'] = $eid;
+		      if (isset($data[$eid])) $client['data'] = $data[$eid]; else $client['data'] = '';
+		      $output[$eid] = [];
+		      if (($cmdline = GetCMD($db, $client)) === '') continue;
+		      exec($cmdline, $output[$eid]);
+		      if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]);
+    		     }
+	     try {
+		  InsertObject($db, $client, $output);
+		 }
+	     catch (PDOException $e)
+		 {
+		  $db->rollBack();
+		  preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $msg = 'Failed to add new object: unique elements duplicate entry!' : $msg = "Failed to add new object: $msg";
+		  $_client['params'] = $client['params'];
+		  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+		  $query->execute([':client' => json_encode(['cmd' => 'ALERT', 'data' => $msg] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+		  exit;
+		 }
+	     unset($_client['params']);
+	     $output = ['cmd' => 'CALL'] + $_client;
+	     break;
+        case 'DELETEOBJECT':
+	     DeleteObject($db, $client);
+	     unset($_client['params']);
+	     $output = ['cmd' => 'CALL'] + $_client;
 	     break;
        }
+
+$query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+$query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);

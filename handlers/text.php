@@ -6,8 +6,8 @@ $event = $_SERVER['argv'][1];
 switch($event)
       {
        case 'INIT':
-    	    if (!isset($_SERVER['argv'][2])) break;
-	    echo json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2], '_description' => 'HUI', '_hint' => 'FUCK OFF!', '_style' => 'color: red;']);
+    	    if (isset($_SERVER['argv'][2]))
+	       json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2], '_description' => 'HUI', '_hint' => 'FUCK OFF!', '_style' => 'color: red;']);
 	    break;
        case 'DBLCLICK':
 	    echo json_encode(['cmd' => 'EDIT']);

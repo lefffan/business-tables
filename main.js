@@ -23,6 +23,7 @@ let user = cmd = OD = OV = ODid = OVid = '';
 let objectsOnThePage, paramsOV;
 let sidebar = {};
 let focusElement = {};
+let oldfocusElement = {};
 /*---------------------------------------------------------------------------*/
 // User interface default profile
 const uiProfile = {
@@ -292,15 +293,16 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 
 function drawMain(data, props)
 {
- let oid, eid, n, q = data.length, warningtext, cell, result, attributes;
+ let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldfocusElement = JSON.parse(JSON.stringify(focusElement));
  let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
  
  // Init some important vars such as tables, focus element and etc..
  mainTable = [];
  objectTable = {};
- focusElement = {};
  mainTableWidth = mainTableHeight = 0;
  objectsOnThePage = q;
+ if (focusElement.td && focusElement.td.contentEditable === 'true') oldfocusElement.contentEditable = 'true';
+ focusElement = { ODid: ODid, OVid: OVid };
  
  // Parse all props elements, to place all objects of that elements
  for (eid in props)
@@ -393,12 +395,27 @@ function drawMain(data, props)
     {
      focusElement.x = objectTable[focusElement.oId][focusElement.eId].x;
      focusElement.y = objectTable[focusElement.oId][focusElement.eId].y;
-     delete focusElement.oId;
-     delete focusElement.eId;
+     //delete focusElement.oId;
+     //delete focusElement.eId;
      CellBorderToggleSelect(null, mainTablediv.rows[focusElement.y].cells[focusElement.x]);
      focusElement.td.focus();
      cmd = focusElement.cmd;
      CallController(focusElement.data);
+    }
+ else if (oldfocusElement.ODid === focusElement.ODid && oldfocusElement.OVid === focusElement.OVid && oldfocusElement.x != undefined)
+    {
+     focusElement.x = Math.min(oldfocusElement.x, mainTableWidth - 1);
+     focusElement.y = Math.min(oldfocusElement.y, mainTableHeight - 1);
+     CellBorderToggleSelect(null, mainTablediv.rows[focusElement.y].cells[focusElement.x]);
+     if (oldfocusElement.contentEditable && oldfocusElement.oId === focusElement.oId && oldfocusElement.eId === focusElement.eId)
+        {
+	 focusElement.td.contentEditable = 'true';
+	 focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+	 // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
+	 focusElement.td.innerHTML = focusElement.olddata;
+	 if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
+	 focusElement.td.focus();
+        }
     }
 }
 
@@ -750,7 +767,7 @@ function FromController(json)
  catch { input = json; }
  
  if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
- input.auth ? user = input.auth : user = '';
+ if (input.auth)		{ user = input.auth; }
  if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
 
  switch (input.cmd)
@@ -760,6 +777,7 @@ function FromController(json)
 	      ShowBox();
 	      break;
 	 case 'EDIT':
+	      if (!objectTable[input.oId][input.eId]) break;
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && focusElement.td.contentEditable != 'true')
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
 	         {
@@ -773,7 +791,7 @@ function FromController(json)
 		 }
 	      break;
 	 case 'SET':
-	      let x, y;
+	      let x, y, value;
 	      if (objectTable[input.oId])
 	         for (let eid in input.data)
 		     if (objectTable[input.oId][eid])
@@ -782,7 +800,8 @@ function FromController(json)
 			 y = objectTable[input.oId][eid].y;
 			 if (typeof input.data[eid] === 'object')
 			    {
-			     input.data[eid]['value'] ? mainTablediv.rows[y].cells[x].innerHTML = toHTMLCharsConvert(input.data[eid]['value']) : mainTablediv.rows[y].cells[x].innerHTML = '';
+			     input.data[eid]['value'] ? value = toHTMLCharsConvert(input.data[eid]['value']) : value = '';
+			     mainTablediv.rows[y].cells[x].contentEditable != 'true' ? mainTablediv.rows[y].cells[x].innerHTML = value : focusElement.olddata = value;
 			     mainTablediv.rows[y].cells[x].setAttribute('style', input.data[eid]['style']);
 			     mainTable[y][x].data = input.data[eid]['value'];
 			     mainTable[y][x].hint = input.data[eid]['hint'];
@@ -790,17 +809,14 @@ function FromController(json)
 			    }
 			 CellBorderToggleSelect(null, focusElement.td, false);
 		        }
-	      if (input.alert) warning(input.alert);
 	      break;
 	 case 'CALL':
+	 case 'New Object Database':
+	 case 'Edit Database Structure':
 	      Hujax("view.php", FromController, input.data);
 	      break;
 	 case 'DRAW':
 	      drawMain(input.data, input.props);
-	      break;
-	 case 'New Object Database':
-	 case 'Edit Database Structure':
-	      Hujax("view.php", FromController, input.data);
 	      break;
 	 case '':
 	      break;
@@ -965,6 +981,12 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
      focusElement.td = newCell;
      focusElement.x = newCell.cellIndex;
      focusElement.y = newCell.parentNode.rowIndex;
+     focusElement.oId = focusElement.eId = 0;
+     if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
+        {
+	 focusElement.oId = mainTable[focusElement.y][focusElement.x].oId;
+	 focusElement.eId = mainTable[focusElement.y][focusElement.x].eId;
+	}
     }
 }
 
