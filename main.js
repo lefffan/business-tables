@@ -767,7 +767,7 @@ function FromController(json)
  catch { input = json; }
  
  if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
- if (input.auth)		{ user = input.auth; }
+ if (input.auth != undefined)	{ user = input.auth; }
  if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
 
  switch (input.cmd)
@@ -824,10 +824,10 @@ function FromController(json)
 	      input = { alert: "Unknown server message '" + input.cmd + "'!" };
 	}
 	
- if (input.sidebar)	drawSidebar(input.sidebar);
- if (input.log)		lg(input.log); 
- if (input.error)	displayMainError(input.error);
- if (input.alert)	warning(input.alert);
+ if (input.sidebar)		drawSidebar(input.sidebar);
+ if (input.log)			lg(input.log); 
+ if (input.error != undefined)	displayMainError(input.error);
+ if (input.alert)		warning(input.alert);
 }
 
 function CallController(data)

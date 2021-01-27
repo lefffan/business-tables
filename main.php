@@ -60,7 +60,8 @@ while (true)
 	 $decoded = decode($data);
 	 $input = json_decode($decoded['payload'], true);
 	 if (gettype($input) === 'array' && !isset($input['data'])) $input['data'] = '';
-	 if (isset($input['cmd']) && $input['cmd'] != 'LOGIN' && !isset($client['auth'])) $input['cmd'] = 'LOGOUT';
+	 if (isset($input['cmd']) && $input['cmd'] != 'LOGIN')
+	 if (!isset($client['auth']) || intval(strtotime("now")) - $client['authtime'] > SESSIONLIFETIME) $input['cmd'] = 'LOGOUT';
 
 	 try {
 	      // Client close socet connection event or unknown command?
@@ -79,11 +80,21 @@ while (true)
 		    	  {
 			   $client['auth'] = $user;
 			   $client['uid'] = $uid;
+			   $client['authtime'] = intval(strtotime("now"));
 			   $input['OD'] = $input['OV'] = '';
 			   $client['ODid'] = NULL;
 			   Check($db, CHECK_OD_OV, $client, $input, $output);
 			   $output['log'] = "User '$user' has logged in from $ipport and user agent: ".$client['User-Agent']."!";
 		    	   $output['customization'] = getUserCustomization($db, $uid);
+			   //------------------Log out login user from other sessions------------------------
+		    	   foreach ($socketarray as $sockid => $sock)
+		    	        if ($sock != $mainsocket && $sockid != $cid && $clientsarray[$sockid]['uid'] === $uid)
+				   {
+				    socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
+				    $clientsarray[$sockid]['uid'] = $clientsarray[$sockid]['auth'] = NULL;
+				    break;
+				   }
+			   //--------------------------------------------------------------------------------
 			   break;
 		    	  }
 		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
@@ -91,9 +102,10 @@ while (true)
 		       $user ? $output['log'] = "Wrong passowrd or username '$user' from $ipport" : $output['log'] = "Empty username login attempt from $ipport";
 		       break;
 		  case 'LOGOUT': // Client context menu logout event or any other event from unauthorized client or pass change or timeout
-		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+		       //$output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''];
 		       if (isset($client['auth'])) $output['log'] = 'User '.$client['auth'].' has logged out!';
-		       $client['auth'] = NULL;
+		       $client['uid'] = $client['auth'] = NULL;
 		       break;
 		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
 		       Check($db, CHECK_OD_OV, $client, $input, $output);
@@ -195,13 +207,19 @@ while (true)
 		       if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
 		       unset($handler['alert']);
 		       
-		       foreach ($socketarray as $cid => $sock)
-		    	       if ($sock != $mainsocket)
-			       if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
-			       if (isset($alert) && $cid === $handler['cid'])
-				  socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
-				else
-				  socket_write($sock, encode(json_encode($handler)));
+		       foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket)
+			       {
+			        if (isset($handler['passchange']) && $clientsarray[$cid]['uid'] === $handler['passchange'])
+				   {
+				    socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
+				    $handler['passchange'] = $clientsarray[$cid]['uid'] = $clientsarray[$cid]['auth'] = NULL;
+				   }
+				if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+				if (isset($alert) && $cid === $handler['cid'])
+				   socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
+				 else
+				   socket_write($sock, encode(json_encode($handler)));
+			       }
 		       break;
 	    	  case 'CALL':
 		       // OV refresh due to add/remove object event

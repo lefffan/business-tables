@@ -198,6 +198,7 @@ switch ($output[$client['eId']]['cmd'])
 		      exec($cmdline, $output[$eid]);
 		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = [];
 		     }
+	     if ($client['ODid'] === '1' && $excludeid === '1' && isset($output[$excludeid]['password'])) $passchange = '';
 	     try {
 	          $db->beginTransaction();
 	          $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
@@ -231,6 +232,7 @@ switch ($output[$client['eId']]['cmd'])
 		    	     if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
 	     $output = ['cmd' => 'SET', 'data' => $output] + $_client;
 	     if (isset($output['data'][$excludeid]['alert'])) $output['alert'] = $output['data'][$excludeid]['alert'];
+	     if (isset($passchange)) $output['passchange'] = strval($client['oId']);
 	     if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
 	        {
 		 $output['customization'] = getUserCustomization($db, $client['uid']);
