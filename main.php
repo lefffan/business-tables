@@ -50,6 +50,7 @@ while (true)
      unset($read[array_search($mainsocket, $read)]);
     }
 
+ $now = intval(strtotime("now"));
  foreach($read as $socket)
 	{
 	 $client = &$clientsarray[$cid = array_search($socket, $socketarray)];
@@ -61,8 +62,11 @@ while (true)
 	 $input = json_decode($decoded['payload'], true);
 	 if (gettype($input) === 'array' && !isset($input['data'])) $input['data'] = '';
 	 if (isset($input['cmd']) && $input['cmd'] != 'LOGIN')
-	 if (!isset($client['auth']) || intval(strtotime("now")) - $client['authtime'] > SESSIONLIFETIME) $input['cmd'] = 'LOGOUT';
-
+	    {
+	     if (!isset($client['auth'])) $input['cmd'] = 'LOGOUT';
+	      else if ($now - $client['authtime'] > SESSIONLIFETIME) $input['cmd'] = 'TIMEOUT';
+	    }
+	     
 	 try {
 	      // Client close socet connection event or unknown command?
 	      if (false === $decoded || 'close' === $decoded['type'] || !isset($input['cmd']))
@@ -80,7 +84,7 @@ while (true)
 		    	  {
 			   $client['auth'] = $user;
 			   $client['uid'] = $uid;
-			   $client['authtime'] = intval(strtotime("now"));
+			   $client['authtime'] = $now;
 			   $input['OD'] = $input['OV'] = '';
 			   $client['ODid'] = NULL;
 			   Check($db, CHECK_OD_OV, $client, $input, $output);
@@ -101,10 +105,11 @@ while (true)
 		       $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong password or username, please try again!\n\nUsername";
 		       $user ? $output['log'] = "Wrong passowrd or username '$user' from $ipport" : $output['log'] = "Empty username login attempt from $ipport";
 		       break;
+		  case 'TIMEOUT':
 		  case 'LOGOUT': // Client context menu logout event or any other event from unauthorized client or pass change or timeout
-		       //$output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
 		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''];
-		       if (isset($client['auth'])) $output['log'] = 'User '.$client['auth'].' has logged out!';
+		       if ($input['cmd'] === 'TIMEOUT') $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nSession timeout, please log in!\n\nUsername";
+		        else if (isset($client['auth'])) $output['log'] = 'User '.$client['auth'].' has logged out!';
 		       $client['uid'] = $client['auth'] = NULL;
 		       break;
 		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
@@ -171,7 +176,14 @@ while (true)
 	     }
 	 catch (PDOException $e)
 	     {
-	      lg($msg = $e->getMessage());
+	      $msg = $e->getMessage();
+	      if (preg_match("/ySQL server has gone away/", $msg) === 1)
+	         {
+		  ResetAllAuth($clientsarray);
+		  include 'connect.php';
+		  LogMessage($db, $clientsarray[$cid], $msg);
+		  break;
+		 }
     	      $output['log'] = $output['alert'] = "Controller error: $msg!";
 	     }
 	 
@@ -185,12 +197,22 @@ while (true)
 	    }
 	}
 		
+ try {
  // Process queue events from sql table `$$`
  $query = $db->prepare("SELECT * FROM `$$`");
  $query->execute();
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
 	  $handler = json_decode($value['client'], true);
+	  
+	  if (isset($handler['passchange'])) foreach ($socketarray as $cid => $sock)
+	  if ($sock != $mainsocket && $clientsarray[$cid]['uid'] === $handler['passchange'])
+	     {
+	      socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
+	      $handler['passchange'] = $clientsarray[$cid]['uid'] = $clientsarray[$cid]['auth'] = NULL;
+	      $clientsarray[$cid]['ODid'] = $clientsarray[$cid]['OVid'] = $clientsarray[$cid]['OD'] = $clientsarray[$cid]['OV'] = '';
+	     }
+	     
 	  switch ($handler['cmd'])
 	         {
 		  case 'ALERT':
@@ -207,25 +229,19 @@ while (true)
 		       if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
 		       unset($handler['alert']);
 		       
-		       foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket)
-			       {
-			        if (isset($handler['passchange']) && $clientsarray[$cid]['uid'] === $handler['passchange'])
-				   {
-				    socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
-				    $handler['passchange'] = $clientsarray[$cid]['uid'] = $clientsarray[$cid]['auth'] = NULL;
-				   }
-				if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
-				if (isset($alert) && $cid === $handler['cid'])
-				   socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
-				 else
-				   socket_write($sock, encode(json_encode($handler)));
-			       }
+		       foreach ($socketarray as $cid => $sock)
+		    	    if ($sock != $mainsocket && $clientsarray[$cid]['auth'])
+			    if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+			    if (isset($alert) && $cid === $handler['cid'])
+			       socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
+			     else
+			       socket_write($sock, encode(json_encode($handler)));
 		       break;
 	    	  case 'CALL':
 		       // OV refresh due to add/remove object event
 		       if (!isset($handler['params']))
 			  {
-			   foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket)
+			   foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket && $clientsarray[$cid]['auth'])
 				   if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
 				      MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
 			   break;
@@ -253,4 +269,16 @@ while (true)
 	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");
 	  $query->execute();
 	 }
+ }
+ catch (PDOException $e)
+ {
+  $msg = $e->getMessage();
+  $client = [];
+  if (preg_match("/ySQL server has gone away/", $msg) === 1)
+     {
+      ResetAllAuth($clientsarray);
+      include 'connect.php';
+     }
+  LogMessage($db, $client, $msg);
+ }
 }

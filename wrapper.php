@@ -24,13 +24,13 @@ function ParseHandlerResult($db, &$output, &$client)
  switch ($output['cmd'])
 	{
 	 case 'EDIT':
-	      ConvertToString($output, ['data']);
-	      if (!isset($output['data'])) $output['data'] = NULL;
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
 	         { 
 		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'EDIT' command on object 'CHANGE' or 'INIT' event!");
 		  return;
 		 }
+	      ConvertToString($output, ['data']);
+	      if (!isset($output['data'])) $output['data'] = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], 'value');
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'ALERT':
@@ -250,27 +250,15 @@ switch ($output[$client['eId']]['cmd'])
 		      exec($cmdline, $output[$eid]);
 		      if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]);
     		     }
-	     try {
-		  InsertObject($db, $client, $output);
-		 }
-	     catch (PDOException $e)
-		 {
-		  $db->rollBack();
-		  preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $msg = 'Failed to add new object: unique elements duplicate entry!' : $msg = "Failed to add new object: $msg";
-		  $_client['params'] = $client['params'];
-		  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-		  $query->execute([':client' => json_encode(['cmd' => 'ALERT', 'data' => $msg] + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
-		  exit;
-		 }
-	     unset($_client['params']);
-	     $output = ['cmd' => 'CALL'] + $_client;
+	     $output = InsertObject($db, $client, $output, $_client);
 	     break;
         case 'DELETEOBJECT':
-	     DeleteObject($db, $client);
-	     unset($_client['params']);
-	     $output = ['cmd' => 'CALL'] + $_client;
+	     $output = DeleteObject($db, $client, $_client);
 	     break;
        }
 
-$query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-$query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+if ($output != [])
+   {
+    $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+    $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+   }

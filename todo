@@ -1,20 +1,12 @@
 --------------Janury 2021--------------------------------------------------------------
-- CHeck authorization at someones else changes the pass or session timeout
-
-- SHOW VARIABLES LIKE "%wait%"; => wait_timeout=28800, 'message' => 'SQLSTATE[HY000]: General error: 2006 MySQL server has gone away'
-- Del deletes new cell text, mouse one click edit new cell
-- Log unfound handler name, for a example, text.ph
-- On SET command occur and undefined edit-content always send actual content to edit, otherwise the content may be obsolete
-
 - Object_selection to OD rule section + Check objects to match view current selection on process client commands?
-
-- help context menu for all help (conception, handler, keyboard/mouse..)
-  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
-  divide core.php to make separate php file to be included in wrapper.php
-  just not to be able to remove users and logs OD
   try chat
   focusElement -> cursor
   MakeTDContentEditable(td, data)
+
+- help context menu for all help (conception, handler, keyboard/mouse..)
+  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
+
 --------------February 2021--------------------------------------------------------------
 - Object process SCHEDULER. Handlers are executed by built-in system user.
 	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
@@ -25,17 +17,11 @@
 	2. status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
 	   if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
 	3. To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user!
-- System calls and its object views: LINK	 
-- System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release  setki.xls)
+- System calls and its object views: LINK (+Element statistic, for a example, client list to warn by email, or client quantity)
+- System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
   These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
 - single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
-  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-  Linux to docker, secure php.ini, optimize mysql to highload app
-  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
-  Problems of deploying - can i use mysql on commerisal base? Can i use sockets number more than 1024?
 - telnet function by SLAVA
 - snmp function by SLAVA
 - diagnostic function by me
@@ -50,7 +36,7 @@
 - User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
 - Feedback and finish https://bakhirev.biz/book/#MmlJN (for quick process require only constan.php with connect.php, not big core.php!)
 
---------------Doubt features--------------------------------------------------------------
+--------------Later (doubt) features--------------------------------------------------
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - Set new object flag (for example small digit in red scope) before OD name and/or html page title
@@ -78,20 +64,30 @@
 - As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
   So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG?
   May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
------------------------------Emulation-------------------------------------------------------
-- Corp chat
-- Corp book
-- Any request app (Helpdesk, Jira)
-- MRTG
-- Zabbix
-- CRM
-- ACS
-- Any accounting system (may be billing)
-- Some excel functions
-- Voting
-- Any statistic/analitycs
-- Setki.xls
-- Operations.xls
+- Adaptivka after browser window size has changed dialog box has gone away
+- divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
+- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
+  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+  Linux to docker, secure php.ini, optimize mysql to highload app
+  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
+  Problems of deploying - can i use mysql on commerisal base? Can i use sockets number more than 1024?
+- Some systems emulation:
+  Corp chat
+  Corp book
+  Any request app (Helpdesk, Jira)
+  MRTG
+  Zabbix
+  CRM
+  ACS
+  Any accounting system (may be billing)
+  Some excel functions
+  Voting
+  Any statistic/analitycs
+  Setki.xls
+  Paraga mail functional and ask Hramcova analitiku po helpdesku
+  See functions on Slava's management system
+- Operations.xls emulation:
   Switch ip, switch description, switch location,
   60 ports (description), for every port: type (uplink,downlink,free,service,client),
   diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
@@ -99,8 +95,6 @@
   In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
   Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
   see client mac, cable length, errors and all other data the switch allows to monitor
-- Paraga mail functional and ask Hramcova analitiku po helpdesku
-- See functions on Slava's management system
 ------------------------------------------------------------------------------------------
 
 

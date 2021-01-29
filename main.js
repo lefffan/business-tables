@@ -669,7 +669,12 @@ function eventHandler(event)
 		  break;
 		 }
 	      //--------------Mouse click on main field table?--------------
-	      if (event.target.tagName == 'TD') CellBorderToggleSelect(focusElement.td, event.target);
+	      if (event.target.tagName == 'TD')
+	         {
+		  CellBorderToggleSelect(focusElement.td, event.target);
+		  if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && focusElement.td.contentEditable != 'true')
+		  if (!isNaN(focusElement.eId) && focusElement.oId === 1) MakeCursorContentEditable(mainTable[focusElement.y][focusElement.x].data);
+		 }
 	      break;
 	 case 'keydown':
 	      if (box && event.which === 13 && event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
@@ -745,7 +750,13 @@ function eventHandler(event)
 			      }
 			    else HideContextmenu();
 			   break;
-		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
+		      case 46: //Del
+		           if (focusElement.td && focusElement.td.contentEditable != 'true' && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId === 1)
+			      {
+			       mainTable[focusElement.y][focusElement.x].data = focusElement.td.innerHTML = '';
+			       break;
+			      }
+		      /*default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
 		    	   if (focusElement.td && focusElement.td.contentEditable != 'true')
 			   if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
 			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
@@ -755,10 +766,38 @@ function eventHandler(event)
 			       CallController({string: event.key, code: event.keyCode});
 			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
 			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
+			      }*/
+		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
+		    	   if (!focusElement.td || focusElement.td.contentEditable === 'true' || !mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x] || isNaN(focusElement.eId)) break;
+
+			   if (focusElement.oId === 1)
+			      {
+			       MakeCursorContentEditable(mainTable[focusElement.y][focusElement.x].data);
+			       break;
+			      }
+			      
+			   if (mainTable[focusElement.y][focusElement.x].realobject)
+			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
+			   if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
+			      {
+			       cmd = 'KEYPRESS';
+			       CallController({string: event.key, code: event.keyCode});
+			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
+			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
 			      }
 		     }
 	      break;
 	}
+}
+
+function MakeCursorContentEditable(data)
+{
+ focusElement.td.contentEditable = 'true';
+ focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+ // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
+ data != undefined ? focusElement.td.innerHTML = toHTMLCharsConvert(data) : focusElement.td.innerHTML = focusElement.olddata;
+ if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
+ focusElement.td.focus();
 }
 
 function FromController(json)
@@ -780,7 +819,8 @@ function FromController(json)
 	      if (!objectTable[input.oId][input.eId]) break;
 	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && focusElement.td.contentEditable != 'true')
 	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
-	         {
+	         MakeCursorContentEditable(input.data);
+	         /*{
 	          focusElement.td.contentEditable = 'true';
 		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
 		  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
@@ -788,7 +828,7 @@ function FromController(json)
 		   else focusElement.td.innerHTML = focusElement.olddata;
 		  if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
 		  focusElement.td.focus();
-		 }
+		 }*/
 	      break;
 	 case 'SET':
 	      let x, y, value;
@@ -986,6 +1026,7 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
         {
 	 focusElement.oId = mainTable[focusElement.y][focusElement.x].oId;
 	 focusElement.eId = mainTable[focusElement.y][focusElement.x].eId;
+	 //if (newCell.contentEditable != 'true' && !isNaN(focusElement.eId) && focusElement.oId === 1) MakeCursorContentEditable(newCell.innerHTML);
 	}
     }
 }
@@ -1264,6 +1305,7 @@ function SetFirstDialogElementFocus()
 {
  for (let element of boxDiv.querySelectorAll('input, textarea'))
   if (element.attributes.type.value === 'password' || element.attributes.type.value === 'text' || element.attributes.type.value === 'textarea')
+  if (!element.readOnly)
      {
       element.focus();
       break;

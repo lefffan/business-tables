@@ -412,7 +412,7 @@ function getElementJSON($db, $ODid, $oid, $eid, $version = NULL)
  return NULL;
 }
 
-function InsertObject($db, &$client, &$output)
+function InsertObject($db, &$client, &$output, $_client = [])
 {
  $query = $values = '';
  $params = [];
@@ -426,51 +426,65 @@ function InsertObject($db, &$client, &$output)
 	 }
  if ($query != '') { $query = substr($query, 1); $values = substr($values, 1); }
 
- // Start transaction, insert uniq elements, calculate inserted object id and insert actual object to data_<ODid> sql table
- $db->beginTransaction();
- $query = $db->prepare("INSERT INTO `uniq_$client[ODid]` ($query) VALUES ($values)");
- $query->execute($params);
+ try {
+      // Start transaction, insert uniq elements, calculate inserted object id and insert actual object to data_<ODid> sql table
+      $db->beginTransaction();
+      $query = $db->prepare("INSERT INTO `uniq_$client[ODid]` ($query) VALUES ($values)");
+      $query->execute($params);
  
- // Get last inserted object id
- $query = $db->prepare("SELECT LAST_INSERT_ID()");
- $query->execute();
- $newId = $query->fetchAll(PDO::FETCH_NUM)[0][0];
+      // Get last inserted object id
+      $query = $db->prepare("SELECT LAST_INSERT_ID()");
+      $query->execute();
+      $newId = $query->fetchAll(PDO::FETCH_NUM)[0][0];
  
- // Prepare actual elements query
- $query  = "id,version,owner";
- $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
- $values = ':id,:version,:owner';
- foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid])) !== false)
-	 {
-	  $query 		      .= ',eid'.strval($eid);
-	  $params[':eid'.strval($eid)] = $json;
-	  $values 		      .= ",:eid".strval($eid);
-	 }
- $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
- $query->execute($params);
- $db->commit();
+      // Prepare actual elements query
+      $query  = "id,version,owner";
+      $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
+      $values = ':id,:version,:owner';
+      foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid])) !== false)
+	      {
+	       $query 		      .= ',eid'.strval($eid);
+	       $params[':eid'.strval($eid)] = $json;
+	       $values 		      .= ",:eid".strval($eid);
+	      }
+      $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
+      $query->execute($params);
+      $db->commit();
+     }
+ catch (PDOException $e)
+     {
+      $db->rollBack();
+      preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $msg = 'Failed to add new object: unique elements duplicate entry!' : $msg = "Failed to add new object: $msg";
+      $_client['params'] = $client['params'];
+      return ['cmd' => 'ALERT', 'data' => $msg] + $_client;
+     }
+ unset($_client['params']);
+ return ['cmd' => 'CALL'] + $_client;
 }
 
-function DeleteObject($db, &$client)
+function DeleteObject($db, &$client, &$_client)
 {
- $db->beginTransaction();
+ try {
+      $db->beginTransaction();
+      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
+      $query->execute();
+      if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) { $db->rollBack(); return []; }
 
- $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
- $query->execute();
- if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
-    {
-     $db->rollBack();
-     return;
-    }
-
- $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1");
- $query->execute();
- $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,version,lastversion,owner) VALUES ($client[oId],0,1,:owner)");
- $query->execute([':owner' => $client['auth']]);
- $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
- $query->execute();
-
- $db->commit();
+      $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1");
+      $query->execute();
+      $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,version,lastversion,owner) VALUES ($client[oId],0,1,:owner)");
+      $query->execute([':owner' => $client['auth']]);
+      $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
+      $query->execute();
+      $db->commit();
+     }
+ catch (PDOException $e)
+     {
+      return [];
+     }
+ unset($_client['params']);
+ if ($client['ODid'] === '1') $_client['passchange'] = strval($client['oId']);
+ return ['cmd' => 'CALL'] + $_client;
 }
 
 function ProcessRules($db, $odid, $oid)
@@ -703,10 +717,9 @@ function LogMessage($db, &$client, $log)
  $_client['allelements'] = ['1' => ''];
  $_client['uniqelements'] = [];
  $output = ['1' => ['cmd' => 'RESET', 'value' => $msg]];
- InsertObject($db, $_client, $output);
  
  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
- $query->execute([':client' => json_encode(['cmd' => 'CALL', 'ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs'], JSON_HEX_APOS | JSON_HEX_QUOT)]);
+ $query->execute([':client' => json_encode(InsertObject($db, $_client, $output, ['ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs']), JSON_HEX_APOS | JSON_HEX_QUOT)]);
 }
 
 function encode($payload, $type = 'text', $masked = false)
@@ -886,6 +899,15 @@ function GenerateRandomString($length = USERPASSMINLENGTH)
  for ($i = 0; $i < $length; $i++) $randomstring .= $permittedchars[mt_rand(0, $len - 1)];
  
  return $randomstring;
+}
+
+function ResetAllAuth(&$array)
+{
+ foreach ($array as $id => $value)
+	 {
+	  $array[$id]['authtime'] = 0;
+	  $array[$id]['ODid'] = $array[$id]['OVid'] = $array[$id]['OD'] = $array[$id]['OV'] = '';
+	 }
 }
 
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, DATABASEUSER, DATABASEPASS);

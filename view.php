@@ -126,6 +126,7 @@ function EditOD($db, &$client)
  // Check current OD permissions to fetch new OD data from dialog box - $client['data']['dialog']['Database']['Permissions'])..
  $groups = getUserGroups($db, $client['uid']); // Get current user group list
  $groups[] = $client['auth']; // and add username at the end of array
+ $alertstring = '';
  
  // Check 'Database' pad change permissions
  if ($client['data']['dialog']['Database'] != $odprops['dialog']['Database'])
@@ -206,7 +207,7 @@ function EditOD($db, &$client)
 
  // Return result
  $output = GetSidebar($db, $client['uid'], $client['ODid'], $client['OVid'], $client['OD'], $client['OV']);
- if (isset($alertstring)) $output['alert'] = "You're not allowed to change ".substr($alertstring, 0, -2)." properties!";
+ if ($alertstring) $output['alert'] = "You're not allowed to change ".substr($alertstring, 0, -2)." properties!";
  return $output;
 }
 
