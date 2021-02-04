@@ -25,7 +25,8 @@ try {
      //------------------------------------------Create default OD 'Users'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
-     $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
      $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
@@ -124,10 +125,10 @@ try {
      $client['ODid'] = '1';
      $client['allelements'] = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
      $client['uniqelements'] = ['1' => ''];
-     $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
+     $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '2' => ['cmd' => 'RESET', 'value' => ''], '3' => ['cmd' => 'RESET', 'value' => ''], '4' => ['cmd' => 'RESET', 'value' => ''], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
      InsertObject($db, $client, $output);
 
-     $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
+     $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '2' => ['cmd' => 'RESET', 'value' => ''], '3' => ['cmd' => 'RESET', 'value' => ''], '4' => ['cmd' => 'RESET', 'value' => ''], '5' => ['cmd' => 'RESET', 'value' => ''], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
      InsertObject($db, $client, $output);
 
      //------------------------------------------Create default OD 'Logs'------------------------------------------

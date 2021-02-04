@@ -216,28 +216,38 @@ switch ($output[$client['eId']]['cmd'])
 			   $client['eId'] = $eid;
 			   if (!WriteElement($db, $client, $output[$eid], $version)) unset($output[$eid]);
 			  }
-	          $db->commit();
+		    
+		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version), 'Change object');
+		  if ($ruleresult['action'] === 'Accept')
+		     {
+	              $db->commit();
+		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+	    	      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
+		    	      if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
+	    	      $output = ['cmd' => 'SET', 'data' => $output] + $_client;
+
+		      if (isset($ruleresult['message']))		$output['alert'] = $ruleresult['message'];
+	    	      if (isset($output['data'][$excludeid]['alert']))	$output['alert'] = $output['data'][$excludeid]['alert'];
+			 
+	    	      if (isset($passchange)) $output['passchange'] = strval($client['oId']);
+	    	      if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
+	    		 {
+			  $output['customization'] = getUserCustomization($db, $client['uid']);
+			  if (!isset($output['customization'])) unset($output['customization']);
+			 }
+	    	      break;
+		     }
 		 }
 	     catch (PDOException $e)
 		 {
-		  $db->rollBack();
-		  preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $msg = 'Failed to write object data: unique elements duplicate entry!' : $msg = "Failed to write object data: $msg";
-		  $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], 'value')]], 'alert' => $msg] + $_client;
-	    	  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-		  $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
-		  exit;
-    		 }
-	     foreach ($output as $eid => $value)
-	    	     foreach ($value as $prop => $valeu)
-		    	     if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
-	     $output = ['cmd' => 'SET', 'data' => $output] + $_client;
-	     if (isset($output['data'][$excludeid]['alert'])) $output['alert'] = $output['data'][$excludeid]['alert'];
-	     if (isset($passchange)) $output['passchange'] = strval($client['oId']);
-	     if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
-	        {
-		 $output['customization'] = getUserCustomization($db, $client['uid']);
-		 if (!isset($output['customization'])) unset($output['customization']);
-		}
+		  preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $ruleresult = ['message' => 'Failed to write object data: unique elements duplicate entry!'] : $ruleresult = ['message' => "Failed to write object data: $msg"];
+		  $ruleresult['log'] = $ruleresult['message'];
+		 }
+	     $db->rollBack();
+	     if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+	     $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $excludeid, 'value')]], 'alert' => $ruleresult['message']] + $_client;
+	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+	     $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
 	     break;
         case 'INIT':
 	     $data = $client['data'];

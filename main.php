@@ -241,8 +241,14 @@ while (true)
 		       // OV refresh due to add/remove object event
 		       if (!isset($handler['params']))
 			  {
+		    	   if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
+			   unset($handler['alert']);
+		       
 			   foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket && $clientsarray[$cid]['auth'])
 				   if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
+				   if (isset($alert) && $cid === $handler['cid'])
+				      MakeViewCall($db, $sock, $clientsarray[$cid], $handler + ['alert' => $alert]);
+				    else
 				      MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
 			   break;
 			  }
@@ -272,7 +278,7 @@ while (true)
  }
  catch (PDOException $e)
  {
-  $msg = $e->getMessage();
+  lg($msg = $e->getMessage());
   $client = [];
   if (preg_match("/ySQL server has gone away/", $msg) === 1)
      {

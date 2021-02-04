@@ -1,3 +1,15 @@
+/*------------------------------VARIABLES------------------------------------*/
+let contextmenu, contextmenuDiv;
+let hint, hintDiv;
+let box = selectExpandedDiv = null, boxDiv, expandedDiv;
+let loadTimerId, tooltipTimerId, undefinedcellRuleIndex, socket;
+let mainDiv, sidebarDiv, mainTablediv;
+let mainTable, mainTableWidth, mainTableHeight, objectTable;
+let user = cmd = OD = OV = ODid = OVid = '';
+let objectsOnThePage, paramsOV;
+let sidebar = {};
+let cursor = {};
+let oldcursor = {};
 /*------------------------------CONSTANTS------------------------------------*/
 const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
@@ -12,23 +24,10 @@ const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div
 const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
 const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
-/*------------------------------VARIABLES------------------------------------*/
-let contextmenu, contextmenuDiv;
-let hint, hintDiv;
-let box = selectExpandedDiv = null, boxDiv, expandedDiv;
-let tooltipTimerId, undefinedcellRuleIndex, socket;
-let mainDiv, sidebarDiv, mainTablediv;
-let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let user = cmd = OD = OV = ODid = OVid = '';
-let objectsOnThePage, paramsOV;
-let sidebar = {};
-let focusElement = {};
-let oldfocusElement = {};
-/*---------------------------------------------------------------------------*/
-// User interface default profile
+const keyExceptions = ['Editable content apply input key combination', 'target', 'effect' , 'filter' , 'Force to use next user customization (empty or non-existent user - option is ignored)' , 'mouseover hint timer in msec'];
 const uiProfile = {
 		  // Body
-		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "" },
+		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values set no way to apply content editable changes by key combination." },
 		  // Sidebar
     		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
@@ -44,7 +43,7 @@ const uiProfile = {
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "", "text-align": "center" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "", "text-align": "center" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
-		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "1px solid #999;", "background": "rgb(255,235,235);" },
+		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background": "" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=true])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
@@ -90,35 +89,11 @@ const uiProfile = {
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  };
+/*---------------------------------------------------------------------------*/
 
 const style = document.createElement('style');			// Create style DOM element
 styleUI();							// Style default user inteface profile
 document.head.appendChild(style);				// Append document style tag
-/*---------------------------------------------------------------------------*/
-
-function lg(...data)
-{
- data.forEach((value) => console.log(value));
-}
-
-function loog(...data)
-{
- let add = new Date().toLocaleString() + ':';
- if (user) add = "Account '" + user + "', " + add;
- lg(add);
- data.forEach((value) => console.dir(value));
-}
-
-function Hujax(url, callback, requestBody)
-{
- fetch(url, { method:	'POST',  
-	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'}, 
-	      body: 	JSON.stringify(requestBody) }).then(function(response) {
-			    if (response.ok) response.json().then(callback);
-			     else displayMainError('Request failed with response ' + response.status + ': ' + response.statusText); })
-							    .catch (function(error) { lg('Ajax request error: ', error); });
- return true;
-}
 
 window.onload = function()
 {
@@ -145,33 +120,41 @@ window.onload = function()
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
  
+ cmd = 'CALL';
+ CreateWebSocket();
+}
+
+function CreateWebSocket()
+{
  socket = new WebSocket(SOCKETADDR);
  socket.onmessage = FromController;
- cmd = 'CALL';
  socket.onopen = CallController;
- socket.onerror = () => warning("The server connection is down! Please refresh the page to reconnect the server");
- socket.onclose = () => warning("The server connection is down! Please refresh the page to reconnect the server");
+ socket.onerror = () => displayMainError("The server connection is down! Try again");
+ socket.onclose = () => displayMainError("The server connection is down! Try again");
+}
 
- 
- /*if (!navigator.cookieEnabled)
-    {
-     warning('To make application work properly please enable Cookies!');
-     return;
-    }
- if (document.cookie != '')
-    {
-     warning("Cookie flag 'httponly' should be set!");
-     return;
-    }*/
- /*------------------Web sockets: 1-here, 2-const, 3-let, 4,5-context menu description and help------------------*/
- //socket = new WebSocket(SOCKETADDR);
- //socket.onmessage = FromController;
- 
- //socket.onopen = function() { socket.send('Connection established with ' + SOCKETADDR); };
- //socket.onmessage = function(event) { lg('Server responce: ' + event.data); };
- //socket.onerror = function(event) { lg('Web socket error occured'); };
- //socket.onclose = function(event) { lg(`Web socket connection was closed with clean status: ${event.wasClean}, event code: ${event.code}, reason: ${event.reason}`); };
- /*--------------------------------------------------------------------------------------------------------------*/
+function lg(...data)
+{
+ data.forEach((value) => console.log(value));
+}
+
+function loog(...data)
+{
+ let add = new Date().toLocaleString() + ':';
+ if (user) add = "Account '" + user + "', " + add;
+ lg(add);
+ data.forEach((value) => console.dir(value));
+}
+
+function Hujax(url, callback, requestBody)
+{
+ fetch(url, { method:	'POST',  
+	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'}, 
+	      body: 	JSON.stringify(requestBody) }).then(function(response) {
+			    if (response.ok) response.json().then(callback);
+			     else displayMainError('Request failed with response ' + response.status + ': ' + response.statusText); })
+							    .catch (function(error) { lg('Ajax request error: ', error); });
+ return true;
 }
 
 function drawSidebar(data)
@@ -225,12 +208,12 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  let x, y, oe, oidnum = Number(oid);
  
  // CHeck specified object element start event
- if (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') eidstr = 'eid' + eid;
-  else eidstr = eid;
- if ((oidnum === NEWOBJECTID || oidnum >= STARTOBJECTID) && props[eid][oid] && eid != eidstr && cmd === 'CALL')
- if (props[eid][oid]['startevent'] === 'DBLCLICK') focusElement = { oId: oid, eId: eid, cmd: 'DBLCLICK' };
-  else if (oidnum >= STARTOBJECTID && props[eid][oid]['startevent'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['startevent'].length > 8)
-	  focusElement = { oId: oid, eId: eid, cmd: 'KEYPRESS', data: props[eid][oid]['startevent'].substr(8) };
+ (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') ? eidstr = 'eid' + eid : eidstr = eid;
+ 
+ if (oidnum >= STARTOBJECTID && props[eid][oid] && eid != eidstr && cmd === 'CALL')
+ if (props[eid][oid]['startevent'] === 'DBLCLICK') cursor = { oId: oid, eId: eid, cmd: 'DBLCLICK' };
+  else if (props[eid][oid]['startevent'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['startevent'].length > 8)
+	  cursor = { oId: oid, eId: eid, cmd: 'KEYPRESS', data: props[eid][oid]['startevent'].substr(8) };
 
  // Check props correctness
  if (object.lastversion != '1' || !props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') 
@@ -293,7 +276,7 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 
 function drawMain(data, props)
 {
- let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldfocusElement = JSON.parse(JSON.stringify(focusElement));
+ let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldcursor = JSON.parse(JSON.stringify(cursor));
  let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
  
  // Init some important vars such as tables, focus element and etc..
@@ -301,8 +284,14 @@ function drawMain(data, props)
  objectTable = {};
  mainTableWidth = mainTableHeight = 0;
  objectsOnThePage = q;
- if (focusElement.td && focusElement.td.contentEditable === 'true') oldfocusElement.contentEditable = 'true';
- focusElement = { ODid: ODid, OVid: OVid };
+ if (cursor.td && cursor.td.contentEditable === 'true')
+    {
+     cursor.td.contentEditable = 'false';
+     oldcursor.contentEditable = 'true';
+     oldcursor.data = htmlCharsConvert(cursor.td.innerHTML);
+    }
+    
+ cursor = { ODid: ODid, OVid: OVid };
  
  // Parse all props elements, to place all objects of that elements
  for (eid in props)
@@ -373,6 +362,7 @@ function drawMain(data, props)
 	        }
       rowHTML += '</tr>';
      }
+ clearTimeout(loadTimerId);
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
 
@@ -382,40 +372,40 @@ function drawMain(data, props)
  mainTablediv.addEventListener('mousemove', eventHandler); 
  
  // Focus element is not empty? Emulate mouse/keyboard start event!
- if (focusElement.oId === NEWOBJECTID)
+ if (cursor.oId === NEWOBJECTID)
     {
-     focusElement.td = mainTablediv.rows[objectTable[focusElement.oId][focusElement.eId].y].cells[objectTable[focusElement.oId][focusElement.eId].x];
-     focusElement.td.contentEditable = 'true';
-     focusElement.olddata = '';
-     focusElement.td.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
-     focusElement.td.focus();
-     CellBorderToggleSelect(null, focusElement.td);
+     /*cursor.td = mainTablediv.rows[objectTable[cursor.oId][cursor.eId].y].cells[objectTable[cursor.oId][cursor.eId].x];
+     cursor.td.contentEditable = 'true';
+     cursor.olddata = '';
+     cursor.td.innerHTML = cursor.olddata; // Fucking FF has bug inserting <br> to the empty content
+     cursor.td.focus();
+     CellBorderToggleSelect(null, cursor.td);*/
+     CellBorderToggleSelect(null, mainTablediv.rows[objectTable[cursor.oId][cursor.eId].y].cells[objectTable[cursor.oId][cursor.eId].x]);
+     MakeCursorContentEditable(oldcursor.data);
     }
-  else if (focusElement.oId != undefined)
+  else if (cursor.oId != undefined)
     {
-     focusElement.x = objectTable[focusElement.oId][focusElement.eId].x;
-     focusElement.y = objectTable[focusElement.oId][focusElement.eId].y;
-     //delete focusElement.oId;
-     //delete focusElement.eId;
-     CellBorderToggleSelect(null, mainTablediv.rows[focusElement.y].cells[focusElement.x]);
-     focusElement.td.focus();
-     cmd = focusElement.cmd;
-     CallController(focusElement.data);
+     cursor.x = objectTable[cursor.oId][cursor.eId].x;
+     cursor.y = objectTable[cursor.oId][cursor.eId].y;
+     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
+     cursor.td.focus();
+     cmd = cursor.cmd;
+     CallController(cursor.data);
     }
- else if (oldfocusElement.ODid === focusElement.ODid && oldfocusElement.OVid === focusElement.OVid && oldfocusElement.x != undefined)
+ else if (oldcursor.ODid === cursor.ODid && oldcursor.OVid === cursor.OVid && oldcursor.x != undefined)
     {
-     focusElement.x = Math.min(oldfocusElement.x, mainTableWidth - 1);
-     focusElement.y = Math.min(oldfocusElement.y, mainTableHeight - 1);
-     CellBorderToggleSelect(null, mainTablediv.rows[focusElement.y].cells[focusElement.x]);
-     if (oldfocusElement.contentEditable && oldfocusElement.oId === focusElement.oId && oldfocusElement.eId === focusElement.eId)
-        {
-	 focusElement.td.contentEditable = 'true';
-	 focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+     cursor.x = Math.min(oldcursor.x, mainTableWidth - 1);
+     cursor.y = Math.min(oldcursor.y, mainTableHeight - 1);
+     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
+     if (oldcursor.contentEditable && oldcursor.oId === cursor.oId && oldcursor.eId === cursor.eId) MakeCursorContentEditable(oldcursor.data);
+        /*{
+	 cursor.td.contentEditable = 'true';
+	 cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
 	 // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
-	 focusElement.td.innerHTML = focusElement.olddata;
-	 if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
-	 focusElement.td.focus();
-        }
+	 cursor.td.innerHTML = cursor.olddata;
+	 if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
+	 cursor.td.focus();
+        }*/
     }
 }
 
@@ -477,39 +467,39 @@ function eventHandler(event)
 	      //--------------Do nothing in case of dialog box or contextmenu event on context menu div area--------------
 	      if (event.target == contextmenuDiv || event.target.classList.contains('contextmenuItems') || box || (contextmenu && event.which != 3)) event.preventDefault();
 	      //--------------Is any element content editable? Apply changes in case of no event.target match--------------
-	       else if (focusElement.td && focusElement.td.contentEditable === 'true')
+	       else if (cursor.td && cursor.td.contentEditable === 'true')
 	         {
-		  if (focusElement.td != event.target)
+		  if (cursor.td != event.target)
 		     {
 		      event.preventDefault();
-		      focusElement.td.contentEditable = 'false';
-		      if (mainTable[focusElement.y][focusElement.x].oId == NEWOBJECTID)
+		      cursor.td.contentEditable = 'false';
+		      if (mainTable[cursor.y][cursor.x].oId == NEWOBJECTID)
 		         {
-			  mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(focusElement.td.innerHTML);
+			  mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
 			 }
 		       else
 		         {
 			  cmd = 'CONFIRM';
-			  CallController(htmlCharsConvert(focusElement.td.innerHTML));
+			  CallController(htmlCharsConvert(cursor.td.innerHTML));
 			 }
 		      // Main field table cell click?
-		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(focusElement.td, event.target);
+		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(cursor.td, event.target);
 		     }
 		 }
 	       else ShowContextmenu(event);
 	      break;
 	 case 'dblclick':
 	      if (!box && event.target.contentEditable != 'true')
-	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
-	      if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
+	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && Number(mainTable[cursor.y][cursor.x].eId) > 0 && mainTable[cursor.y][cursor.x].realobject)
+	      /*if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
 		 {
-	    	  focusElement.td.contentEditable = 'true';
-		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
-		  event.target.innerHTML = focusElement.olddata; // Fucking FF has bug inserting <br> to the empty content
-	    	  focusElement.td.focus();
+	    	  cursor.td.contentEditable = 'true';
+		  cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
+		  event.target.innerHTML = cursor.olddata; // Fucking FF has bug inserting <br> to the empty content
+	    	  cursor.td.focus();
 		  event.preventDefault();
 		 }
-	       else if (mainTable[focusElement.y][focusElement.x].realobject)
+	       else if (mainTable[cursor.y][cursor.x].realobject)*/
 	    	 {
 		  cmd = 'DBLCLICK';
 		  CallController();
@@ -617,24 +607,24 @@ function eventHandler(event)
 	      //--------------Dialog box events are processed and mouse click on grey menu item or on context menu but not menu item? Break!----------
 	      if (box || event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) break;
 	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
-	      if (focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
+	      if (cursor.td && cursor.td != event.target && cursor.td.contentEditable === 'true')
 		 {
-		  if (mainTable[focusElement.y][focusElement.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(focusElement.td.innerHTML));
-		   else mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(focusElement.td.innerHTML);
-		  focusElement.td.contentEditable = 'false';
+		  if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
+		   else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+		  cursor.td.contentEditable = 'false';
 		 }
-	     /***if (focusElement && focusElement.td && focusElement.td != event.target && focusElement.td.contentEditable === 'true')
-	     if (mainTable[focusElement.y][focusElement.x].oId === NEWOBJECTID)
+	     /***if (cursor && cursor.td && cursor.td != event.target && cursor.td.contentEditable === 'true')
+	     if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
 		 {
-		  focusElement.td.contentEditable = 'false';
-		  mainTable[focusElement.y][focusElement.x].data = htmlCharsConvert(focusElement.td.innerHTML);
+		  cursor.td.contentEditable = 'false';
+		  mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
 		  break;
 		 }
 	      else
 		 {
-		  focusElement.td.contentEditable = 'false';
+		  cursor.td.contentEditable = 'false';
 		  cmd = 'CONFIRM';
-		  CallController(htmlCharsConvert(focusElement.td.innerHTML));
+		  CallController(htmlCharsConvert(cursor.td.innerHTML));
 		  break;
 		 }***/
 	      //--------------Mouse click on context menu item? Call controller with appropriate context menu item as a command--------------
@@ -665,15 +655,16 @@ function eventHandler(event)
 		  OD = next.dataset.od;
 		  OV = next.dataset.ov;
 		  cmd = 'CALL';
+		  displayMainError('Loading...', false);
 		  CallController();
 		  break;
 		 }
 	      //--------------Mouse click on main field table?--------------
 	      if (event.target.tagName == 'TD')
 	         {
-		  CellBorderToggleSelect(focusElement.td, event.target);
-		  if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && focusElement.td.contentEditable != 'true')
-		  if (!isNaN(focusElement.eId) && focusElement.oId === 1) MakeCursorContentEditable(mainTable[focusElement.y][focusElement.x].data);
+		  CellBorderToggleSelect(cursor.td, event.target);
+		  if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && cursor.td.contentEditable != 'true')
+		  if (!isNaN(cursor.eId) && cursor.oId === 1) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
 		 }
 	      break;
 	 case 'keydown':
@@ -690,20 +681,20 @@ function eventHandler(event)
 		     }
 
 	      HideHint();
-	      if ((box && event.which != 27) || (focusElement.td != undefined && focusElement.td.contentEditable === 'true' && event.which != 27 && event.which != 13)) break;
+	      if ((box && event.which != 27) || (cursor.td != undefined && cursor.td.contentEditable === 'true' && event.which != 27 && event.which != 13)) break;
 	      switch (event.which)
 		     {
 		      case 36: //Home
-		           moveCursor(focusElement.x, 0, true);
+		           moveCursor(cursor.x, 0, true);
 			   break;
 		      case 35: //End
-		           moveCursor(focusElement.x, mainTableHeight - 1, true);
+		           moveCursor(cursor.x, mainTableHeight - 1, true);
 			   break;
 		      case 33: //PgUp
-			   moveCursor(focusElement.x, Math.max(Math.trunc((mainDiv.scrollTop - 0.5*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), 0), true);
+			   moveCursor(cursor.x, Math.max(Math.trunc((mainDiv.scrollTop - 0.5*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), 0), true);
 			   break;
 		      case 34: //PgDown
-		           moveCursor(focusElement.x, Math.min(Math.trunc((mainDiv.scrollTop + 1.7*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), mainTableHeight - 1), true);
+		           moveCursor(cursor.x, Math.min(Math.trunc((mainDiv.scrollTop + 1.7*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), mainTableHeight - 1), true);
 			   break;
 		      case 38: //Up
 			   SetContextmenuItem("UP");
@@ -716,8 +707,31 @@ function eventHandler(event)
 		      case 13: //Enter
 		           if (!contextmenu) // If context menu is not active, try to move cursor down
 			      {
-			       if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
+			       if (cursor.td != undefined && cursor.td.contentEditable === 'true')
 			          {
+				   // --------------------
+				   let confirm = false;
+				   const combinationKey = uiProfile['application']['Editable content apply input key combination'];
+				   if ((event.altKey && combinationKey === 'Alt+Enter') || (event.ctrlKey && combinationKey === 'Ctrl+Enter') || (event.shiftKey && combinationKey === 'Shift+Enter')) confirm = true;
+				   if (!event.altKey && !event.ctrlKey && !event.shiftKey && combinationKey === 'Enter') confirm = true;
+				   
+				   if (confirm)
+				      {
+				       cursor.td.contentEditable = 'false';
+				       if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
+					  {
+					   cmd = 'CONFIRM';
+					   CallController(htmlCharsConvert(cursor.td.innerHTML));
+					  }
+					else
+					  {
+					   mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+					   cmd = 'New Object';
+					   CallController();
+					  }
+				       break;
+				      }
+				   // -------------------- 
 				   event.preventDefault();
 				   document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in FF
 				  }
@@ -740,25 +754,32 @@ function eventHandler(event)
 		           if (box && box.flags.esc != undefined) // Any modal with esc flag set?
 			      {
 			       // Expanded div visible? Hide it, otherwise hide dialog box
-			       if ((/show$/).test(expandedDiv.classList[2]) != true) HideBox();
-			        else expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
+			       if ((/show$/).test(expandedDiv.classList[2]) != true)
+			          {
+				   if (box['flags'] && box['flags']['cmd'] === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
+				   HideBox();
+				   break;
+				  }
+			       expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
+			       break;
 			      }
-			    else if (focusElement.td != undefined && focusElement.td.contentEditable === 'true')
+			   if (cursor.td != undefined && cursor.td.contentEditable === 'true')
 			      {
-			       focusElement.td.contentEditable = 'false';
-			       focusElement.td.innerHTML = focusElement.olddata;
+			       cursor.td.contentEditable = 'false';
+			       cursor.td.innerHTML = cursor.olddata;
+			       break;
 			      }
-			    else HideContextmenu();
+			   HideContextmenu();
 			   break;
 		      case 46: //Del
-		           if (focusElement.td && focusElement.td.contentEditable != 'true' && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].oId === 1)
+		           if (cursor.td && cursor.td.contentEditable != 'true' && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].oId === 1)
 			      {
-			       mainTable[focusElement.y][focusElement.x].data = focusElement.td.innerHTML = '';
+			       mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
 			       break;
 			      }
 		      /*default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
-		    	   if (focusElement.td && focusElement.td.contentEditable != 'true')
-			   if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject && Number(mainTable[focusElement.y][focusElement.x].eId) > 0)
+		    	   if (cursor.td && cursor.td.contentEditable != 'true')
+			   if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject && Number(mainTable[cursor.y][cursor.x].eId) > 0)
 			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
 		           if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
 			      {
@@ -768,15 +789,15 @@ function eventHandler(event)
 			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
 			      }*/
 		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
-		    	   if (!focusElement.td || focusElement.td.contentEditable === 'true' || !mainTable[focusElement.y] || !mainTable[focusElement.y][focusElement.x] || isNaN(focusElement.eId)) break;
+		    	   if (!cursor.td || cursor.td.contentEditable === 'true' || !mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId)) break;
 
-			   if (focusElement.oId === 1)
+			   if (cursor.oId === 1)
 			      {
-			       MakeCursorContentEditable(mainTable[focusElement.y][focusElement.x].data);
+			       MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
 			       break;
 			      }
 			      
-			   if (mainTable[focusElement.y][focusElement.x].realobject)
+			   if (mainTable[cursor.y][cursor.x].realobject)
 			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
 			   if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
 			      {
@@ -792,12 +813,12 @@ function eventHandler(event)
 
 function MakeCursorContentEditable(data)
 {
- focusElement.td.contentEditable = 'true';
- focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+ cursor.td.contentEditable = 'true';
+ cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
- data != undefined ? focusElement.td.innerHTML = toHTMLCharsConvert(data) : focusElement.td.innerHTML = focusElement.olddata;
- if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
- focusElement.td.focus();
+ data != undefined ? cursor.td.innerHTML = toHTMLCharsConvert(data) : cursor.td.innerHTML = cursor.olddata;
+ if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
+ cursor.td.focus();
 }
 
 function FromController(json)
@@ -812,22 +833,23 @@ function FromController(json)
  switch (input.cmd)
 	{
 	 case 'DIALOG':
+	      if (cursor.td && cursor.td.contentEditable === 'true') break;
 	      box = input.data;
 	      ShowBox();
 	      break;
 	 case 'EDIT':
 	      if (!objectTable[input.oId][input.eId]) break;
-	      if (focusElement && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && focusElement.td.contentEditable != 'true')
-	      if (mainTable[focusElement.y][focusElement.x].oId === input.oId && mainTable[focusElement.y][focusElement.x].eId === input.eId)
+	      if (cursor && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && cursor.td.contentEditable != 'true')
+	      if (mainTable[cursor.y][cursor.x].oId === input.oId && mainTable[cursor.y][cursor.x].eId === input.eId)
 	         MakeCursorContentEditable(input.data);
 	         /*{
-	          focusElement.td.contentEditable = 'true';
-		  focusElement.olddata = toHTMLCharsConvert(mainTable[focusElement.y][focusElement.x].data);
+	          cursor.td.contentEditable = 'true';
+		  cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
 		  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
-		  if (input.data != undefined) focusElement.td.innerHTML = toHTMLCharsConvert(input.data);
-		   else focusElement.td.innerHTML = focusElement.olddata;
-		  if (focusElement.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(focusElement.td);
-		  focusElement.td.focus();
+		  if (input.data != undefined) cursor.td.innerHTML = toHTMLCharsConvert(input.data);
+		   else cursor.td.innerHTML = cursor.olddata;
+		  if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
+		  cursor.td.focus();
 		 }*/
 	      break;
 	 case 'SET':
@@ -841,13 +863,13 @@ function FromController(json)
 			 if (typeof input.data[eid] === 'object')
 			    {
 			     input.data[eid]['value'] ? value = toHTMLCharsConvert(input.data[eid]['value']) : value = '';
-			     mainTablediv.rows[y].cells[x].contentEditable != 'true' ? mainTablediv.rows[y].cells[x].innerHTML = value : focusElement.olddata = value;
+			     mainTablediv.rows[y].cells[x].contentEditable != 'true' ? mainTablediv.rows[y].cells[x].innerHTML = value : cursor.olddata = value;
 			     mainTablediv.rows[y].cells[x].setAttribute('style', input.data[eid]['style']);
 			     mainTable[y][x].data = input.data[eid]['value'];
 			     mainTable[y][x].hint = input.data[eid]['hint'];
 			     mainTable[y][x].description = input.data[eid]['description'];
 			    }
-			 CellBorderToggleSelect(null, focusElement.td, false);
+			 CellBorderToggleSelect(null, cursor.td, false);
 		        }
 	      break;
 	 case 'CALL':
@@ -890,7 +912,7 @@ function CallController(data)
 	 case 'Description':
 	      let cell, hidden = msg = '';
 	      //--------------Add object and element information to the result message---------------
-	      if (focusElement.td != undefined && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && (cell = mainTable[focusElement.y][focusElement.x]) && cell.oId)
+	      if (cursor.td != undefined && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId)
 	      switch (cell.oId)
 	    	     {
 		      case NEWOBJECTID:
@@ -912,7 +934,7 @@ function CallController(data)
 	      //--------------Add description to the result message---------------
 	      if (cell && typeof cell.description === 'string') msg += '\n\nElement description property:\n' + cell.description;
 	      //--------Add x and y coordinates to the result message-------------
-	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${focusElement.x}\nTable cell 'y' coordinate: ${focusElement.y}\n\n`;
+	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${cursor.x}\nTable cell 'y' coordinate: ${cursor.y}\n\n`;
 	      //--------------------Add database and view info--------------------
 	      if (OV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
 	      msg += `Object Database: ${OD}\nObject View${hidden}: ${OV} (${objectsOnThePage} objects)\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}`;
@@ -935,20 +957,22 @@ function CallController(data)
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
 	      break;
 	 case 'Delete Object':
-	      if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject)
-		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[focusElement.y][focusElement.x].oId, 'paramsOV': paramsOV };
+	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject)
+		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId, 'paramsOV': paramsOV };
 	      break;
 	 case 'LOGIN':
 	 case 'CONFIRM':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
 	      object = { "cmd": cmd };
-	      if (focusElement.td && mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
+	      if (cursor.td && mainTable[cursor.y] && mainTable[cursor.y][cursor.x])
 	         {
-	          object["oId"] = mainTable[focusElement.y][focusElement.x].oId;
-		  object["eId"] = mainTable[focusElement.y][focusElement.x].eId;
+	          object["oId"] = mainTable[cursor.y][cursor.x].oId;
+		  object["eId"] = mainTable[cursor.y][cursor.x].eId;
 		 }
 	      if (data != undefined) object.data = data;
+	      break;
+	 case '':
 	      break;
 	 default:
 	      if (cmd.substr(0, 7) != 'Logout ')
@@ -966,17 +990,29 @@ function CallController(data)
      object.ODid = ODid;
      object.OVid = OVid;
      try { socket.send(JSON.stringify(object)); }
-     catch { warning("The server connection is down! Please refresh the page to reconnect the server"); }
-     if (socket.readyState === 3) warning("The server connection is down! Please refresh the page to reconnect the server");
+     catch {}
+     if (socket.readyState === 3) CreateWebSocket();
     }
 }
 
 function displayMainError(errormsg, resetOV = true)
 {
- lg(errormsg);
+ //lg(errormsg);
+ clearTimeout(loadTimerId);
+
+ if (errormsg.substr(0, 7) === 'Loading') 
+    {
+     errormsg === 'Loading...' ? errormsg = 'Loading' : errormsg += '.';
+     loadTimerId = setTimeout(displayMainError, 500, errormsg, false);
+     errormsg = errormsg.replace(/Loading/, '').replace(/./g, '&nbsp;') + errormsg;
+    }
  mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
- if (resetOV) OD = OV = ODid = OVid = '';
- mainTableRemoveEventListeners();
+
+ if (resetOV)
+    {
+     OD = OV = ODid = OVid = '';
+     mainTableRemoveEventListeners();
+    }
 }
 
 function mainTableRemoveEventListeners()
@@ -1018,15 +1054,15 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
  if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
  if (setFocusElement)
     {
-     focusElement.td = newCell;
-     focusElement.x = newCell.cellIndex;
-     focusElement.y = newCell.parentNode.rowIndex;
-     focusElement.oId = focusElement.eId = 0;
-     if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x])
+     cursor.td = newCell;
+     cursor.x = newCell.cellIndex;
+     cursor.y = newCell.parentNode.rowIndex;
+     cursor.oId = cursor.eId = 0;
+     if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x])
         {
-	 focusElement.oId = mainTable[focusElement.y][focusElement.x].oId;
-	 focusElement.eId = mainTable[focusElement.y][focusElement.x].eId;
-	 //if (newCell.contentEditable != 'true' && !isNaN(focusElement.eId) && focusElement.oId === 1) MakeCursorContentEditable(newCell.innerHTML);
+	 cursor.oId = mainTable[cursor.y][cursor.x].oId;
+	 cursor.eId = mainTable[cursor.y][cursor.x].eId;
+	 //if (newCell.contentEditable != 'true' && !isNaN(cursor.eId) && cursor.oId === 1) MakeCursorContentEditable(newCell.innerHTML);
 	}
     }
 }
@@ -1041,7 +1077,7 @@ function contextFitMainDiv(x, y)
 
 function moveCursor(x, y, abs)
 {
- if (!focusElement.td || focusElement.td.contentEditable === 'true' || contextmenu || (abs && focusElement.x == x && focusElement.y == y)) return;
+ if (!cursor.td || cursor.td.contentEditable === 'true' || contextmenu || (abs && cursor.x == x && cursor.y == y)) return;
  
  let a, b, newTD;
  if (abs)
@@ -1051,17 +1087,17 @@ function moveCursor(x, y, abs)
     }
   else 
     {
-     a = focusElement.x + x;
-     b = focusElement.y + y;
+     a = cursor.x + x;
+     b = cursor.y + y;
     }
     
  if (a < 0 || a >= mainTableWidth || b < 0 || b >= mainTableHeight) return;
  
  newTD = mainTablediv.rows[b].cells[a];
- if (abs || isVisible(newTD) || (!isVisible(focusElement.td) && tdVisibleSquare(newTD) > tdVisibleSquare(focusElement.td)) || (y == 0 && xAxisVisible(newTD)) || (x == 0 && yAxisVisible(newTD)))
+ if (abs || isVisible(newTD) || (!isVisible(cursor.td) && tdVisibleSquare(newTD) > tdVisibleSquare(cursor.td)) || (y == 0 && xAxisVisible(newTD)) || (x == 0 && yAxisVisible(newTD)))
     {
      if (!abs) event.preventDefault();
-     CellBorderToggleSelect(focusElement.td, newTD);
+     CellBorderToggleSelect(cursor.td, newTD);
     }
 }
 
@@ -1503,10 +1539,10 @@ function ShowContextmenu(event)
  // Application context menu on main field empty area? Display mainContext context menu
   else if ((event.target === mainDiv && OV != '') || event.target === mainTablediv) innerHTML = mainContext;
  // Application context menu on main field table or has been generated by keyboard (event.which != 3) and any element is selected? Display appropriate context menu
-  else if (event.target.tagName === 'TD' || (focusElement.td != undefined && event.which != 3))
+  else if (event.target.tagName === 'TD' || (cursor.td != undefined && event.which != 3))
     {
-     if (event.target.tagName === 'TD') CellBorderToggleSelect(focusElement.td, event.target);
-     if (mainTable[focusElement.y] && mainTable[focusElement.y][focusElement.x] && mainTable[focusElement.y][focusElement.x].realobject) innerHTML = mainObjectContext;
+     if (event.target.tagName === 'TD') CellBorderToggleSelect(cursor.td, event.target);
+     if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject) innerHTML = mainObjectContext;
       else innerHTML = mainContext;
     }
     
@@ -1521,7 +1557,7 @@ function ShowContextmenu(event)
      // Context menu div left/top calculating
      if (event.which != 3)
         {
-	 data = focusElement.td;
+	 data = cursor.td;
 	 if (!contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
 	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
 	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
@@ -1670,8 +1706,7 @@ function styleUI()
      {
       inner += uiProfile[element]["target"] + " {";
       for (key in uiProfile[element])
-       if (key != 'target' && key != 'effect' && key != 'filter' && key != 'Force to use next user customization (empty or non-existent user - option is ignored)' && key != 'mouseover hint timer in msec' && key.substr(0, 1) != '_' && uiProfile[element][key] != '')
-          inner += key + ": " + uiProfile[element][key];
+	  if (keyExceptions.indexOf(key) === -1 && key.substr(0, 1) != '_' && uiProfile[element][key] != '') inner += key + ": " + uiProfile[element][key];
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }
  style.innerHTML = inner;

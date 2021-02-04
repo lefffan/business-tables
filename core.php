@@ -14,11 +14,9 @@ function lg($arg, $title = 'LOG') // Function saves input $arg to error.log
     {
      echo "\n----------------------------".$title." START-------------------------------\n";
      echo $arg;
-     echo "\n-----------------------------".$title." END-------------------------------\n";
     }
  file_put_contents('error.log', "\n----------------------------".$title." START-------------------------------\n", FILE_APPEND);
  file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
- file_put_contents('error.log', "\n-----------------------------".$title." END-------------------------------\n", FILE_APPEND);
 }
 
 function adjustODProperties($db, $data, $ODid)
@@ -125,6 +123,8 @@ function adjustODProperties($db, $data, $ODid)
 	  $rulepad[$value['element1']['data']] = $rulepad[$key];	// Otherwise create new rule with new rule name
 	  unset($rulepad[$key]);					// and remove old rule
 	 }
+ unset($data['dialog']['Rule']['New rule']);
+ ksort($data['dialog']['Rule'], SORT_STRING);
  $data['dialog']['Rule']['New rule'] = $newRule; // Reset 'New rule' profile to default
  
  // Return result data
@@ -145,13 +145,13 @@ function initNewODDialogElements()
 		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Emtpy, undefined or zero value - no limit.', 'data' => '', 'line' => ''],
 		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
 		    
- $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+ $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
 		    'element2' => ['type' => 'textarea', 'head' => "List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties.\nYou must be aware of disallowing all users, so avoid user/group empty list with 'allowed' type list", 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
 		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
 		    'element6' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views', 'data' => '', 'line' => ''],
-		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)'],
+		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
 		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
@@ -176,8 +176,10 @@ function initNewODDialogElements()
 							  
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+No action|Warning|Confirm|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
-		    'element4' => ['type' => 'textarea', 'head' => 'Rule expression', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
+		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
+		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
+		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
 }
 
 function GetSidebar($db, $userid, $ODid, $OVid, $OD, $OV)
@@ -309,9 +311,12 @@ function Check($db, $flags, &$client, &$input, &$output)
      if (($client['oId'] = $input['oId']) === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT') { $output['alert'] = 'System account cannot be deleted!'; return; }
      
      // Check database object existence -> Check oid object selection existence
-     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0");
+     $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']); 
+     if (gettype($client['objectselection']) === 'array') { $output['alert'] = "Object selection has been changed, please refresh Object View!"; return; }
+     //$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND id in (SELECT id FROM `data_$client[ODid]` $client[objectselection])");
+     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] and lastversion=1 and concat(id,lastversion) IN (SELECT concat(id,lastversion) FROM `data_$client[ODid]` $client[objectselection])");
      $query->execute();
-     if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['alert'] = "Please refresh Object View, object with id=$client[oId] doesn't exist!"; return; }
+     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) { $output['alert'] = "Please refresh Object View, specified object (id=$client[oId]) doesn't exist!"; return; }
     }
 
  if ($flags & CHECK_EID)
@@ -449,77 +454,117 @@ function InsertObject($db, &$client, &$output, $_client = [])
 	      }
       $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
       $query->execute($params);
-      $db->commit();
+    
+      $client['oId'] = $newId;
+      $ruleresult = ProcessRules($db, $client, NULL, '1', 'Add object');
+      if ($ruleresult['action'] === 'Accept')
+         {
+          $db->commit();
+	  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+	  unset($_client['params']);
+	  if (isset($ruleresult['message']) && $ruleresult['message']) $_client['alert'] = $ruleresult['message'];
+	  return ['cmd' => 'CALL'] + $_client;
+	 }
      }
  catch (PDOException $e)
      {
-      $db->rollBack();
-      preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $msg = 'Failed to add new object: unique elements duplicate entry!' : $msg = "Failed to add new object: $msg";
-      $_client['params'] = $client['params'];
-      return ['cmd' => 'ALERT', 'data' => $msg] + $_client;
+      preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $ruleresult = ['message' => 'Failed to add new object: unique elements duplicate entry!'] : $ruleresult = ['message' => "Failed to add new object: $msg"];
+      $ruleresult['log'] = $ruleresult['message'];
      }
- unset($_client['params']);
- return ['cmd' => 'CALL'] + $_client;
+
+ $db->rollBack();
+ if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+ $_client['params'] = $client['params'];
+ return ['cmd' => 'ALERT', 'data' => $ruleresult['message']] + $_client;
 }
 
 function DeleteObject($db, &$client, &$_client)
 {
  try {
       $db->beginTransaction();
-      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
+      $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
       $query->execute();
-      if (count($query->fetchAll(PDO::FETCH_NUM)) == 0) { $db->rollBack(); return []; }
-
+      $version = $query->fetchAll(PDO::FETCH_NUM);
+      if (!isset($version[0][0])) { $db->rollBack(); return []; }
+      $version = $version[0][0];
+      
       $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1");
       $query->execute();
       $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,version,lastversion,owner) VALUES ($client[oId],0,1,:owner)");
       $query->execute([':owner' => $client['auth']]);
       $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
       $query->execute();
-      $db->commit();
+      
+      $ruleresult = ProcessRules($db, $client, $version, NULL, 'Delete object');
+      if ($ruleresult['action'] === 'Accept')
+         {
+	  $db->commit();
+	  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+	  unset($_client['params']);
+	  if ($client['ODid'] === '1') $_client['passchange'] = strval($client['oId']);
+	  if (isset($ruleresult['message']) && $ruleresult['message']) $_client['alert'] = $ruleresult['message'];
+	  return ['cmd' => 'CALL'] + $_client;
+	 }
      }
  catch (PDOException $e)
      {
-      return [];
+      $ruleresult = ['message' => 'Failed to delete object: '.$e->getMessage()];
+      $ruleresult['log'] = $ruleresult['message'];
      }
- unset($_client['params']);
- if ($client['ODid'] === '1') $_client['passchange'] = strval($client['oId']);
- return ['cmd' => 'CALL'] + $_client;
+
+ $db->rollBack();
+ if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+ $_client['params'] = $client['params'];
+ return ['cmd' => 'ALERT', 'data' => $ruleresult['message']] + $_client;
 }
 
-function ProcessRules($db, $odid, $oid)
+function ProcessRules($db, &$client, $preversion, $postversion, $operation)
 {
- /*if ($result = ProcessRules($db, $odid, $oid))
-    {
-    }*/
- //retreive old verion value in case of uniq conflict and reset last version to the previous object
- //ProcessRules in CreateNewObjectVersion and insertobject functions
-
  // Get rule section json data
- $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Rule') FROM $ WHERE id='$odid'");
+ $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Rule') FROM $ WHERE id='$client[ODid]'");
  $query->execute();
- if (count($Rules = $query->fetchAll(PDO::FETCH_NUM)) == 0) return;
-
- // Move on. Decoding json data
- $Rules = json_decode($Rules[0][0], true);
- if (gettype($Rules) != 'array') return;
+ $Rules = $query->fetchAll(PDO::FETCH_NUM);
+ 
+ // Move on. Return default action in case of empty rule selection or decoding error
+ if (!isset($Rules[0][0]) || gettype($Rules = json_decode($Rules[0][0], true)) != 'array') return ['action' => 'Accept', 'message' => ''];
  unset($Rules['New rule']);
  
  // Process non empty expression rules one by one
  foreach ($Rules as $key => $value)
 	 {
-	  if (($expression = trim($value['element4']['data'])) === '') continue;
-	  $message = $value['element2']['data'];
-	  $action = $value['element3']['data'];
-	  $action = substr($action, strpos($action, '+') + 1, strpos($action, '|', strpos($action, '+') + 1) - strpos($action, '+') - 1);
-	  $query = $db->prepare("SELECT id FROM `data_$odid` WHERE id=$oid and id IN (SELECT id FROM `data_$odid` WHERE $expression)");
-	  $query->execute();
-	  if (count($query->fetchAll(PDO::FETCH_NUM)) == 0)
-	     {
-	      if ($action === 'No action') return;
-	      return ['name' => $key, 'message' => $message, 'action' => $action, 'expression' => $expression];
-	     }
+	  if (strpos($value['element4']['data'], '+'.$operation) === false) continue;
+	  strpos($value['element3']['data'], '+Accept') === false ? $action = 'Reject' : $action = 'Accept';
+	  $message = trim($value['element2']['data']);
+
+	  if (gettype($result = CheckRule($db, $client, trim($value['element5']['data']), $preversion)) === 'string') return ['action' => $action, 'message' => $result, 'log' => $result];
+	  if ($result === false) continue;
+
+	  if (gettype($result = CheckRule($db, $client, trim($value['element6']['data']), $postversion)) === 'string') return ['action' => $action, 'message' => $result, 'log' => $result];
+	  if ($result === false) continue;
+
+	  // Rule match occured. Return its action
+	  return ['action' => $action, 'message' => $message];
 	 }
+
+ // Return default action
+ return ['action' => 'Accept', 'message' => ''];
+}
+
+function CheckRule($db, &$client, $rule, $version)
+{
+ if (!isset($rule, $version) || $rule === '' || $version === '') return true;
+
+ try {
+      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND version=$version AND $rule");
+      $query->execute();
+     }
+ catch (PDOException $e)      
+     {
+      return 'Rule error: '.$e->getMessage();
+     }
+     
+ if (isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) return true;
+ return false;
 }
 
 function setElementSelectionIds(&$client)
@@ -908,6 +953,54 @@ function ResetAllAuth(&$array)
 	  $array[$id]['authtime'] = 0;
 	  $array[$id]['ODid'] = $array[$id]['OVid'] = $array[$id]['OD'] = $array[$id]['OV'] = '';
 	 }
+}
+
+function GetObjectSelection($db, $objectSelection, $params, $user)
+{
+ // Check input paramValues array and add reserved :user parameter value
+ if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
+ $i = -1;
+ $len = strlen($objectSelection);
+ if (gettype($params) != 'array') $params = [];
+ $params[':user'] = $user;
+ $isDialog = false;
+ $objectSelectionNew = '';
+ 
+ // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
+ while  (++$i <= $len)
+     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
+	{
+	 if (isset($newparam))
+	 if (isset($params[$newparam]))
+	    {
+	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $params[$newparam]];
+	     if (!$isDialog) $objectSelectionNew .= $params[$newparam];
+	    }
+	  else
+	    {
+	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
+	     $isDialog = true;
+	    }
+	 if ($i === $len) break;
+	 $newparam = NULL;
+	 if ($objectSelection[$i] === ':') $newparam = ':';
+	  else $objectSelectionNew .= $objectSelection[$i];
+	}
+      else if (isset($newparam)) $newparam .= $objectSelection[$i];
+      else $objectSelectionNew .= $objectSelection[$i];
+
+ //  In case of no dialog - return object selection string
+ unset($params[':user']); // Is it needable?
+ if (!$isDialog) return $objectSelectionNew;
+ 
+ // Otherwise return dialog array
+ return [
+	 'title'   => 'Object View parameters',
+	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
+	 'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
+	 'flags'   => ['cmd' => 'CALL',
+		       'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;', 'esc' => '']
+	];
 }
 
 $db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, DATABASEUSER, DATABASEPASS);

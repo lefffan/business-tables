@@ -34,6 +34,6 @@ const CHECK_EID				= 0b00100000;
 const CHECK_ACCESS			= 0b01000000;
 const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
-const SESSIONLIFETIME			= 36000;
+const SESSIONLIFETIME			= 360000;
 const CALLTIMEOUT			= 10;
 const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';

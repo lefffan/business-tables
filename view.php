@@ -2,54 +2,6 @@
 
 require_once 'core.php';
 
-function GetObjectSelection($db, $objectSelection, $params, $user)
-{
- // Check input paramValues array and add reserved :user parameter value
- if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
- $i = -1;
- $len = strlen($objectSelection);
- if (gettype($params) != 'array') $params = [];
- $params[':user'] = $user;
- $isDialog = false;
- $objectSelectionNew = '';
- 
- // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
- while  (++$i <= $len)
-     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
-	{
-	 if (isset($newparam))
-	 if (isset($params[$newparam]))
-	    {
-	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $params[$newparam]];
-	     if (!$isDialog) $objectSelectionNew .= $params[$newparam];
-	    }
-	  else
-	    {
-	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
-	     $isDialog = true;
-	    }
-	 if ($i === $len) break;
-	 $newparam = NULL;
-	 if ($objectSelection[$i] === ':') $newparam = ':';
-	  else $objectSelectionNew .= $objectSelection[$i];
-	}
-      else if (isset($newparam)) $newparam .= $objectSelection[$i];
-      else $objectSelectionNew .= $objectSelection[$i];
-
- //  In case of no dialog - return object selection string
- unset($params[':user']); // Is it needable?
- if (!$isDialog) return $objectSelectionNew;
- 
- // Otherwise return dialog array
- return [
-	 'title'   => 'Object View parameters',
-	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
-	 'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
-	 'flags'   => ['cmd' => 'CALL',
-		       'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
-	];
-}
-
 function CheckODString($odname)
 {
  return substr(str_replace("'", '', str_replace('"', '', trim(str_replace("\\", '', $odname)))), 0, ODSTRINGMAXCHAR);
@@ -146,6 +98,7 @@ function EditOD($db, &$client)
 	 $client['data']['dialog']['Database'] = $odprops['dialog']['Database'];
 	}
     }
+
  // Check 'Element' pad change permissions
  if ($client['data']['dialog']['Element'] != $odprops['dialog']['Element'])
  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element4']['data'])), "strcmp")))
@@ -225,7 +178,7 @@ catch (PDOException $e)
      exit;
     }    
 
-if (intval($client[0]) > CALLTIMEOUT) { echo json_encode(['cmd' => '', 'alert' => 'Server call request timeout, please try again!']); exit; }
+if (intval($client[0]) > CALLTIMEOUT) { echo json_encode(['cmd' => '', 'error' => 'Server call request timeout, please try again!']); exit; }
 $client = json_decode($client[1], true);
 
 try {
@@ -271,7 +224,7 @@ catch (PDOException $e)
      switch ($client['cmd'])
     	    {
     	     case 'CALL':
-	          $output = ['cmd' => '', 'alert' => "Failed to get Object View: $msg"];
+	          $output = ['cmd' => '', 'error' => "Failed to get Object View: $msg"];
 	    	  break;
     	     case 'New Object Database':
 	    	  if (isset($id))

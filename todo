@@ -1,42 +1,30 @@
 --------------Janury 2021--------------------------------------------------------------
-- Object_selection to OD rule section + Check objects to match view current selection on process client commands?
-  try chat
-  focusElement -> cursor
-  MakeTDContentEditable(td, data)
-
+- try chat (start event of oid=title|newobject navigates table to the this oid location automatically, at the new/delete object try to leave cursor on corresponded oid/eid)
+  alert only initiator cid after rule rejection as a SET command does
+- context menu NEWOBJECT -> ADD OBJECT
 - help context menu for all help (conception, handler, keyboard/mouse..)
   Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
 
 --------------February 2021--------------------------------------------------------------
 - Object process SCHEDULER. Handlers are executed by built-in system user.
-	1. User can call element (by pressing F2 for example) many times, so to prevent multiple execution call 'id_execution' also will be useful.
-	   Another words DDOSing server should be prevented. What if user calls OD refresh many times OD data building takes much time? How to avoid it?
-	   What if use calls 'cusomization', then it takes much time for the server, so during that time user calls another request, 
-	   so how the system will react on this situation?
-	   Real example 29/10/2020 - I called 'user customization' then dbclicked edit cell - diaog box and content editable actions pop up and work together!!
-	2. status 'Loading..' on wrap icon, and "wait cursor": { "target": ".waitcursor", "cursor": "wait" }?
-	   if server doesn't responce during page refresh main error should be displayed? May be Settimeout(DisplayMainError, 3000) in callController switch/case 'GETMAIN/GETMENU' section?
-	3. To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user!
 - System calls and its object views: LINK (+Element statistic, for a example, client list to warn by email, or client quantity)
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
-- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php).
-  These calls can be applied to files saved for specified OD, object and element (for a example in ..OD/oId/eId/ dir)
-- single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
+- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 - telnet function by SLAVA
-- snmp function by SLAVA
+- snmp function by SLAVA?
 - diagnostic function by me
-- inner text in <td> can consists of <br>, <color> and <font> tags
   
 --------------March 2021--------------------------------------------------------------
-- Object view PIECHART and GRAPH
-- System calls and its object views: LOCATION.
-- multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
+- Object view PIECHART, GRAPH, LOCATION.
+- inner text in <td> can consists of <br>, <color> and <font> tags
 - firefox up/down and left/right arrows scroll page
+- multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
+  single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
+  User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+  User can copy an image to the cell?
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
-- User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
-- Feedback and finish https://bakhirev.biz/book/#MmlJN (for quick process require only constan.php with connect.php, not big core.php!)
 
---------------Later (doubt) features--------------------------------------------------
+--------------Later or doubt features-------------------------------------------------
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - Set new object flag (for example small digit in red scope) before OD name and/or html page title
@@ -54,11 +42,11 @@
 - fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
 - event json can send not only current objects elements, but other objects of current OD and other objects of another OD
 - Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
-- In case of no pagination should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
+  should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
 - Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
 - Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
-- Define OV by id (not by name) to avoid client socket subscribed OV loss. For example, during client adding new object OV name has changed, so OV refresh command will not be passed due to subscribed and changed OV are unmatched
 - socket rate limit https://javascript.info/websocket#rate-limiting
+  To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user?
 - Make OD/OV array that consists of socket indexes that every OV of every OD are subscribed of. It is just to have quicker access on OV change to serve big amount of connects
 - Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
 - As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
@@ -85,7 +73,8 @@
   Voting
   Any statistic/analitycs
   Setki.xls
-  Paraga mail functional and ask Hramcova analitiku po helpdesku
+  Paraga mail functional
+  Ask Hramcova analitiku po helpdesku
   See functions on Slava's management system
 - Operations.xls emulation:
   Switch ip, switch description, switch location,
@@ -277,7 +266,7 @@ $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQuery
 WHERE (select datetime from data_1 WHERE owner='system')>0;
 IAM: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':user'
 e: *
-test obj sel: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':input_user'
+test obj sel: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'!=':input_user'
 test el sel:
 
 {"event":"INIT"}
@@ -376,3 +365,6 @@ const PHPBINARY				= '/usr/bin/php';
 const HANDLERDIR			= '/Library/WebServer/Documents/handlers/';
 php ./makedb.php
 php ./main.php
+
+
+WHERE lastversion=1 AND version!=0 and eid2->>'$.value'!=':Input_user'
