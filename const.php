@@ -8,8 +8,8 @@ const PHPBINARY				= '/usr/local/bin/php';
 const HANDLERDIR			= '/usr/local/apache2/htdocs/handlers/';
 const IP				= '192.168.9.39';
 const PORT				= 7889;
-/*****************************************************************************************/
 
+/****************************Other constants**********************************************/
 const MAXOBJECTS			= 100000;
 const ODSTRINGMAXCHAR			= 64;
 const OVSTRINGMAXCHAR			= 64;

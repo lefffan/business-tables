@@ -1,48 +1,5 @@
 <?php
 
-/*****************************************************************************************************************
-Element handler JSON to the controller stored in $output variable.
-
-Cell content edit, dialog call and alert message (non string "data" property is ignored):
-    { 
-     "cmd":		"EDIT[<LINES_NUM>]|DIALOG|ALERT"
-     "data":		"<text data for EDIT or ALERT>|<JSON for DIALOG>"
-    }
-
-User handler specified OD/OV call, in case of absent OD/OV - current values are used:
-    { 
-     "cmd":		"CALL"
-     "data":		JSON with "OD", "OV" and "Params" properties.
-    }
-"Params" value is a JSON with object selection args list (as a properties) with its values, see appropriate section help.
-Absent args will be requested via dialog box.
- 
-Element data set and reset. 'SET' command sets defined properties, additionally 'RESET' removes all other.
-"image" and "<any property>" unlike other properties may contain non string data types.
-    {
-     "cmd":		"SET|RESET"
-     "alert":		"<alert message>"
-     "value":		"visible cell data" 
-     "image":		"image to display instead of value text"
-     "link":		""
-     "location":	""
-     "hint":		""
-     "description":	""
-     "style":		""
-     "<any property>":	""
-    }
-
-Controller JSON to the element handler is in $intput variable:
-    
-    {
-     "event":		"INIT|DBLCLICK|KEYPRESS|CONFIRM|ONCHANGE"
-     "user":		"<username initiated the process>"
-     "title":		"element title"
-     "data":		"<key code or pasted data for KEYPRESS>|<element value (table cell innerHTML) for CONFIRM or NEWOBJECT>|<dialog JSON for CONFIRM>"
-     "<any property>":	{ "eId": "", "property": ""}|<string>'
-    }
-*****************************************************************************************************************/
-
 require_once 'customizationjson.php';
 
 function lg($arg)

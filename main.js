@@ -18,8 +18,8 @@ const STARTOBJECTID = 3;
 const DEFAULTOBJECTSPERPAGE = 50;
 const range = document.createRange();   
 const selection = window.getSelection();
-const mainObjectContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
-const mainContext = '<div class="contextmenuItems">New Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
+const mainObjectContext = '<div class="contextmenuItems">Add Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
+const mainContext = '<div class="contextmenuItems">Add Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
 const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
 const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
@@ -55,7 +55,7 @@ const uiProfile = {
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Hint
-		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "padding": "5px;", "effect": "hotnews", "mouseover hint timer in msec": "1000", "_effect": "Hint " + EFFECTHELP },
+		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "border-radius": "3px;", "box-shadow": "2px 2px 4px #cfcfcf;", "padding": "5px;", "effect": "hotnews", "mouseover hint timer in msec": "1000", "_effect": "Hint " + EFFECTHELP },
 		  // Box interface elements
 		  "dialog box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;", "effect": "slideleft", "_effect": "Dialog box " + EFFECTHELP, "filter": "grayscale(0.5)", "_filter": "Application css style filter applied to the sidebar and main field.<br>For a example: 'grayscale(0.5)' or 'blur(3px)'. See appropriate css documentaion." },
 		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
@@ -210,11 +210,6 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  // CHeck specified object element start event
  (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') ? eidstr = 'eid' + eid : eidstr = eid;
  
- if (oidnum >= STARTOBJECTID && props[eid][oid] && eid != eidstr && cmd === 'CALL')
- if (props[eid][oid]['startevent'] === 'DBLCLICK') cursor = { oId: oid, eId: eid, cmd: 'DBLCLICK' };
-  else if (props[eid][oid]['startevent'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['startevent'].length > 8)
-	  cursor = { oId: oid, eId: eid, cmd: 'KEYPRESS', data: props[eid][oid]['startevent'].substr(8) };
-
  // Check props correctness
  if (object.lastversion != '1' || !props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') 
     if (oidnum != TITLEOBJECTID && oid != NEWOBJECTID && props[eid]['0']) oid = '0';
@@ -266,7 +261,7 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 	  mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, object);
 	 }
     }
- if (oidnum === NEWOBJECTID || mainTable[y][x]['realobject'])
+ if (oidnum === TITLEOBJECTID || oidnum === NEWOBJECTID || mainTable[y][x]['realobject'])
     {
      if (objectTable[oidnum] === undefined) objectTable[oidnum] = {};
      objectTable[oidnum][eid] = { x: x, y: y };
@@ -290,10 +285,33 @@ function drawMain(data, props)
      oldcursor.contentEditable = 'true';
      oldcursor.data = htmlCharsConvert(cursor.td.innerHTML);
     }
-    
  cursor = { ODid: ODid, OVid: OVid };
- 
- // Parse all props elements, to place all objects of that elements
+
+ // Parse all props elements to calculate start event
+ if (cmd === 'CALL')
+ outer: for (eid in props)
+	for (oid in props[eid])
+	 if (props[eid][oid]['event'] != undefined)
+    	    {
+	     cursor.oId = Number(oid);
+	     cursor.eId = Number(eid);
+	     if (Number(oid) >= STARTOBJECTID && !isNaN(eid))
+	        {
+		 if (props[eid][oid]['event'] === 'DBLCLICK')
+		    {
+		     cursor.cmd = 'DBLCLICK';
+		     break outer;
+		    }
+		 if (props[eid][oid]['event'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['event'].length > 8)
+		    {
+		     cursor.cmd = 'KEYPRESS';
+		     cursor.data = {string: props[eid][oid]['event'].substr(8), code: ''};
+		    }
+		}
+	     break outer;
+	    }
+
+ // Parse all props elements to place all objects of that elements
  for (eid in props)
      {
       oid = String(NEWOBJECTID);
@@ -302,7 +320,7 @@ function drawMain(data, props)
 	 
       oid = String(TITLEOBJECTID);
       if (result = SetOEPosition(props, oid, eid, 0, q)) warningtext = result;
-      if (props[eid][oid] && !(/n|q/.test(props[eid][oid].x)) && !(/n|q/.test(props[eid][oid].y))) props[eid][oid] = undefined; // Remove specified element title object prop, in case of absent 'n' and 'q' variables this object element placement is used only once
+      if (props[eid][oid] && !(/n|q/.test(props[eid][oid].x)) && !(/n|q/.test(props[eid][oid].y))) props[eid][oid] = undefined; // In case of absent 'n' and 'q' variables - remove specified element title object prop. This object element placement is used only once.
 	 
       for (n in data)
 	  {
@@ -370,43 +388,36 @@ function drawMain(data, props)
  mainTablediv.addEventListener('dblclick', eventHandler);
  mainTablediv.addEventListener('mouseleave', eventHandler);
  mainTablediv.addEventListener('mousemove', eventHandler); 
- 
+
  // Focus element is not empty? Emulate mouse/keyboard start event!
- if (cursor.oId === NEWOBJECTID)
+ if (cursor.oId != undefined)
     {
-     /*cursor.td = mainTablediv.rows[objectTable[cursor.oId][cursor.eId].y].cells[objectTable[cursor.oId][cursor.eId].x];
-     cursor.td.contentEditable = 'true';
-     cursor.olddata = '';
-     cursor.td.innerHTML = cursor.olddata; // Fucking FF has bug inserting <br> to the empty content
-     cursor.td.focus();
-     CellBorderToggleSelect(null, cursor.td);*/
      CellBorderToggleSelect(null, mainTablediv.rows[objectTable[cursor.oId][cursor.eId].y].cells[objectTable[cursor.oId][cursor.eId].x]);
-     MakeCursorContentEditable(oldcursor.data);
-    }
-  else if (cursor.oId != undefined)
-    {
-     cursor.x = objectTable[cursor.oId][cursor.eId].x;
-     cursor.y = objectTable[cursor.oId][cursor.eId].y;
-     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
-     cursor.td.focus();
-     cmd = cursor.cmd;
-     CallController(cursor.data);
+     if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable(oldcursor.data);
+      else if (cursor.cmd)
+        {
+	 cmd = cursor.cmd;
+         CallController(cursor.data);
+	}
     }
  else if (oldcursor.ODid === cursor.ODid && oldcursor.OVid === cursor.OVid && oldcursor.x != undefined)
     {
-     cursor.x = Math.min(oldcursor.x, mainTableWidth - 1);
-     cursor.y = Math.min(oldcursor.y, mainTableHeight - 1);
-     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
-     if (oldcursor.contentEditable && oldcursor.oId === cursor.oId && oldcursor.eId === cursor.eId) MakeCursorContentEditable(oldcursor.data);
-        /*{
-	 cursor.td.contentEditable = 'true';
-	 cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
-	 // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
-	 cursor.td.innerHTML = cursor.olddata;
-	 if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
-	 cursor.td.focus();
-        }*/
+     if (objectTable[oldcursor.oId] && objectTable[oldcursor.oId][oldcursor.eId])
+        {
+         cursor.x = objectTable[oldcursor.oId][oldcursor.eId].x;
+         cursor.y = objectTable[oldcursor.oId][oldcursor.eId].y;
+	 CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
+	 if (oldcursor.contentEditable) MakeCursorContentEditable(oldcursor.data);
+	}
+      else
+	{
+         cursor.x = Math.min(oldcursor.x, mainTableWidth - 1);
+         cursor.y = Math.min(oldcursor.y, mainTableHeight - 1);
+	 CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
+        }
     }
+ if (cursor.y) mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
+ if (cursor.x) mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
 }
 
 function ElementStyleFetch(props, eid, oid, oe = {})
@@ -664,7 +675,7 @@ function eventHandler(event)
 	         {
 		  CellBorderToggleSelect(cursor.td, event.target);
 		  if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && cursor.td.contentEditable != 'true')
-		  if (!isNaN(cursor.eId) && cursor.oId === 1) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+		  if (!isNaN(cursor.eId) && cursor.oId === NEWOBJECTID) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
 		 }
 	      break;
 	 case 'keydown':
@@ -726,7 +737,7 @@ function eventHandler(event)
 					else
 					  {
 					   mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-					   cmd = 'New Object';
+					   cmd = 'Add Object';
 					   CallController();
 					  }
 				       break;
@@ -878,6 +889,7 @@ function FromController(json)
 	      Hujax("view.php", FromController, input.data);
 	      break;
 	 case 'DRAW':
+	      paramsOV = input.params;
 	      drawMain(input.data, input.props);
 	      break;
 	 case '':
@@ -949,16 +961,16 @@ function CallController(data)
 	      box = help;
 	      ShowBox();
 	      break;
-	 case 'New Object':
+	 case 'Add Object':
 	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "data": {}, 'paramsOV': paramsOV };
+	      object = { "cmd": 'INIT', "data": {} };
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
 		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject)
-		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId, 'paramsOV': paramsOV };
+		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
 	      break;
 	 case 'LOGIN':
 	 case 'CONFIRM':
@@ -1116,13 +1128,13 @@ function isVisible(e)
 
 function xAxisVisible(e)
 {
- if (e.offsetLeft >= mainDiv.scrollLeft && e.offsetLeft - mainDiv.scrollLeft + e.offsetWidth < mainDiv.offsetWidth) return true;
+ if (e.offsetLeft >= mainDiv.scrollLeft && e.offsetLeft - mainDiv.scrollLeft + e.offsetWidth <= mainDiv.offsetWidth + 1) return true;
  return false;
 }
 
 function yAxisVisible(e)
 {
- if (e.offsetTop >= mainDiv.scrollTop && e.offsetTop - mainDiv.scrollTop + e.offsetHeight < mainDiv.offsetHeight) return true;
+ if (e.offsetTop >= mainDiv.scrollTop && e.offsetTop - mainDiv.scrollTop + e.offsetHeight <= mainDiv.offsetHeight + 1) return true;
  return false;
 }
 
@@ -1136,34 +1148,6 @@ function rangeTest(a, b)
 
 function ShowBox()
 {
- /*******************************************************************************************************************************/
- /* box.title		= box title												*/
- /*																*/
- /* box.dialog		= JSON with properties as tabs, each tab represents JSON with properties as profiles			*/
- /*			  Each profile represents JSON with properties as interface elements with next format:			*/
- /*		   	  "element_name":											*/
- /*						{										*/
- /*				      	  	 "type"      : select|multiple|checkbox|radio|textarea|password|text		*/
- /*				      	  	 "head"      : "<any text>"							*/
- /*				      	  	 "data"      : "+text1|text2|text3"						*/
- /*		  		      	  	 "help"	     : "<any text>"							*/
- /*		  		      	  	 "line"	     : ""								*/
- /*		  		      	  	 "readonly"  : ""								*/
- /*				     	 	}										*/
- /*																*/
- /* box.buttons		= JSON with properties as buttons where property name is a button text					*/
- /*			  Non empty values make th system to call the controller on specified button click event		*/
- /*																*/
- /* box.flags		= JSON with next properties:										*/
- /*			  "esc" - property lets user to cancel dialog box by esc button 					*/
- /*			  "style" - dialog box content wrapper style attribute							*/
- /*			  "pad" - active (current) dialog box pad (if exists)							*/
- /*			  "profile" - active (current) dialog box profile (if exist)						*/
- /*			  "display_single_pad" - set this flag to display pad block in case of single one			*/
- /*			  "display_single_profile" - set this flag to display profile select in case of single one		*/
- /*			  "callback" - any callback string element handler to pass without changes at CONFIRM event		*/
- /*			  "cmd" - initial command to return to the controller							*/
- /*******************************************************************************************************************************/
  if (typeof box !== 'object') return;
  let inner = getInnerDialog();
  HideHint();
@@ -1720,49 +1704,243 @@ const help = { title: 'Help', dialog: {
 `Tabels application is a set of custom data tables the user can interact many different ways.
 Every table consists of identical objects, which, in turn, are set of user defined elements.
 Table data of itself is called Object Database (OD) and can be changed or created by
-appropriate sidebar context menu. Every OD should contain some Object Views (OV), that
-define which object of the OD (see object selection help section) and what kind of element
-should be displayed and how (see element selection help section).
+appropriate sidebar context menu. OD contains Object Views (OV). Views define what objects
+(via 'object selection', see appropriate help section) and elements (via 'element selection',
+see appropriate help section) should be displayed and how.
 
-OV allows users to operate specified objects many different ways and display its data 
+OV allows users to operate its objects many different ways, so to display its data 
 generated by binded to elements appropriate handlers. Simple OV is a classic table with
 object list in 'y' order and its elements in 'x' order, so Object Database is similar to
 any SQL database, where objects are rows and elements are its fields.
 
 Element data represents itself JSON data type and stored in SQL database with that type.
-Element JSON data can be managed by appropriate built-in or user defined element
-handlers (see element element events section).`
+Element JSON data can be managed by appropriate user defined element handlers (see 'handlers'
+help section).`
 }}},
 
+/*Handlers can set any properties to store any data, but some of them are reserved
+to defined element special behaviour. Those properties are:
+- 'cmd'. Last handler command to the controller, see 'handler' help section.
+- 'value'. Object element visible text data displayed in OV
+- 'image'. Object element file name displayed in OV as an image. 
+- 'alert'. Alert text to inform the user after 'SET' command, see 'handler' help section.
+- 'link'. 
+- 'location'. 
+- 'hint'. 
+- 'description'. 
+- 'style'. Object element visible text data css, see css documentation.*/
+
 "Object Selection": { profile: { element: { head:
-`Logical expression based on elements and its values is used to match the given object. Expression format:
-    (<id[ver]>|user|<string>[<operator>]..)..
-    id            Object element id (format $id) or its title (format $"my_title" or $'my_title').
-    user          Username/group selection function will be applied to.
-    string        Any text in double quotes. Single quotes interpret string as a regular expression.
-	          For case sensitive value use char '_' after quoted string. Additionally, this field
-		  first char '@' before the quoted string makes the system to retrieve text or regular
-		  expression from dialog box user input with the <string> text comment.
-		  Also no qouted predefined strings such as #user (determines username that selection
-		  function applying to) or #undef (id, ver or user/group does not exist; string of itself
-		  has false logical value) can be used.
-    operator  	  Compare operations: =  !=  ==  !==  =>  <=  <  >. Double char '==' construction means
-		  exact match, whereas single '=' matches "consists of" case.
-                  Element versions compare:  logical OR applied for default, char '&' before operator -
-		  logical AND applied. Element versions on both sides of the expression are compared
-		  one by one until the last match or one to any.
-                  Arithmetic operations: +  -  \  *. For digital operands only. All arithmetic operations
-		  on non digital operands leads to undefined result.
-                  String operations: Single point '.' concatenates strings.
-		  Logical operations: '!', 'AND', 'OR'.
-		  Link operations: 'uplink', 'downlink'. Selects appropriate object tree based on 'link'
-		  property (see appropriate tag) from the first matched object.
-       ver        Version expression is a logical expression in round brackets and without quotes (match
-    		  last selected object version), with single quotes (match first selected object version)
-		  or with double quotes (match all selected object versions). Format:
-		  (<id>|<string>|<operator> ..) ..
-		  Absent field or blank expression selects last available version, any digit value -
-		  exact version number.`
+`Object selection is a part of the sql query string that selects objects for the specified view.
+Let's have a quickly look to the object structure stored in database to select
+required objects effectively. Each object consists of next elements:
+- id. Object identificator.
+- lastversion. Element value can be 0 or 1 and indicates whether it is last object version or not. See 'version' field.
+- version. Indicates object version number started from '1' value, so new object has first version. 
+  After object any change, controller creates a new row with the changed object copy, increments its version and set lastversion flag to 1.
+  This mechanism allows to store every object version, so user can trace object data changing and find out when, how and who object is changed by.
+  Deleted objects are marked by zero version.
+- owner. The user this object version was created by.
+- datetime. Date and time object version was created at.
+- eid<element id>. JSON type user-defined (via element handlers) data.
+
+In case of empty string default object selection 'WHERE lastversion=1 AND version!=0'
+is applied. Default object selection selects all relevant (lastversion=1) and non deleted objects (version!=0).
+To select objects from database controller applies next query based on object selection string:
+'SELECT <element selection> FROM data_<OD id> <object selection>'
+This query format together with object structure provides effective selection of any sets
+of objects via powerful SQL capabilities!
+
+To make object selection process more flexible user can use some parameters in 
+object selection string. These parameters should start from char ':' and finsh with space.
+Parsed parameter name is set as a question (with chars '_' reaplced with spaces) in client side dialog box at the object view call.
+Object selection string example for 'Users' object database:
+'WHERE lastversion=1 AND version!=0 AND eid1->>'$.value'!=':Input_user'.
+That selection example OV call will display dialog to get input and pass it to the controller to build result query.`
+}}},
+
+"Element selection": { profile: { element: { head:
+`
+Element selection is a JSON strings list. Each JSON defines element and its behaviour (table cell position, style attribute, OV start event, etc..)
+JSON possible properties are:
+- 'x','y'. Appropriate table cell coordinates defined by expression that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects)
+- 'oid','eid'. Object id, element id this behaviour is applied to. Real object identificators starts from 3. Title object id is 2.
+  New object (cell to input text data for a new objects adding) id is 1. To match all real objects in the selection set oid property to 0.
+  Note that element id are user-defined elements with identificators started from 1
+  and built-in elements with identificators 'id', 'lastversion', 'version', 'owner' and 'datetime', see 'object selection' help section.
+  In case of undefined eid/oid - zero values are set. Both zero oid and eid defines behaviour for undefined cell, that has no any object element in.
+- 'event'. Mouse double click or key press emulation after OV call. Possible values are 'DBLCLICK' and 'KEYPRESS<key code>', see 'handler' help section.
+  Any other values - no event emulation, but cursor is set to the specified by 'x','y' props position anyway.
+- 'collpase'. This property presence with any value - set collapse flag to the table cell. Any table column/row with empty cell and collapse flag set for each - will be collapsed.
+- 'style'. HTML style attribute for specified element, see appropriate css documentaion.
+- 'tablestyle'. HTML style attribute for tag <table>, can be defined only with undefined cell (oid=0, eid=0).
+
+Let's parse 'All logs' OV element selection of 'Logs' database:
+{"eid":"id", "oid":"2", "x":"0", "y":"0"}
+{"eid":"id", "x":"0", "y":"n+1"}
+{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}
+{"eid":"datetime", "x":"1", "y":"n+1"}
+{"eid":"1", "oid":"2", "x":"2", "y":"0"}
+{"eid":"1", "x":"2", "y":"n+1"}
+
+First two JSONS display 'id' object element title (oid=2) and 'id' object element for real objects in the selection (oid=0). 
+Title cell for 'id' is positioned to the first table column (x=0) and first table row (y=0)
+Element 'id' for real objects is set to the  first column (x=0) and to the rows in order starting from second row (y=n+1).
+First object in the selection with n=0 is set to the second row (y=1), second object in the selection with n=1 is set to the third row (y=2) and so on.
+Similarly to the 'datetime' element and first user-defined element (eid=1) that consists of real system log data. See 'OV example' help section also.
+
+In addition to JSONS above, element selection could be set to one of next values:
+'' - Empty value selects all user-defined database elements and diplays them as a classic table with the title as a first row.
+'*' - One asterisk behaves like empty value with one exception - 'new object' input row is added to the table just right after title row.
+'**' - Two asterisks behaves like empty value, but built-in elements ('id', 'version', 'owner'..) are added.
+'***' - Three asterisks behaves like one asterisk, but built-in elements ('id', 'version', 'owner'..) are added.
+`
+}}},
+
+"Element handlers": { profile: { element: { head:
+`
+Element handler is any executable script or binary called by the contoller when specified event occurs.
+Events occur on user interaction with real object element (mouse double clicking or keypressing), adding
+new object, changing the object and other object processes:
+- KEYPRESS. Event occurs when the keyboard input is registered for letters, digits, space and non symbol keys: F2, F12, INS, DEL.
+- DBLCLICK. Left button mouse double click event.
+- CONFIRM. Event occurs when dialog box or cell content editable data returns to the handler to be confirmed after the user has finished dialog/edit process.
+- INIT. Event occurs when the new object has been created.
+- CHANGE. Event occurs after one of elements have been changed by handler command SET or RESET.
+- SCHEDULE. Event is generated by system scheduler.
+
+For any of events above specified element handler is called.
+Handler command line is defined in Object Database structure dialog (you can call it via appropriate context menu) on 'Element' tab.
+There are some command line arguments enclosed by '<>' - they are replaced by the service data:
+- <event>. Event name the handler is called on.
+- <user>. User name the event was initiated by. Arg is qouted automatically. 
+- <oid>. Object id the event was initiated on.
+- <title>. Element id title the event was initiated on. Arg is qouted automatically. 
+- <data>. Event data passed to the hanlder. Arg is qouted automatically. 
+  For KEYPRESS it will be JSON '{"string": <key char>, "code": <key code>}'. In case of text paste operation event KEYPRESS is generated, string property will be pasted text, code property - empty.
+  For INIT event <data> argument will be text in 'new object' table cells, for empty or undefined cells <data> arg value is ''.
+  For CONFIRM event after html element <td> editable content apply  - <data> argument is a string representing that content.
+  After dialog box apply - <data> argument is a JSON that represents dialog structure*
+  For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
+
+Besides all above user can pass any strings as an arguments, but since they are in JSON format the specified property of specified object element is retrieved.
+Format: {"ODid": "<OD id>", "OVid": "<OV id>", "oid": "<object id>", "eid": "<element id>", "prop": "<property name>"}
+Next argument example will retrieve object id=4 and element id=1 property "password" value stored in current object database: '{"oid": "4", "eid": "1", "prop": "password"}'.
+In case of ODid/OVid/oid/eid omitted, current ODid/OVid/oid/eid identificators are used, "prop" is mandatory, so empty string an is used as an arg in case of absent or nonexistent "prop".
+
+Since handlers want to make some actions they should output string in JSON format to stdout:
+- '{ "cmd": "EDIT", "data": "<text data>" }'. EDIT handler command makes element content editable.
+- '{ "cmd": "ALERT", "data": "<text data>" }'. Command output alert box on the client (browser).
+- '{ "cmd": "DIALOG", "data": <JSON dialog structure> }'. Command output dialog box on the client (browser).*
+- '{ "cmd": "CALL", "data": {"ODid": "", "OD": "", "OVid": "", "OV": "", "params": ""} }'. Command calls specified object database view.
+  In case OD/OV omitted current values are used. Property "params" is optional, its value is a JSON with object selection args list (as a properties) with its values. 
+  Absent object selection args in "params" JSON will be requested via dialog box.
+  Example: '{ "cmd": "CALL", "data": {"OD": "Users", "OV": "User", "params": {":Input_user": "root"} } }'.
+  Let OV 'User' of OD 'Users' have next object selection: WHERE lastversion=1 AND version!=0 AND eid1->>'$.value'=':Input_user'.
+  So example command above calls view 'User' that displays only root user object.
+  In case of absent "params" property - example call will dislpay dialog box to input user to select it from db.
+- '{ "cmd": "SET|RESET", .. }'. SET or RESET stores any JSON properties to the object database. RESET rewrites specified JSON instead current actual element JSON version, while SET adds specified properties to the current version only.
+  These two commands can write any props, but setting of some reserved props causes element specific behaviour:
+  - 'cmd'. SET or RESET.
+  - 'value'. Object element visible text data displayed in OV output.
+  - 'image'. Object element file name displayed in OV as an image. 
+  - 'alert'. Alert text to inform the user after object change via 'SET|RESET' commands.
+  - 'link'. 
+  - 'location'. 
+  - 'hint'. Element hint pops up after mouse cursor element navigation.
+  - 'description'. Description information displayed in info-box via appropriate context menu item select.
+  - 'style'. Object element visible text data css, see css documentation.
+  
+  Note that any non-JSON handler output doesn't cause an error, output data is set as a "value" property of element JSON, so handler command becomes look like that:
+  '{ "cmd": "SET", "value": "non-JSON output" }'
+  It is usefull for ordinary utils/scripts. For a example, using ping as a handler allows to store and display this diagnostic utility output.
+
+* JSON dialog structure:
+ '{ "title": "dialog box title",
+    "dialog": { "pad name1": { "profile name1": { "element name1": { "type": "select|multiple|checkbox|radio|textarea|password|text",
+								     "head": "<interface element head text>",
+								     "data": "<interface element initial data>",
+								     "help": "<help text displayed as a hint>",
+								     "line": "",
+								     "readonly": "",
+								   }
+						 "element name2": {}..
+						},
+			       "profile name2": {}..
+			     },
+		"pad name2": {}..
+	      }
+    "buttons": { "button text1": "", "button text2": "".. }, 
+    "flags": { "style": "dialog box content html style attribute",
+	       "pad": "active (current selected) dialog box pad (if exists)",
+	       "profile": "active (current selected) dialog box profile (if exist)",
+	       "display_single_pad": "display pad area flag",
+	       "display_single_profile": "display profile area flag",
+	     }
+ }'
+    
+JSON dialog structure is a nested JSONs which draw dialog box with its interface elements and specific behaviour:
+- "title" property is a dialog box text title, empty or undefined title - no box title area drawn.
+- "dialog" property is a dialog content of itself with pads, profiles for every pad and input interface elements for every profile.
+  Pads, profiles and element names are arbitrary. See OD structure dialog with pads and its profiles as an example.
+  Every profile is an input elements list. Each element must have one of the folowing types:
+  - select. Dropdown list with one possible option to select
+  - multiple. Dropdown list with more than one possible options to select
+  - radio|checkbox. HTML input tag with radio or checkbox type. Selects one or multiple options respectively.
+  - textarea. Multiple lines text input.
+  - text. Single line text input.
+  - password. Single line hidden text input.
+  "head" value is a text to be drawn in the upper element area.
+  "data" value is an initial text for text-input element types and options separated by '|' with selected option marked with '+' (example: "option1|+option2|option3|") for 'select' element types.
+  "help" value is a text to be drawn on element head 'question' button.
+  Any value "line" property draws shadowed line at the bottom element area.
+  Any value "readonly" property make input element to be read only.
+- "buttons" property is a JSON with property name is a button text. One property - one content bottom area button.
+  Property text value is a html style attribute applied for specified button element.
+  No first space char in that text destroys dialog with no action made (just like cancel button behaviour).
+  Only first space char also destroys dialog, but the controller is called on specified button click event with 'CONFIRM' as event name.
+  Two spaces at the begining of the possible style string are like 'one space char', but dialog box is not destroyed and remains on the client side.
+  Example: "buttons": {"OK": " background-color: green;", "CANCEL": "background-color: red;", "APPLY": "  "}.
+  Possibility to cancel the box is provided by ESC key for any dialog box.
+- "flags" property is a JSON with props to style dialog box.
+  Property "style" value is a dialog box content html style attribute inserted to the box content wrapper.
+  Property "pad" and "profile" values select active pad and profiles to be displayed after dialog call.
+  In case of single pad or/and profile its area can be shown or hidden via appropriate flags.
+`
+}}},
+
+"OV example": { profile: { element: { head:
+`
+Let's have a look to the chat like OV create example.
+First - create OD instance via sidebar context menu 'New Object Database'
+
+Second - create element for 'INIT' event with next handler command line: /usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php INIT <data>
+Handler text.php is a built-in script that implements text operation functions (much like excel cell :)
+
+Move on. Let's create view with next object selection 'WHERE lastversion=1 AND version!=0 ORDER BY id DESC'
+and next element selection:
+{"eid":"datetime", "x":"0", "y":"q-n-1"}
+{"eid":"owner", "x":"1", "y":"q-n-1"}
+{"eid":"1", "x":"2", "y":"q-n-1"}
+{"eid":"1", "oid":"1", "x":"2", "y":"q", "event":""}
+New message coordinates to be at the bottom equal 'q' - total objects (messages) count.
+Last message (but first message in query with n=0) goes one row above with y=q-n-1=q-0-1=q-1
+Second last (n=1) goes two rows above new message cell - y=q-n-1=q-1-1=q-2. And so on.
+
+Next - create object database rules (see 'Rules' tab in Object Database structure dialog).
+OD rule of itself is a part of sql query string to apply to the obejct instance before (pre-rule) and 
+after (post-rule) on specified operation (object add/delete/chagne), so in case of no operation specified - rule is ignored. 
+Controller check rules in alphabetical order and when a match is found, the action (accept or reject)
+corresponding to the matching rule is performed. The search terminates.
+Match case is successfull query select (at least one row selected) for both (pre and post) rules.
+Empty rule - no selection made, but selection is considered successfull, so both pre and post rules empty case causes a match case.
+Query format: SELECT * FROM data_<ODid> where id=<oid> AND version=<version_before|version_after> AND <pre-rule|post-rule>;
+For a kind of chat OV we should insert some rules. First OD rule - disallow empty messages, so the post-rule for operation 'Add object' should be:
+eid1->>'$.value'=''. Post-rule for 'add' operation type is ignored.
+Second OD rule - disallow to delete chat messages, so pre-rule for our case should be blank to match all objects.
+Pre-rule for 'delete' operation type is ignored (for 'change' type - both pre and post rules are checked).
+And Of course, for both our chat restrictions action is set to 'reject'.
+`
 }}},
 
 "Keyboard/Mouse": { profile: { element: { head:
@@ -1790,56 +1968,8 @@ handlers (see element element events section).`
   
 * will be available in a future releases`
 }}},
-
-"Element events": { profile: { element: { head:
-`Element events occur on user interaction with real object element on active table cell (mouse double clicking or keypressing), adding
-new object, changing the object and other object processes, see below. For any element event - specified element handler is called.
-Arguments for the handler, its command line name and other properties are defined in Object Database structure dialog (you can call it
-via appropriate context menu) on 'Element' tab. Handler arguments are set of JSON strings (one by line), one JSON - one element event.
-
-Incorrect JSON string or JSON with undefined event name property will be ignored. JSON format is:
-{"event": "<event name>", "data": "", "user": "", "oid": "", "title": "", "arg1": "<user or json string>", "arg2": "<user or json string>", ..}
-{"event": "<event name>", "arg1": "<user string | json string | {event|data|user|oid|title}>", "arg2": "---||---", ..}
-
-/*<data|user|oid|title>*/
-"event" - property is mandatory and represents element event names such as:
-    KEYPRESS (occurs when the keyboard input is registered for letters, digits, space and non symbol keys: F2, F12, INS, DEL),
-    DBLCLICK (left button mouse double click),
-    CONFIRM (callback event occurs when dialog box or cell content editable data returns to the handler to be confirmed after the user has finished dialog/edit process. Event is sent automatically if omitted),
-    INIT (occurs when the new object has been created for every element of that object),
-    CHANGE (occurs after one of elements has been changed by handler command SET or RESET, see handler answer commands below).
-"data" - this property is set automatically by the controller with specified event data.
-    For KEYPRESS it will be the key code or some text data in case of paste operation.
-    For INIT it will be new element cell text from OV new object table cells.
-    For CONFIRM it will be editable text data (as a result of EDIT handler answer command) or JSON fromat data (as a result of DIALOG handler answer command).
-    For two other events DBLCLICK and CHANGE this property is undefined.
-"user", "oid", "title" - are object id the specified event occurs on, user initiated the event and element header respectively.
-    Properties are set automatically by the controller. Two events (KEYPRESS, DBLCLICK) that can be emulated by scheduler are initiated by 'system' user.
-"arg1", "arg2".. - these properties are user defined properties. Its values with the props above act as arguments to pass to the
-    handler via next command line: <handler name> <event name> <event data> <user> <oid> <title> <arg1> <arg2> ..
-    <argN> are any user defined strings, but since they are in JSON format they are replaced by the value the JSON points to:
-    {"OD": "<OD name>", "OV": "<OV name>", "oid": "<object id>", "eid": "<element id>", "prop": "<property name>"}
-    Thus, these JSONs will be replaced  by the element JSON data property name ("prop") of object id ("oid") and element id
-    ("eid") of Object Database ("OD") and Object View ("OV"). In case of "OD", "OV", "oId" or "eId" omitted - current Object Database/View
-    and object/element id values are used. Property "prop" is mandatory, so empty string is used in case of absent or nonexistent "prop".
-
-Simple example - one of object Database (OD) consists of two elements: 'ip' (eid1) and 'ping' (eid2). User root wants to see the element1 ip address ping result by double clicking on element2 table cell.
-Handler name is 'ping.sh' and JSON event string is: {"event": "DBLCLICK", "arg1": '{"eid": "1", "prop": "value"}'}
-Therefore the command line to execute the handler is: ping.sh DBLCLICK '' root 1 'ping diagnostic' 'ip address'
-Script ping.sh may look like:
-#!/bin/sh
-$res = 'ping $6'
-echo '{"cmd": "SET", "cmd": ""}'`
-}}},
-
-"Handler commands": { profile: { element: { head:
-`To make controller prosess handler result data each handler should output JSON with next format:
-{"cmd": "<cmd name>", "data": "<event data>", "user": "", "oid": "", "title": "", "arg1": "<user or json string>", "arg2": "<user or json string>", ..}
-DIALOG - JSON string that calls dialog box on the client side with next format:
-`
-}}}
 },
 
 buttons: { "&nbsp;   OK   &nbsp;": "" },
-flags:   { esc: "", style: "min-width: 700px; min-height: 600px;" }
+flags:   { esc: "", style: "min-width: 700px; min-height: 600px; width: 860px; height: 720px;" }
 };

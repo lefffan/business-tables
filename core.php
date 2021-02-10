@@ -167,7 +167,7 @@ function initNewODDialogElements()
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'line' => '', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
-		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Uplink scheme|Downlink scheme|Graph|Piechart|Map|', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Uplink table|Downlink table|Uplink|Downlink|Graph|Piechart|Map|', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
 		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to display this view', 'data' => '', 'line' => ''],
@@ -179,7 +179,8 @@ function initNewODDialogElements()
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
 		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
-		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing']];
+		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
+		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']];
 }
 
 function GetSidebar($db, $userid, $ODid, $OVid, $OD, $OV)
@@ -579,20 +580,20 @@ function setElementSelectionIds(&$client)
  // |      | html table:     tablestyle      | x, y, style, collapse    	 | x, y, style				 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // |  1   | new object:     style     	     | new object:			 |		   -			 |
- // |      | 				     | x, y, style, startevent, _hint	 |					 |
+ // |      | 				     | x, y, style, event, _hint	 |					 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // |  2   | title object:   style           | title object:			 |		   -			 |
  // |      | 				     | x, y, style, _title, _hint	 |					 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // | 3..  | exact object:   style     	     | exact object: 			 | object service info:			 |
- // |      | 				     | x, y, style, startevent, collapse | x, y, style				 |
+ // |      | 				     | x, y, style, event, collapse	 | x, y, style				 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  
  
  foreach (preg_split("/\n/", $client['elementselection']) as $value)
       if ($arr = json_decode($value, true, 2))
 	 {
-	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'startevent', 'tablestyle']); // Retrieve correct values only
+	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'event', 'tablestyle']); // Retrieve correct values only
 	  if (!key_exists('eid', $arr)) $arr['eid'] = '0'; // Set 'eid' key default value to zero
 	  if (!key_exists('oid', $arr)) $arr['oid'] = '0'; // Set 'oid' key default value to zero
 
@@ -649,10 +650,10 @@ function setElementSelectionIds(&$client)
 			      }
 			  }
 		       break;
-		  default: // Parse all other numeric elements that defines styles, x-y coordinates, collapse capability and 'startevent' event for new, title, selection and exact objects
+		  default: // Parse all other numeric elements that defines styles, x-y coordinates, 'collapse' capability and 'event' event for new, title, selection and exact objects
 		       if (!key_exists($eid, $client['allelements'])) break;
-		       if (key_exists('startevent', $arr)) $props[$eid][$oid]['startevent'] = $arr['startevent'];
-		       if (gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
+		       if (key_exists('event', $arr)) $props[$eid][$oid]['event'] = $arr['event'];
+		       if (isset($arr['x'], $arr['y']) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
 		          {
 			   $props[$eid][$oid]['x'] = $arr['x'];
 			   $props[$eid][$oid]['y'] = $arr['y'];

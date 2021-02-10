@@ -1,33 +1,29 @@
---------------Janury 2021--------------------------------------------------------------
-- try chat (start event of oid=title|newobject navigates table to the this oid location automatically, at the new/delete object try to leave cursor on corresponded oid/eid)
-  alert only initiator cid after rule rejection as a SET command does
-- context menu NEWOBJECT -> ADD OBJECT
+--------------February 2021--------------------------------------------------------------
+esc
+log rule messages
 - help context menu for all help (conception, handler, keyboard/mouse..)
   Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
-
---------------February 2021--------------------------------------------------------------
-- Object process SCHEDULER. Handlers are executed by built-in system user.
+- Task manager and object process SCHEDULER. Handlers are executed by built-in system user.
 - System calls and its object views: LINK (+Element statistic, for a example, client list to warn by email, or client quantity)
+
+--------------March 2021--------------------------------------------------------------
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 - telnet function by SLAVA
 - snmp function by SLAVA?
 - diagnostic function by me
-  
---------------March 2021--------------------------------------------------------------
-- Object view PIECHART, GRAPH, LOCATION.
 - inner text in <td> can consists of <br>, <color> and <font> tags
 - firefox up/down and left/right arrows scroll page
 - multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
   single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
   User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
   User can copy an image to the cell?
+- Object view PIECHART, GRAPH, LOCATION.
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
 
 --------------Later or doubt features-------------------------------------------------
-- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div
+- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': ''
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
-- Set new object flag (for example small digit in red scope) before OD name and/or html page title
 - System call NEWOBJECT (to create object by user handlers)
 - Export OV data to xls, pdf or txt file
 - Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
@@ -44,7 +40,6 @@
 - Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
   should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
 - Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
-- Radio tag (and may be not only this  tag) is lose its positin after textarea tag in case of no 'line': ''
 - socket rate limit https://javascript.info/websocket#rate-limiting
   To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user?
 - Make OD/OV array that consists of socket indexes that every OV of every OD are subscribed of. It is just to have quicker access on OV change to serve big amount of connects
@@ -84,6 +79,7 @@
   In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
   Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
   see client mac, cable length, errors and all other data the switch allows to monitor
+- application customization: current view refreshat sidebar OV select will show 'loading..' and reload main div or not; autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
 ------------------------------------------------------------------------------------------
 
 
@@ -367,4 +363,28 @@ php ./makedb.php
 php ./main.php
 
 
+
 WHERE lastversion=1 AND version!=0 and eid2->>'$.value'!=':Input_user'
+
+
+
+OD chat:
+- 1 element with init handler: /usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php INIT <data>
+- object selection: WHERE lastversion=1 AND version!=0 ORDER BY id DESC
+- element selection: 
+{"eid":"datetime", "x":"0", "y":"q-n-1", "style": "border: none;"}
+{"eid":"owner", "x":"1", "y":"q-n-1", "style": "border: none;"}
+{"eid":"1", "x":"2", "y":"q-n-1", "style": "border: none;"}
+{"eid":"1", "oid":"1", "x":"2", "y":"q", "event":"", "style": "border: 1px solid;"}
+
+
+
+{"eid":"datetime", "x":"0", "y":"q-n-1", "tyle": "border: none;"}
+{"eid":"owner", "x":"1", "y":"q-n-1", "tyle": "border: none;"}
+{"eid":"1", "x":"2", "y":"q-n-1", "tyle": "border: none;"}
+{"eid":"1", "oid":"1", "x":"2", "y":"q", "event":"", "tyle": "border: 1px solid;"}
+
+
+
+- 'not empty msgs' reject post rule (for add oper): eid1->>'$.value'=''
+- 'not delete msgs' reject rule (for delete oper): both pre and post rules are empty

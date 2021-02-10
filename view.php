@@ -206,7 +206,7 @@ try {
 	     // Return OV refresh command to the client with object selection sql query result as a main field data
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
-	     $output = ['cmd' => 'DRAW', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props];
+	     $output = ['cmd' => 'DRAW', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']];
 	     break;
         case 'New Object Database':
 	     if (!Check($db, CHECK_ACCESS, $client, $client, $output)) break;
