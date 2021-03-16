@@ -8,9 +8,9 @@ function rmSQLinjectionChars($str) // Function removes dangerous chars such as: 
  return str_replace(';', '', str_replace('"', '', str_replace("'", '', str_replace("%", '', $str))));
 }
 
-function lg($arg, $title = 'LOG') // Function saves input $arg to error.log
+function lg($arg, $title = 'LOG', $echo = false) // Function saves input $arg to error.log and echo it
 {
- if (gettype($arg) === 'string')
+ if ($echo && gettype($arg) === 'string')
     {
      echo "\n----------------------------".$title." START-------------------------------\n";
      echo $arg;
@@ -154,29 +154,35 @@ function initNewODDialogElements()
 		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
 		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
 
- $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'line' => '', 'help' => 'To remove object element - set empty element header, description and handler file'],
+ $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element4' => ['type' => 'text', 'head' => "Command line to process 'mouse double click' event:", 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'text', 'head' => "Command line to process 'key press' event:", 'data' => '', 'line' => ''],
-		    'element6' => ['type' => 'text', 'head' => "Command line to process 'init' event:", 'data' => '', 'line' => ''],
-		    'element7' => ['type' => 'text', 'head' => "Command line to process 'confirm' event:", 'data' => '', 'line' => ''],
-		    'element8' => ['type' => 'text', 'head' => "Command line to process 'object change' event:", 'data' => '', 'line' => ''],
-		    'element9' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
+		    'element4' => ['type' => 'text', 'head' => "Command line to process 'init' event:", 'data' => ''],
+		    'element5' => ['type' => 'text', 'head' => "Command line to process 'mouse double click' event:", 'data' => ''],
+		    'element6' => ['type' => 'text', 'head' => "Command line to process 'key press' event:", 'data' => ''],
+		    'element7' => ['type' => 'text', 'head' => "Command line to process 'INS press' event:", 'data' => ''],
+		    'element8' => ['type' => 'text', 'head' => "Command line to process 'DEL press' event:", 'data' => ''],
+		    'element9' => ['type' => 'text', 'head' => "Command line to process 'F2 press' event:", 'data' => ''],
+		    'element10' => ['type' => 'text', 'head' => "Command line to process 'F12 press' event:", 'data' => ''],
+		    'element11' => ['type' => 'text', 'head' => "Command line to process 'confirm edit' event:", 'data' => ''],
+		    'element12' => ['type' => 'text', 'head' => "Command line to process 'confirm dialog' event:", 'data' => ''],
+		    'element13' => ['type' => 'text', 'head' => "Command line to process 'object change' event:", 'data' => '', 'line' => ''],
+		    'element14' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
 	
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'line' => '', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => '', 'line' => ''],
-		    'element4' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Uplink table|Downlink table|Uplink|Downlink|Graph|Piechart|Map|', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
-		    'element5' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
-		    'element6' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
-		    'element7' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to display this view', 'data' => '', 'line' => ''],
-		    'element8' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
-		    'element9' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view', 'data' => '', 'line' => '']];
+		    'element3' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => ''],
+		    'element5' => ['type' => 'text', 'head' => 'Object selection link type', 'data' => '', 'line' => ''],
+		    'element6' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
+		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to display this view', 'data' => '', 'line' => ''],
+		    'element9' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element10' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view', 'data' => '', 'line' => '']];
 							  
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "All actions shows up dialog box with rule message inside.<br>'Warning' action warns user and apply the changes.<br>'Reject' does the same, but cancels the changes with no chance to keep them.<br>'Confirm' asks wether keep it or reject."],
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action apply object changes, 'Reject' cancels."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
 		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
 		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
@@ -269,19 +275,23 @@ function Check($db, $flags, &$client, &$input, &$output)
  if ($flags & GET_VIEWS)
     {
      // Get view section
-     unset($client['elementselection']);
-     unset($client['objectselection']);
+     unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linktype']);
+     
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
      foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $value)
 	  if ($value['element1']['id'] === $client['OVid'])
     	     {
-	      $client['objectselection'] = trim($value['element3']['data']);
-	      $client['elementselection'] = trim($value['element5']['data']);
+	      $client['viewtype'] = substr($value['element3']['data'], ($pos = strpos($value['element3']['data'], '+')) + 1, strpos($value['element3']['data'], '|', $pos) - $pos -1);
+	      $client['objectselection'] = trim($value['element4']['data']);
+	      $client['linktype'] = $value['element5']['data'];
+	      $client['elementselection'] = trim($value['element6']['data']);
 	      break;
 	     }
-     if (!isset($client['elementselection'], $client['elementselection'])) { $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!"; return; }
-     // List is empty? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype'])) { $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!"; return; }
+
+     // List is empty or includes '*' chars for a 'Table' view? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+     if ($client['viewtype'] === 'Table')
      if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
         {
          $x = 0;
@@ -297,6 +307,21 @@ function Check($db, $flags, &$client, &$input, &$output)
 		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
 	          $x++;
 	    	 }
+	}
+
+     // List is empty for a 'Tree' view? Set up default list for all elements appearance: {'title1': '', 'value1': '', 'title2': ''..} 
+     if ($client['viewtype'] === 'Tree')
+     if ($client['elementselection'] === '')
+        {
+	 $client['elementselection'] = ['id' => '', 'datetime' => ''];
+	 foreach ($client['allelements'] as $id => $value) $client['elementselection'][$id] = '';
+	}
+      else
+        {
+	 $arr = [];
+	 foreach (preg_split("/\n/", $client['elementselection']) as $value)
+		 if (gettype($arr = json_decode($value, true, 2)) === 'array') break;
+	 gettype($arr) === 'array' ? $client['elementselection'] = $arr : $client['elementselection'] = [];
 	}
     }
 
@@ -342,9 +367,14 @@ function Check($db, $flags, &$client, &$input, &$output)
      case 'CALL':
      case 'DELETEOBJECT':
      case 'INIT':
-     case 'KEYPRESS':
      case 'DBLCLICK':
+     case 'KEYPRESS':
+     case 'INS':
+     case 'DEL':
+     case 'F2':
+     case 'F12':
      case 'CONFIRM':
+     case 'CONFIRMDIALOG':
 	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
 	  $query->execute();
 	  if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!"; return; }
@@ -354,25 +384,25 @@ function Check($db, $flags, &$client, &$input, &$output)
 	  $groups[] = $client['auth'];				// and add username at the end of array
 	  
 	  // Check on 'display' permissions
-	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
+	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element8']['data'])), "strcmp")))
 	     {
-	      if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
+	      if ($View['element7']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
 	     }
 	   else
 	     {
-	      if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
+	      if ($View['element7']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
 	     }
 	  // No need to check 'writable' permissions for displaying OV by CALL event
 	  if ($client['cmd'] === 'CALL') break;
 	  
 	  // Check on 'writable' permissions 
-	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp")))
+	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element10']['data'])), "strcmp")))
 	     {
-	      if ($View['element8']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
+	      if ($View['element9']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
 	     }
 	   else
 	     {
-	      if ($View['element8']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
+	      if ($View['element9']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
 	     }
 	  break;
     }
@@ -542,9 +572,11 @@ function ProcessRules($db, &$client, $preversion, $postversion, $operation)
 
 	  if (gettype($result = CheckRule($db, $client, trim($value['element6']['data']), $postversion)) === 'string') return ['action' => $action, 'message' => $result, 'log' => $result];
 	  if ($result === false) continue;
-
+	  
 	  // Rule match occured. Return its action
-	  return ['action' => $action, 'message' => $message];
+	  $output = ['action' => $action, 'message' => $message];
+	  if (substr($value['element7']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$message'"; // Log rule message in case of approprate checkbox is set
+	  return $output;
 	 }
 
  // Return default action
@@ -753,9 +785,12 @@ function getLoginDialogData()
 function LogMessage($db, &$client, $log)
 {
  $msg = '';
- if (isset($client['auth'])) $msg .= "['$client[auth]']";
- if (isset($client['OD']) && $client['OD'] != '') $msg .= "[OD '$client[OD]'] [OV '$client[OV]']";
- if ($msg != '') $msg .= ': ';
+ if (isset($client['auth'])) $msg .= "USER: '$client[auth]', ";
+ if (isset($client['OD']) && $client['OD'] != '') $msg .= "OD: '$client[OD]', OV: '$client[OV]', ";
+ if (isset($client['oId'])) $msg .= "OBJECT ID: '$client[oId]', ";
+ if (isset($client['eId'])) $msg .= "ELEMENT ID: '$client[eId]', ";
+
+ if ($msg != '') $msg = '[ '.substr($msg, 0, -2).' ] ';
  lg($msg .= $log);
 							                                                                                                           
  if (isset($client['auth'])) $_client['auth'] = $client['auth']; else $_client['auth'] = 'system';

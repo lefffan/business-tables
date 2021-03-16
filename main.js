@@ -1,15 +1,9 @@
 /*------------------------------VARIABLES------------------------------------*/
-let contextmenu, contextmenuDiv;
-let hint, hintDiv;
-let box = selectExpandedDiv = null, boxDiv, expandedDiv;
+let box = selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
 let loadTimerId, tooltipTimerId, undefinedcellRuleIndex, socket;
-let mainDiv, sidebarDiv, mainTablediv;
-let mainTable, mainTableWidth, mainTableHeight, objectTable;
-let user = cmd = OD = OV = ODid = OVid = '';
-let objectsOnThePage, paramsOV;
-let sidebar = {};
-let cursor = {};
-let oldcursor = {};
+let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
+let user = cmd = OD = OV = ODid = OVid = OVtype = '';
+let sidebar = {}, cursor = {}, oldcursor = {};
 /*------------------------------CONSTANTS------------------------------------*/
 const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
@@ -18,13 +12,16 @@ const STARTOBJECTID = 3;
 const DEFAULTOBJECTSPERPAGE = 50;
 const range = document.createRange();   
 const selection = window.getSelection();
-const mainObjectContext = '<div class="contextmenuItems">Add Object</div><div class="contextmenuItems">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
-const mainContext = '<div class="contextmenuItems">Add Object</div><div class="contextmenuItems greyContextMenuItem">Delete Object</div><div class="contextmenuItems">Description</div><div class="contextmenuItems">Help</div>';
-const sidebarOVContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems greyContextMenuItem">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
-const sidebarODContext = '<div class="contextmenuItems">New Object Database</div><div class="contextmenuItems">Edit Database Structure</div><div class="contextmenuItems">Help</div>';
+const GREYITEM = '<div class="contextmenuItems greyContextMenuItem">';
+const ACTIVEITEM = '<div class="contextmenuItems">';
+const BASECONTEXT = ACTIVEITEM + 'Help</div>';
+const CONTEXTITEMUSERNAMEMAXCHAR = 12;
 const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
 const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
 const keyExceptions = ['Editable content apply input key combination', 'target', 'effect' , 'filter' , 'Force to use next user customization (empty or non-existent user - option is ignored)' , 'mouseover hint timer in msec'];
+const TREETITLEMAXCHAR = 15;
+const TREEVALUEMAXCHAR = 60;
+const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values set no way to apply content editable changes by key combination." },
@@ -88,6 +85,13 @@ const uiProfile = {
 		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "tree table": { target: ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
+		  "tree error element": { target: ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
+		  "tree element": { target: ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
+		  "tree arrow stock": { target: ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "100px;", },
+		  "tree arrow down": { target: ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
+		  "tree arrow up": { target: ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
+		  "tree element description": { target: ".treelinkdescription", "display": "flex;", "flex": "1 10px;", "background-color": "transparent;", "border": "none;", "padding": "5px;", "font": "10px/11px arial;", "overflow": "hidden;", },
 		  };
 /*---------------------------------------------------------------------------*/
 
@@ -99,21 +103,21 @@ window.onload = function()
 {
  // Define document html and add appropriate event listeners for it
  document.body.innerHTML = '<div class="sidebar"></div><div class="main"></div><div class="contextmenu ' + uiProfile["context menu"]["effect"] + 'hide"></div><div class="hint ' + uiProfile["hint"]["effect"] + 'hide"></div><div class="box ' + uiProfile["dialog box"]["effect"] + 'hide"></div><div class="select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide"></div>';
- document.addEventListener('keydown', eventHandler);
- document.addEventListener('mousedown', eventHandler);
- document.addEventListener('contextmenu', eventHandler);
+ document.addEventListener('mousedown', MouseEventHandler);
+ document.addEventListener('keydown', KeyboardEventHandler);
+ document.addEventListener('contextmenu', ContextEventHandler);
  
  // Define sidebar div
  sidebarDiv = document.querySelector('.sidebar');
 
  // Define main field div and add 'scroll' event for it
  mainDiv = document.querySelector('.main');
- mainDiv.addEventListener('scroll', eventHandler);
+ mainDiv.addEventListener('scroll', () => { HideHint(); HideContextmenu(); });
  
  // Define context menu div and add some mouse events for it
  contextmenuDiv = document.querySelector('.contextmenu');
- contextmenuDiv.addEventListener('mouseover', eventHandler);
- contextmenuDiv.addEventListener('mouseout', eventHandler);
+ contextmenuDiv.addEventListener('mouseover', event => { if (event.target.classList.contains('contextmenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target); });
+ contextmenuDiv.addEventListener('mouseout', () => { SetContextmenuItem(null); });
 
  // Define interface divs 
  hintDiv = document.querySelector('.hint');
@@ -128,14 +132,14 @@ function CreateWebSocket()
 {
  socket = new WebSocket(SOCKETADDR);
  socket.onmessage = FromController;
- socket.onopen = CallController;
- socket.onerror = () => displayMainError("The server connection is down! Try again");
- socket.onclose = () => displayMainError("The server connection is down! Try again");
+ socket.onopen	= CallController;
+ socket.onclose = () => { HideBox(); HideHint(); displayMainError("The server connection is down! Try again") };
+ socket.onerror = () => socket.onclose();
 }
 
 function lg(...data)
 {
- data.forEach((value) => console.log(value));
+ data.forEach(value => console.log(value));
 }
 
 function loog(...data)
@@ -279,6 +283,7 @@ function drawMain(data, props)
  objectTable = {};
  mainTableWidth = mainTableHeight = 0;
  objectsOnThePage = q;
+ OVtype = 'Table';
  if (cursor.td && cursor.td.contentEditable === 'true')
     {
      cursor.td.contentEditable = 'false';
@@ -305,7 +310,7 @@ function drawMain(data, props)
 		 if (props[eid][oid]['event'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['event'].length > 8)
 		    {
 		     cursor.cmd = 'KEYPRESS';
-		     cursor.data = {string: props[eid][oid]['event'].substr(8), code: ''};
+		     cursor.data = props[eid][oid]['event'].substr(8);
 		    }
 		}
 	     break outer;
@@ -332,7 +337,7 @@ function drawMain(data, props)
  // Handle some errors
  if (!mainTableHeight)
     {
-     if (!warningtext) warningtext = `Specified view '${OV}' has no objects defined!<br>Please add some objects`;
+     if (!warningtext) warningtext = `Specified view '${OV}' has no objects matched current selection!<br>Please add some objects`;
      displayMainError(warningtext, false);
      return;
     }
@@ -385,9 +390,9 @@ function drawMain(data, props)
  mainTablediv = mainDiv.querySelector('table');
 
  // Add current view event listeners
- mainTablediv.addEventListener('dblclick', eventHandler);
- mainTablediv.addEventListener('mouseleave', eventHandler);
- mainTablediv.addEventListener('mousemove', eventHandler); 
+ mainTablediv.addEventListener('dblclick', MainDivEventHandler);
+ mainTablediv.addEventListener('mouseleave', MainDivEventHandler);
+ mainTablediv.addEventListener('mousemove', MainDivEventHandler); 
 
  // Focus element is not empty? Emulate mouse/keyboard start event!
  if (cursor.oId != undefined)
@@ -420,6 +425,120 @@ function drawMain(data, props)
  if (cursor.x) mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
 }
 
+function CalcTree(tree)
+{
+ if (!tree.link || !tree.link.length) return (tree['colspan'] = 1);
+
+ tree['colspan'] = 0;
+ for (let i in tree.link) tree['colspan'] += CalcTree(tree.link[i]);
+ return tree['colspan'];
+}
+
+function BuildTree(tree, y, x)
+{
+ if (!mainTable[y]) mainTable[y] = [];
+ mainTable[y][x] = { colspan: tree['colspan'], content: tree['content']};
+ tree['class'] ? mainTable[y][x]['class'] = ' class="' + tree['class'] + '"' : mainTable[y][x]['class'] = '';
+
+ if (tree.link && tree.link.length)
+    {
+     y++;
+     for (let i in tree.link) 
+         {
+          BuildTree(tree.link[i], y, x);
+	  x += tree.link[i]['colspan'];
+	 }
+    }
+}
+
+function DrawTree(tree, direction)
+{
+ let x, y, stockrow, arrowrow, objectrow, trs = '';
+
+ // Flush old data
+ mainTableRemoveEventListeners();
+ clearTimeout(loadTimerId);
+ 
+ // Calculate and build object tree
+ mainTable = [];
+ OVtype = 'Tree';
+ cursor = { ODid: ODid, OVid: OVid };
+ CalcTree(tree);
+ BuildTree(tree, 0, 0);
+
+ // Create html table of mainTable array
+ mainTableHeight = mainTable.length;
+ mainTableWidth = tree.colspan;
+ for (y = 0; y < mainTableHeight; y++)
+     {
+      x = 0;
+      stockrow = arrowrow = objectrow = '';
+      while (x < mainTable[y].length)
+	    {
+	     //----------------------
+	     stockrow += '<td';
+	     arrowrow += '<td';
+	     objectrow += '<td';
+	     //----------------------
+	     if (mainTable[y][x]['colspan'] > 1)
+	        {
+		 stockrow += ' colspan=' + mainTable[y][x]['colspan'];
+		 arrowrow += ' colspan=' + mainTable[y][x]['colspan'];
+		 objectrow += ' colspan=' + mainTable[y][x]['colspan'];
+		}
+	     //----------------------
+	     objectrow += mainTable[y][x]['class'] + '>' + GetTreeElementContent(mainTable[y][x]['content']) + '</td>';
+	     stockrow += '><div class="treelink"><div style="justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription"><span>' + (mainTable[y][x]['content'][0]?.['title'] ? mainTable[y][x]['content'][0]['title'] : "'&nbsp;&nbsp;'") + '</span></div><div class="treelinkstock"></div><div style="justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription">' + (mainTable[y][x]['content'][0]?.['value'] ? mainTable[y][x]['content'][0]['value'] : "'&nbsp;&nbsp;'") + '</div></div></td>';
+	     if (mainTable[y][x]['content'][1])
+	        {
+		 arrowrow += '><div class="treelink"><div style="' + (mainTable[y][x]['content'][1]['title'] === undefined ? 'color: red; ' : '');
+	         arrowrow += 'justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
+		 arrowrow += '<span>' + (mainTable[y][x]['content'][1]['title'] === undefined ? 'Unknown element:' : (mainTable[y][x]['content'][1]['title'] ? mainTable[y][x]['content'][1]['title'] : "'&nbsp;&nbsp;'")) + '</span></div>';
+		 arrowrow += '<div class="treelinkarrow' + direction + '"></div>';
+		 arrowrow += '<div style="' + (mainTable[y][x]['content'][1]['title'] === undefined ? 'color: red; ' : '');
+		 arrowrow += 'justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
+		 arrowrow += '<span>' + (mainTable[y][x]['content'][1]['title'] === undefined ? mainTable[y][x]['content'][1]['id'] : (mainTable[y][x]['content'][1]['value'] ? mainTable[y][x]['content'][1]['value'] : "'&nbsp;&nbsp;'")) + '</span></div></td>';
+		}
+	     //----------------------
+	     x += mainTable[y][x]['colspan'];
+	    }
+      if (direction === 'up')
+         {
+          if (y > 0) trs = '<tr>' + arrowrow + '</tr><tr>' + stockrow + '</tr>' + trs;
+          trs = '<tr>' + objectrow + '</tr>' + trs;
+	 }
+       else
+         {
+          if (y > 0) trs += '<tr>' + stockrow + '</tr><tr>' + arrowrow + '</tr>';
+          trs += '<tr>' + objectrow + '</tr>';
+	 }
+     }
+     
+ mainDiv.innerHTML = '<table class="treetable"><tbody>' + trs + '</tbody></table>';
+}
+
+function GetTreeElementContent(content)
+{
+ let add, data = '';
+
+ for (let i = 2; i < content.length; i++)
+     {
+      if (add = content[i]['title'])
+         {
+	  if (add.length > TREETITLEMAXCHAR) add = add.substr(0, TREETITLEMAXCHAR - 2) + '..';
+	  data += `<span class="underlined">${add}</span>: `;
+         }
+      if (add = content[i]['value'])
+         {
+	  if (add.length > TREEVALUEMAXCHAR && content[i]['title'] != undefined) add = add.substr(0, TREEVALUEMAXCHAR - 2) + '..';
+	  data += add;
+         }
+      data += '<br>';
+     }
+ 
+ return data;
+}
+
 function ElementStyleFetch(props, eid, oid, oe = {})
 {
  let style = '';
@@ -445,7 +564,7 @@ function MergeStyleRules(...styles)
  return resultStyle;
 }
 
-function eventHandler(event)
+function MainDivEventHandler(event)
 {
  switch (event.type)
 	{
@@ -465,360 +584,431 @@ function eventHandler(event)
 		 }
 	       else HideHint();
 	      break;
-	 case 'mouseover': // Mouse over non grey context menu item? Set current menu item to call appropriate menu action by 'enter' key
-	      if (event.target.classList.contains('contextmenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target);
+	 case 'dblclick':
+	      if (!box && event.target.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x])
+	      if (Number(mainTable[cursor.y][cursor.x].eId) > 0 && mainTable[cursor.y][cursor.x].realobject && (cmd = 'DBLCLICK')) CallController();
 	      break;
-	 case 'mouseout': // Mouse out if the context menu? Set current menu item to null
-	      SetContextmenuItem(null);
-	      break;
-	 case 'scroll':
-	      HideContextmenu();
-	      break;
-	 case 'contextmenu':
-	      //--------------Do nothing in case of dialog box or contextmenu event on context menu div area--------------
-	      if (event.target == contextmenuDiv || event.target.classList.contains('contextmenuItems') || box || (contextmenu && event.which != 3)) event.preventDefault();
-	      //--------------Is any element content editable? Apply changes in case of no event.target match--------------
-	       else if (cursor.td && cursor.td.contentEditable === 'true')
-	         {
-		  if (cursor.td != event.target)
+	}
+}
+
+function BoxEventHandler(event)
+{
+ // Dialog 'hint icon' event? Display element hint
+ if (event.target.classList.contains('help-icon'))
+    {
+     hint = { x: event.target.offsetLeft - event.target.scrollLeft + boxDiv.offsetLeft - boxDiv.scrollLeft + event.target.offsetWidth, y: event.target.offsetTop - event.target.scrollTop + boxDiv.offsetTop - boxDiv.scrollTop + event.target.offsetHeight };
+     ShowHint(box.dialog[box.flags.pad][box.flags.profile][event.target.attributes.name.value]["help"], hint.x, hint.y);
+     return;
+    }
+
+ // Any dialog button event? Non empty button property value calls controller, then hide box anyway
+ if (event.target.classList.contains('button'))
+ if (typeof box.buttons[event.target.innerHTML] === 'string' && box.buttons[event.target.innerHTML] != '' && box.buttons[event.target.innerHTML].charCodeAt(0) === 32)
+    {
+     box.buttons = { [event.target.innerHTML]: '' };
+     saveDialogProfile(); // Save dialog box content and send it to the controller
+     box['flags']?.['cmd'] ? cmd = box['flags']['cmd'] : cmd = 'CONFIRMDIALOG';
+     CallController(box);
+     HideBox();
+     return;
+    }
+  else 
+    {
+     if (box['flags']?.['cmd'] === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
+     HideBox();
+     return;
+    }
+
+ // Dialog expanded div mousedown event?
+ if (event.target.parentNode.classList && event.target.parentNode.classList.contains('expanded'))
+    {
+     if (selectExpandedDiv.firstChild.attributes.value.value != event.target.attributes.value.value) // Selected option differs from the current?
+     if (selectExpandedDiv.attributes.type.value === 'select-profile')	// Select element is a profile select?
+	{
+	 saveDialogProfile();
+	 box.flags.profile = event.target.innerHTML;		// Set event.target.innerHTML as a current profile
+	 ShowBox();						// Redraw dialog box
+	}
+      else // Selected element is usual option select? // Set selected option as a current
+	{
+	 selectExpandedDiv.innerHTML = '<div value="' + event.target.attributes.value.value + '">' + event.target.innerHTML + '</div>';
+	 box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"] = setOptionSelected(box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"], event.target.attributes.value.value);
+	}
+     expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide'; // Hide expanded div and break;
+     return;
+    }
+		 
+ // Dialog box select interface element mouse down event?
+ if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && (event.target.parentNode.attributes.name === undefined || box.dialog[box.flags.pad][box.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined))
+    {
+     switch (event.target.parentNode.attributes.type.value)
+	    {
+	     case 'select-profile':
+	     case 'select-one':
+		  if ((/hide$/).test(expandedDiv.classList[2]) === false) // Expanded div visible? Hide it.
 		     {
-		      event.preventDefault();
+		      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
+		      break;
+		     }
+		  let data, inner = '', count = 0;
+		  selectExpandedDiv = event.target.parentNode; // Set current select div that expanded div belongs to
+		  if (selectExpandedDiv.attributes.type.value === 'select-one') // Define expandedDiv innerHTML for usual select, otherwise for profile select
+		     {
+		      if (typeof (data = box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"]) === 'string')
+		      for (data of data.split('|'))
+			  //if (data.length > 0 && (data[0] != '+' || data.length > 1)) // Check non empty options
+			  if (data[0] == '+') inner += '<div class="selected" value="' + (count++) + '">' + data.substr(1) + '</div>'; // Current option
+			   else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
+		     }
+		   else
+		     {
+		      for (data in box.dialog[box.flags.pad]) if (typeof box.dialog[box.flags.pad][data] === "object")
+			  if (data === box.flags.profile) inner += '<div class="selected" value="' + (count++) + '">' + data + '</div>'; // Current option
+			   else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
+		     }
+		  expandedDiv.innerHTML  = inner; // Fill expandedDiv with innerHTML
+		  expandedDiv.style.top  = selectExpandedDiv.offsetTop + boxDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position
+		  expandedDiv.style.left = selectExpandedDiv.offsetLeft + boxDiv.offsetLeft + 'px'; // Place expandedDiv left position
+		  expandedDiv.className  = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'show'; // Show expandedDiv
+		  break;
+	     case 'select-multiple':
+		  event.target.classList.toggle("selected");
+		  break;
+	    }
+     return;
+    }
+		 
+ // Expanded div still visible and non expanded div mouse click?
+ if ((/show$/).test(expandedDiv.classList[2]) === true && !event.target.classList.contains('expanded'))
+    {
+     expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
+     return;
+    }
+    
+ // Non active pad is selected?
+ if (event.target.classList.contains('pad'))
+    {
+     saveDialogProfile();
+     box.flags.pad = event.target.innerHTML; // Set event.target.innerHTML as a current pad
+     ShowBox(); // Redraw dialog
+     return;
+    }
+}
+
+function ContextEventHandler(event)
+{
+ HideHint();
+
+ // Prevent default context menu while dialog box up, mouse click on already existed context menu or context key press
+ if (box || event.target == contextmenuDiv || event.target.classList.contains('contextmenuItems') || (contextmenu && event.which === 0))
+    {
+     event.preventDefault();
+     return;
+    }
+    
+ // Is cursor element content editable? Apply changes in case of no event.target match
+ if (cursor.td?.contentEditable === 'true')
+    {
+     if (cursor.td != event.target)
+	{
+	 event.preventDefault();
+	 cursor.td.contentEditable = 'false';
+	 if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
+	  else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+	 // Main field table cell click?
+	 if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(cursor.td, event.target);
+	}
+     return;
+    }
+
+ // Context event on wrap icon cell? Use next DOM element
+ let inner, target = event.target;                                             
+ if (event.target.classList.contains('wrap')) target = target.nextSibling;
+  else if (cursor.td && event.which === 0) target = cursor.td;
+ // Plus: event target is td.span, td.font or td.color?
+ 
+ if (target.classList.contains('sidebar-od')) inner = ACTIVEITEM + 'New Object Database</div>' + ACTIVEITEM + 'Edit Database Structure</div>'; // Context event on OD
+  else if (target.classList.contains('sidebar-ov') || target === sidebarDiv) inner = ACTIVEITEM + 'New Object Database</div>' + GREYITEM + 'Edit Database Structure</div>'; // Context event on OV
+  else switch (OVtype)
+    {
+     case 'Table':
+          if (target === mainDiv || target === mainTablediv) // Context event on main div with any OV displayed or on main table div in case od table edge click!
+	     {
+	      inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
+	      break;
+	     }
+	  if (target.tagName === 'TD')
+	     {
+	      CellBorderToggleSelect(cursor.td, target);
+	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) inner = ACTIVEITEM + 'Add Object</div>' + ACTIVEITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
+	       else inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
+	      break;
+	     }
+          break;
+     case 'Tree':
+          if (target === mainDiv || target === mainTablediv || target.tagName === 'TD') inner = GREYITEM + 'Hide Object</div>' + ACTIVEITEM + 'Description</div>';
+          break;
+    }
+    
+ if (inner != undefined)
+    {
+     event.preventDefault();
+     contextmenu = { item : null };
+     if (target.dataset?.odid) contextmenu.data = target.dataset.odid;
+
+     inner += BASECONTEXT;
+     user.length > CONTEXTITEMUSERNAMEMAXCHAR ? inner += ACTIVEITEM + 'Logout '+ user.substr(0, CONTEXTITEMUSERNAMEMAXCHAR - 2) + '..</div>' : inner += ACTIVEITEM + 'Logout '+ user + '</div>';
+     contextmenuDiv.innerHTML = inner;
+
+     // Context menu div left/top calculating
+     if (event.which === 0)
+        {
+	 target = cursor.td;
+	 const left = target.offsetLeft - mainDiv.scrollLeft;
+	 const top = target.offsetTop - mainDiv.scrollTop;
+	 if (!contextFitMainDiv(left + target.offsetWidth, top + target.offsetHeight) &&
+	     !contextFitMainDiv(left - contextmenuDiv.offsetWidth, top + target.offsetHeight) &&
+	     !contextFitMainDiv(left - contextmenuDiv.offsetWidth, top - contextmenuDiv.offsetHeight) &&
+	     !contextFitMainDiv(left + target.offsetWidth, top - contextmenuDiv.offsetHeight) &&
+	     !contextFitMainDiv(left + target.offsetWidth - contextmenuDiv.offsetWidth, top + target.offsetHeight) &&
+	     !contextFitMainDiv(left, top + target.offsetHeight) &&
+	     !contextFitMainDiv(left - contextmenuDiv.offsetWidth, top) &&
+	     !contextFitMainDiv(left, top - contextmenuDiv.offsetHeight) &&
+	     !contextFitMainDiv(left + target.offsetWidth, top))
+	    {
+	     contextmenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextmenuDiv.offsetWidth) + "px";
+	     contextmenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextmenuDiv.offsetHeight) + "px";
+	    }
+	}
+      else
+        {
+	 if (mainDiv.offsetWidth + mainDiv.offsetLeft > contextmenuDiv.offsetWidth + event.clientX) contextmenuDiv.style.left = event.clientX + "px";
+	  else contextmenuDiv.style.left = event.clientX - contextmenuDiv.clientWidth + "px";
+	 if (mainDiv.offsetHeight + mainDiv.offsetTop > contextmenuDiv.offsetHeight + event.clientY) contextmenuDiv.style.top = event.clientY + "px";
+	  else contextmenuDiv.style.top = event.clientY - contextmenuDiv.clientHeight + "px";
+	}
+     // Show context menu
+     contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'show';
+     return;
+    }
+ 
+ HideContextmenu();
+}
+
+function MouseEventHandler(event)
+{
+ HideHint();
+
+ // Return if mouse non left button click
+ if (event.which != 1) return;
+
+ // Dialog box is up? Process its mouse left button click
+ if (box)
+    {
+     BoxEventHandler(event);
+     return;
+    }
+
+ // Mouse clilck out of main field content editable table cell? Save cell inner html for a new element, otherwise send it to the controller
+ if (cursor.td?.contentEditable === 'true' && cursor.td != event.target)
+    {
+     if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
+      else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+     cursor.td.contentEditable = 'false';
+    }
+    
+ // Mouse click on context menu item? Call controller with appropriate context menu item as a command
+ if (event.target.classList.contains('contextmenuItems'))
+    {
+     cmd = event.target.innerHTML;
+     CallController(contextmenu.data);
+     HideContextmenu();
+     return;
+    }
+    
+ // Mouse click on grey menu item or on context menu? Do nothing and return, else hide context menu and go on
+ if (event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) return; 
+ HideContextmenu();
+    
+ // OD item (or its wrap icon before) mouse click? Wrap/unwrap OV list
+ let next = event.target;
+ if (event.target.classList.contains('wrap')) next = next.nextSibling;
+ if (next.classList.contains('sidebar-od'))
+    {
+     if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) return;
+     sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];
+     cmd = 'SIDEBAR';
+     CallController();
+     return;
+    }
+
+ // OV item (or its wrap icon before) mouse click? Open OV in main field
+ if (next.classList.contains('sidebar-ov'))
+    {
+     ODid = next.dataset.odid;
+     OVid = next.dataset.ovid;
+     OD = next.dataset.od;
+     OV = next.dataset.ov;
+     cmd = 'CALL';
+     displayMainError('Loading...', false);
+     CallController();
+     return;
+    }
+    
+ // Table type view mouse click event?
+ if (event.target.tagName == 'TD' && OVtype === 'Table')
+    {
+     CellBorderToggleSelect(cursor.td, event.target);
+     if (mainTable[cursor.y]?.[cursor.x] && cursor.td.contentEditable != 'true' && !isNaN(cursor.eId) && cursor.oId === NEWOBJECTID) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+     return;
+    }
+}		 
+		 
+function KeyboardEventHandler(event)
+{
+ HideHint();	      
+ switch (event.keyCode)
+	{
+	 case 36: //Home
+	      moveCursor(cursor.x, 0, true);
+	      break;
+	 case 35: //End
+	      moveCursor(cursor.x, mainTableHeight - 1, true);
+	      break;
+	 case 33: //PgUp
+	      moveCursor(cursor.x, Math.max(Math.trunc((mainDiv.scrollTop - 0.5*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), 0), true);
+	      break;
+	 case 34: //PgDown
+	      moveCursor(cursor.x, Math.min(Math.trunc((mainDiv.scrollTop + 1.7*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), mainTableHeight - 1), true);
+	      break;
+	 case 38: //Up
+	      SetContextmenuItem("UP");
+	      moveCursor(0, -1, false);
+	      break;
+	 case 40: //Down
+	      SetContextmenuItem("DOWN");
+	      moveCursor(0, 1, false);
+	      break;
+	 case 13: //Enter
+	      if (box)
+	         {
+		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
+		  for (let btn in box.buttons)
+		  if (box.buttons[btn][0] === ' ')
+		     {
+		      box.buttons = { [btn]: '' };
+		      saveDialogProfile(); // Save dialog box content and send it to the controller
+		      box.flags?.cmd ? cmd = box.flags.cmd : cmd = 'CONFIRMDIALOG';
+		      CallController(box);
+		      HideBox();
+		      break;
+		     }
+		  break;
+		 }
+	      if (contextmenu) 
+	         {
+		  if (contextmenu.item)
+		     {
+		      cmd = contextmenu.item.innerHTML;
+		      CallController(contextmenu.data);
+		      HideContextmenu();
+		     }
+		  break;
+		 }
+	      if (cursor.td?.contentEditable === 'true')
+		 {
+		  //--------------------
+		  let confirm;
+		  const combinationKey = uiProfile['application']['Editable content apply input key combination'];
+		  //--------------------
+		  if (event.altKey && combinationKey === 'Alt+Enter') confirm = true;
+		  if (event.ctrlKey && combinationKey === 'Ctrl+Enter') confirm = true;
+		  if (event.shiftKey && combinationKey === 'Shift+Enter') confirm = true;
+		  if (!event.altKey && !event.ctrlKey && !event.shiftKey && combinationKey === 'Enter') confirm = true;
+		  //--------------------		   
+		  if (confirm)
+		     {
 		      cursor.td.contentEditable = 'false';
-		      if (mainTable[cursor.y][cursor.x].oId == NEWOBJECTID)
-		         {
-			  mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-			 }
-		       else
-		         {
+		      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
+			 {
 			  cmd = 'CONFIRM';
 			  CallController(htmlCharsConvert(cursor.td.innerHTML));
 			 }
-		      // Main field table cell click?
-		      if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(cursor.td, event.target);
-		     }
-		 }
-	       else ShowContextmenu(event);
-	      break;
-	 case 'dblclick':
-	      if (!box && event.target.contentEditable != 'true')
-	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && Number(mainTable[cursor.y][cursor.x].eId) > 0 && mainTable[cursor.y][cursor.x].realobject)
-	      /*if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
-		 {
-	    	  cursor.td.contentEditable = 'true';
-		  cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
-		  event.target.innerHTML = cursor.olddata; // Fucking FF has bug inserting <br> to the empty content
-	    	  cursor.td.focus();
-		  event.preventDefault();
-		 }
-	       else if (mainTable[cursor.y][cursor.x].realobject)*/
-	    	 {
-		  cmd = 'DBLCLICK';
-		  CallController();
-		 }
-	      break;
-	 case 'mousedown':
-	      HideHint();
-	      if (event.which != 1) break;
-	      //--------------Dialog 'hint icon' event? Display element hint--------------
-	      if (event.target.classList.contains('help-icon'))
-	         {
-		  hint = { x: event.target.offsetLeft - event.target.scrollLeft + boxDiv.offsetLeft - boxDiv.scrollLeft + event.target.offsetWidth, y: event.target.offsetTop - event.target.scrollTop + boxDiv.offsetTop - boxDiv.scrollTop + event.target.offsetHeight };
-		  ShowHint(box.dialog[box.flags.pad][box.flags.profile][event.target.attributes.name.value]["help"], hint.x, hint.y);
-		  break;
-		 }
-	      //--------------Any dialog button event? Non empty button property value calls controller, then hide box anyway--------------
-	      if (event.target.classList.contains('button'))
-	         {
-		  if (!box) break;
-		  if (typeof box.buttons[event.target.innerHTML] === 'string' && box.buttons[event.target.innerHTML] != '' && box.buttons[event.target.innerHTML].charCodeAt(0) === 32)
-		     {
-		      box.buttons = {};
-		      box.buttons[event.target.innerHTML] = '';
-		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd']; else cmd = 'CONFIRM';
-		      CallController(box);
-		     }
-		   else if (box['flags'] && box['flags']['cmd'] === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
-		  HideBox();
-		  break;
-		 }
-	      //--------------Dialog expanded div mousedown event?--------------
-	      if (event.target.parentNode.classList && event.target.parentNode.classList.contains('expanded'))
-	         {
-		  if (selectExpandedDiv.firstChild.attributes.value.value != event.target.attributes.value.value) // Selected option differs from the current?
-		  if (selectExpandedDiv.attributes.type.value === 'select-profile')	// Select element is a profile select?
-		     {
-		      saveDialogProfile();
-		      box.flags.profile = event.target.innerHTML;		// Set event.target.innerHTML as a current profile
-		      ShowBox();						// Redraw dialog box
-		     }
-		   else // Select element is usual option select?
-		     {
-		      // Set selected option as a current
-		      selectExpandedDiv.innerHTML = '<div value="' + event.target.attributes.value.value + '">' + event.target.innerHTML + '</div>';
-		      box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"] = setOptionSelected(box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"], event.target.attributes.value.value);
-		     }
-		  // Hide expanded div and break;
-		  expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
-		  break;
-		 }
-	      //--------------Dialog box select interface element mouse down event?--------------
-	      if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && (event.target.parentNode.attributes.name === undefined || box.dialog[box.flags.pad][box.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined))
-	         {
-		  switch (event.target.parentNode.attributes.type.value)
+		       else
 			 {
-			  case 'select-profile':
-			  case 'select-one':
-			       if ((/hide$/).test(expandedDiv.classList[2]) === false) // Expanded div visible? Hide it.
-				  {
-				   expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
-				   break;
-				  }
-			       let data, inner = '', count = 0;
-			       selectExpandedDiv = event.target.parentNode; // Set current select div that expanded div belongs to
-			       if (selectExpandedDiv.attributes.type.value === 'select-one') // Define expandedDiv innerHTML for usual select, otherwise for profile select
-				  {
-			    	   if (typeof (data = box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"]) === 'string')
-				   for (data of data.split('|')) // Split data by '|'
-			    	   //if (data.length > 0 && (data[0] != '+' || data.length > 1)) // Check non empty options
-				   if (data[0] == '+') inner += '<div class="selected" value="' + (count++) + '">' + data.substr(1) + '</div>'; // Current option
-				    else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
-				  }
-				else
-				  {
-				   for (data in box.dialog[box.flags.pad]) if (typeof box.dialog[box.flags.pad][data] === "object")
-				   if (data === box.flags.profile) inner += '<div class="selected" value="' + (count++) + '">' + data + '</div>'; // Current option
-				    else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
-				  }
-			       expandedDiv.innerHTML  = inner; // Fill expandedDiv with innerHTML
-			       expandedDiv.style.top  = selectExpandedDiv.offsetTop + boxDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position
-			       expandedDiv.style.left = selectExpandedDiv.offsetLeft + boxDiv.offsetLeft + 'px'; // Place expandedDiv left position
-			       expandedDiv.className  = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'show'; // Show expandedDiv
-			       break;
-			  case 'select-multiple':
-			       event.target.classList.toggle("selected");
-			       break;
+			  mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+			  cmd = 'Add Object';
+			  CallController();
 			 }
+		      break;
+		     }
+		  //-------------------- 
+		  event.preventDefault();
+		  document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in FF
 		  break;
 		 }
-	      //--------------Expanded div still visible and non expanded div mouse click?--------------
-	      if ((/show$/).test(expandedDiv.classList[2]) === true && !event.target.classList.contains('expanded'))
-	         {
-		  expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
-		  break;
-		 }
-	      //--------------Non active pad is selected?--------------
-	      if (event.target.classList.contains('pad'))
+	      moveCursor(0, 1, false);
+	      break;
+	 case 37: //Left
+	      moveCursor(-1, 0, false);
+	      break;
+	 case 39: //Right
+	      moveCursor(1, 0, false);
+	      break;
+	 case 27: //Esc
+	      if (box)
 		 {
-		  saveDialogProfile();
-		  box.flags.pad = event.target.innerHTML; // Set event.target.innerHTML as a current pad
-		  ShowBox(); // Redraw dialog
+		  if ((/show$/).test(expandedDiv.classList[2])) // Expanded div visible? Hide it, otherwise hide dialog box
+		     {
+		      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
+		      break;
+		     }
+		  if (box.flags?.esc != undefined) // Box with esc flag set?
+		     {
+		      if (box.flags.cmd === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
+		      HideBox();
+		     }
 		  break;
 		 }
-	      //--------------Dialog box events are processed and mouse click on grey menu item or on context menu but not menu item? Break!----------
-	      if (box || event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) break;
-	      //--------------Mouse clilck out of main field content editable table cell? Save cell inner html as a new element, otherwise send it to the controller--------------
-	      if (cursor.td && cursor.td != event.target && cursor.td.contentEditable === 'true')
-		 {
-		  if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
-		   else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-		  cursor.td.contentEditable = 'false';
-		 }
-	     /***if (cursor && cursor.td && cursor.td != event.target && cursor.td.contentEditable === 'true')
-	     if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
-		 {
-		  cursor.td.contentEditable = 'false';
-		  mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-		  break;
-		 }
-	      else
+	      if (cursor.td?.contentEditable === 'true')
 		 {
 		  cursor.td.contentEditable = 'false';
-		  cmd = 'CONFIRM';
-		  CallController(htmlCharsConvert(cursor.td.innerHTML));
-		  break;
-		 }***/
-	      //--------------Mouse click on context menu item? Call controller with appropriate context menu item as a command--------------
-	      if (event.target.classList.contains('contextmenuItems'))
-		 {
-		  cmd = event.target.innerHTML;
-		  CallController(contextmenu.data);
-		  HideContextmenu();
+		  cursor.td.innerHTML = cursor.olddata;
 		  break;
 		 }
 	      HideContextmenu();
-	      //--------------OD item (or wrap icon before) mouse click? Wrap/unwrap OV list--------------
-	      let next = event.target;
-	      if (event.target.classList.contains('wrap')) next = next.nextSibling;
-	      if (next.classList.contains('sidebar-od'))
-		 {
-		  if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) break;
-		  sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];
-		  cmd = 'SIDEBAR';
-		  CallController();
-		  break;
-		 }
-	      //------------OV item (or wrap icon before) mouse click? Open OV in main field------------
-	      if (next.classList.contains('sidebar-ov'))
-		 {
-		  ODid = next.dataset.odid;
-		  OVid = next.dataset.ovid;
-		  OD = next.dataset.od;
-		  OV = next.dataset.ov;
-		  cmd = 'CALL';
-		  displayMainError('Loading...', false);
-		  CallController();
-		  break;
-		 }
-	      //--------------Mouse click on main field table?--------------
-	      if (event.target.tagName == 'TD')
+	      break;
+	 case 45: //Ins
+	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS')) CallController();
+	      break;
+	 case 46: //Del
+	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'DEL')) CallController();
+	       else mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
+	      break;
+	 case 113: //F2
+	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'F2')) CallController();
+	       else MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	      break;
+	 case 123: //F12
+	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'F12')) CallController();
+	      break;
+	 default: // space, letters, digits
+	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
 	         {
-		  CellBorderToggleSelect(cursor.td, event.target);
-		  if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && cursor.td.contentEditable != 'true')
-		  if (!isNaN(cursor.eId) && cursor.oId === NEWOBJECTID) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+		  if (event.ctrlKey == false && event.altKey == false && event.metaKey == false && rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE) && (cmd = 'KEYPRESS'))
+		     {
+		      CallController(event.key); // Was: CallController({string: event.key, code: event.keyCode});
+		      // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
+		      if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
+		     }
 		 }
-	      break;
-	 case 'keydown':
-	      if (box && event.which === 13 && event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
-	         for (let btn in box.buttons) if (box.buttons[btn][0] === ' ')
-		     {
-		      box.buttons = {};
-		      box.buttons[btn] = '';
-		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      if (box['flags'] && box['flags']['cmd']) cmd = box['flags']['cmd']; else cmd = 'CONFIRM';                                             
-		      CallController(box);
-		      HideBox();
-		      return;
-		     }
-
-	      HideHint();
-	      if ((box && event.which != 27) || (cursor.td != undefined && cursor.td.contentEditable === 'true' && event.which != 27 && event.which != 13)) break;
-	      switch (event.which)
-		     {
-		      case 36: //Home
-		           moveCursor(cursor.x, 0, true);
-			   break;
-		      case 35: //End
-		           moveCursor(cursor.x, mainTableHeight - 1, true);
-			   break;
-		      case 33: //PgUp
-			   moveCursor(cursor.x, Math.max(Math.trunc((mainDiv.scrollTop - 0.5*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), 0), true);
-			   break;
-		      case 34: //PgDown
-		           moveCursor(cursor.x, Math.min(Math.trunc((mainDiv.scrollTop + 1.7*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), mainTableHeight - 1), true);
-			   break;
-		      case 38: //Up
-			   SetContextmenuItem("UP");
-			   moveCursor(0, -1, false);
-			   break;
-		      case 40: //Down
-			   SetContextmenuItem("DOWN");
-			   moveCursor(0, 1, false);
-			   break;
-		      case 13: //Enter
-		           if (!contextmenu) // If context menu is not active, try to move cursor down
-			      {
-			       if (cursor.td != undefined && cursor.td.contentEditable === 'true')
-			          {
-				   // --------------------
-				   let confirm = false;
-				   const combinationKey = uiProfile['application']['Editable content apply input key combination'];
-				   if ((event.altKey && combinationKey === 'Alt+Enter') || (event.ctrlKey && combinationKey === 'Ctrl+Enter') || (event.shiftKey && combinationKey === 'Shift+Enter')) confirm = true;
-				   if (!event.altKey && !event.ctrlKey && !event.shiftKey && combinationKey === 'Enter') confirm = true;
-				   
-				   if (confirm)
-				      {
-				       cursor.td.contentEditable = 'false';
-				       if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
-					  {
-					   cmd = 'CONFIRM';
-					   CallController(htmlCharsConvert(cursor.td.innerHTML));
-					  }
-					else
-					  {
-					   mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-					   cmd = 'Add Object';
-					   CallController();
-					  }
-				       break;
-				      }
-				   // -------------------- 
-				   event.preventDefault();
-				   document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in FF
-				  }
-			       else moveCursor(0, 1, false);
-			      }
-			    else if (contextmenu.item) // If context menu item is active
-			      {
-			       cmd = contextmenu.item.innerHTML;
-			       CallController(contextmenu.data);
-			       HideContextmenu();
-			      }
-			   break;
-		      case 37: //Left
-		           moveCursor(-1, 0, false);
-			   break;
-		      case 39: //Right
-		           moveCursor(1, 0, false);
-			   break;
-		      case 27: //Esc
-		           if (box && box.flags.esc != undefined) // Any modal with esc flag set?
-			      {
-			       // Expanded div visible? Hide it, otherwise hide dialog box
-			       if ((/show$/).test(expandedDiv.classList[2]) != true)
-			          {
-				   if (box['flags'] && box['flags']['cmd'] === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
-				   HideBox();
-				   break;
-				  }
-			       expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
-			       break;
-			      }
-			   if (cursor.td != undefined && cursor.td.contentEditable === 'true')
-			      {
-			       cursor.td.contentEditable = 'false';
-			       cursor.td.innerHTML = cursor.olddata;
-			       break;
-			      }
-			   HideContextmenu();
-			   break;
-		      case 46: //Del
-		           if (cursor.td && cursor.td.contentEditable != 'true' && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].oId === 1)
-			      {
-			       mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
-			       break;
-			      }
-		      /*default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
-		    	   if (cursor.td && cursor.td.contentEditable != 'true')
-			   if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject && Number(mainTable[cursor.y][cursor.x].eId) > 0)
-			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
-		           if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
-			      {
-			       cmd = 'KEYPRESS';
-			       CallController({string: event.key, code: event.keyCode});
-			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
-			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
-			      }*/
-		      default: // space, letters, digits, plus functional keys: F2 (113), F12 (123), INS (45), DEL (46)
-		    	   if (!cursor.td || cursor.td.contentEditable === 'true' || !mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId)) break;
-
-			   if (cursor.oId === 1)
-			      {
-			       MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
-			       break;
-			      }
-			      
-			   if (mainTable[cursor.y][cursor.x].realobject)
-			   if (event.ctrlKey == false && event.altKey == false && event.metaKey == false)
-			   if (rangeTest(event.keyCode, [113,113,123,123,45,46,65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226]))
-			      {
-			       cmd = 'KEYPRESS';
-			       CallController({string: event.key, code: event.keyCode});
-			       // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
-			       if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
-			      }
-		     }
-	      break;
+	       else
+	         {
+		  MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+		 }
 	}
 }
 
@@ -888,9 +1078,12 @@ function FromController(json)
 	 case 'Edit Database Structure':
 	      Hujax("view.php", FromController, input.data);
 	      break;
-	 case 'DRAW':
+	 case 'Table':
 	      paramsOV = input.params;
 	      drawMain(input.data, input.props);
+	      break;
+	 case 'Tree':
+	      DrawTree(input.tree, input.direction);
 	      break;
 	 case '':
 	      break;
@@ -974,8 +1167,13 @@ function CallController(data)
 	      break;
 	 case 'LOGIN':
 	 case 'CONFIRM':
+	 case 'CONFIRMDIALOG':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
+	 case 'INS':
+	 case 'DEL':
+	 case 'F2':
+	 case 'F12':
 	      object = { "cmd": cmd };
 	      if (cursor.td && mainTable[cursor.y] && mainTable[cursor.y][cursor.x])
 	         {
@@ -1009,7 +1207,6 @@ function CallController(data)
 
 function displayMainError(errormsg, resetOV = true)
 {
- //lg(errormsg);
  clearTimeout(loadTimerId);
 
  if (errormsg.substr(0, 7) === 'Loading') 
@@ -1022,7 +1219,7 @@ function displayMainError(errormsg, resetOV = true)
 
  if (resetOV)
     {
-     OD = OV = ODid = OVid = '';
+     OD = OV = ODid = OVid = OVtype = '';
      mainTableRemoveEventListeners();
     }
 }
@@ -1031,9 +1228,9 @@ function mainTableRemoveEventListeners()
 {
  if (mainTablediv)
     {
-     mainTablediv.removeEventListener('dblclick', eventHandler);
-     mainTablediv.removeEventListener('mouseleave', eventHandler);
-     mainTablediv.removeEventListener('mousemove', eventHandler); 
+     mainTablediv.removeEventListener('dblclick', MainDivEventHandler);
+     mainTablediv.removeEventListener('mouseleave', MainDivEventHandler);
+     mainTablediv.removeEventListener('mousemove', MainDivEventHandler); 
     }
 }
 
@@ -1089,7 +1286,7 @@ function contextFitMainDiv(x, y)
 
 function moveCursor(x, y, abs)
 {
- if (!cursor.td || cursor.td.contentEditable === 'true' || contextmenu || (abs && cursor.x == x && cursor.y == y)) return;
+ if (box || !cursor.td || cursor.td.contentEditable === 'true' || contextmenu || (abs && cursor.x == x && cursor.y == y)) return;
  
  let a, b, newTD;
  if (abs)
@@ -1502,76 +1699,6 @@ function collapseMainTable(undefinedCellCollapse) // Function removes collapse f
        }
 }
 
-function ShowContextmenu(event)
-{
- let innerHTML, data;
- 
- // Context event on wrap icon cell with OD item? Display OD context menu
- if (event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-od'))
-    {
-     innerHTML = sidebarODContext;
-     data = event.target.nextSibling.dataset.odid;
-    }
- // Context event on OD item? Display OD context menu
-  else if (event.target.classList.contains('sidebar-od'))
-    { 
-     innerHTML = sidebarODContext;
-     data = event.target.dataset.odid;
-    }
- // Context event on OV item, on wrap icon cell with OV item or on sidebar empty area? Display OV context menu
-  else if ((event.target.classList.contains('wrap') && event.target.nextSibling.classList.contains('sidebar-ov')) || event.target.classList.contains('sidebar-ov') || event.target.classList.contains('sidebar')) innerHTML = sidebarOVContext;
- // Application context menu on main field empty area? Display mainContext context menu
-  else if ((event.target === mainDiv && OV != '') || event.target === mainTablediv) innerHTML = mainContext;
- // Application context menu on main field table or has been generated by keyboard (event.which != 3) and any element is selected? Display appropriate context menu
-  else if (event.target.tagName === 'TD' || (cursor.td != undefined && event.which != 3))
-    {
-     if (event.target.tagName === 'TD') CellBorderToggleSelect(cursor.td, event.target);
-     if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject) innerHTML = mainObjectContext;
-      else innerHTML = mainContext;
-    }
-    
- if (innerHTML != undefined)
-    {
-     if (user.length > 12) innerHTML += '<div class="contextmenuItems">Logout '+ user.substr(0, 10) +'..</div>';
-      else innerHTML += '<div class="contextmenuItems">Logout '+ user +'</div>';
-     event.preventDefault();
-     contextmenuDiv.innerHTML = innerHTML;
-     contextmenu = { item : null };
-     if (data) contextmenu.data = data;
-     // Context menu div left/top calculating
-     if (event.which != 3)
-        {
-	 data = cursor.td;
-	 if (!contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft, data.offsetTop - mainDiv.scrollTop + data.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft - contextmenuDiv.offsetWidth, data.offsetTop - mainDiv.scrollTop) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft, data.offsetTop - mainDiv.scrollTop - contextmenuDiv.offsetHeight) &&
-	     !contextFitMainDiv(data.offsetLeft - mainDiv.scrollLeft + data.offsetWidth, data.offsetTop - mainDiv.scrollTop))
-	    {
-	     contextmenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextmenuDiv.offsetWidth) + "px";
-	     contextmenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextmenuDiv.offsetHeight) + "px";
-	    }
-	}
-      else
-        {
-	 if (mainDiv.offsetWidth + mainDiv.offsetLeft > contextmenuDiv.offsetWidth + event.clientX) contextmenuDiv.style.left = event.clientX + "px";
-	  else contextmenuDiv.style.left = event.clientX - contextmenuDiv.clientWidth + "px";
-	 if (mainDiv.offsetHeight + mainDiv.offsetTop > contextmenuDiv.offsetHeight + event.clientY) contextmenuDiv.style.top = event.clientY + "px";
-	  else contextmenuDiv.style.top = event.clientY - contextmenuDiv.clientHeight + "px";
-	}
-     // Show context menu
-     contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'show';
-    }
-  else
-    {
-     HideContextmenu();
-    }
-}
-
 function HideContextmenu()
 {
  if (contextmenu)
@@ -1695,14 +1822,14 @@ function styleUI()
      }
  style.innerHTML = inner;
  
- //lg(JSON.stringify(uiProfile).replace(/'/g, "\\'")); // Output uiProfile array to te console to use it as a default customization configuration
+ //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);"); // Output uiProfile array to te console to use it as a default customization configuration
 }
 
 const help = { title: 'Help', dialog: {
 
 "System description": { profile: { element: { head:
 `Tabels application is a set of custom data tables the user can interact many different ways.
-Every table consists of identical objects, which, in turn, are set of user defined elements.
+Every table consists of identical objects, which, in turn, are set of bult-in and user defined elements.
 Table data of itself is called Object Database (OD) and can be changed or created by
 appropriate sidebar context menu. OD contains Object Views (OV). Views define what objects
 (via 'object selection', see appropriate help section) and elements (via 'element selection',
@@ -1713,22 +1840,15 @@ generated by binded to elements appropriate handlers. Simple OV is a classic tab
 object list in 'y' order and its elements in 'x' order, so Object Database is similar to
 any SQL database, where objects are rows and elements are its fields.
 
-Element data represents itself JSON data type and stored in SQL database with that type.
-Element JSON data can be managed by appropriate user defined element handlers (see 'handlers'
+As it was mentioned above each object is a ste of bult-in and user defined elements.
+Bult-in elements represent service data which is set automatically:
+-id 
+-user
+..
+User defined element represents itself JSON data type and stored in SQL database with that type.
+Each element JSON data can be managed by appropriate user defined element handlers (see 'handlers'
 help section).`
 }}},
-
-/*Handlers can set any properties to store any data, but some of them are reserved
-to defined element special behaviour. Those properties are:
-- 'cmd'. Last handler command to the controller, see 'handler' help section.
-- 'value'. Object element visible text data displayed in OV
-- 'image'. Object element file name displayed in OV as an image. 
-- 'alert'. Alert text to inform the user after 'SET' command, see 'handler' help section.
-- 'link'. 
-- 'location'. 
-- 'hint'. 
-- 'description'. 
-- 'style'. Object element visible text data css, see css documentation.*/
 
 "Object Selection": { profile: { element: { head:
 `Object selection is a part of the sql query string that selects objects for the specified view.
@@ -1769,7 +1889,7 @@ JSON possible properties are:
   Note that element id are user-defined elements with identificators started from 1
   and built-in elements with identificators 'id', 'lastversion', 'version', 'owner' and 'datetime', see 'object selection' help section.
   In case of undefined eid/oid - zero values are set. Both zero oid and eid defines behaviour for undefined cell, that has no any object element in.
-- 'event'. Mouse double click or key press emulation after OV call. Possible values are 'DBLCLICK' and 'KEYPRESS<key code>', see 'handler' help section.
+- 'event'. Mouse double click or key press emulation after OV call. Possible values are 'DBLCLICK' and 'KEYPRESS<any_string>', see 'handler' help section.
   Any other values - no event emulation, but cursor is set to the specified by 'x','y' props position anyway.
 - 'collpase'. This property presence with any value - set collapse flag to the table cell. Any table column/row with empty cell and collapse flag set for each - will be collapsed.
 - 'style'. HTML style attribute for specified element, see appropriate css documentaion.
@@ -1802,9 +1922,11 @@ In addition to JSONS above, element selection could be set to one of next values
 Element handler is any executable script or binary called by the contoller when specified event occurs.
 Events occur on user interaction with real object element (mouse double clicking or keypressing), adding
 new object, changing the object and other object processes:
-- KEYPRESS. Event occurs when the keyboard input is registered for letters, digits, space and non symbol keys: F2, F12, INS, DEL.
+- KEYPRESS. Event occurs when keyboard input for letters, digits and space is registered.
+- INS,DEL,F2,F12. Event occurs when keyboard input for appropriate non symbol keys is registered.
 - DBLCLICK. Left button mouse double click event.
-- CONFIRM. Event occurs when dialog box or cell content editable data returns to the handler to be confirmed after the user has finished dialog/edit process.
+- CONFIRM. Event occurs when cell content editable data returns to the handler to be confirmed after the user has applied editable content.
+- CONFIRMDIALOG. Event occurs when dialog box data returns to the handler to be confirmed after the user has applied dialog.
 - INIT. Event occurs when the new object has been created.
 - CHANGE. Event occurs after one of elements have been changed by handler command SET or RESET.
 - SCHEDULE. Event is generated by system scheduler.
@@ -1817,10 +1939,10 @@ There are some command line arguments enclosed by '<>' - they are replaced by th
 - <oid>. Object id the event was initiated on.
 - <title>. Element id title the event was initiated on. Arg is qouted automatically. 
 - <data>. Event data passed to the hanlder. Arg is qouted automatically. 
-  For KEYPRESS it will be JSON '{"string": <key char>, "code": <key code>}'. In case of text paste operation event KEYPRESS is generated, string property will be pasted text, code property - empty.
+  For KEYPRESS it will be key char. In case of text paste operation - KEYPRESS event is also generated and <data> arg will be the pasted text.
   For INIT event <data> argument will be text in 'new object' table cells, for empty or undefined cells <data> arg value is ''.
-  For CONFIRM event after html element <td> editable content apply  - <data> argument is a string representing that content.
-  After dialog box apply - <data> argument is a JSON that represents dialog structure*
+  For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
+  For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
   For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
 
 Besides all above user can pass any strings as an arguments, but since they are in JSON format the specified property of specified object element is retrieved.
@@ -1898,7 +2020,7 @@ JSON dialog structure is a nested JSONs which draw dialog box with its interface
 - "buttons" property is a JSON with property name is a button text. One property - one content bottom area button.
   Property text value is a html style attribute applied for specified button element.
   No first space char in that text destroys dialog with no action made (just like cancel button behaviour).
-  Only first space char also destroys dialog, but the controller is called on specified button click event with 'CONFIRM' as event name.
+  Staring one space char also destroys dialog, but the controller is called on specified button click event with 'CONFIRMDIALOG' as event name.
   Two spaces at the begining of the possible style string are like 'one space char', but dialog box is not destroyed and remains on the client side.
   Example: "buttons": {"OK": " background-color: green;", "CANCEL": "background-color: red;", "APPLY": "  "}.
   Possibility to cancel the box is provided by ESC key for any dialog box.
@@ -1929,16 +2051,16 @@ Second last (n=1) goes two rows above new message cell - y=q-n-1=q-1-1=q-2. And 
 
 Next - create object database rules (see 'Rules' tab in Object Database structure dialog).
 OD rule of itself is a part of sql query string to apply to the obejct instance before (pre-rule) and 
-after (post-rule) on specified operation (object add/delete/chagne), so in case of no operation specified - rule is ignored. 
-Controller check rules in alphabetical order and when a match is found, the action (accept or reject)
-corresponding to the matching rule is performed. The search terminates.
-Match case is successfull query select (at least one row selected) for both (pre and post) rules.
+after (post-rule) specified operation (object add/delete/chagne), so in case of no operation specified - post and pre rules are ignored. 
+Controller check rules in rule names alphabetical order and when a match is found, the action (accept or reject)
+corresponding to the matching rule is performed. The search terminates. No any rule match - default action (accept) is applied.
+Match case occurs at successfull query select (at least one row selected) for both pre and post rules.
 Empty rule - no selection made, but selection is considered successfull, so both pre and post rules empty case causes a match case.
 Query format: SELECT * FROM data_<ODid> where id=<oid> AND version=<version_before|version_after> AND <pre-rule|post-rule>;
-For a kind of chat OV we should insert some rules. First OD rule - disallow empty messages, so the post-rule for operation 'Add object' should be:
-eid1->>'$.value'=''. Post-rule for 'add' operation type is ignored.
+For a kind of chat OV some rules needed. First - disallow empty messages, so the post-rule for operation 'Add object' should be:
+eid1->>'$.value'=''. Pre-rule for 'add' operation type is ignored.
 Second OD rule - disallow to delete chat messages, so pre-rule for our case should be blank to match all objects.
-Pre-rule for 'delete' operation type is ignored (for 'change' type - both pre and post rules are checked).
+Post-rule for 'delete' operation type is ignored (for 'change' operation type - both pre and post rules are checked).
 And Of course, for both our chat restrictions action is set to 'reject'.
 `
 }}},
@@ -1949,7 +2071,7 @@ And Of course, for both our chat restrictions action is set to 'reject'.
   - CTRL with Home/End key set table cursor to the upper/lower end of the table
   - CTRL+C or CTRL+INS copy element text data to clipboard*
   - CTRL+Shift+C or CTRL+Shift+INS copy current object to clipboard*
-  - CTRL+V pastes text data to the current via 'KEYPRESS' event (see event section help) or
+  - CTRL+V pastes text data to the current via 'KEYPRESS' event (see handler section help) or
     clones clipboard object*
   - CTRL+Shift+F search on user input regular expression among current view object elements
   - CTRL+Z/Y usual undo actions are not implemented int the system, cos it is hard to undo element

@@ -59,6 +59,7 @@ function ParseHandlerResult($db, &$output, &$client)
 		 }
 	      if ($client['ODid'] != '1' || ($client['eId'] != '1' && $client['eId'] != '6')) if (isset($output['data']['flags']['cmd'])) unset($output['data']['flags']['cmd']);
 	      cutKeys($output, ['cmd', 'data']);
+	      $output['data']['flags']['esc'] = '';
 	      break;
 	 case 'CALL':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
@@ -122,7 +123,7 @@ function WriteElement($db, &$client, &$output, $version)
 
 function GetCMD($db, &$client)
 {
- $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'DBLCLICK', '5'=>'KEYPRESS', '6'=>'INIT', '7'=>'CONFIRM', '8'=>'CHANGE'])]['data']);
+ $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE'])]['data']);
  if (!($len = strlen($cmdline))) return '';
  $i = -1;
  $newcmdline = '';
@@ -141,12 +142,13 @@ function GetCMD($db, &$client)
 	    	       }
 		    break;
     	       case "<":
-    		    if (($j = strpos($cmdline, '>', $i + 1)) !== false && (($match = substr($cmdline, $i + 1, $j - $i - 1)) === 'data' || $match === 'user' || $match === 'oid' || $match === 'title')) // Check for <data|user|oid|title> match
+    		    if (($j = strpos($cmdline, '>', $i + 1)) !== false && (($match = substr($cmdline, $i + 1, $j - $i - 1)) === 'data' || $match === 'user' || $match === 'oid' || $match === 'event' || $match === 'title')) // Check for <data|user|oid|title> match
 	    	       {	
 			$i = $j;
 			if ($match === 'data') $add = $client['data'];
 			 else if ($match === 'user') $add = $client['auth'];
 			 else if ($match === 'oid') $add = $client['oId'];
+			 else if ($match === 'event') $add = $client['cmd'];
 			 else $add = $client['allelements'][$client['eId']]['element1']['data'];
 			$add = "'".str_replace("'", "'".'"'."'".'"'."'", $add)."'";
 	    	       }
@@ -226,8 +228,8 @@ switch ($output[$client['eId']]['cmd'])
 		    	      if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
 	    	      $output = ['cmd' => 'SET', 'data' => $output] + $_client;
 
-		      if (isset($ruleresult['message']))		$output['alert'] = $ruleresult['message'];
-	    	      if (isset($output['data'][$excludeid]['alert']))	$output['alert'] = $output['data'][$excludeid]['alert'];
+		      if (isset($ruleresult['message']) && $ruleresult['message'])	$output['alert'] = $ruleresult['message'];
+	    	      if (isset($output['data'][$excludeid]['alert']))			$output['alert'] = $output['data'][$excludeid]['alert'];
 			 
 	    	      if (isset($passchange)) $output['passchange'] = strval($client['oId']);
 	    	      if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))

@@ -1,39 +1,35 @@
---------------February 2021--------------------------------------------------------------
-esc
-log rule messages
-- help context menu for all help (conception, handler, keyboard/mouse..)
-  Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git
-- Task manager and object process SCHEDULER. Handlers are executed by built-in system user.
-- System calls and its object views: LINK (+Element statistic, for a example, client list to warn by email, or client quantity)
-
 --------------March 2021--------------------------------------------------------------
+- Any props to text.php
+- Func keys to the start event
+- firefox up/down and left/right arrows scroll page
+- single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
+- Task manager (+protocol to interact with server with dialog box visible) and object process SCHEDULER. Handlers are executed by built-in system user.
+
+--------------Necessary features--------------------------------------------------------------
+- Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git. !Help content during all code lookup
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-- telnet function by SLAVA
-- snmp function by SLAVA?
-- diagnostic function by me
-- inner text in <td> can consists of <br>, <color> and <font> tags
-- firefox up/down and left/right arrows scroll page
-- multi cell selecting - copy (Plain text or excel table?:), delete (removes all selected objects)
-  single table cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags); want to support hot key undependent on keyboard layout? Use event.code - https://learn.javascript.ru/keyboard-events
-  User can copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
-  User can copy an image to the cell?
 - Object view PIECHART, GRAPH, LOCATION.
+- telnet, snmp and diagnostic functions
+- inner text in <td> can consists of <br>, <color> and <font> tags
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
+- System call open in a new tab
+- Object selection with non-empty link type for all view types (by now it is released for tree view type only)
 
---------------Later or doubt features-------------------------------------------------
-- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': ''
+--------------Questionable features-------------------------------------------------
+- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - System call NEWOBJECT (to create object by user handlers)
 - Export OV data to xls, pdf or txt file
+- Tree element hint (mouseover), callOV or link in a new tab (mouse click), hide tree element rebuilds the tree (context menu hide)
 - Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
-- OD Dialog Box - OD icon, OV icon, OV shortcut key
+- OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
 - Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
 - Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
 - Predefined system messages can be displayed on other languages
 - not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
 - Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
-- style/hint/description edit for text.php? The problem is that style/hint/description data should be transmitted automatically,
+- style/hint/description/image edit for text.php? The problem is that style/hint/description data should be transmitted automatically. There isno problem - make unversal text.php to keep not only text data, but dialog data also
   and it is hard to insert style/hint/description props to every element in OD properties dialog
 - fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
 - event json can send not only current objects elements, but other objects of current OD and other objects of another OD
@@ -55,6 +51,8 @@ log rule messages
   Linux to docker, secure php.ini, optimize mysql to highload app
   ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
   Problems of deploying - can i use mysql on commerisal base? Can i use sockets number more than 1024?
+- Set OD users at least simple description
+- element selection when elements are selected not by exact numbers, but bu regular expr that defines that numbers or titles
 - Some systems emulation:
   Corp chat
   Corp book
@@ -79,7 +77,15 @@ log rule messages
   In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
   Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
   see client mac, cable length, errors and all other data the switch allows to monitor
-- application customization: current view refreshat sidebar OV select will show 'loading..' and reload main div or not; autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
+- application customization: current view refresh at sidebar OV select will show 'loading..' and reload main div or not; autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
+- Service demon for every element - is the demon that executes at the start of the server for example radius server
+- autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
+- Paste file or image to object element - should it be realized via handler event just like KEYPRESS for pasting text
+- event.which -> event.code https://learn.javascript.ru/keyboard-events
+- dialog interface element heads - not plain text but some <font> <color> tags?
+- multi cell selecting - copy (excel table), delete (removes all selected objects). User can select and copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+- text.php as an option selection predefined data, for example operation selection (new podkl, udalenie, perekluchenie..)
+- tree element onclick: { 'OD': '', 'ODid': '', 'OV': '', 'OVid': '', 'params': {'Input_object_id': '', 'value4': '', } }
 ------------------------------------------------------------------------------------------
 
 
@@ -198,6 +204,7 @@ selection.addRange(range);
 - https://habr.com/ru/sandbox/122675/
 - https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
 - https://css-tricks.com/lodge/svg/09-svg-data-uris/
+- https://observablehq.com/@d3/mobile-patent-suits
 --------------------------Input style:--------------------------
 - http://jsfiddle.net/js5x06nL/
 --------------------------JWT:--------------------------
@@ -212,6 +219,17 @@ selection.addRange(range);
 - drop database OE8; create database OE8; use OE8; show tables;
 - drop database OE6; create database OE6; use OE6; show tables;
 - create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+--------------------------------------flex----------------------
+- https://wp-kama.ru/id_8045/flex-v-css.html#flex-wrap
+-----------------arrows-----------------------------------
+- https://css-tricks.com/snippets/css/css-triangle/
+- http://css.yoksel.ru/strelki-s-pomoshh-yu-svojstva-border/
+------------------------websocket----------------------
+- https://tokmakov.msk.ru/blog/item/202
+- https://hpbn.co/websocket/#wsmsg
+--------------------------php demon-------------------------------
+- http://mithrandir.ru/professional/php/php-daemons.html
+
 
 
 user.php
@@ -388,3 +406,31 @@ OD chat:
 
 - 'not empty msgs' reject post rule (for add oper): eid1->>'$.value'=''
 - 'not delete msgs' reject rule (for delete oper): both pre and post rules are empty
+
+
+wrapper <start_time> <eid> <cid> <ODid> <OVid> <user>
+Initiator User Exe_time OD OV oid eid PID Process_name
+sort on title, select lines and kill them option
+
+
+
+link type = up|down
+link object - selection rule
+link element id (link element title) - 
+
+/usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php <event> '{"prop": "link"}' '{"prop": "linkoid"}' '{"prop": "linkeid"}'
+
+
+/*
+link area:
+- element title on the left
+- element value on the right
+- hint: full title and value
+content area (+error content):
+- lines of element titles and values based on element selection {'title3': '', 'value4': '', 'valueowner': ''..}
+- hint: lines of full element titles and values 
+- click: { 'OD': '', 'ODid': '', 'OV': '', 'OVid': '', 'params': {'Input_object_id': '', 'value4': '', } }
+content limit one line and max char
+unknown element by red color
+up or down direction table
+*/

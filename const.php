@@ -36,4 +36,5 @@ const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
 const SESSIONLIFETIME			= 360000;
 const CALLTIMEOUT			= 10;
+const SERVICEELEMENTS			= ['id', 'version', 'owner', 'datetime', 'lastversion']; 
 const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';

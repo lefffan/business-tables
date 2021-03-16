@@ -1,6 +1,5 @@
 <?php
 
-//require_once 'const.php';
 require_once 'core.php';
 
 if (!isset($_SERVER['argv'][1])) exit;
@@ -22,7 +21,7 @@ switch ($event)
 	      else if ($initiator != $user) echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
 	      else echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => '']]]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
 	     break;
-	case 'CONFIRM':
+	case 'CONFIRMDIALOG':
 	     // Check dialog data to be correct
 	     if (isset($_SERVER['argv'][2])) $data = json_decode($_SERVER['argv'][2], true);
 	     if (!isset($data, $data['dialog']['pad']['profile']['element1']['data'])) 

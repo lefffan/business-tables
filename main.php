@@ -160,10 +160,15 @@ while (true)
 		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
 		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
 		       break;
-		  case 'KEYPRESS':
-		  case 'DBLCLICK':
-		  case 'CONFIRM':
 		  case 'INIT':
+		  case 'DBLCLICK':
+		  case 'KEYPRESS':
+		  case 'INS':
+		  case 'DEL':
+		  case 'F2':
+		  case 'F12':
+		  case 'CONFIRM':
+		  case 'CONFIRMDIALOG':
 		  case 'DELETEOBJECT':
 		       if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $input, $output)) break;
 		       $client['data'] = $input['data'];
@@ -196,7 +201,7 @@ while (true)
 	     socket_write($socket, encode(json_encode($output)));
 	    }
 	}
-		
+
  try {
  // Process queue events from sql table `$$`
  $query = $db->prepare("SELECT * FROM `$$`");

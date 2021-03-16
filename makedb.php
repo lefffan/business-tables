@@ -26,14 +26,14 @@ try {
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
      //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
-     $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
      $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'Edit Database Structure', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
 
      $newView['element1']['id'] = '1';
      $newView['element1']['data'] = 'All users';
-     $newView['element5']['data'] = '*';
+     $newView['element6']['data'] = '*';
      $userOD['dialog']['View']['All users'] = $newView;
 
      $newElement['element1']['id'] = '1';
@@ -44,66 +44,84 @@ try {
      $json1 = '{"prop": "value"}';
      $json2 = '{"prop": "odaddperm"}';
      $json3 = '{"prop": "groups"}';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR."user.php DBLCLICK '$json1' '$json2' '$json3' <user>";
-     $newElement['element5']['data'] = '';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php INIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php CONFIRM <data>';
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."user.php <event> '$json1' '$json2' '$json3' <user>";
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
      $userOD['dialog']['Element']['User'] = $newElement;
 
+     $json1 = '{"prop": "link"}';
+     $json2 = '{"prop": "linkoid"}';
+     $json3 = '{"prop": "linkeid"}';
+     initNewODDialogElements();
      $newElement['element1']['id'] = '2';
      $newElement['element1']['data'] = 'Name';
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Name'] = $newElement;
-
+     
+     initNewODDialogElements();
      $newElement['element1']['id'] = '3';
      $newElement['element1']['data'] = 'Telephone';
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Telephone'] = $newElement;
 
+     initNewODDialogElements();
      $newElement['element1']['id'] = '4';
      $newElement['element1']['data'] = 'Email';
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Email'] = $newElement;
 
+     initNewODDialogElements();
      $newElement['element1']['id'] = '5';
      $newElement['element1']['data'] = 'Comment';
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php DBLCLICK';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php KEYPRESS <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php INIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRM <data>';
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Comment'] = $newElement;
 
+     initNewODDialogElements();
      $newElement['element1']['id'] = '6';
      $newElement['element1']['data'] = 'Customization';
      $newElement['element2']['data'] = "\nDouble click appropriate cell to change color, font, background and other properties for the specified user";
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
      $json = '{"prop": "dialog"}';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR."customization.php DBLCLICK '$json'";
-     $newElement['element5']['data'] = '';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php INIT';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php CONFIRM <data>';
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."customization.php <event> '$json'";
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event> <data>';
      $userOD['dialog']['Element']['Customization'] = $newElement;
 
      $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
@@ -141,8 +159,8 @@ try {
 
      $newView['element1']['id'] = '1';
      $newView['element1']['data'] = 'All logs';
-     $newView['element5']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}';
-     $newView['element8']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     $newView['element6']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}';
+     $newView['element9']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
      $logOD['dialog']['View']['All logs'] = $newView;
 
      $newElement['element1']['id'] = '1';
@@ -166,8 +184,8 @@ try {
 
 catch (PDOException $e)
     {
-     echo 'Failed to reset default sql tables:'."\n".$e->getMessage();
+     echo 'Failed to reset default sql tables: '."\n".$e->getMessage();
      exit;
     }
 
-echo 'All sql tables reset to default successfully'."\n";
+echo 'All sql tables reset to default successfully!'."\n";

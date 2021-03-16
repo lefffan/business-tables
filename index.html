@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-	<meta name="description" content="Object Engineering Smart System">
+	<meta name="description" content="OE">
 	<title>OE</title>
 	<meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,6 +42,10 @@
 	    .blink
 		  {
 	    	   animation: blink 1s infinite;
+		  }
+	    span.underlined
+		  {
+		   text-decoration: underline;
 		  }
 	    @keyframes blink 
 		  {
@@ -161,6 +165,27 @@
 	    .expanded
 		  {
 		   z-index: 40;
+		  }
+	    .treelink
+		  {
+		   display: flex;
+		   flex-direction: row;
+		   justify-content: center;
+		   flex-wrap: nowrap;
+		   border: none;
+		   margin: 0;
+		   padding: 0;
+		  }
+	    .treelinkdescription > span
+		  {
+    		   white-space: nowrap;
+		   text-overflow: ellipsis;
+		   overflow: hidden;
+		  }
+	    .treetable td
+		  {
+		   min-width: 250px;
+		   padding: 0;
 		  }
 	    .hotnewshide { visibility: hidden; transform: scale(0) rotate(0deg); opacity: 0; transition: all .4s; -webkit-transition: all .4s; }
 	    .hotnewsshow { visibility: visible; transform: scale(1) rotate(720deg); opacity: 1; transition: .4s; -webkit-transition: .4s; -webkit-transition-property: transform, opacity transition-property: transform, opacity }

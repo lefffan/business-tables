@@ -7,6 +7,98 @@ function CheckODString($odname)
  return substr(str_replace("'", '', str_replace('"', '', trim(str_replace("\\", '', $odname)))), 0, ODSTRINGMAXCHAR);
 }
 
+function GetTreeElementContent($db, &$client, &$content, $oid)
+{
+ if (isset($content[1]['id'], $client['allelements'][$content[1]['id']])) $content[1]['title'] = $client['allelements'][$content[1]['id']]['element1']['data'];
+
+ foreach ($client['elementselection'] as $key => $value)
+	 if (array_search($key, SERVICEELEMENTS) !== false) $content[] = ['id' => $key, 'title' => $key, 'value' => ''];
+	  else if (isset($client['allelements'][$key])) $content[] = ['id' => $key, 'title' => $client['allelements'][$key]['element1']['data'], 'value' => ''];
+		    
+ $query = '';
+ foreach ($content as $key => $value) if ($key) 
+	 if (!isset($value['id'])) $query .= 'NULL,';
+	  else if (array_search($value['id'], SERVICEELEMENTS) !== false) $query .= $value['id'].',';
+	  else if (!isset($client['allelements'][$value['id']])) $query .= 'NULL,';
+	  else $query .= "eid".$value['id']."->>'$.value',";
+
+ try {
+      $query = $db->prepare('SELECT '.substr($query, 0, -1)." FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND id=$oid");
+      $query->execute();
+      foreach ($query->fetch(PDO::FETCH_NUM) as $key => $value) $value ? $content[$key + 1]['value'] = $value : $content[$key + 1]['value'] = '';
+     }
+ catch (PDOException $e)
+     {
+      lg($e);
+     }
+}
+
+function DefineNodeLinks($db, &$client, $oid, $type, &$tree, &$objects)
+{
+ // $tree consists of one head object ['link' => [tree objects array], 'content' => [eid, etitle, evalue], 'class' => ''], where:
+ // 'link'	- array of the same linked tree node with its link prop and content,
+ // 'content'	- array of node text data, first array element - remote node linked element info, local node linked element info,
+ //  		  then current node element list to be displayed,
+ // 'class'	- content css style class name.
+
+ foreach ($client['allelements'] as $eid => $value)
+	 {
+	  //--------------Link props fetch--------------
+	  try {
+	       $content = [['id' => $eid, 'title' => $value['element1']['data'], 'value' => '']];
+	       $query = $db->prepare("SELECT eid$eid->>'$.linkoid', eid$eid->>'$.linkeid', eid$eid->>'$.value' FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0 AND eid$eid->>'$.link'='$type'");
+	       $query->execute();
+	       $object = $query->fetchAll(PDO::FETCH_NUM);
+	       if (!isset($object[0][0], $object[0][1])) continue;
+	       $selection = $object[0][0];
+	       $content[] = ['id' => $object[0][1]];
+	       if (isset($object[0][2])) $content[0]['value'] = $object[0][2];
+	      }
+	  catch (PDOException $e)
+	      {
+	       $content[2]['value'] = "Error getting object id '$oid' element id '$eid' link properties: ".$e->getMessage();
+	       $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
+	       continue;
+	      }
+
+	  //--------------Remote object id 'linkoid' prop selection--------------
+	  try {
+	       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND $selection");
+	       $query->execute();
+	       $remoteoid = $query->fetch(PDO::FETCH_NUM);
+	       if (!isset($remoteoid[0]))
+	    	  {
+		   $content[2]['value'] = "Object id '$oid' element id '$eid' links to unexisting object: '$selection'";
+		   $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
+	    	   continue;
+	    	  }
+	       $remoteoid = $remoteoid[0];
+	      }
+	  catch (PDOException $e)
+	      {
+	       $content[2]['value'] = "Object id '$oid' element id '$eid' linkoid property selection syntax error: ".$e->getMessage();
+	       $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
+	       continue;
+	      }
+
+	  //--------------Get tree element content, remote and local elements--------------
+	  GetTreeElementContent($db, $client, $content, $remoteoid);
+	  
+	  //--------------Check loop--------------
+	  if (isset($objects[$remoteoid]))
+	     {
+	      $tree['link'][] = ['content' => [$content[0], $content[1], ['value' => "Loop detected on link from remote node [object id'$oid'] to me [object id'$remoteoid']!"]], 'class' => 'treeerror'];
+	      continue;
+	     }
+	  $objects[$remoteoid] = true;
+	  
+	  //--------------Build tree element and define remote node tree--------------
+	  $tree['link'][] = ['link' => [], 'content' => $content, 'class' => 'treeelement'];
+	  end($tree['link']);
+	  DefineNodeLinks($db, $client, $remoteoid, $type, $tree['link'][key($tree['link'])], $objects);
+	 }
+}
+
 function NewOD($db, &$client)
 {
  global $id;
@@ -186,6 +278,36 @@ try {
        {
         case 'CALL':
 	     if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $client, $output)) break;
+	     
+	     //////////////////////////////
+	     if ($client['viewtype'] === 'Tree')
+	        {
+		 if ($client['linktype'] === '')
+		    {
+		     $output = ['cmd' => '', 'error' => "Specified view '".$client['OV']."' has no link type defined!"];
+		     break;
+		    }
+	         $query = $db->prepare("SELECT id FROM `data_$client[ODid]` $client[objectselection]");
+	         $query->execute();
+		 $headid = $query->fetch(PDO::FETCH_ASSOC);
+		 if (!isset($headid['id']))
+		    {
+		     $output = ['cmd' => '', 'error' => "Specified view '".$client['OV']."' has no objects matched current selection!"];
+		     break;
+		    }
+		 $headid = $headid['id'];
+	    	 $objects = [$headid => true];
+		 $content = [[], []];
+		 GetTreeElementContent($db, $client, $content, $headid);
+	         $tree = ['link' => [], 'content' => $content, 'class' => 'treeelement'];
+	         DefineNodeLinks($db, $client, $headid, $client['linktype'], $tree, $objects);
+		 $output = ['cmd' => 'Tree', 'tree' => $tree];
+		 if (isset($client['elementselection']['direction']) && $client['elementselection']['direction'] === 'up') $output['direction'] = 'up';
+		  else $output['direction'] = 'down';
+		 break;
+		}
+	     //////////////////////////////
+	     
 	     // Get object selection query string, in case of array as a return result send dialog to the client to fetch up object selection params
 	     $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']);
 	     if (gettype($client['objectselection']) === 'array')
@@ -206,7 +328,7 @@ try {
 	     // Return OV refresh command to the client with object selection sql query result as a main field data
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
-	     $output = ['cmd' => 'DRAW', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']];
+	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']];
 	     break;
         case 'New Object Database':
 	     if (!Check($db, CHECK_ACCESS, $client, $client, $output)) break;

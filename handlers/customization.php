@@ -30,11 +30,11 @@ switch ($event)
 	     $dialog = ['title' => 'User customization',
 			'dialog' => $data,
 			'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'],
-			'flags'  => ['style' => 'width: 600px; height: 600px;', 'esc' => '', 'padprofilehead' => ['pad' => "\n\nSelect customization"]]];
+			'flags'  => ['style' => 'width: 600px; height: 600px;', 'padprofilehead' => ['pad' => "\n\nSelect customization"]]];
 
 	     echo json_encode(['cmd' => 'DIALOG', 'data' => $dialog]);
 	     break;
-	case 'CONFIRM':
+	case 'CONFIRMDIALOG':
 	     if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
 	     
 	     CheckEffect($data['dialog']['pad']['context menu']['element12']['data']);
