@@ -129,9 +129,9 @@ function adjustODProperties($db, $data, $ODid)
  
  // Return result data
  $data['title'] = 'Edit Object Database Structure';
- $data['buttons'] = ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'];
+ $data['buttons'] = SAVECANCEL;
+ $data['buttons']['SAVE']['call'] = 'Edit Database Structure';
  if (!isset($data['flags'])) $data['flags'] = [];
- $data['flags']['cmd'] = 'Edit Database Structure';
  return $data;
 }					
 
@@ -777,8 +777,8 @@ function getLoginDialogData()
  return [
 	 'title'   => 'Login',
 	 'dialog'  => ['pad' => ['profile' => ['element1' => ['head' => "\nUsername", 'type' => 'text'], 'element2' => ['head' => 'Password', 'type' => 'password']]]],
-	 'buttons' => ['LOGIN' => ' '],
-	 'flags'   => ['cmd' => 'LOGIN', 'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
+	 'buttons' => ['LOGIN' => ['value' => 'LOGIN', 'call' => 'LOGIN', 'enterkey' => '']],
+	 'flags'   => ['style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
 	];
 }
 
@@ -1030,12 +1030,13 @@ function GetObjectSelection($db, $objectSelection, $params, $user)
  if (!$isDialog) return $objectSelectionNew;
  
  // Otherwise return dialog array
+ $buttons = OKCANCEL;
+ $buttons['OK']['call'] = 'CALL';
  return [
 	 'title'   => 'Object View parameters',
 	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
-	 'buttons' => ['OK' => ' ', 'CANCEL' => 'background-color: red;'],
-	 'flags'   => ['cmd' => 'CALL',
-		       'style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;', 'esc' => '']
+	 'buttons' => $buttons,
+	 'flags'   => ['style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;', 'esc' => '']
 	];
 }
 

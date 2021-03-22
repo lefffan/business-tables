@@ -14,7 +14,7 @@ const range = document.createRange();
 const selection = window.getSelection();
 const GREYITEM = '<div class="contextmenuItems greyContextMenuItem">';
 const ACTIVEITEM = '<div class="contextmenuItems">';
-const BASECONTEXT = ACTIVEITEM + 'Help</div>';
+const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>';
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
 const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
 const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
@@ -65,6 +65,8 @@ const uiProfile = {
 		  "dialog box element headers": { "target": ".element-headers", "margin": "5px 5px 5px 5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
 		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
 		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
+		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background": "transparent;", "margin": "10px;" },
+		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;" },
 		  //
 		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
@@ -85,6 +87,7 @@ const uiProfile = {
 		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  // Tree
 		  "tree table": { target: ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
 		  "tree error element": { target: ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
 		  "tree element": { target: ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
@@ -302,12 +305,11 @@ function drawMain(data, props)
 	     cursor.eId = Number(eid);
 	     if (Number(oid) >= STARTOBJECTID && !isNaN(eid))
 	        {
-		 if (props[eid][oid]['event'] === 'DBLCLICK')
+		 if (['DBLCLICK', 'INS', 'DEL', 'F2', 'F12'].indexOf(props[eid][oid]['event']) !== -1)
 		    {
-		     cursor.cmd = 'DBLCLICK';
-		     break outer;
+		     cursor.cmd = props[eid][oid]['event'];
 		    }
-		 if (props[eid][oid]['event'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['event'].length > 8)
+		 else if (props[eid][oid]['event'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['event'].length > 8)
 		    {
 		     cursor.cmd = 'KEYPRESS';
 		     cursor.data = props[eid][oid]['event'].substr(8);
@@ -591,6 +593,16 @@ function MainDivEventHandler(event)
 	}
 }
 
+function SeekObjJSONProp(object, name, value)
+{
+ // Undefined value - search for non-existent json prop, null - any existing json prop, otherwise specified value json prop
+ for (let prop in object)
+     {
+      if (object[prop] === undefined) if (value === undefined) return object[prop]; else continue;
+      if (value === null || object[prop][name] === value) return object[prop];
+     }
+}
+
 function BoxEventHandler(event)
 {
  // Dialog 'hint icon' event? Display element hint
@@ -601,24 +613,33 @@ function BoxEventHandler(event)
      return;
     }
 
- // Any dialog button event? Non empty button property value calls controller, then hide box anyway
- if (event.target.classList.contains('button'))
- if (typeof box.buttons[event.target.innerHTML] === 'string' && box.buttons[event.target.innerHTML] != '' && box.buttons[event.target.innerHTML].charCodeAt(0) === 32)
+ // Any dialog button event? Existing dataset-call attribute calls the controller, otherwise do nothing and hide dialog box
+ if (event.target.classList.contains('button') && box.buttons[event.target.dataset.button])
+ if (box.buttons[event.target.dataset.button]['call'])
     {
-     box.buttons = { [event.target.innerHTML]: '' };
      saveDialogProfile(); // Save dialog box content and send it to the controller
-     box['flags']?.['cmd'] ? cmd = box['flags']['cmd'] : cmd = 'CONFIRMDIALOG';
+     box.flags['event'] = event.target.dataset.button; 
+     cmd = box.buttons[event.target.dataset.button]['call'];
      CallController(box);
-     HideBox();
+     if (box.buttons[event.target.dataset.button]['interactive'] === undefined) HideBox();
      return;
     }
-  else 
+  else
     {
-     if (box['flags']?.['cmd'] === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
-     HideBox();
+     if (box.buttons[event.target.dataset.button]['error']) displayMainError(box.buttons[event.target.dataset.button]['error']);
+     box.buttons[event.target.dataset.button]['warning'] ? warning(box.buttons[event.target.dataset.button]['warning']) : HideBox();
      return;
     }
 
+ if (event.target.classList.contains('boxtablecell') && event.target.dataset.button)
+    {
+     saveDialogProfile(); // Save dialog box content and send it to the controller
+     lg(box.flags['event'] = event.target.dataset.button); 
+     cmd = 'CONFIRMDIALOG';
+     CallController(box);
+     return;
+    } 
+ 
  // Dialog expanded div mousedown event?
  if (event.target.parentNode.classList && event.target.parentNode.classList.contains('expanded'))
     {
@@ -893,15 +914,17 @@ function KeyboardEventHandler(event)
 	      if (box)
 	         {
 		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
-		  for (let btn in box.buttons)
-		  if (box.buttons[btn][0] === ' ')
 		     {
-		      box.buttons = { [btn]: '' };
-		      saveDialogProfile(); // Save dialog box content and send it to the controller
-		      box.flags?.cmd ? cmd = box.flags.cmd : cmd = 'CONFIRMDIALOG';
-		      CallController(box);
-		      HideBox();
-		      break;
+		      const button = SeekObjJSONProp(box.buttons, 'enterkey', null);
+		      if (button) for (let prop in box.buttons) if (box.buttons[prop] === button)
+		         {
+		          saveDialogProfile(); // Save dialog box content to be sent to the controller 
+		          box.flags['event'] = prop;
+		          cmd = button['call'];
+		          CallController(box);
+		          if (button['interactive'] === undefined) HideBox();
+		    	  break;
+			 }
 		     }
 		  break;
 		 }
@@ -944,7 +967,7 @@ function KeyboardEventHandler(event)
 		     }
 		  //-------------------- 
 		  event.preventDefault();
-		  document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in FF
+		  document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in fucking FF
 		  break;
 		 }
 	      moveCursor(0, 1, false);
@@ -965,8 +988,9 @@ function KeyboardEventHandler(event)
 		     }
 		  if (box.flags?.esc != undefined) // Box with esc flag set?
 		     {
-		      if (box.flags.cmd === 'CALL') displayMainError(`View '${OV}' output has been canceled`);
-		      HideBox();
+		      const button = SeekObjJSONProp(box.buttons, 'call');
+    		      if (button?.['error']) displayMainError(button['error']);
+    		      button?.['warning'] ? warning(button['warning']) : HideBox();
 		     }
 		  break;
 		 }
@@ -979,23 +1003,28 @@ function KeyboardEventHandler(event)
 	      HideContextmenu();
 	      break;
 	 case 45: //Ins
-	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS')) CallController();
+	      if (box || contextmenu) break;
+	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS')) CallController();
 	      break;
 	 case 46: //Del
-	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (box || contextmenu) break;
+	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
 	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'DEL')) CallController();
 	       else mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
 	      break;
 	 case 113: //F2
-	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (box || contextmenu) break;
+	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
 	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'F2')) CallController();
 	       else MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
 	      break;
 	 case 123: //F12
-	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'F12')) CallController();
+	      if (box || contextmenu) break;
+	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'F12')) CallController();
 	      break;
 	 default: // space, letters, digits
-	      if (cursor.td?.contentEditable === 'false' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (box || contextmenu) break;
+	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
 	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
 	         {
 		  if (event.ctrlKey == false && event.altKey == false && event.metaKey == false && rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE) && (cmd = 'KEYPRESS'))
@@ -1043,15 +1072,6 @@ function FromController(json)
 	      if (cursor && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && cursor.td.contentEditable != 'true')
 	      if (mainTable[cursor.y][cursor.x].oId === input.oId && mainTable[cursor.y][cursor.x].eId === input.eId)
 	         MakeCursorContentEditable(input.data);
-	         /*{
-	          cursor.td.contentEditable = 'true';
-		  cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
-		  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
-		  if (input.data != undefined) cursor.td.innerHTML = toHTMLCharsConvert(input.data);
-		   else cursor.td.innerHTML = cursor.olddata;
-		  if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
-		  cursor.td.focus();
-		 }*/
 	      break;
 	 case 'SET':
 	      let x, y, value;
@@ -1105,6 +1125,7 @@ function CallController(data)
  switch (cmd)
 	{
 	 case 'New Object Database':
+	 case 'Task Manager':
 	      object = { "cmd": cmd };
 	      if (typeof data != 'string') object.data = data;
 	      break;
@@ -1253,6 +1274,7 @@ function toHTMLCharsConvert(string)
 
 function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
 {
+ mainDiv.focus();
  if (oldCell)
     {
      oldCell.style.outline = "none";
@@ -1353,17 +1375,18 @@ function ShowBox()
  //---------------Any content?---------------
  if (inner)
     {
-     let buttonStyle;
      // Add title
      if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner;
      // Add buttons
      inner += '<div class="footer">';
      for (let button in box.buttons)
          {
-	  buttonStyle = '';
-	  if (typeof box.buttons[button] === 'string' && box.buttons[button].trim() != '') buttonStyle = ' style ="' + escapeHTMLTags(box.buttons[button].trim()) + '"';
-	  inner += '<div class="button"' + buttonStyle + '>' + button + '</div>';
+	  if (!box.buttons[button]['value']) continue;
+	  inner += '<div class="button" data-button="' + button + '"';
+	  if (box.buttons[button]['style']) inner += ' style="' + escapeHTMLTags(box.buttons[button]['style'].trim()) + '"';
+	  inner += '>' + escapeHTMLTags(box.buttons[button]['value']) + '</div>';
 	 }
+     // Finish 'footer' div
      boxDiv.innerHTML = inner + '</div>';
      // Calculate left/top box position
      boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%";
@@ -1453,6 +1476,28 @@ function getInnerDialog()
       if (element.data != undefined && typeof element.data == "string") data = element.data;
       switch (element.type)
 	     {
+	      case 'table':
+		   if (data != '')
+		      {
+		       try   { data = JSON.parse(data); }
+		       catch { break; }
+		       let row, cell;
+		       inner += '<table class="boxtable"><tbody>';
+		       for (row in data)
+		    	   {
+			    inner += '<tr>';
+			    for (cell in data[row])
+				{
+				 inner += '<td class="boxtablecell"';
+				 if (data[row][cell].call != undefined) inner += ' data-button="' + cell + '"';
+				 if (data[row][cell].style)  inner += ` style="${escapeHTMLTags(data[row][cell].style)}"`;
+				 inner += '>' + escapeHTMLTags(data[row][cell].value) + '</td>';
+				}
+			    inner += '</tr>';
+			   }
+		       inner += '</tbody></table>';
+		      }
+	    	   break;
 	      case 'select-multiple':
 		   if (data != '')
 		      {
@@ -1710,7 +1755,7 @@ function HideContextmenu()
 
 function SetContextmenuItem(newItem)
 {
- if (!contextmenu) return;
+ if (!contextmenu || box) return;
  
  if (typeof newItem === 'string')
     {
@@ -1774,16 +1819,17 @@ function escapeDoubleQuotes(string)
 
 function escapeHTMLTags(string)
 {
- return string.replace(/</g,"&lt;").replace(/"/g,"&quot;");
+ if (string) return string.replace(/</g,"&lt;").replace(/"/g,"&quot;");
+ return '';
 }
 
 function warning(text, title, log = true)
 {
- if (typeof text != 'string') text = 'Undefined warning message!';
- if (log) lg(text);
+ if (!text || typeof text != 'string') return;
  if (typeof title != 'string') title = 'Warning';
- box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {"&nbsp;   OK   &nbsp;": ""}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
+ box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {OK: {value: "&nbsp;   OK   &nbsp;"}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
  ShowBox();
+ if (log) lg(text);
 }
 
 function isObjectEmpty(object, excludeProp)
@@ -2092,6 +2138,6 @@ And Of course, for both our chat restrictions action is set to 'reject'.
 }}},
 },
 
-buttons: { "&nbsp;   OK   &nbsp;": "" },
+buttons: { OK: {value: "&nbsp;   OK   &nbsp;"}},
 flags:   { esc: "", style: "min-width: 700px; min-height: 600px; width: 860px; height: 720px;" }
 };

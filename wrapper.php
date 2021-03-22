@@ -57,9 +57,11 @@ function ParseHandlerResult($db, &$output, &$client)
 	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] returned incorrect 'DIALOG' command data!");
 		  return;
 		 }
-	      if ($client['ODid'] != '1' || ($client['eId'] != '1' && $client['eId'] != '6')) if (isset($output['data']['flags']['cmd'])) unset($output['data']['flags']['cmd']);
 	      cutKeys($output, ['cmd', 'data']);
 	      $output['data']['flags']['esc'] = '';
+	      foreach ($output['data']['buttons'] as $button => $value)
+	    	      if (isset($value['call'])) $output['data']['buttons'][$button]['call'] = 'CONFIRMDIALOG';
+		       else unset($output['data']['buttons'][$button]['enterkey']);
 	      break;
 	 case 'CALL':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
@@ -134,7 +136,7 @@ function GetCMD($db, &$client)
     	       {
     	        case "'":
     		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)) && isset($arr['prop']))
-	    	       {	
+	    	       {
 	    		$i = $j;
 			$add = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], $arr['prop']);
 			if (!isset($add)) $add = '';

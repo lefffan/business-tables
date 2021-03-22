@@ -129,7 +129,8 @@ while (true)
 		       if ($input['data'] === '')
 		          {
 	    		   initNewODDialogElements();
-			   $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => ['CREATE' => ' ', 'CANCEL' => 'background-color: red;'], 'flags'  => ['cmd' => 'New Object Database', 'style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
+			   $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => CREATECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
+			   $output['data']['buttons']['CREATE']['call'] = 'New Object Database';
 			   break;
 		          }
 		       $output['cmd'] = 'New Object Database';
@@ -175,6 +176,10 @@ while (true)
 		       //exec(PHPBINARY." wrapper.php $client[uid] $client[ODid] $client[OVid] '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       exec(PHPBINARY." wrapper.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
+		  case 'Task Manager':
+		       $client['data'] = $input['data'];
+		       exec(PHPBINARY." taskmanager.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+		       break;
 		  default:
 		       $output['log'] = $output['alert'] = "Controller report: unknown event '$input[cmd]' from client $ipport and user '$input[auth]'!";
 		 }
@@ -182,7 +187,7 @@ while (true)
 	 catch (PDOException $e)
 	     {
 	      $msg = $e->getMessage();
-	      if (preg_match("/ySQL server has gone away/", $msg) === 1)
+	      if (preg_match("/SQL server has gone away/", $msg) === 1)
 	         {
 		  ResetAllAuth($clientsarray);
 		  include 'connect.php';
@@ -220,6 +225,14 @@ while (true)
 	     
 	  switch ($handler['cmd'])
 	         {
+		  case 'Task Manager':
+		       $cid = $handler['cid'];
+		       if (isset($socketarray[$cid]))
+		          {
+			   $handler['cmd'] = 'DIALOG';
+			   socket_write($socketarray[$cid], encode(json_encode($handler)));
+			  }
+		       break;
 		  case 'ALERT':
 		  case 'DIALOG':
 		  case 'EDIT':
@@ -285,7 +298,7 @@ while (true)
  {
   lg($msg = $e->getMessage());
   $client = [];
-  if (preg_match("/ySQL server has gone away/", $msg) === 1)
+  if (preg_match("/SQL server has gone away/", $msg) === 1)
      {
       ResetAllAuth($clientsarray);
       include 'connect.php';

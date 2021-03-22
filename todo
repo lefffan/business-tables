@@ -1,7 +1,5 @@
 --------------March 2021--------------------------------------------------------------
 - Any props to text.php
-- Func keys to the start event
-- firefox up/down and left/right arrows scroll page
 - single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
 - Task manager (+protocol to interact with server with dialog box visible) and object process SCHEDULER. Handlers are executed by built-in system user.
 
@@ -17,6 +15,7 @@
 - Object selection with non-empty link type for all view types (by now it is released for tree view type only)
 
 --------------Questionable features-------------------------------------------------
+- system command to copy data to the buffer
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - System call NEWOBJECT (to create object by user handlers)
@@ -434,3 +433,20 @@ content limit one line and max char
 unknown element by red color
 up or down direction table
 */
+
++build buttons html:
+- Dialog buttons = {"value": "", "style": "", "call": "", "interactive": "", "enterkey": "", "timer": "", "showtimer": "", "error": "", "warning": ""}
+- Table cells = {"value": "", "style": "", "call": ""}
++Make handlers: Buttons handler = mouse, esc, enter
++Remake all existed system dialogs
++uiProfile to customization
++remake warning() function
+
++controller check for call prop - for user handlers should be CONFIRMDIALOG, for system hsandlers - untouchable
++set button['enterkey'] only for for OK (with existing call prop) buttons
++always set prop box.flags with esc=""
+
+View Tree: link type = down
+View TreeUP: link type = down, element selection = {"id":"", "3":"", "direction":"up"}
+object=3, eid=2: link type=down, id=4, 2t
+object=3, eid=3: link type=down, id=4, hui

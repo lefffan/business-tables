@@ -25,7 +25,7 @@ switch($event)
 				    					  'element2' => ['type' => 'text', 'head' => 'Remote object selection:', 'data' => $linkoid, 'line' => ''],
 									  'element3' => ['type' => 'text', 'head' => 'Remote object element selection:', 'data' => $linkeid, 'line' => ''],
 									 ]]],
-				     'buttons' => ['SAVE' => ' ', 'CANCEL' => 'background-color: red;'],
+				     'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
 				     'flags'  => ['style' => 'width: 500px; height: 500px;']]]);
 	    
 	    break;
@@ -45,6 +45,9 @@ switch($event)
 	    break;
        case 'CONFIRMDIALOG':
     	    if (!isset($_SERVER['argv'][2]) || gettype($data = json_decode($_SERVER['argv'][2], true)) != 'array') break;
-	    echo json_encode(['cmd' => 'SET', 'link' => $data['dialog']['pad']['profile']['element1']['data'], 'linkoid' => $data['dialog']['pad']['profile']['element2']['data'], 'linkeid' => $data['dialog']['pad']['profile']['element3']['data']]);
+	    echo json_encode(['cmd' => 'SET', 
+			      'link' => $data['dialog']['pad']['profile']['element1']['data'],
+			      'linkoid' => $data['dialog']['pad']['profile']['element2']['data'],
+			      'linkeid' => $data['dialog']['pad']['profile']['element3']['data']]);
 	    break;
       }
