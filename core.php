@@ -479,9 +479,9 @@ function InsertObject($db, &$client, &$output, $_client = [])
       $values = ':id,:version,:owner';
       foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid])) !== false)
 	      {
-	       $query 		      .= ',eid'.strval($eid);
+	       $query .= ',eid'.strval($eid);
 	       $params[':eid'.strval($eid)] = $json;
-	       $values 		      .= ",:eid".strval($eid);
+	       $values .= ",:eid".strval($eid);
 	      }
       $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
       $query->execute($params);

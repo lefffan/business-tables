@@ -2,7 +2,7 @@
 
 require_once 'core.php';
 
-CONST ARGVCLIENTINDEX = 1;
+CONST ARGVCLIENTINDEX = 9;
 
 function ParseHandlerResult($db, &$output, &$client)
 {
@@ -60,8 +60,19 @@ function ParseHandlerResult($db, &$output, &$client)
 	      cutKeys($output, ['cmd', 'data']);
 	      $output['data']['flags']['esc'] = '';
 	      foreach ($output['data']['buttons'] as $button => $value)
-	    	      if (isset($value['call'])) $output['data']['buttons'][$button]['call'] = 'CONFIRMDIALOG';
-		       else unset($output['data']['buttons'][$button]['enterkey']);
+	    	      {
+		       if (isset($value['call'])) $output['data']['buttons'][$button]['call'] = 'CONFIRMDIALOG';
+		        else unset($output['data']['buttons'][$button]['enterkey']);
+		       if (!isset($output['data']['buttons'][$button]['timer'])) continue;
+		       
+		       if (isset($timer) || !ctype_digit($output['data']['buttons'][$button]['timer'])) unset($output['data']['buttons'][$button]['timer']);
+		       if (isset($output['data']['buttons'][$button]['timer']))
+		          {
+			   $timer = intval($output['data']['buttons'][$button]['timer']);                                             
+			   if ($timer < MINBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MINBUTTONTIMERMSEC);
+			   if ($timer > MAXBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MAXBUTTONTIMERMSEC);
+			  }
+		      }	
 	      break;
 	 case 'CALL':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
@@ -125,7 +136,7 @@ function WriteElement($db, &$client, &$output, $version)
 
 function GetCMD($db, &$client)
 {
- $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE'])]['data']);
+ $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE', '14'=>'SCHEDULE'])]['data']);
  if (!($len = strlen($cmdline))) return '';
  $i = -1;
  $newcmdline = '';
@@ -163,7 +174,7 @@ function GetCMD($db, &$client)
 
 // Init variables
 $client	= json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
-$_client = ['ODid' => $client['ODid'], 'OD' => $client['OD'], 'OVid' => $client['OVid'], 'OV' => $client['OV'], 'params' => $client['params'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid'], 'uid' => $client['uid']];
+$_client = ['ODid' => $client['ODid'], 'OD' => $client['OD'], 'OVid' => $client['OVid'], 'OV' => $client['OV'], 'params' => $client['params'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid'], 'uid' => $client['uid'], 'cmdId' => $client['cmdId']];
 $output = [];
 
 if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')

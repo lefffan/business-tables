@@ -1,9 +1,10 @@
 /*------------------------------VARIABLES------------------------------------*/
 let box = selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
-let loadTimerId, tooltipTimerId, undefinedcellRuleIndex, socket;
+let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
 let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
 let user = cmd = OD = OV = ODid = OVid = OVtype = '';
 let sidebar = {}, cursor = {}, oldcursor = {};
+let cmdId = 0;
 /*------------------------------CONSTANTS------------------------------------*/
 const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
@@ -61,12 +62,13 @@ const uiProfile = {
 		  "dialog box pad bar": { "target": ".padbar", "background-color": "transparent;", "border": "none;", "padding": "4px;", "margin": "10px 0 15px 0;" },
 		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #CCC;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
 		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
+		  "dialog box button push": { "target": ".buttonpush", "transform": "translate(3%, 3%);" },
 		  "dialog box button and pad hover": { "target": ".button:hover, .pad:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
 		  "dialog box element headers": { "target": ".element-headers", "margin": "5px 5px 5px 5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
 		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
 		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
-		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background": "transparent;", "margin": "10px;" },
-		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;" },
+		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background": "transparent;", "margin": "0px;", "width": "100%;", "box-sizing": "border-box;" },
+		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;", "text-align": "center" },
 		  //
 		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
@@ -107,6 +109,7 @@ window.onload = function()
  // Define document html and add appropriate event listeners for it
  document.body.innerHTML = '<div class="sidebar"></div><div class="main"></div><div class="contextmenu ' + uiProfile["context menu"]["effect"] + 'hide"></div><div class="hint ' + uiProfile["hint"]["effect"] + 'hide"></div><div class="box ' + uiProfile["dialog box"]["effect"] + 'hide"></div><div class="select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide"></div>';
  document.addEventListener('mousedown', MouseEventHandler);
+ document.addEventListener('mouseup', MouseEventHandler);
  document.addEventListener('keydown', KeyboardEventHandler);
  document.addEventListener('contextmenu', ContextEventHandler);
  
@@ -136,7 +139,7 @@ function CreateWebSocket()
  socket = new WebSocket(SOCKETADDR);
  socket.onmessage = FromController;
  socket.onopen	= CallController;
- socket.onclose = () => { HideBox(); HideHint(); displayMainError("The server connection is down! Try again") };
+ socket.onclose = () => { displayMainError("The server connection is down! Try again") };
  socket.onerror = () => socket.onclose();
 }
 
@@ -598,43 +601,70 @@ function SeekObjJSONProp(object, name, value)
  // Undefined value - search for non-existent json prop, null - any existing json prop, otherwise specified value json prop
  for (let prop in object)
      {
-      if (object[prop] === undefined) if (value === undefined) return object[prop]; else continue;
-      if (value === null || object[prop][name] === value) return object[prop];
+      if (object[prop] === undefined) if (value === undefined) return prop; else continue;
+      if (value === null || object[prop][name] === value) return prop;
      }
+}
+
+function BoxApply(buttonprop)
+{
+ if (!box || typeof buttonprop != 'string' || typeof box.buttons[buttonprop] != 'object') return;
+ const button = box.buttons[buttonprop];
+
+ if (button['call'])
+    {
+     saveDialogProfile(); // Save dialog box content and send it to the controller
+     box.flags['event'] = buttonprop;
+     cmd = button['call'];
+     CallController(box);
+     if (button['interactive'] === undefined) HideBox();
+     return;
+    }
+
+ cmdId++;
+ if (button['error']) displayMainError(button['error']);
+ if (button['warning']) 
+    {
+     clearTimeout(buttonTimerId);
+     warning(button['warning']);
+    }
+  else
+    {
+     HideBox();
+    }
 }
 
 function BoxEventHandler(event)
 {
+ // Mouse up with any button already pushed? Release button element
+ if (event.type === 'mouseup' && box.flags.buttonpush)
+    {
+     box.flags.buttonpush.classList.remove("buttonpush");
+     delete box.flags.buttonpush;
+    }
+    
  // Dialog 'hint icon' event? Display element hint
  if (event.target.classList.contains('help-icon'))
     {
-     hint = { x: event.target.offsetLeft - event.target.scrollLeft + boxDiv.offsetLeft - boxDiv.scrollLeft + event.target.offsetWidth, y: event.target.offsetTop - event.target.scrollTop + boxDiv.offsetTop - boxDiv.scrollTop + event.target.offsetHeight };
+     hint = { x: event.x, y: event.y };
      ShowHint(box.dialog[box.flags.pad][box.flags.profile][event.target.attributes.name.value]["help"], hint.x, hint.y);
      return;
     }
-
+ 
  // Any dialog button event? Existing dataset-call attribute calls the controller, otherwise do nothing and hide dialog box
- if (event.target.classList.contains('button') && box.buttons[event.target.dataset.button])
- if (box.buttons[event.target.dataset.button]['call'])
+ if (event.target.classList.contains('button'))
     {
-     saveDialogProfile(); // Save dialog box content and send it to the controller
-     box.flags['event'] = event.target.dataset.button; 
-     cmd = box.buttons[event.target.dataset.button]['call'];
-     CallController(box);
-     if (box.buttons[event.target.dataset.button]['interactive'] === undefined) HideBox();
+     event.type === 'mouseup' ? BoxApply(event.target.dataset.button) : (box.flags.buttonpush = event.target).classList.add("buttonpush");
      return;
     }
-  else
-    {
-     if (box.buttons[event.target.dataset.button]['error']) displayMainError(box.buttons[event.target.dataset.button]['error']);
-     box.buttons[event.target.dataset.button]['warning'] ? warning(box.buttons[event.target.dataset.button]['warning']) : HideBox();
-     return;
-    }
+    
+ // Mouse up event for a dialog box interface element except buttons? No actions left, so return
+ if (event.type != 'mousedown') return;
 
  if (event.target.classList.contains('boxtablecell') && event.target.dataset.button)
     {
      saveDialogProfile(); // Save dialog box content and send it to the controller
-     lg(box.flags['event'] = event.target.dataset.button); 
+     box.flags['event'] = event.target.dataset.button;
      cmd = 'CONFIRMDIALOG';
      CallController(box);
      return;
@@ -659,7 +689,7 @@ function BoxEventHandler(event)
      return;
     }
 		 
- // Dialog box select interface element mouse down event?
+ // Dialog box 'select' interface element mouse down event?
  if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && (event.target.parentNode.attributes.name === undefined || box.dialog[box.flags.pad][box.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined))
     {
      switch (event.target.parentNode.attributes.type.value)
@@ -829,7 +859,10 @@ function MouseEventHandler(event)
      BoxEventHandler(event);
      return;
     }
-
+ 
+ // Non mouse down event for a document with no dialog box? Return!
+ if (event.type != 'mousedown') return;
+ 
  // Mouse clilck out of main field content editable table cell? Save cell inner html for a new element, otherwise send it to the controller
  if (cursor.td?.contentEditable === 'true' && cursor.td != event.target)
     {
@@ -913,19 +946,7 @@ function KeyboardEventHandler(event)
 	 case 13: //Enter
 	      if (box)
 	         {
-		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
-		     {
-		      const button = SeekObjJSONProp(box.buttons, 'enterkey', null);
-		      if (button) for (let prop in box.buttons) if (box.buttons[prop] === button)
-		         {
-		          saveDialogProfile(); // Save dialog box content to be sent to the controller 
-		          box.flags['event'] = prop;
-		          cmd = button['call'];
-		          CallController(box);
-		          if (button['interactive'] === undefined) HideBox();
-		    	  break;
-			 }
-		     }
+		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password')) BoxApply(SeekObjJSONProp(box.buttons, 'enterkey', null));
 		  break;
 		 }
 	      if (contextmenu) 
@@ -988,9 +1009,11 @@ function KeyboardEventHandler(event)
 		     }
 		  if (box.flags?.esc != undefined) // Box with esc flag set?
 		     {
-		      const button = SeekObjJSONProp(box.buttons, 'call');
-    		      if (button?.['error']) displayMainError(button['error']);
-    		      button?.['warning'] ? warning(button['warning']) : HideBox();
+		      cmdId++;
+		      let button = SeekObjJSONProp(box.buttons, 'call');
+		      if (!button || !(button = box.buttons[button])) break;
+    		      if (button['error']) displayMainError(button['error']);
+    		      button['warning'] ? warning(button['warning']) : HideBox();
 		     }
 		  break;
 		 }
@@ -1024,7 +1047,7 @@ function KeyboardEventHandler(event)
 	      break;
 	 default: // space, letters, digits
 	      if (box || contextmenu) break;
-	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (cursor.td && cursor.td.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
 	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
 	         {
 		  if (event.ctrlKey == false && event.altKey == false && event.metaKey == false && rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE) && (cmd = 'KEYPRESS'))
@@ -1063,7 +1086,7 @@ function FromController(json)
  switch (input.cmd)
 	{
 	 case 'DIALOG':
-	      if (cursor.td && cursor.td.contentEditable === 'true') break;
+	      if (input.cmdId != cmdId || (cursor.td && cursor.td.contentEditable === 'true')) break;
 	      box = input.data;
 	      ShowBox();
 	      break;
@@ -1216,6 +1239,7 @@ function CallController(data)
 	
  if (object)
     {
+     object.cmdId = ++cmdId;
      object.OD = OD;
      object.OV = OV;
      object.ODid = ODid;
@@ -1381,10 +1405,17 @@ function ShowBox()
      inner += '<div class="footer">';
      for (let button in box.buttons)
          {
-	  if (!box.buttons[button]['value']) continue;
-	  inner += '<div class="button" data-button="' + button + '"';
-	  if (box.buttons[button]['style']) inner += ' style="' + escapeHTMLTags(box.buttons[button]['style'].trim()) + '"';
-	  inner += '>' + escapeHTMLTags(box.buttons[button]['value']) + '</div>';
+	  if (box.buttons[button]['value'])
+	     {
+	      inner += '<div class="button" data-button="' + button + '"';
+	      if (box.buttons[button]['style']) inner += ' style="' + escapeHTMLTags(box.buttons[button]['style'].trim()) + '"';
+	      inner += '>' + escapeHTMLTags(box.buttons[button]['value']) + '</div>';
+	     }
+	  if (box.buttons[button]['timer'])
+	     {
+	      clearTimeout(buttonTimerId);
+	      buttonTimerId = setTimeout(BoxApply, box.buttons[button]['timer'], button);
+	     }
 	 }
      // Finish 'footer' div
      boxDiv.innerHTML = inner + '</div>';
@@ -1400,7 +1431,8 @@ function ShowBox()
     }
   else 
     {
-     box = null;
+     cmdId++;
+     HideBox();
     }
 }
 
@@ -1640,12 +1672,14 @@ function setOptionSelected(data, value) // Function selects option (by setting '
 		       
 function HideBox()
 {
+ clearTimeout(buttonTimerId);
  if (box)
     {
+     box = null;
+     lg('closing box');
      if (uiProfile["dialog box"]["effect"] != 'none') boxDiv.removeEventListener('transitionend', SetFirstDialogElementFocus);
      boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'hide';
      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
-     box = null;
      mainDiv.style.filter = 'none';
      sidebarDiv.style.filter = 'none';
     }
@@ -1657,7 +1691,7 @@ function getAbsoluteX(element, flag = '')
  if (flag == 'end') disp = element.offsetWidth;				// Select element right position
  if (flag == 'middle') disp = Math.trunc(element.offsetWidth/2);	// Select element middle position
  
- return element.offsetLeft - element.scrollLeft + mainDiv.offsetLeft - mainDiv.scrollLeft + disp;
+ return element.offsetLeft - element.scrollLeft + mainDiv.offsetLeft - mainDiv.scrollLeft + mainTablediv.offsetLeft - mainTablediv.scrollLeft + disp;
 }
 
 function getAbsoluteY(element, flag = '')
@@ -1666,7 +1700,7 @@ function getAbsoluteY(element, flag = '')
  if (flag == 'end') disp = element.offsetHeight;			// Select element bottom position
  if (flag == 'middle') disp = Math.trunc(element.offsetHeight/2);	// Select element middle position
  
- return element.offsetTop - element.scrollTop + mainDiv.offsetTop - mainDiv.scrollTop + disp;
+ return element.offsetTop - element.scrollTop + mainDiv.offsetTop - mainDiv.scrollTop + mainTablediv.offsetTop - mainTablediv.scrollTop + disp;
 }
 
 function collapseMainTable(undefinedCellCollapse) // Function removes collapse flag tagged rows and columns from main object table

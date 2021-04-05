@@ -1,5 +1,5 @@
 <?php
-
+sleep(1000);
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
 

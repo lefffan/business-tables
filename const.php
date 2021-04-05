@@ -5,10 +5,11 @@ const DATABASENAME			= 'OE8';
 const DATABASEUSER			= 'root';
 const DATABASEPASS			= '123';
 const PHPBINARY				= '/usr/local/bin/php';
+const WRAPPERBINARY			= PHPBINARY.' wrapper.php';
 const HANDLERDIR			= '/usr/local/apache2/htdocs/handlers/';
 const IP				= '192.168.9.39';
 const PORT				= 7889;
-const WRAPPERPROCESSESCMD		= 'ps ax | grep wrapper.php';
+const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";
 
 /****************************Other constants**********************************************/
 const MAXOBJECTS			= 100000;
@@ -42,3 +43,5 @@ const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
 const SAVECANCEL			= ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const CREATECANCEL			= ['CREATE' => ['value' => 'CREATE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
+const MINBUTTONTIMERMSEC		= 500;
+const MAXBUTTONTIMERMSEC		= 36000000;

@@ -1,10 +1,14 @@
---------------March 2021--------------------------------------------------------------
+--------------April 2021--------------------------------------------------------------
 - Any props to text.php
 - single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-- Task manager (+protocol to interact with server with dialog box visible) and object process SCHEDULER. Handlers are executed by built-in system user.
-
---------------Necessary features--------------------------------------------------------------
+- Task manager:
+  calc ODid OVId etc..
+  sort and kill (+red backgraound)
+- Context menu on main even with no any OD displayed
+- SCHEDULE process
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git. !Help content during all code lookup
+
+--------------May 2021----------------------------------------------------------------
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 - Object view PIECHART, GRAPH, LOCATION.
@@ -15,6 +19,7 @@
 - Object selection with non-empty link type for all view types (by now it is released for tree view type only)
 
 --------------Questionable features-------------------------------------------------
+- show timer in dialog button text
 - system command to copy data to the buffer
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
@@ -406,10 +411,22 @@ OD chat:
 - 'not empty msgs' reject post rule (for add oper): eid1->>'$.value'=''
 - 'not delete msgs' reject rule (for delete oper): both pre and post rules are empty
 
-
+version 1:
 wrapper <start_time> <eid> <cid> <ODid> <OVid> <user>
 Initiator User Exe_time OD OV oid eid PID Process_name
 sort on title, select lines and kill them option
+
+version 2:
+wrapper <uid> <start_time> <ODid> <OVid> <oid> <eid>
+Initiator
+PID
+Process name
+Exe time
+Database
+View 
+Object id
+Element id
+Kill
 
 
 
@@ -450,3 +467,7 @@ View Tree: link type = down
 View TreeUP: link type = down, element selection = {"id":"", "3":"", "direction":"up"}
 object=3, eid=2: link type=down, id=4, 2t
 object=3, eid=3: link type=down, id=4, hui
+
+
+context menu (cmd TASKMANAGER) -> DIALOG cmd from controller
+REFRESH on timer (CONFIRMDIALOG) -> DIALOG cmd from controller 1

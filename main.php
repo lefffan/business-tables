@@ -60,6 +60,8 @@ while (true)
 	 $data = socket_read($socket, SOCKETREADMAXBYTES);
 	 $decoded = decode($data);
 	 $input = json_decode($decoded['payload'], true);
+	 $client['cmdId'] = $input['cmdId'];
+	 
 	 if (gettype($input) === 'array' && !isset($input['data'])) $input['data'] = '';
 	 if (isset($input['cmd']) && $input['cmd'] != 'LOGIN')
 	    {
@@ -101,7 +103,7 @@ while (true)
 			   //--------------------------------------------------------------------------------
 			   break;
 		    	  }
-		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData()];
+		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'cmdId' => strval(intval($client['cmdId']) + 1)];
 		       $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong password or username, please try again!\n\nUsername";
 		       $user ? $output['log'] = "Wrong passowrd or username '$user' from $ipport" : $output['log'] = "Empty username login attempt from $ipport";
 		       break;
@@ -173,8 +175,8 @@ while (true)
 		  case 'DELETEOBJECT':
 		       if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $input, $output)) break;
 		       $client['data'] = $input['data'];
-		       //exec(PHPBINARY." wrapper.php $client[uid] $client[ODid] $client[OVid] '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
-		       exec(PHPBINARY." wrapper.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+		       // wrapper <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
+		       exec(WRAPPERBINARY." '$client[uid]' ".strval($now)." '$client[ODid]' '$client[OVid]' $client[oId] $client[eId] $input[cmd] $client[ip] '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
 		  case 'Task Manager':
 		       $client['data'] = $input['data'];
@@ -203,6 +205,7 @@ while (true)
 	     if (isset($output['log'])) LogMessage($db, $client, $output['log']);
 	     if (isset($output['error'])) $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
 	     if (isset($client['auth'])) $output['auth'] = $client['auth'];
+	     $output['cmdId'] = $client['cmdId'];
 	     socket_write($socket, encode(json_encode($output)));
 	    }
 	}
