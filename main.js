@@ -69,6 +69,7 @@ const uiProfile = {
 		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
 		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background": "transparent;", "margin": "0px;", "width": "100%;", "box-sizing": "border-box;" },
 		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;", "text-align": "center" },
+		  "dialog box pushable table cell hover": { "target": ".boxtablecellpush:hover", "cursor": "pointer;" }, 
 		  //
 		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
@@ -610,7 +611,8 @@ function BoxApply(buttonprop)
 {
  if (!box || typeof buttonprop != 'string' || typeof box.buttons[buttonprop] != 'object') return;
  const button = box.buttons[buttonprop];
-
+ clearTimeout(buttonTimerId);
+ 
  if (button['call'])
     {
      saveDialogProfile(); // Save dialog box content and send it to the controller
@@ -623,15 +625,7 @@ function BoxApply(buttonprop)
 
  cmdId++;
  if (button['error']) displayMainError(button['error']);
- if (button['warning']) 
-    {
-     clearTimeout(buttonTimerId);
-     warning(button['warning']);
-    }
-  else
-    {
-     HideBox();
-    }
+ button['warning'] ? warning(button['warning']) : HideBox();
 }
 
 function BoxEventHandler(event)
@@ -661,11 +655,11 @@ function BoxEventHandler(event)
  // Mouse up event for a dialog box interface element except buttons? No actions left, so return
  if (event.type != 'mousedown') return;
 
- if (event.target.classList.contains('boxtablecell') && event.target.dataset.button)
+ if (event.target.classList.contains('boxtablecellpush'))
     {
      saveDialogProfile(); // Save dialog box content and send it to the controller
      box.flags['event'] = event.target.dataset.button;
-     cmd = 'CONFIRMDIALOG';
+     cmd = box.cmd;
      CallController(box);
      return;
     } 
@@ -1087,8 +1081,11 @@ function FromController(json)
 	{
 	 case 'DIALOG':
 	      if (input.cmdId != cmdId || (cursor.td && cursor.td.contentEditable === 'true')) break;
+	      let scrollLeft, scrollTop;
+	      if (box?.contentDiv?.scrollLeft) scrollLeft = box.contentDiv.scrollLeft;
+	      if (box?.contentDiv?.scrollTop) scrollTop = box.contentDiv.scrollTop;
 	      box = input.data;
-	      ShowBox();
+	      ShowBox(scrollLeft, scrollTop);
 	      break;
 	 case 'EDIT':
 	      if (!objectTable[input.oId][input.eId]) break;
@@ -1389,56 +1386,51 @@ function rangeTest(a, b)
  return false;
 }
 
-function ShowBox()
+function ShowBox(scrollLeft, scrollTop)
 {
- if (typeof box !== 'object') return;
  let inner = getInnerDialog();
- HideHint();
- HideContextmenu();
-
- //---------------Any content?---------------
- if (inner)
-    {
-     // Add title
-     if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner;
-     // Add buttons
-     inner += '<div class="footer">';
-     for (let button in box.buttons)
-         {
-	  if (box.buttons[button]['value'])
-	     {
-	      inner += '<div class="button" data-button="' + button + '"';
-	      if (box.buttons[button]['style']) inner += ' style="' + escapeHTMLTags(box.buttons[button]['style'].trim()) + '"';
-	      inner += '>' + escapeHTMLTags(box.buttons[button]['value']) + '</div>';
-	     }
-	  if (box.buttons[button]['timer'])
-	     {
-	      clearTimeout(buttonTimerId);
-	      buttonTimerId = setTimeout(BoxApply, box.buttons[button]['timer'], button);
-	     }
-	 }
-     // Finish 'footer' div
-     boxDiv.innerHTML = inner + '</div>';
-     // Calculate left/top box position
-     boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%";
-     boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%";
-     // Show box div
-     boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'show';
-     // Apply filters if exist
-     if (uiProfile["dialog box"]["filter"]) sidebarDiv.style.filter = mainDiv.style.filter = uiProfile["dialog box"]["filter"];
-     // Set focus on first text-input element
-     uiProfile["dialog box"]["effect"] === 'none' ? SetFirstDialogElementFocus() : boxDiv.addEventListener('transitionend', SetFirstDialogElementFocus);
-    }
-  else 
+ if (!inner) // No content? Hide dialog and return;
     {
      cmdId++;
      HideBox();
+     return;
     }
+
+ HideContextmenu();
+ if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner; // Add title
+     
+ inner += '<div class="footer">'; // Add 'footer' div and buttons to (if exist)
+ for (let button in box.buttons)
+     {
+      if (box.buttons[button]['call']) box.cmd = box.buttons[button]['call'];
+      if (box.buttons[button]['value'])
+	 {
+	  inner += '<div class="button" data-button="' + button + '"';
+	  if (box.buttons[button]['style']) inner += ' style="' + escapeHTMLTags(box.buttons[button]['style'].trim()) + '"';
+	  inner += '>' + escapeHTMLTags(box.buttons[button]['value']) + '</div>';
+	 }
+      if (box.buttons[button]['timer'])
+	 {
+	  clearTimeout(buttonTimerId);
+	  buttonTimerId = setTimeout(BoxApply, box.buttons[button]['timer'], button);
+	 }
+     }
+ boxDiv.innerHTML = inner + '</div>'; // Finish 'footer' div
+
+ boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%"; // Calculate left box position
+ boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%"; // Calculate top box position
+ boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'show'; // Show box div
+ if (uiProfile["dialog box"]["filter"]) sidebarDiv.style.filter = mainDiv.style.filter = uiProfile["dialog box"]["filter"]; // Apply filters if exist
+ uiProfile["dialog box"]["effect"] === 'none' ? SetFirstDialogElementFocus() : boxDiv.addEventListener('transitionend', SetFirstDialogElementFocus); // Set focus on first text-input element
+ 
+ box.contentDiv = boxDiv.querySelector('.boxcontentwrapper');
+ if (scrollLeft) box.contentDiv.scrollLeft = scrollLeft;
+ if (scrollTop) box.contentDiv.scrollTop = scrollTop;
 }
 
 function getInnerDialog()
 {
- if (typeof box.dialog !== 'object') return '';
+ if (!box || !box.dialog || typeof box.dialog != 'object') return;
  let element, data, count = 0, readonly, inner = '';
  
  //------------------Creating current pad and profile if not exist------------------
@@ -1520,8 +1512,8 @@ function getInnerDialog()
 			    inner += '<tr>';
 			    for (cell in data[row])
 				{
-				 inner += '<td class="boxtablecell"';
-				 if (data[row][cell].call != undefined) inner += ' data-button="' + cell + '"';
+				 inner += '<td class="boxtablecell';
+				 data[row][cell].call != undefined ? inner += ' boxtablecellpush" data-button="' + cell + '"' : inner += '"';
 				 if (data[row][cell].style)  inner += ` style="${escapeHTMLTags(data[row][cell].style)}"`;
 				 inner += '>' + escapeHTMLTags(data[row][cell].value) + '</td>';
 				}
@@ -1588,11 +1580,10 @@ function getInnerDialog()
      
  if (inner != '')
     {
-     let contentStyle = '';
-     if (box.flags && box.flags.style && typeof box.flags.style === 'string') contentStyle = ' style ="' + escapeHTMLTags(box.flags.style) + '"';
-     return '<div class="boxcontentwrapper"'+ contentStyle +'>' + inner + '</div>';
+     data = '';
+     if (box.flags?.style && typeof box.flags.style === 'string') data = ' style ="' + escapeHTMLTags(box.flags.style) + '"';
+     return '<div class="boxcontentwrapper"'+ data +'>' + inner + '</div>';
     }
- return '';
 }
 
 function SetFirstDialogElementFocus()

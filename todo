@@ -1,11 +1,10 @@
 --------------April 2021--------------------------------------------------------------
 - Any props to text.php
 - single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-- Task manager:
-  calc ODid OVId etc..
-  sort and kill (+red backgraound)
+- Task manager: sort and kill (+red backgraound)
 - Context menu on main even with no any OD displayed
 - SCHEDULE process
+- Tree constants to customization
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git. !Help content during all code lookup
 
 --------------May 2021----------------------------------------------------------------
@@ -19,7 +18,8 @@
 - Object selection with non-empty link type for all view types (by now it is released for tree view type only)
 
 --------------Questionable features-------------------------------------------------
-- show timer in dialog button text
+- show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
+- Release mechanism that allows handler to save dialog data element JSON data at a time or other commands with element json data set.
 - system command to copy data to the buffer
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div

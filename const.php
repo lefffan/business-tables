@@ -10,6 +10,7 @@ const HANDLERDIR			= '/usr/local/apache2/htdocs/handlers/';
 const IP				= '192.168.9.39';
 const PORT				= 7889;
 const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";
+const KILLWRAPPERPROCESSESCMD		= "kill -9";
 
 /****************************Other constants**********************************************/
 const MAXOBJECTS			= 100000;
