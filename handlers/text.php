@@ -1,5 +1,6 @@
 <?php
-sleep(1000);
+
+//sleep(13);
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
 
@@ -12,7 +13,14 @@ switch($event)
 	    echo json_encode(['cmd' => 'EDIT']);
 	    break;
        case 'KEYPRESS':
-    	    if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'EDIT', 'data' => $_SERVER['argv'][2]]);
+    	    //if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'EDIT', 'data' => $_SERVER['argv'][2]]);
+	    $data = json_decode($_SERVER['argv'][2], true);
+	    if (isset($data['altkey']) && $data['altkey'] && $data['string'] === 'r')
+		{
+		 echo json_encode(['cmd' => 'SET', 'value' => '']);
+		 break;
+		}
+	    if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'EDIT', 'data' => $data['string']]);
 	    break;
        case 'INS':
     	    if (isset($_SERVER['argv'][2])) $link = $_SERVER['argv'][2]; else $link = '';
@@ -31,6 +39,9 @@ switch($event)
 	    break;
        case 'DEL':
     	    echo json_encode(['cmd' => 'SET', 'value' => '']);
+	    break;
+       case 'SCHEDULE':
+    	    echo "OK";
 	    break;
        case 'F2':
 	    echo json_encode(['cmd' => 'EDIT']);

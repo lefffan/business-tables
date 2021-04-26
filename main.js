@@ -4,7 +4,6 @@ let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
 let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
 let user = cmd = OD = OV = ODid = OVid = OVtype = '';
 let sidebar = {}, cursor = {}, oldcursor = {};
-let cmdId = 0;
 /*------------------------------CONSTANTS------------------------------------*/
 const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
@@ -19,9 +18,7 @@ const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
 const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
 const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
-const keyExceptions = ['Editable content apply input key combination', 'target', 'effect' , 'filter' , 'Force to use next user customization (empty or non-existent user - option is ignored)' , 'mouseover hint timer in msec'];
-const TREETITLEMAXCHAR = 15;
-const TREEVALUEMAXCHAR = 60;
+const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
 const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const uiProfile = {
 		  // Body
@@ -93,7 +90,7 @@ const uiProfile = {
 		  // Tree
 		  "tree table": { target: ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
 		  "tree error element": { target: ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
-		  "tree element": { target: ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
+		  "tree element": { target: ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "object element value max chars": "60", "object element title max chars": "15", },
 		  "tree arrow stock": { target: ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "100px;", },
 		  "tree arrow down": { target: ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree arrow up": { target: ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
@@ -531,12 +528,12 @@ function GetTreeElementContent(content)
      {
       if (add = content[i]['title'])
          {
-	  if (add.length > TREETITLEMAXCHAR) add = add.substr(0, TREETITLEMAXCHAR - 2) + '..';
+	  if (add.length > Number(uiProfile['tree element']['object element title max chars'])) add = add.substr(0, Number(uiProfile['tree element']['object element title max chars']) - 2) + '..';
 	  data += `<span class="underlined">${add}</span>: `;
          }
       if (add = content[i]['value'])
          {
-	  if (add.length > TREEVALUEMAXCHAR && content[i]['title'] != undefined) add = add.substr(0, TREEVALUEMAXCHAR - 2) + '..';
+	  if (add.length > Number(uiProfile['tree element']['object element value max chars']) && content[i]['title'] != undefined) add = add.substr(0, Number(uiProfile['tree element']['object element value max chars']) - 2) + '..';
 	  data += add;
          }
       data += '<br>';
@@ -592,7 +589,8 @@ function MainDivEventHandler(event)
 	      break;
 	 case 'dblclick':
 	      if (!box && event.target.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x])
-	      if (Number(mainTable[cursor.y][cursor.x].eId) > 0 && mainTable[cursor.y][cursor.x].realobject && (cmd = 'DBLCLICK')) CallController();
+	      if (Number(mainTable[cursor.y][cursor.x].eId) > 0 && mainTable[cursor.y][cursor.x].realobject && (cmd = 'DBLCLICK'))
+	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	}
 }
@@ -623,8 +621,7 @@ function BoxApply(buttonprop)
      return;
     }
 
- cmdId++;
- if (button['error']) displayMainError(button['error']);
+ if (button['error']) displayMainError(button['error'], false);
  button['warning'] ? warning(button['warning']) : HideBox();
 }
 
@@ -657,6 +654,7 @@ function BoxEventHandler(event)
 
  if (event.target.classList.contains('boxtablecellpush'))
     {
+     clearTimeout(buttonTimerId);
      saveDialogProfile(); // Save dialog box content and send it to the controller
      box.flags['event'] = event.target.dataset.button;
      cmd = box.cmd;
@@ -793,6 +791,8 @@ function ContextEventHandler(event)
      case 'Tree':
           if (target === mainDiv || target === mainTablediv || target.tagName === 'TD') inner = GREYITEM + 'Hide Object</div>' + ACTIVEITEM + 'Description</div>';
           break;
+     default:
+          if (target === mainDiv) inner = '';
     }
     
  if (inner != undefined)
@@ -865,7 +865,10 @@ function MouseEventHandler(event)
      cursor.td.contentEditable = 'false';
     }
     
- // Mouse click on context menu item? Call controller with appropriate context menu item as a command
+ // Mouse click on grey menu item or on context menu? Do nothing and return
+ if (event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) return; 
+    
+ // Mouse click on context menu item? Call controller with appropriate context menu item as a command. Else hide context menu and go on
  if (event.target.classList.contains('contextmenuItems'))
     {
      cmd = event.target.innerHTML;
@@ -873,9 +876,6 @@ function MouseEventHandler(event)
      HideContextmenu();
      return;
     }
-    
- // Mouse click on grey menu item or on context menu? Do nothing and return, else hide context menu and go on
- if (event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu')) return; 
  HideContextmenu();
     
  // OD item (or its wrap icon before) mouse click? Wrap/unwrap OV list
@@ -883,8 +883,9 @@ function MouseEventHandler(event)
  if (event.target.classList.contains('wrap')) next = next.nextSibling;
  if (next.classList.contains('sidebar-od'))
     {
-     if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) return;
-     sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];
+     /*if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) return;
+     sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];*/
+     if (Object.keys(sidebar[next.dataset.odid]['view']).length > 0) sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];
      cmd = 'SIDEBAR';
      CallController();
      return;
@@ -893,6 +894,12 @@ function MouseEventHandler(event)
  // OV item (or its wrap icon before) mouse click? Open OV in main field
  if (next.classList.contains('sidebar-ov'))
     {
+     if (ODid != next.dataset.odid || OVid != next.dataset.ovid)
+        {
+	 if (sidebar[ODid]?.['active']) delete sidebar[ODid]['active'];
+         sidebar[next.dataset.odid]['active'] = next.dataset.ovid;
+	 drawSidebar(sidebar);
+	}
      ODid = next.dataset.odid;
      OVid = next.dataset.ovid;
      OD = next.dataset.od;
@@ -1003,15 +1010,14 @@ function KeyboardEventHandler(event)
 		     }
 		  if (box.flags?.esc != undefined) // Box with esc flag set?
 		     {
-		      cmdId++;
 		      let button = SeekObjJSONProp(box.buttons, 'call');
 		      if (!button || !(button = box.buttons[button])) break;
-    		      if (button['error']) displayMainError(button['error']);
+    		      if (button['error']) displayMainError(button['error'], false);
     		      button['warning'] ? warning(button['warning']) : HideBox();
 		     }
 		  break;
 		 }
-	      if (cursor.td?.contentEditable === 'true')
+	      if (cursor.td && cursor.td.contentEditable === 'true')
 		 {
 		  cursor.td.contentEditable = 'false';
 		  cursor.td.innerHTML = cursor.olddata;
@@ -1020,36 +1026,40 @@ function KeyboardEventHandler(event)
 	      HideContextmenu();
 	      break;
 	 case 45: //Ins
-	      if (box || contextmenu) break;
-	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS')) CallController();
+	      if (box || contextmenu || !cursor.td) break;
+	      if (cursor?.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS'))
+	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 case 46: //Del
-	      if (box || contextmenu) break;
+	      if (box || contextmenu || !cursor.td) break;
 	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
-	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'DEL')) CallController();
-	       else mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
+	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'DEL'))
+	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+	       else
+		 mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
 	      break;
 	 case 113: //F2
-	      if (box || contextmenu) break;
+	      if (box || contextmenu || !cursor.td) break;
 	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
-	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'F2')) CallController();
-	       else MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'F2'))
+		 CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+	       else
+		 MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
 	      break;
 	 case 123: //F12
-	      if (box || contextmenu) break;
-	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'F12')) CallController();
+	      if (box || contextmenu || !cursor.td) break;
+	      if (cursor.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'F12'))
+	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 default: // space, letters, digits
-	      if (box || contextmenu) break;
-	      if (cursor.td && cursor.td.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
+	      if (!box && !contextmenu && cursor.td && cursor.td.contentEditable != 'true')
+	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
 	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
 	         {
-		  if (event.ctrlKey == false && event.altKey == false && event.metaKey == false && rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE) && (cmd = 'KEYPRESS'))
-		     {
-		      CallController(event.key); // Was: CallController({string: event.key, code: event.keyCode});
-		      // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
-		      if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
-		     }
+		  if (!rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) break;
+		  cmd = 'KEYPRESS';
+		  CallController({string: event.key, metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+		  if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault(); // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
 		 }
 	       else
 	         {
@@ -1073,6 +1083,7 @@ function FromController(json)
  try { input = JSON.parse(json.data); }
  catch { input = json; }
  
+ lg('Message from controller: ', input);
  if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
  if (input.auth != undefined)	{ user = input.auth; }
  if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
@@ -1080,7 +1091,8 @@ function FromController(json)
  switch (input.cmd)
 	{
 	 case 'DIALOG':
-	      if (input.cmdId != cmdId || (cursor.td && cursor.td.contentEditable === 'true')) break;
+	 case 'UPDATEDIALOG':
+	      if ((cursor.td && cursor.td.contentEditable === 'true') || (input.cmd === 'UPDATEDIALOG' && !box)) break;
 	      let scrollLeft, scrollTop;
 	      if (box?.contentDiv?.scrollLeft) scrollLeft = box.contentDiv.scrollLeft;
 	      if (box?.contentDiv?.scrollTop) scrollTop = box.contentDiv.scrollTop;
@@ -1088,7 +1100,7 @@ function FromController(json)
 	      ShowBox(scrollLeft, scrollTop);
 	      break;
 	 case 'EDIT':
-	      if (!objectTable[input.oId][input.eId]) break;
+	      if (box || (cursor.td && cursor.td.contentEditable === 'true') || !objectTable[input.oId][input.eId]) break;
 	      if (cursor && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && cursor.td.contentEditable != 'true')
 	      if (mainTable[cursor.y][cursor.x].oId === input.oId && mainTable[cursor.y][cursor.x].eId === input.eId)
 	         MakeCursorContentEditable(input.data);
@@ -1113,6 +1125,7 @@ function FromController(json)
 			 CellBorderToggleSelect(null, cursor.td, false);
 		        }
 	      break;
+	 case 'SIDEBAR':
 	 case 'CALL':
 	 case 'New Object Database':
 	 case 'Edit Database Structure':
@@ -1133,14 +1146,14 @@ function FromController(json)
 	
  if (input.sidebar)		drawSidebar(input.sidebar);
  if (input.log)			lg(input.log); 
- if (input.error != undefined)	displayMainError(input.error);
+ if (input.error != undefined)	displayMainError(input.error, false);
  if (input.alert)		warning(input.alert);
 }
 
 function CallController(data)
 {
  let object;
- lg(cmd);
+ lg('Message to controller (cmd, data): ', cmd, data);
  
  switch (cmd)
 	{
@@ -1152,6 +1165,7 @@ function CallController(data)
 	 case 'Edit Database Structure':
 	 case 'SIDEBAR':
 	 case 'CALL':
+	 case 'LOGIN':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
 	      break;
@@ -1206,7 +1220,6 @@ function CallController(data)
 	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject)
 		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
 	      break;
-	 case 'LOGIN':
 	 case 'CONFIRM':
 	 case 'CONFIRMDIALOG':
 	 case 'DBLCLICK':
@@ -1236,11 +1249,11 @@ function CallController(data)
 	
  if (object)
     {
-     object.cmdId = ++cmdId;
      object.OD = OD;
      object.OV = OV;
      object.ODid = ODid;
      object.OVid = OVid;
+
      try { socket.send(JSON.stringify(object)); }
      catch {}
      if (socket.readyState === 3) CreateWebSocket();
@@ -1259,11 +1272,8 @@ function displayMainError(errormsg, resetOV = true)
     }
  mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
 
- if (resetOV)
-    {
-     OD = OV = ODid = OVid = OVtype = '';
-     mainTableRemoveEventListeners();
-    }
+ mainTableRemoveEventListeners();
+ if (resetOV) OD = OV = ODid = OVid = OVtype = '';
 }
 
 function mainTableRemoveEventListeners()
@@ -1391,7 +1401,6 @@ function ShowBox(scrollLeft, scrollTop)
  let inner = getInnerDialog();
  if (!inner) // No content? Hide dialog and return;
     {
-     cmdId++;
      HideBox();
      return;
     }
@@ -1667,7 +1676,6 @@ function HideBox()
  if (box)
     {
      box = null;
-     lg('closing box');
      if (uiProfile["dialog box"]["effect"] != 'none') boxDiv.removeEventListener('transitionend', SetFirstDialogElementFocus);
      boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'hide';
      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
@@ -1888,7 +1896,7 @@ function styleUI()
      {
       inner += uiProfile[element]["target"] + " {";
       for (key in uiProfile[element])
-	  if (keyExceptions.indexOf(key) === -1 && key.substr(0, 1) != '_' && uiProfile[element][key] != '') inner += key + ": " + uiProfile[element][key];
+	  if (NOTARGETUIPROFILEPROPS.indexOf(key) === -1 && key.substr(0, 1) != '_' && uiProfile[element][key] != '') inner += key + ": " + uiProfile[element][key];
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }
  style.innerHTML = inner;

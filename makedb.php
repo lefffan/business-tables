@@ -25,8 +25,8 @@ try {
      //------------------------------------------Create default OD 'Users'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
-     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
-     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = ALLOWEDLIST;
+     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = ALLOWEDLIST;
      $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
      $userOD['buttons']['SAVE']['call'] = 'Edit Database Structure';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
@@ -138,22 +138,24 @@ try {
      // Create Object Database (actual data instance)
      $query = $db->prepare("create table `data_1` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, eid2 JSON, eid3 JSON, eid4 JSON, eid5 JSON, eid6 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
      $query->execute();
-
+     $query = $db->prepare('ALTER TABLE `data_1` ADD INDEX (`lastversion`)');
+     $query->execute();
+     
      // Insert two objects (two users) to OD with id=1
      $client['auth'] = 'system';
      $client['ODid'] = '1';
      $client['allelements'] = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
      $client['uniqelements'] = ['1' => ''];
      $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '2' => ['cmd' => 'RESET', 'value' => ''], '3' => ['cmd' => 'RESET', 'value' => ''], '4' => ['cmd' => 'RESET', 'value' => ''], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
-     InsertObject($db, $client, $output);
+     AddObject($db, $client, $output);
 
      $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '2' => ['cmd' => 'RESET', 'value' => ''], '3' => ['cmd' => 'RESET', 'value' => ''], '4' => ['cmd' => 'RESET', 'value' => ''], '5' => ['cmd' => 'RESET', 'value' => ''], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
-     InsertObject($db, $client, $output);
+     AddObject($db, $client, $output);
 
      //------------------------------------------Create default OD 'Logs'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Logs';
-     $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = ALLOWEDLIST;
      $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
      $logOD['buttons']['SAVE']['call'] = 'Edit Database Structure';
      $logOD['dialog']['Element']['New element']['element1']['id'] = '2';
@@ -162,7 +164,8 @@ try {
      $newView['element1']['id'] = '1';
      $newView['element1']['data'] = 'All logs';
      $newView['element6']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}';
-     $newView['element9']['data'] = '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
+     $newView['element9']['data'] = ALLOWEDLIST;
+     $newView['element10']['data'] = 'root';
      $logOD['dialog']['View']['All logs'] = $newView;
 
      $newElement['element1']['id'] = '1';
@@ -181,6 +184,8 @@ try {
       
      // Create Object Database (actual data instance)
      $query = $db->prepare("create table `data_2` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, eid2 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+     $query->execute();
+     $query = $db->prepare('ALTER TABLE `data_2` ADD INDEX (`lastversion`)');
      $query->execute();
     }
 

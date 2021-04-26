@@ -12,10 +12,10 @@ function lg($arg, $title = 'LOG', $echo = false) // Function saves input $arg to
 {
  if ($echo && gettype($arg) === 'string')
     {
-     echo "\n----------------------------".$title." START-------------------------------\n";
+     echo "\n----------------------------".$title."-------------------------------\n";
      echo $arg;
     }
- file_put_contents('error.log', "\n----------------------------".$title." START-------------------------------\n", FILE_APPEND);
+ file_put_contents('error.log', "\n----------------------------".$title."-------------------------------\n", FILE_APPEND);
  file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
 }
 
@@ -145,13 +145,13 @@ function initNewODDialogElements()
 		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Emtpy, undefined or zero value - no limit.', 'data' => '', 'line' => ''],
 		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
 		    
- $newPermissions = ['element1' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+ $newPermissions = ['element1' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
 		    'element2' => ['type' => 'textarea', 'head' => "List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties.\nYou must be aware of disallowing all users, so avoid user/group empty list with 'allowed' type list", 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element3' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
 		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element5' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
 		    'element6' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views', 'data' => '', 'line' => ''],
-		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element7' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
 		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'help' => 'To remove object element - set empty element header, description and handler file'],
@@ -175,9 +175,9 @@ function initNewODDialogElements()
 		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => ''],
 		    'element5' => ['type' => 'text', 'head' => 'Object selection link type', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
-		    'element7' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element7' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
 		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to display this view', 'data' => '', 'line' => ''],
-		    'element9' => ['type' => 'radio', 'data' => 'allowed list (disallowed for others)|+disallowed list (allowed for others)|'],
+		    'element9' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
 		    'element10' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view', 'data' => '', 'line' => '']];
 							  
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
@@ -187,227 +187,6 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
 		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
 		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']];
-}
-
-function GetSidebar($db, $userid, $ODid, $OVid, $OD, $OV)
-{
- $groups = getUserGroups($db, $userid);	// Get current user group list
- $groups[] = getUserName($db, $userid);	// and add username at the end of array
-
- $sidebar = [];
- $query = $db->prepare("SELECT id,odname FROM `$`");
- $query->execute();
- foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
-	 {
-	  $name = $value['odname'];
-	  $id = intval($value['id']);
-	  $sidebar[$id] = ['name' => $name, 'view' => []];
-	  
-	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$name'");
-	  $query->execute();
-	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
-		  {
-		   if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element7']['data'])), "strcmp")))
-		      { if ($View['element6']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') continue; }
-		    else 
-		      { if ($View['element6']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') continue; }
-		   $sidebar[$id]['view'][intval($View['element1']['id'])] = $View['element1']['data'];
-		   if ($id === intval($ODid) && $View['element1']['id'] === $OVid) $sidebar[$id]['active'] = $OVid;
-		  }
-	 }
-
- if (count($sidebar) == 0)			return ['cmd' => '', 'sidebar' => $sidebar, 'error' => 'Please create Object Database first!'];
- if ($ODid === '')				return ['cmd' => '', 'sidebar' => $sidebar, 'error' => 'Please create/select Object View!'];
- if (!isset($sidebar[$ODid]['view'][$OVid]))	return ['cmd' => '', 'sidebar' => $sidebar, 'error' => "Database '$OD' or its View '$OV' not found!"];
-						return ['cmd' => '', 'sidebar' => $sidebar];
-}
-
-function cutKeys(&$arr, $keys) // Function cuts all keys of array $arr except of keys defined in $keys array
-{
- foreach ($arr as $key => $value) if (array_search($key, $keys) === false) unset($arr[$key]);
-}
-
-function CopyKeys(&$arr, $keys)
-{                                                                     
- $result = [];
- foreach ($keys as $value) if (isset($arr[$value])) $result[$value] = $arr[$value];
- return $result;                                                      
-}
-	    
-function Check($db, $flags, &$client, &$input, &$output)
-{
- $client['cmd'] = $input['cmd'];
-
- if ($flags & CHECK_OD_OV)
-    {
-     // Check input OD/OV vars existence
-     if (!isset($input['OD'], $input['OV'])) $input['OD'] = $input['OV'] = '';
-     if (!isset($input['ODid'], $input['OVid'])) $input['ODid'] = $input['OVid'] = '';
-     $output = GetSidebar($db, $client['uid'], $input['ODid'], $input['OVid'], $input['OD'], $input['OV']);
-     if (isset($output['error'])) return;
-     
-     // Set subscribed input parameters to the current client
-     $client['ODid'] = $input['ODid'];
-     $client['OVid'] = $input['OVid'];
-     $client['OD']   = $output['sidebar'][ intval($input['ODid']) ]['name'];
-     $client['OV']   = $output['sidebar'][ intval($input['ODid']) ]['view'][ intval($input['OVid']) ];
-    }
-
- if ($flags & GET_ELEMENTS)
-    {
-     // Get element section
-     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$client[ODid]'");
-     $query->execute();
-     if (count($elements = $query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!"; return; }
-
-     // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
-     $client['allelements'] = $client['uniqelements'] = [];
-     foreach (json_decode($elements[0][0], true) as $key => $value) if ($key != 'New element')
-    	     {
-	      $id = intval($value['element1']['id']); // Calculate current element id
-	      $client['allelements'][$id] = $value;
-	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $client['uniqelements'][$id] = '';
-	     }
-     if (!count($client['allelements'])) { $output['error'] = "Database '$client[OD]' has no elements exist!"; return; }
-     ksort($client['allelements'], SORT_NUMERIC);
-    }
-    
- if ($flags & GET_VIEWS)
-    {
-     // Get view section
-     unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linktype']);
-     
-     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
-     $query->execute();
-     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $value)
-	  if ($value['element1']['id'] === $client['OVid'])
-    	     {
-	      $client['viewtype'] = substr($value['element3']['data'], ($pos = strpos($value['element3']['data'], '+')) + 1, strpos($value['element3']['data'], '|', $pos) - $pos -1);
-	      $client['objectselection'] = trim($value['element4']['data']);
-	      $client['linktype'] = $value['element5']['data'];
-	      $client['elementselection'] = trim($value['element6']['data']);
-	      break;
-	     }
-     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype'])) { $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!"; return; }
-
-     // List is empty or includes '*' chars for a 'Table' view? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-     if ($client['viewtype'] === 'Table')
-     if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
-        {
-         $x = 0;
-	 $startline = 'n+1';
-	 if ($client['elementselection'] === '*' || $client['elementselection'] === '***') $startline = 'n+2';
-	 $arr = $client['allelements'];
-	 if ($client['elementselection'] === '**' || $client['elementselection'] === '***') $arr = ['id' => '', 'version' => '', 'owner' => '', 'datetime' => ''] + $arr;
-	 $client['elementselection'] = '';
-         foreach ($arr as $id => $value)
-    	         {
-	          $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
-	          if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
-		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
-	          $x++;
-	    	 }
-	}
-
-     // List is empty for a 'Tree' view? Set up default list for all elements appearance: {'title1': '', 'value1': '', 'title2': ''..} 
-     if ($client['viewtype'] === 'Tree')
-     if ($client['elementselection'] === '')
-        {
-	 $client['elementselection'] = ['id' => '', 'datetime' => ''];
-	 foreach ($client['allelements'] as $id => $value) $client['elementselection'][$id] = '';
-	}
-      else
-        {
-	 $arr = [];
-	 foreach (preg_split("/\n/", $client['elementselection']) as $value)
-		 if (gettype($arr = json_decode($value, true, 2)) === 'array') break;
-	 gettype($arr) === 'array' ? $client['elementselection'] = $arr : $client['elementselection'] = [];
-	}
-    }
-
- if ($flags & CHECK_OID)
- if ($client['cmd'] === 'INIT')
-    {
-     $client['oId'] = 0;
-    }
-  else
-    {
-     // Check object identificator value existence
-     if (!isset($input['oId']) || $input['oId'] < STARTOBJECTID) { $output['alert'] = 'Incorrect object identificator value!'; return; }
-     if (($client['oId'] = $input['oId']) === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT') { $output['alert'] = 'System account cannot be deleted!'; return; }
-     
-     // Check database object existence -> Check oid object selection existence
-     $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']); 
-     if (gettype($client['objectselection']) === 'array') { $output['alert'] = "Object selection has been changed, please refresh Object View!"; return; }
-     //$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND id in (SELECT id FROM `data_$client[ODid]` $client[objectselection])");
-     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] and lastversion=1 and concat(id,lastversion) IN (SELECT concat(id,lastversion) FROM `data_$client[ODid]` $client[objectselection])");
-     $query->execute();
-     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) { $output['alert'] = "Please refresh Object View, specified object (id=$client[oId]) doesn't exist!"; return; }
-    }
-
- if ($flags & CHECK_EID)
- if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
-    {
-     $client['eId'] = 0;
-    }
-  else
-    {
-     // Check element identificator value existence
-     if (!isset($input['eId'])) { $output['alert'] = 'Incorrect element identificator value!'; return; }
-     
-     // Check eid element selection existence
-     if (!isset(setElementSelectionIds($client)[strval($client['eId'] = $input['eId'])])) { $output['alert'] = "Please refresh Object View, specified element id doesn't exist!"; return; }
-    }
-
- if ($flags & CHECK_ACCESS) switch ($client['cmd'])
-    {
-     case 'New Object Database':
-	  if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|') { $output['alert'] = "You're not allowed to add Object Databases!"; return; }
-	  break;
-     case 'CALL':
-     case 'DELETEOBJECT':
-     case 'INIT':
-     case 'DBLCLICK':
-     case 'KEYPRESS':
-     case 'INS':
-     case 'DEL':
-     case 'F2':
-     case 'F12':
-     case 'CONFIRM':
-     case 'CONFIRMDIALOG':
-	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
-	  $query->execute();
-	  if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0) { $output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!"; return; }
-		  
-	  $View = json_decode($View[0][0], true)[$client['OV']];// Set current view array data
-	  $groups = getUserGroups($db, $client['uid']);		// Get current user group list
-	  $groups[] = $client['auth'];				// and add username at the end of array
-	  
-	  // Check on 'display' permissions
-	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element8']['data'])), "strcmp")))
-	     {
-	      if ($View['element7']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
-	     }
-	   else
-	     {
-	      if ($View['element7']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['error'] = "You're not allowed to display or modify this Object View!"; return; }
-	     }
-	  // No need to check 'writable' permissions for displaying OV by CALL event
-	  if ($client['cmd'] === 'CALL') break;
-	  
-	  // Check on 'writable' permissions 
-	  if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element10']['data'])), "strcmp")))
-	     {
-	      if ($View['element9']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
-	     }
-	   else
-	     {
-	      if ($View['element9']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|') { $output['alert'] = "You're not allowed to modify this Object View!"; return; }
-	     }
-	  break;
-    }
- 
- return true;
 }
 
 function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
@@ -448,7 +227,7 @@ function getElementJSON($db, $ODid, $oid, $eid, $version = NULL)
  return NULL;
 }
 
-function InsertObject($db, &$client, &$output, $_client = [])
+function AddObject($db, &$client, &$output)
 {
  $query = $values = '';
  $params = [];
@@ -492,9 +271,9 @@ function InsertObject($db, &$client, &$output, $_client = [])
          {
           $db->commit();
 	  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
-	  unset($_client['params']);
-	  if (isset($ruleresult['message']) && $ruleresult['message']) $_client['alert'] = $ruleresult['message'];
-	  return ['cmd' => 'CALL'] + $_client;
+	  $output = ['cmd' => 'INIT'];
+	  if (isset($ruleresult['message']) && $ruleresult['message']) $output['alert'] = $ruleresult['message'];
+	  return;
 	 }
      }
  catch (PDOException $e)
@@ -505,11 +284,10 @@ function InsertObject($db, &$client, &$output, $_client = [])
 
  $db->rollBack();
  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
- $_client['params'] = $client['params'];
- return ['cmd' => 'ALERT', 'data' => $ruleresult['message']] + $_client;
+ $output = ['cmd' => '', 'alert' => $ruleresult['message']];
 }
 
-function DeleteObject($db, &$client, &$_client)
+function DeleteObject($db, &$client, &$output)
 {
  try {
       $db->beginTransaction();
@@ -531,10 +309,10 @@ function DeleteObject($db, &$client, &$_client)
          {
 	  $db->commit();
 	  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
-	  unset($_client['params']);
-	  if ($client['ODid'] === '1') $_client['passchange'] = strval($client['oId']);
-	  if (isset($ruleresult['message']) && $ruleresult['message']) $_client['alert'] = $ruleresult['message'];
-	  return ['cmd' => 'CALL'] + $_client;
+	  $output = ['cmd' => 'DELETEOBJECT'];
+	  if (isset($ruleresult['message']) && $ruleresult['message']) $output['alert'] = $ruleresult['message'];
+	  if ($client['ODid'] === '1') $output['passchange'] = strval($client['oId']);
+	  return;
 	 }
      }
  catch (PDOException $e)
@@ -545,8 +323,7 @@ function DeleteObject($db, &$client, &$_client)
 
  $db->rollBack();
  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
- $_client['params'] = $client['params'];
- return ['cmd' => 'ALERT', 'data' => $ruleresult['message']] + $_client;
+ $output = ['cmd' => '', 'alert' => $ruleresult['message']];
 }
 
 function ProcessRules($db, &$client, $preversion, $postversion, $operation)
@@ -772,11 +549,12 @@ function getUserCustomization($db, $uid)
  return $customization;
 }
 
-function getLoginDialogData()
+function getLoginDialogData($title = NULL)
 {
+ if (!$title) $title = "\nUsername";
  return [
 	 'title'   => 'Login',
-	 'dialog'  => ['pad' => ['profile' => ['element1' => ['head' => "\nUsername", 'type' => 'text'], 'element2' => ['head' => 'Password', 'type' => 'password']]]],
+	 'dialog'  => ['pad' => ['profile' => ['element1' => ['head' => $title, 'type' => 'text'], 'element2' => ['head' => 'Password', 'type' => 'password']]]],
 	 'buttons' => ['LOGIN' => ['value' => 'LOGIN', 'call' => 'LOGIN', 'enterkey' => '']],
 	 'flags'   => ['style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;']
 	];
@@ -785,22 +563,21 @@ function getLoginDialogData()
 function LogMessage($db, &$client, $log)
 {
  $msg = '';
- if (isset($client['auth'])) $msg .= "USER: '$client[auth]', ";
- if (isset($client['OD']) && $client['OD'] != '') $msg .= "OD: '$client[OD]', OV: '$client[OV]', ";
- if (isset($client['oId'])) $msg .= "OBJECT ID: '$client[oId]', ";
- if (isset($client['eId'])) $msg .= "ELEMENT ID: '$client[eId]', ";
+ if (isset($client['auth']) && $client['auth']) $msg .= "USER: '$client[auth]', ";
+ if (isset($client['OD']) && $client['OD']) $msg .= "OD: '$client[OD]', OV: '$client[OV]', ";
+ if (isset($client['oId']) && $client['oId']) $msg .= "OBJECT ID: '$client[oId]', ";
+ if (isset($client['eId']) && $client['eId']) $msg .= "ELEMENT ID: '$client[eId]', ";
 
  if ($msg != '') $msg = '[ '.substr($msg, 0, -2).' ] ';
  lg($msg .= $log);
 							                                                                                                           
- if (isset($client['auth'])) $_client['auth'] = $client['auth']; else $_client['auth'] = 'system';
- $_client['ODid'] = '2';
- $_client['allelements'] = ['1' => ''];
- $_client['uniqelements'] = [];
+ $_client = ['ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs', 'allelements' => ['1' => ''], 'uniqelements' => [], 'params' => []];
+ isset($client['auth']) ? $_client['auth'] = $client['auth'] : $_client['auth'] = 'system';
  $output = ['1' => ['cmd' => 'RESET', 'value' => $msg]];
  
+ AddObject($db, $_client, $output);
  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
- $query->execute([':client' => json_encode(InsertObject($db, $_client, $output, ['ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs']), JSON_HEX_APOS | JSON_HEX_QUOT)]);
+ $query->execute([':client' => json_encode($output + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
 }
 
 function encode($payload, $type = 'text', $masked = false)
@@ -857,7 +634,11 @@ function encode($payload, $type = 'text', $masked = false)
     
 function decode($data)
 {
-     if (!strlen($data)) return false;
+     if (!strlen($data))
+        {
+	 lg('Socket data zero length!');
+	 return false;
+	}
      
      $unmaskedPayload = '';
      $decodedData = array();
@@ -869,7 +650,12 @@ function decode($data)
      $isMasked = ($secondByteBinary[0] == '1') ? true : false;
      $payloadLength = ord($data[1]) & 127;
      
-     if (!$isMasked) return array('type' => '', 'payload' => '', 'error' => 'protocol error (1002)'); // Unmasked frame is received
+     if (!$isMasked)
+        {
+	 lg('Unmasked frame is received!');
+	 //return false;
+	 return array('type' => '', 'payload' => '', 'error' => 'protocol error (1002)'); // Unmasked frame is received
+	}
      
      switch ($opcode)
     	    {
@@ -889,6 +675,8 @@ function decode($data)
 	          $decodedData['type'] = 'pong'; // Pong frame
 		  break;
 	     default:
+		  lg('Socket data unknown opcode (1003)!');
+		  //return false;
 	          return array('type' => '', 'payload' => '', 'error' => 'unknown opcode (1003)');
 	    }
      
@@ -915,7 +703,11 @@ function decode($data)
 	}
      
      // We have to check for large frames here - socket_recv cuts at 1024 bytes so if websocket-frame is > 1024 bytes, then we have to wait until whole data is transferd
-     if (strlen($data) < $dataLength) return false;
+     if (strlen($data) < $dataLength)
+        {
+	 lg('Socket data is more than 1024 bytes, so wait until whole data is transferd, input data is '.strval(strlen($data)).'bytes, actual data is '.strval($dataLength).'bytes');
+	 return false;
+	}
      
      if ($isMasked)
         {
@@ -982,15 +774,6 @@ function GenerateRandomString($length = USERPASSMINLENGTH)
  return $randomstring;
 }
 
-function ResetAllAuth(&$array)
-{
- foreach ($array as $id => $value)
-	 {
-	  $array[$id]['authtime'] = 0;
-	  $array[$id]['ODid'] = $array[$id]['OVid'] = $array[$id]['OD'] = $array[$id]['OV'] = '';
-	 }
-}
-
 function GetObjectSelection($db, $objectSelection, $params, $user)
 {
  // Check input paramValues array and add reserved :user parameter value
@@ -1032,6 +815,7 @@ function GetObjectSelection($db, $objectSelection, $params, $user)
  // Otherwise return dialog array
  $buttons = OKCANCEL;
  $buttons['OK']['call'] = 'CALL';
+ $buttons['CANCEL']['error'] = 'View output has been canceled';
  return [
 	 'title'   => 'Object View parameters',
 	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
@@ -1040,7 +824,276 @@ function GetObjectSelection($db, $objectSelection, $params, $user)
 	];
 }
 
-$db = new PDO('mysql:host=localhost;dbname='.DATABASENAME, DATABASEUSER, DATABASEPASS);
-$db->exec("SET NAMES UTF8");
-$db->exec("ALTER DATABASE ".DATABASENAME." CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci");
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+function Swap(&$a, &$b)
+{
+ $swap = $a;
+ $a = $b;
+ $b = $swap;
+}
+
+function Sidebar($db, &$client)
+{
+ $groups = getUserGroups($db, $client['uid']);	// Get current user group list
+ $groups[] = getUserName($db, $client['uid']);	// and add username at the end of array
+
+ $sidebar = [];
+ $query = $db->prepare("SELECT id,odname FROM `$`");
+ $query->execute();
+ foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
+	 {
+	  $name = $value['odname'];
+	  $id = $value['id'];
+	  $sidebar[$id] = ['name' => $name, 'view' => []];
+	  
+	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$name'");
+	  $query->execute();
+	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
+		  {
+		   $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element8']['data'])), "strcmp"));
+		   if (($count && $View['element7']['data'] === DISALLOWEDLIST) || (!$count && $View['element7']['data'] === ALLOWEDLIST)) continue;
+		   $sidebar[$id]['view'][$View['element1']['id']] = $View['element1']['data'];
+		   if ($id === $client['ODid'] && $View['element1']['id'] === $client['OVid']) $sidebar[$id]['active'] = $client['OVid'];
+		  }
+	 }
+ 
+ return $sidebar;
+}
+
+function Check($db, $flags, &$client, &$output)
+{
+ if ($flags & CHECK_OD_OV)
+    {
+     // Copy input OD/OV ids and names if exist
+     $output['sidebar'] = Sidebar($db, $client);
+     
+     if (count($output['sidebar']) == 0)
+        {
+	 $output['error'] = 'Please create Object Database first!';
+	 return;
+	}
+     if ($client['ODid'] === '')
+        {
+	 $output['error'] = 'Please create/select Object View!';
+	 return;
+	}
+     if (!isset($output['sidebar'][$client['ODid']]['view'][$client['OVid']]))
+        {
+	 $output['error'] = "Database '$client[OD]' or its View '$client[OV]' not found!";
+	 return;
+	}
+     
+     $client['OD'] = $output['sidebar'][$client['ODid']]['name'];
+     $client['OV'] = $output['sidebar'][$client['ODid']]['view'][$client['OVid']];
+    }
+
+ if ($flags & GET_ELEMENTS)
+    {
+     $client['allelements'] = $client['uniqelements'] = [];
+     // Get element section
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$client[ODid]'");
+     $query->execute();
+     if (!count($elements = $query->fetchAll(PDO::FETCH_NUM)))
+        { 
+	 $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!";
+	 return;
+	}
+
+     // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
+     foreach (json_decode($elements[0][0], true) as $key => $value) if ($key != 'New element')
+    	     {
+	      $id = intval($value['element1']['id']); // Calculate current element id
+	      $client['allelements'][$id] = $value;
+	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $client['uniqelements'][$id] = '';
+	     }
+     if (!count($client['allelements']))
+        {
+	 $output['error'] = "Database '$client[OD]' has no elements exist!";
+	 return;
+	}
+     ksort($client['allelements'], SORT_NUMERIC);
+    }
+    
+ if ($flags & GET_VIEWS)
+ if ($client['cmd'] !== 'SCHEDULE')
+    {
+     // Get view section
+     unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linktype']);
+     
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
+     $query->execute();
+     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $value)
+	  if ($value['element1']['id'] === $client['OVid'])
+    	     {
+	      $client['viewtype'] = substr($value['element3']['data'], ($pos = strpos($value['element3']['data'], '+')) + 1, strpos($value['element3']['data'], '|', $pos) - $pos -1);
+	      $client['objectselection'] = trim($value['element4']['data']);
+	      $client['linktype'] = $value['element5']['data'];
+	      $client['elementselection'] = trim($value['element6']['data']);
+	      break;
+	     }
+     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype']))
+        {
+	 $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!";
+	 return;
+	}
+
+     // List is empty or includes '*' chars for a 'Table' view? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+     if ($client['viewtype'] === 'Table')
+     if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
+        {
+         $x = 0;
+	 $startline = 'n+1';
+	 if ($client['elementselection'] === '*' || $client['elementselection'] === '***') $startline = 'n+2';
+	 $arr = $client['allelements'];
+	 if ($client['elementselection'] === '**' || $client['elementselection'] === '***') $arr = ['id' => '', 'version' => '', 'owner' => '', 'datetime' => ''] + $arr;
+	 $client['elementselection'] = '';
+         foreach ($arr as $id => $value)
+    	         {
+	          $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
+	          if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
+		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
+	          $x++;
+	    	 }
+	}
+
+     // List is empty for a 'Tree' view? Set up default list for all elements appearance: {'title1': '', 'value1': '', 'title2': ''..} 
+     if ($client['viewtype'] === 'Tree')
+     if ($client['elementselection'] === '')
+        {
+	 $client['elementselection'] = ['id' => '', 'datetime' => ''];
+	 foreach ($client['allelements'] as $id => $value) $client['elementselection'][$id] = '';
+	}
+      else
+        {
+	 $arr = [];
+	 foreach (preg_split("/\n/", $client['elementselection']) as $value)
+		 if (gettype($arr = json_decode($value, true, 2)) === 'array') break;
+	 gettype($arr) === 'array' ? $client['elementselection'] = $arr : $client['elementselection'] = [];
+	}
+    }
+
+ if ($flags & CHECK_OID)
+ if ($client['cmd'] !== 'SCHEDULE')
+ if ($client['cmd'] === 'INIT')
+    {
+     $client['oId'] = 0;
+    }
+  else
+    {
+     isset($client['oId']) ? $client['oId'] = $client['oId'] : $client['oId'] = 0;
+
+     // Check object identificator value existence
+     if ($client['oId'] < STARTOBJECTID)
+        {
+	 $output['alert'] = 'Incorrect object identificator value!';
+	 return;
+	}
+
+     // Avoid object id = STARTOBJECTID (system user from User OD) to be deleted
+     if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT')
+        {
+	 $output['alert'] = 'System account cannot be deleted!';
+	 return;
+	}
+     
+     // Check for changes of object selection
+     if (gettype($client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth'])) === 'array')
+        {
+	 $output['alert'] = "Object selection has been changed, please refresh Object View!";
+	 return;
+	}
+     
+     // Check object existence
+     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] and lastversion=1 and concat(id,lastversion) IN (SELECT concat(id,lastversion) FROM `data_$client[ODid]` $client[objectselection])");
+     $query->execute();
+     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]))
+        {
+	 $output['alert'] = "Please refresh Object View, specified object (id=$client[oId]) doesn't exist!";
+	 return;
+	}
+    }
+
+ if ($flags & CHECK_EID)
+ if ($client['cmd'] !== 'SCHEDULE')
+ if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
+    {
+     $client['eId'] = 0;
+    }
+  else
+    {
+     isset($client['eId']) ? $client['eId'] = $client['eId'] : $client['eId'] = 0;
+     
+     // Check eid element selection existence
+     if (!isset(setElementSelectionIds($client)[strval($client['eId'])]))
+        {
+	 $output['alert'] = "Please refresh Object View, specified element id doesn't exist!";
+	 return;
+	}
+    }
+
+ if ($flags & CHECK_ACCESS)
+ if ($client['cmd'] !== 'SCHEDULE')
+ if ($client['cmd'] === 'New Object Database')
+    {
+     if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|')
+        $output['alert'] = "You're not allowed to add Object Databases!";
+    }
+  else if (array_search($client['cmd'], ['CALL', 'DELETEOBJECT', 'INIT', 'DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'SCHEDULE']) !== false)
+    {
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
+     $query->execute();
+     if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0)
+        {
+	 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!";
+	 return;
+	}
+      else
+	{	  
+	 $View = json_decode($View[0][0], true)[$client['OV']]; // Set current view array data
+	 $groups = getUserGroups($db, $client['uid']);		// Get current user group list
+	 $groups[] = $client['auth'];				// and add username at the end of array
+	  
+	 // Check on 'display' permissions
+	 $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element8']['data'])), "strcmp"));
+	 if (($count && $View['element7']['data'] === DISALLOWEDLIST) || (!$count && $View['element7']['data'] === ALLOWEDLIST))
+	    {
+	     $output['error'] = "You're not allowed to display or modify this Object View!";
+	     return;
+	    }
+
+	 // Check 'writable' permissions for non-CALL event
+	 if ($client['cmd'] !== 'CALL')
+	    {
+	     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element10']['data'])), "strcmp"));
+	     if (($count && $View['element9']['data'] === DISALLOWEDLIST) || (!$count && $View['element9']['data'] === ALLOWEDLIST))
+	        {
+		 $output['alert'] = "You're not allowed to modify this Object View!";
+		 return;
+		}
+	    }
+	}
+    }
+  else
+    {
+     $output['error'] = "Unknown client event '$client[cmd]'!";
+     return;
+    }
+    
+ return true;
+}
+
+function CopyArrayElements(&$from, &$to, $props)
+{
+ foreach ($props as $value) isset($from[$value]) ? $to[$value] = $from[$value] : $to[$value] = '';
+}
+
+function cutKeys(&$arr, $keys) // Function cuts all keys of array $arr except of keys defined in $keys array
+{
+ foreach ($arr as $key => $value) if (array_search($key, $keys) === false) unset($arr[$key]);
+}
+
+function CopyKeys(&$arr, $keys)
+{                                                                     
+ $result = [];
+ foreach ($keys as $value) if (isset($arr[$value])) $result[$value] = $arr[$value];
+ return $result;                                                      
+}

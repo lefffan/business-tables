@@ -99,13 +99,15 @@ function DefineNodeLinks($db, &$client, $oid, $type, &$tree, &$objects)
 	 }
 }
 
-function NewOD($db, &$client)
+function NewOD($db, &$client, &$output)
 {
- global $id;
- 
  // Get dialog OD name, cut it and check
  $odname = CheckODString($client['data']['dialog']['Database']['Properties']['element1']['data']);
- if ($odname === '') return ['cmd' => '', 'alert' => 'Object Database name cannot be empty!'];
+ if ($odname === '') 
+    {
+     $output = ['cmd' => '', 'alert' => 'Object Database name cannot be empty!'];
+     return;
+    }
  $client['data']['dialog']['Database']['Properties']['element1']['data'] = $odname;
 
  // Inserting new OD name
@@ -124,15 +126,17 @@ function NewOD($db, &$client)
  // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
  $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
+ $query = $db->prepare('ALTER TABLE `data_$id` ADD INDEX (`lastversion`)');
+ $query->execute();
  
  // Insert new OD properties
  $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
  $query->execute([':odprops' => json_encode(adjustODProperties($db, $client['data'], $id))]);
-		    
- return GetSidebar($db, $client['uid'], $client['ODid'], $client['OVid'], $client['OD'], $client['OV']);
+ 
+ return true;
 }
 		
-function EditOD($db, &$client)
+function EditOD($db, &$client, &$output)
 {
  // Get dialog old and new OD name
  $newodname = CheckODString($client['data']['dialog']['Database']['Properties']['element1']['data']);
@@ -144,7 +148,11 @@ function EditOD($db, &$client)
  $query->execute([':id' => $id]);
  $oldodname = $query->fetchAll(PDO::FETCH_NUM);
  
- if (!isset($oldodname[0][0], $oldodname[0][1])) return ['cmd' => '', 'alert' => "Object Database has already been removed!"];
+ if (!isset($oldodname[0][0], $oldodname[0][1]))
+    {
+     $output = ['cmd' => '', 'alert' => "Object Database has already been removed!"];
+     return;
+    }
  $odprops = $oldodname[0][1];
  $oldodname = $oldodname[0][0];
  
@@ -158,14 +166,17 @@ function EditOD($db, &$client)
      $query->execute();
      $query = $db->prepare("DROP TABLE IF EXISTS `data_$id`");
      $query->execute();
-     //$query->closeCursor();
-     return GetSidebar($db, $client['uid'], $client['ODid'], $client['OVid'], $client['OD'], $client['OV']);
+     return true;
     }
 
  // Decode current OD props
  $odprops = json_decode($odprops, true);
- if (isset($odprops['dialog']['Database']['Permissions'])) $dbPermissions = $odprops['dialog']['Database']['Permissions'];
-  else return ['cmd' => '', 'alert' => "Failed to get Object Database '$oldodname' properties!"];
+ if (!isset($odprops['dialog']['Database']['Permissions']))
+    {
+     $output = ['cmd' => '', 'alert' => "Failed to get Object Database '$oldodname' properties!"];
+     return;
+    }
+ $dbPermissions = $odprops['dialog']['Database']['Permissions'];
   
  // Check current OD permissions to fetch new OD data from dialog box - $client['data']['dialog']['Database']['Permissions'])..
  $groups = getUserGroups($db, $client['uid']); // Get current user group list
@@ -174,86 +185,57 @@ function EditOD($db, &$client)
  
  // Check 'Database' pad change permissions
  if ($client['data']['dialog']['Database'] != $odprops['dialog']['Database'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element2']['data'])), "strcmp")))
     {
-     if ($dbPermissions['element1']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element2']['data'])), "strcmp"));
+     if (($count && $dbPermissions['element1']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element1']['data'] === ALLOWEDLIST))
 	{
 	 $alertstring .= "'Database', ";
 	 $client['data']['dialog']['Database'] = $odprops['dialog']['Database'];
+	 $newodname = $oldodname;
 	}
     }
-  else
-    {
-     if ($dbPermissions['element1']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Database', ";
-	 $client['data']['dialog']['Database'] = $odprops['dialog']['Database'];
-	}
-    }
-
+    
  // Check 'Element' pad change permissions
  if ($client['data']['dialog']['Element'] != $odprops['dialog']['Element'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element4']['data'])), "strcmp")))
     {
-     if ($dbPermissions['element3']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element4']['data'])), "strcmp"));
+     if (($count && $dbPermissions['element3']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element3']['data'] === ALLOWEDLIST))
 	{
 	 $alertstring .= "'Element', ";
 	 $client['data']['dialog']['Element'] = $odprops['dialog']['Element'];
 	}
     }
-  else
-    {
-     if ($dbPermissions['element3']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Element', ";
-	 $client['data']['dialog']['Element'] = $odprops['dialog']['Element'];
-	}
-    }
+    
  // Check 'View' pad change permissions
  if ($client['data']['dialog']['View'] != $odprops['dialog']['View'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element6']['data'])), "strcmp")))
     {
-     if ($dbPermissions['element5']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element6']['data'])), "strcmp"));
+     if (($count && $dbPermissions['element5']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element5']['data'] === ALLOWEDLIST))
 	{
 	 $alertstring .= "'View', ";
 	 $client['data']['dialog']['View'] = $odprops['dialog']['View'];
 	}
     }
-  else
-    {
-     if ($dbPermissions['element5']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'View', ";
-	 $client['data']['dialog']['View'] = $odprops['dialog']['View'];
-	}
-    }
+    
  // Check 'Rule' pad change permissions
  if ($client['data']['dialog']['Rule'] != $odprops['dialog']['Rule'])
- if (count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element8']['data'])), "strcmp")))
     {
-     if ($dbPermissions['element7']['data'] === 'allowed list (disallowed for others)|+disallowed list (allowed for others)|')
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element8']['data'])), "strcmp"));
+     if (($count && $dbPermissions['element7']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element7']['data'] === ALLOWEDLIST))
 	{
 	 $alertstring .= "'Rule', ";
 	 $client['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
 	}
     }
-  else
-    {
-     if ($dbPermissions['element7']['data'] === '+allowed list (disallowed for others)|disallowed list (allowed for others)|')
-	{
-	 $alertstring .= "'Rule', ";
-	 $client['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
-	}
-    }
-
+    
+ //
+ if ($alertstring) $output['alert'] = "You're not allowed to change ".substr($alertstring, 0, -2)." properties!";
+ 
  // Writing new properties
  $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=:id");
  $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($db, $client['data'], $id)), ':id' => $id]);
-
- // Return result
- $output = GetSidebar($db, $client['uid'], $client['ODid'], $client['OVid'], $client['OD'], $client['OV']);
- if ($alertstring) $output['alert'] = "You're not allowed to change ".substr($alertstring, 0, -2)." properties!";
- return $output;
+ 
+ return true;
 }
 
 try {
@@ -270,21 +252,27 @@ catch (PDOException $e)
      exit;
     }    
 
-if (intval($client[0]) > CALLTIMEOUT) { echo json_encode(['cmd' => '', 'error' => 'Server call request timeout, please try again!']); exit; }
+if (intval($client[0]) > CALLTIMEOUT)
+   {
+    echo json_encode(['cmd' => '', 'error' => "Server call request timeout with $client[0]sec, please try again!"]);
+    exit;
+   }
 $client = json_decode($client[1], true);
 
 try {
      switch ($client['cmd'])
        {
+	case 'SIDEBAR': // Client sidebar items wrap/unwrap event
+	     Check($db, CHECK_OD_OV, $client, $output);
+	     break;
         case 'CALL':
-	     if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $client, $output)) break;
-	     
+	     if (!isset($client['allelements'], $client['elementselection'], $client['objectselection'], $client['viewtype']) && !Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $output)) break;
 	     //////////////////////////////
 	     if ($client['viewtype'] === 'Tree')
 	        {
 		 if ($client['linktype'] === '')
 		    {
-		     $output = ['cmd' => '', 'error' => "Specified view '".$client['OV']."' has no link type defined!"];
+		     $output['error'] = "Specified view '".$client['OV']."' has no link type defined!";
 		     break;
 		    }
 	         $query = $db->prepare("SELECT id FROM `data_$client[ODid]` $client[objectselection]");
@@ -292,7 +280,7 @@ try {
 		 $headid = $query->fetch(PDO::FETCH_ASSOC);
 		 if (!isset($headid['id']))
 		    {
-		     $output = ['cmd' => '', 'error' => "Specified view '".$client['OV']."' has no objects matched current selection!"];
+		     $output['error'] = "Specified view '".$client['OV']."' has no objects matched current selection!";
 		     break;
 		    }
 		 $headid = $headid['id'];
@@ -301,41 +289,65 @@ try {
 		 GetTreeElementContent($db, $client, $content, $headid);
 	         $tree = ['link' => [], 'content' => $content, 'class' => 'treeelement'];
 	         DefineNodeLinks($db, $client, $headid, $client['linktype'], $tree, $objects);
-		 $output = ['cmd' => 'Tree', 'tree' => $tree];
+		 $output = ['cmd' => 'Tree', 'tree' => $tree] + $output;
 		 if (isset($client['elementselection']['direction']) && $client['elementselection']['direction'] === 'up') $output['direction'] = 'up';
 		  else $output['direction'] = 'down';
 		 break;
 		}
 	     //////////////////////////////
-	     
 	     // Get object selection query string, in case of array as a return result send dialog to the client to fetch up object selection params
 	     $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']);
 	     if (gettype($client['objectselection']) === 'array')
 	        {
-		 $output = ['cmd' => 'DIALOG', 'data' => $client['objectselection']];
+		 $output = ['cmd' => 'DIALOG', 'data' => $client['objectselection'], 'ODid' => $client['ODid'], 'ODid' => $client['OVid']] + $output;
 		 break;
 		}
 	     // Get element selection query string, in case of empty result return no element message as an error
 	     $elementQueryString = '';
 	     $props = setElementSelectionIds($client);
-
 	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
 	     if ($elementQueryString === '')
 	        {
-		 $output = ['cmd' => '', 'error' => "Database '$client[OD]' Object View '$client[OV]' has no elements defined!"];
+		 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!";
 		 break;
 		}
+	     lg('Trying to prepare call request');
 	     // Return OV refresh command to the client with object selection sql query result as a main field data
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
-	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']];
+	     lg('Trying to fecth OD from DB');
+	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
 	     break;
         case 'New Object Database':
-	     if (!Check($db, CHECK_ACCESS, $client, $client, $output)) break;
-	     $output = NewOD($db, $client);
+	     if (!Check($db, CHECK_ACCESS, $client, $output)) break;
+	     if ($client['data'] === '')
+		{
+	    	 initNewODDialogElements();
+		 $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => CREATECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
+		 $output['data']['buttons']['CREATE']['call'] = 'New Object Database';
+		 break;
+		}
+	     if (!NewOD($db, $client, $output) || !Check($db, CHECK_OD_OV, $client, $output)) break;
 	     break;
         case 'Edit Database Structure':
-	     $output = EditOD($db, $client);
+	     if (gettype($client['data']) === 'string')
+		{
+ 		 $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
+		 $query->execute([':id' => $client['data']]);
+		 $odprops = $query->fetch(PDO::FETCH_NUM);
+		 $odname = $odprops[0];
+		    	   if ($odprops = json_decode($odprops[1], true))
+			      {
+			       $odprops['flags']['callback'] = $client['data'];
+			       $odprops['title'] .= " - '$odname' (id $client[data])";
+			       ksort($odprops['dialog'], SORT_STRING);
+			       $output = ['cmd' => 'DIALOG', 'data' => $odprops];
+			       break;
+			      }
+			   $output['alert'] = "Object Database doesn't exist!";
+			   break;
+			  }
+	     if (!EditOD($db, $client, $output) || !Check($db, CHECK_OD_OV, $client, $output)) break;
 	     break;
        }
     }

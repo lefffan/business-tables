@@ -1,7 +1,7 @@
 <?php
 
 /****************************Platform dependent constants*********************************/
-const DATABASENAME			= 'OE8';
+const DATABASENAME			= 'OE9';
 const DATABASEUSER			= 'root';
 const DATABASEPASS			= '123';
 const PHPBINARY				= '/usr/local/bin/php';
@@ -18,13 +18,15 @@ const ODSTRINGMAXCHAR			= 64;
 const OVSTRINGMAXCHAR			= 64;
 const USERSTRINGMAXCHAR			= '64';
 const USERPASSMINLENGTH			= '8';
-const SOCKETREADMAXBYTES		= 100000;
+const SOCKETREADMAXBYTES		= 150000;
 const SOCKETTIMEOUTUSEC			= 50000;
 const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 32;
 const ELEMENTPROFILENAMEADDSTRING	= ' (id';
 const UNIQKEYCHARLENGTH			= 300;
 const UNIQELEMENTTYPE			= '+unique|';
+const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';   
+const DISALLOWEDLIST			= 'allowed list (disallowed for others)|+disallowed list (allowed for others)|';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
 const STARTOBJECTID			= 3;
@@ -38,9 +40,9 @@ const CHECK_ACCESS			= 0b01000000;
 const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
 const SESSIONLIFETIME			= 360000;
-const CALLTIMEOUT			= 10;
-const SERVICEELEMENTS			= ['id', 'version', 'owner', 'datetime', 'lastversion']; 
+const CALLTIMEOUT			= 15;
 const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
+const SERVICEELEMENTS			= ['id', 'version', 'owner', 'datetime', 'lastversion']; 
 const SAVECANCEL			= ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const CREATECANCEL			= ['CREATE' => ['value' => 'CREATE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];

@@ -4,9 +4,9 @@ require_once 'core.php';
 
 function MakeViewCall($db, &$socket, &$client, $handler)
 {
- $handler['uid'] = $client['uid'];
- $handler['auth'] = $client['auth'];
+ CopyArrayElements($client, $handler, ['auth', 'uid']);
  if (!isset($handler['params'])) $handler['params'] = $client['params'];
+ $handler['cmd'] = 'CALL'; 
  
  $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
  $query->execute([':id' => $handler['data'] = GenerateRandomString(), ':client' => json_encode($handler)]);
@@ -17,11 +17,13 @@ error_reporting(E_ALL);	// Report all errors
 set_time_limit(0);	// set script execution time to unlimited value
 ob_implicit_flush();	// Turn implicit system buffer flushing on 
 
+// Flush all queue tables
 $query = $db->prepare("DELETE FROM `$$`");
 $query->execute();
 $query = $db->prepare("DELETE FROM `$$$`");
 $query->execute();
 
+// Create a socket
 if (false === ($mainsocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP))) { lg('Create socket connection error: '.socket_strerror(socket_last_error())); return; }
 if (false === socket_bind($mainsocket, IP, PORT)) { lg('Socket binding error: '.socket_strerror(socket_last_error())); return; }
 if (false === socket_listen($mainsocket)) { lg('Set socket option error: '.socket_strerror(socket_last_error())); return; }
@@ -38,132 +40,111 @@ while (true)
      lg('Socket wait status error: '.socket_strerror(socket_last_error()));
      return;
     }
-	    
+
+ // Client array:
+ // 'auth': client username 
+ // 'authtime': user login time stamp
+ // 'uid': user id
+ // 'ip': client ip address
+ // 'port': client tcp/udp port
+ // 'User-Agent': Client user agent name
+ // 'ODid'/'OVid': Client OD/OV identificators
+ // 'OD'/'OV': Client OD/OV names
+ // 'params' object selection args array
+ // 'oId'/'eId': Object/element ids client event inited by
+ // 'cid': Socket array index, used as a client identificator
  if (in_array($mainsocket, $read))
     {
      if (($newsocket = socket_accept($mainsocket)) && ($info = handshake($newsocket)))
 	{
-	 lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
+	 //lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
 	 $socketarray[] = $newsocket;
-	 $clientsarray[] = ['auth' => NULL, 'authtime' => NULL, 'uid' => NULL, 'ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => ''];
+	 $clientsarray[] = ['ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => ''];
 	}
      unset($read[array_search($mainsocket, $read)]);
     }
 
- $now = intval(strtotime("now"));
+ $now = strtotime("now");
  foreach($read as $socket)
 	{
+	 $decoded = socket_read($socket, SOCKETREADMAXBYTES);
+	 $decoded = decode($decoded);
+	 // Client close socet connection event or unknown command?
+	 if (false === $decoded || 'close' === $decoded['type'])
+	    {
+	     socket_shutdown($socket);
+	     socket_close($socket);
+	     unset($socketarray[$cid]);
+	     unset($clientsarray[$cid]);
+	     continue;
+	    }
+	 
+	 $input = json_decode($decoded['payload'], true);
+	 if (!isset($input['cmd'])) continue;
+	 
 	 $client = &$clientsarray[$cid = array_search($socket, $socketarray)];
 	 $client['cid'] = $cid;
-	 $output = ['cmd' => ''];
-	 $ipport = $client['ip'].':'.$client['port'];
-	 $data = socket_read($socket, SOCKETREADMAXBYTES);
-	 $decoded = decode($data);
-	 $input = json_decode($decoded['payload'], true);
-	 $client['cmdId'] = $input['cmdId'];
 	 
-	 if (gettype($input) === 'array' && !isset($input['data'])) $input['data'] = '';
-	 if (isset($input['cmd']) && $input['cmd'] != 'LOGIN')
-	    {
-	     if (!isset($client['auth'])) $input['cmd'] = 'LOGOUT';
-	      else if ($now - $client['authtime'] > SESSIONLIFETIME) $input['cmd'] = 'TIMEOUT';
-	    }
+	 // Init input args
+	 $output = ['cmd' => ''];
+	 CopyArrayElements($input, $client, ['ODid', 'OVid', 'OD', 'OV', 'cmd', 'data', 'oId', 'eId']);
+	 unset($input);
+	 if ($client['cmd'] != 'LOGIN' && (!isset($client['auth']) || $now - $client['authtime'] > SESSIONLIFETIME)) $client['cmd'] = 'LOGOUT';
 	     
 	 try {
-	      // Client close socet connection event or unknown command?
-	      if (false === $decoded || 'close' === $decoded['type'] || !isset($input['cmd']))
-		 {
-		  socket_shutdown($socket);
-		  socket_close($socket);
-		  $output['alert'] = "Client $ipport web socket connection closed due to undefined or close event";
-		  unset($socketarray[$cid]);
-		  unset($clientsarray[$cid]);
-		 }
-	       else switch ($input['cmd'])
+	      switch ($client['cmd'])
 	    	 {
 		  case 'LOGIN': // Client context menu login dialog event. Check if user/pass are correct and not empty
-		       if (($user = $input['data']['dialog']['pad']['profile']['element1']['data']) != '' &&  ($pass = $input['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user))))
+		       if (($user = $client['data']['dialog']['pad']['profile']['element1']['data']) != '' &&  ($pass = $client['data']['dialog']['pad']['profile']['element2']['data']) != '' && password_verify($pass, $hash = getUserPass($db, $uid = getUserId($db, $user))))
 		    	  {
 			   $client['auth'] = $user;
 			   $client['uid'] = $uid;
 			   $client['authtime'] = $now;
-			   $input['OD'] = $input['OV'] = '';
-			   $client['ODid'] = NULL;
-			   Check($db, CHECK_OD_OV, $client, $input, $output);
-			   $output['log'] = "User '$user' has logged in from $ipport and user agent: ".$client['User-Agent']."!";
+			   $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
+			   Check($db, CHECK_OD_OV, $client, $output);
+			   $output['log'] = "Logged in from $client[ip] with user agent: ".$client['User-Agent']."!";
 		    	   $output['customization'] = getUserCustomization($db, $uid);
-			   //------------------Log out login user from other sessions------------------------
+			   //------------------Log out new login user from other session------------------------
 		    	   foreach ($socketarray as $sockid => $sock)
-		    	        if ($sock != $mainsocket && $sockid != $cid && $clientsarray[$sockid]['uid'] === $uid)
+		    	        if ($sock != $mainsocket && $sockid != $cid && isset($clientsarray[$sockid]['uid']) && $clientsarray[$sockid]['uid'] === $uid)
 				   {
-				    socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
-				    $clientsarray[$sockid]['uid'] = $clientsarray[$sockid]['auth'] = NULL;
+				    socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData("\nUser other session detected!\n\nUsername"), 'sidebar' => [], 'auth' => '', 'error' => ''])));
+				    cutKeys($clientsarray[$sockid], ['ip', 'port', 'User-Agent']);
 				    break;
 				   }
-			   //--------------------------------------------------------------------------------
+			   //-----------------------------------------------------------------------------------
 			   break;
 		    	  }
-		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'cmdId' => strval(intval($client['cmdId']) + 1)];
-		       $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nWrong password or username, please try again!\n\nUsername";
-		       $user ? $output['log'] = "Wrong passowrd or username '$user' from $ipport" : $output['log'] = "Empty username login attempt from $ipport";
-		       break;
-		  case 'TIMEOUT':
-		  case 'LOGOUT': // Client context menu logout event or any other event from unauthorized client or pass change or timeout
-		       $output = ['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''];
-		       if ($input['cmd'] === 'TIMEOUT') $output['data']['dialog']['pad']['profile']['element1']['head'] = "\nSession timeout, please log in!\n\nUsername";
-		        else if (isset($client['auth'])) $output['log'] = 'User '.$client['auth'].' has logged out!';
-		       $client['uid'] = $client['auth'] = NULL;
-		       break;
-		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
-		       Check($db, CHECK_OD_OV, $client, $input, $output);
+		  case 'LOGOUT': // Client context menu logout event or any other event from unauthorized client. Also wrong pass, pass change, timeout
+		       $output = ['cmd' => 'DIALOG', 'sidebar' => [], 'auth' => '', 'error' => ''];
+		       if ($client['cmd'] === 'LOGOUT')
+		          {
+			   $title = NULL;
+			   if (isset($client['auth'])) $now - $client['authtime'] > SESSIONLIFETIME ? $title = "\nSession timeout, please log in!\n\nUsername" : $output['log'] = 'User '.$client['auth'].' has logged out!';
+			  }
+			else
+			  {
+			   $title = "\nWrong password or username, please try again!\n\nUsername";
+			   $user ? $output['log'] = "Wrong passowrd or username '$user' from $client[ip]" : $output['log'] = "Empty username login attempt from $client[ip]";
+			  }
+		       $output['data'] = getLoginDialogData($title);
+		       cutKeys($client, ['ip', 'port', 'User-Agent']);
 		       break;
 		  case 'CALL': // Client OD data fetch event
-		       if (!Check($db, CHECK_OD_OV, $client, $input, $output)) break;
+		       // Get client input OV params from dialog data if exist
 		       $client['params'] = [];
-		       if (isset($input['data']['dialog']['pad']['profile'])) // First convert input dialog data to object selection params data
-			  foreach ($input['data']['dialog']['pad']['profile'] as $key => $value) $client['params'][$key] = $value['data'];
-		       $output['cmd'] = 'CALL';
-		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
-		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
-		       break;
+		       if (isset($client['data']['dialog']['pad']['profile'])) foreach ($client['data']['dialog']['pad']['profile'] as $key => $value) $client['params'][$key] = $value['data'];
+		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
 		  case 'New Object Database':
-		       if (!Check($db, CHECK_ACCESS, $client, $input, $output)) break;
-		       if ($input['data'] === '')
-		          {
-	    		   initNewODDialogElements();
-			   $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => CREATECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
-			   $output['data']['buttons']['CREATE']['call'] = 'New Object Database';
-			   break;
-		          }
-		       $output['cmd'] = 'New Object Database';
-		       $client['data'] = $input['data'];
-		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
-		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
-		       break;
 		  case 'Edit Database Structure':
-		       if (gettype($input['data']) === 'string')
-		    	  {
- 			   $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
-			   $query->execute([':id' => $input['data']]);
-			   $odprops = $query->fetch(PDO::FETCH_NUM);
-			   $odname = $odprops[0];
-		    	   if ($odprops = json_decode($odprops[1], true))
-			      {
-			       $odprops['flags']['callback'] = $input['data'];
-			       $odprops['title'] .= " - '$odname' (id $input[data])";
-			       ksort($odprops['dialog'], SORT_STRING);
-			       $output = ['cmd' => 'DIALOG', 'data' => $odprops];
-			       break;
-			      }
-			   $output['alert'] = "Object Database doesn't exist!";
-			   break;
-			  }
-		       $client['cmd'] = $output['cmd'] = $input['cmd'];
-		       $client['data'] = $input['data'];
+		       $output['cmd'] = $client['cmd'];
 		       $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
 		       $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($client)]);
 		       break;
 		  case 'INIT':
+		       Check($db, CHECK_OID, $client, $output);
+		  case 'DELETEOBJECT':
+			Check($db, CHECK_EID, $client, $output);
 		  case 'DBLCLICK':
 		  case 'KEYPRESS':
 		  case 'INS':
@@ -172,29 +153,22 @@ while (true)
 		  case 'F12':
 		  case 'CONFIRM':
 		  case 'CONFIRMDIALOG':
-		  case 'DELETEOBJECT':
-		       if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $input, $output)) break;
-		       $client['data'] = $input['data'];
 		       // wrapper <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
-		       exec(WRAPPERBINARY." '$client[uid]' ".strval($now)." '$client[ODid]' '$client[OVid]' $client[oId] $client[eId] $input[cmd] $client[ip] '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+		       exec(WRAPPERBINARY." '$client[uid]' ".strval($now)." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
 		  case 'Task Manager':
-		       $client['data'] = $input['data'];
 		       exec(PHPBINARY." taskmanager.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
 		  default:
-		       $output['log'] = $output['alert'] = "Controller report: unknown event '$input[cmd]' from client $ipport and user '$input[auth]'!";
+		       $output['log'] = $output['alert'] = "Controller report: unknown event '$client[cmd]' from client $client[ip] and user '$client[auth]'!";
 		 }
 	     }
 	 catch (PDOException $e)
 	     {
-	      $msg = $e->getMessage();
-	      if (preg_match("/SQL server has gone away/", $msg) === 1)
+	      if (preg_match("/SQL server has gone away/", $msg = $e->getMessage()) === 1)
 	         {
-		  ResetAllAuth($clientsarray);
+		  foreach ($clientsarray as $key => $value) if (isset($clientsarray[$key]['auth'])) cutKeys($clientsarray[$key], ['ip', 'port', 'User-Agent']);
 		  include 'connect.php';
-		  LogMessage($db, $clientsarray[$cid], $msg);
-		  break;
 		 }
     	      $output['log'] = $output['alert'] = "Controller error: $msg!";
 	     }
@@ -205,7 +179,6 @@ while (true)
 	     if (isset($output['log'])) LogMessage($db, $client, $output['log']);
 	     if (isset($output['error'])) $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
 	     if (isset($client['auth'])) $output['auth'] = $client['auth'];
-	     $output['cmdId'] = $client['cmdId'];
 	     socket_write($socket, encode(json_encode($output)));
 	    }
 	}
@@ -216,81 +189,49 @@ while (true)
  $query->execute();
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
-	  $handler = json_decode($value['client'], true);
+	  $handler = json_decode($value['client'], true);lg($handler);
+	  isset($handler['cid']) ? $hid = $handler['cid'] : $hid = -1;
 	  
 	  if (isset($handler['passchange'])) foreach ($socketarray as $cid => $sock)
-	  if ($sock != $mainsocket && $clientsarray[$cid]['uid'] === $handler['passchange'])
+	  if (isset($clientsarray[$cid]['uid']) && $clientsarray[$cid]['uid'] === $handler['passchange'])
 	     {
 	      socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
-	      $handler['passchange'] = $clientsarray[$cid]['uid'] = $clientsarray[$cid]['auth'] = NULL;
-	      $clientsarray[$cid]['ODid'] = $clientsarray[$cid]['OVid'] = $clientsarray[$cid]['OD'] = $clientsarray[$cid]['OV'] = '';
+	      cutKeys($clientsarray[$cid], ['ip', 'port', 'User-Agent']);
 	     }
-	     
+	  unset($handler['passchange']);
+	  
 	  switch ($handler['cmd'])
 	         {
-		  case 'Task Manager':
-		       $cid = $handler['cid'];
-		       if (isset($socketarray[$cid]))
-		          {
-			   $handler['cmd'] = 'DIALOG';
-			   socket_write($socketarray[$cid], encode(json_encode($handler)));
-			  }
-		       break;
-		  case 'ALERT':
 		  case 'DIALOG':
+		  case 'UPDATEDIALOG':
 		  case 'EDIT':
-		       $cid = $handler['cid'];
-		       if (isset($socketarray[$cid]) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
-			  {
-			   if ($handler['cmd'] === 'ALERT') $handler = ['cmd' => '', 'alert' => $handler['data']];
-			   socket_write($socketarray[$cid], encode(json_encode($handler)));
-			  }
+		  case '':
+		       if (isset($socketarray[$hid]) && $clientsarray[$hid]['ODid'] === $handler['ODid'] && $clientsarray[$hid]['OVid'] === $handler['OVid'] && $clientsarray[$hid]['params'] === $handler['params'])
+			  socket_write($socketarray[$hid], encode(json_encode($handler)));
 		       break;
 		  case 'SET':
 		       if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
 		       unset($handler['alert']);
 		       
 		       foreach ($socketarray as $cid => $sock)
-		    	    if ($sock != $mainsocket && $clientsarray[$cid]['auth'])
-			    if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
-			    if (isset($alert) && $cid === $handler['cid'])
-			       socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
-			     else
-			       socket_write($sock, encode(json_encode($handler)));
+		    	    if (isset($clientsarray[$cid]['auth']) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+			    if (isset($alert) && $cid === $hid) socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
+			     else socket_write($sock, encode(json_encode($handler)));
+			     
+		       break;
+	    	  case 'INIT':
+	    	  case 'DELETEOBJECT':
+		       if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
+		       unset($handler['alert']);
+
+		       foreach ($socketarray as $cid => $sock)
+			    if (isset($clientsarray[$cid]['auth']) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+			    if (isset($alert) && $cid === $hid) MakeViewCall($db, $sock, $clientsarray[$cid], $handler + ['alert' => $alert]);
+			     else MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
+			     
 		       break;
 	    	  case 'CALL':
-		       // OV refresh due to add/remove object event
-		       if (!isset($handler['params']))
-			  {
-		    	   if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
-			   unset($handler['alert']);
-		       
-			   foreach ($socketarray as $cid => $sock) if ($sock != $mainsocket && $clientsarray[$cid]['auth'])
-				   if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
-				   if (isset($alert) && $cid === $handler['cid'])
-				      MakeViewCall($db, $sock, $clientsarray[$cid], $handler + ['alert' => $alert]);
-				    else
-				      MakeViewCall($db, $sock, $clientsarray[$cid], $handler);
-			   break;
-			  }
-		  
-		       // OV refresh due to handler call command
-		       if (!isset($handler['ODid']))
-		          {
-			   $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
-			   $query->execute([':odname' => $handler['OD']]);
-			   if (count($handler['ODid'] = $query->fetchAll(PDO::FETCH_NUM)) > 0) $handler['ODid'] = $handler['ODid'][0][0]; else $handler['ODid'] = '';
-			  }
-		       if (!isset($handler['OVid']))
-		          {
-			   $handler['OVid'] = '';
-			   $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
-			   $query->execute([':id' => $handler['ODid']]);
-			   foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View)
-				if ($key != 'New view' && $key === $handler['OV']) { $handler['OVid'] = $View['element1']['id']; break; }
-			  }
-		       if (Check($db, CHECK_OD_OV, $handler, $handler, $output))
-		          MakeViewCall($db, $socketarray[$handler['cid']], $clientsarray[$handler['cid']], $handler);
+		       if (Check($db, CHECK_OD_OV, $handler, $output)) MakeViewCall($db, $socketarray[$hid], $clientsarray[$hid], $handler);
 		       break;
 		 }
 	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");
@@ -299,13 +240,12 @@ while (true)
  }
  catch (PDOException $e)
  {
-  lg($msg = $e->getMessage());
-  $client = [];
-  if (preg_match("/SQL server has gone away/", $msg) === 1)
+  if (preg_match("/SQL server has gone away/", $msg = $e->getMessage()) === 1)
      {
-      ResetAllAuth($clientsarray);
+      foreach ($clientsarray as $key => $value) if (isset($clientsarray[$key]['auth'])) cutKeys($clientsarray[$key], ['ip', 'port', 'User-Agent']);
       include 'connect.php';
      }
+  $client = [];
   LogMessage($db, $client, $msg);
  }
 }

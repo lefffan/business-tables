@@ -1,23 +1,45 @@
---------------April 2021--------------------------------------------------------------
+--------------May 2021--------------------------------------------------------------
+- TAB
+- Tree constants to customization
 - Any props to text.php
 - single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-- Task manager: sort and kill (+red backgraound)
-- Context menu on main even with no any OD displayed
-- SCHEDULE process
-- Tree constants to customization
+
+- if element json is NULL than element value should be retreived from last object element version with non NULL value.
+  First object version should always be non NULL, but empty {"cmd":"SET", "value":""}
+- retreive at call event only necesecary props line value, hint, description, style..
+
+- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
+  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+  secure php.ini
+  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
+  Can i use sockets number more than 1024?
+  socket incorrect data while task managers works long period of time
+
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git. !Help content during all code lookup
 
---------------May 2021----------------------------------------------------------------
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
+- SET command should refresh all database views that has refreshing object
+--------------June 2021----------------------------------------------------------------
 - Object view PIECHART, GRAPH, LOCATION.
-- telnet, snmp and diagnostic functions
+- telnet, snmp and diagnostic functions, current mrtg base convert to OD with to build the tree example
 - inner text in <td> can consists of <br>, <color> and <font> tags
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
 - System call open in a new tab
 - Object selection with non-empty link type for all view types (by now it is released for tree view type only)
+- Task manager: restrict call of task manager for some users
+- Optimize mysql to highload app:
+  for php ORM Doctrine can be used
+  index columns: alter table data_1 add index (`lastversion`);
+  unbuffered queries and partial OV output mysql_unbuffered_query()
+  Problems of deploying - can i use mysql on commerisal base? 
 
 --------------Questionable features-------------------------------------------------
+- What time and bytes limit should be set to php script execution
+- prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
+- Scheduler should be OV based! Not element based
+- OV Link between two objects! for example between two switches. So if object selection selects one object - then tree built till the last object with no/error link. In case of selection selects two or more objects - tree path built from first selected to the selected
 - show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
 - Release mechanism that allows handler to save dialog data element JSON data at a time or other commands with element json data set.
 - system command to copy data to the buffer
@@ -49,12 +71,6 @@
   May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
 - Adaptivka after browser window size has changed dialog box has gone away
 - divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
-- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
-  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL    https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-  Linux to docker, secure php.ini, optimize mysql to highload app
-  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
-  Problems of deploying - can i use mysql on commerisal base? Can i use sockets number more than 1024?
 - Set OD users at least simple description
 - element selection when elements are selected not by exact numbers, but bu regular expr that defines that numbers or titles
 - Some systems emulation:
@@ -81,6 +97,7 @@
   In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
   Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
   see client mac, cable length, errors and all other data the switch allows to monitor
+  ping <switch ip>, on port ping <client ip>
 - application customization: current view refresh at sidebar OV select will show 'loading..' and reload main div or not; autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
 - Service demon for every element - is the demon that executes at the start of the server for example radius server
 - autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
@@ -219,6 +236,9 @@ selection.addRange(range);
 - git push -u origin master
 - lefffan
 - git pull origin # Nakatit v local repositary last code version before work
+- 7 advices for git: http://rus-linux.net/MyLDP/algol/git/7-Git-Tips-for-Beginners.html
+- Shpora for git: https://eax.me/git-commands/
+- Git bases: https://git-scm.com/book/ru/v2/
 --------------------------DB SQL manage:--------------------------
 - drop database OE8; create database OE8; use OE8; show tables;
 - drop database OE6; create database OE6; use OE6; show tables;

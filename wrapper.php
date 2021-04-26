@@ -24,7 +24,7 @@ function ParseHandlerResult($db, &$output, &$client)
  switch ($output['cmd'])
 	{
 	 case 'EDIT':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         { 
 		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'EDIT' command on object 'CHANGE' or 'INIT' event!");
 		  return;
@@ -34,7 +34,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'ALERT':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         {
 		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'ALERT' command on object 'CHANGE' or 'INIT' event!");
 		  return;
@@ -44,10 +44,10 @@ function ParseHandlerResult($db, &$output, &$client)
 		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] returned undefined 'ALERT' message!");
 		  return;
 		 }
-	      cutKeys($output, ['cmd', 'data']);
+	      $output = ['cmd' => '', 'alert' => $output['data']];
 	      break;
 	 case 'DIALOG':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         {
 		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'DIALOG' command on object 'CHANGE' or 'INIT' event!");
 		  return;
@@ -75,7 +75,7 @@ function ParseHandlerResult($db, &$output, &$client)
 		      }	
 	      break;
 	 case 'CALL':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT')
+	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         {
 	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'CALL' command on object 'CHANGE' or 'INIT' event!");
 		  return;
@@ -83,8 +83,28 @@ function ParseHandlerResult($db, &$output, &$client)
 	      cutKeys($output, ['cmd', 'OD', 'OV', 'ODid', 'OVid', 'params']);
 	      ConvertToString($output, ['OD', 'OV', 'ODid', 'OVid']);
 	      if (!isset($output['params']) || gettype($output['params']) != 'array') $output['params'] = [];
-	      if (!isset($output['ODid'], $output['OD'])) { $output['ODid'] = $client['ODid']; $output['OD'] = $client['OD']; }
-	      if (!isset($output['OVid'], $output['OV'])) { $output['OVid'] = $client['OVid']; $output['OV'] = $client['OV']; }
+	      if (!isset($output['ODid']) && !isset($output['OD'])) { $output['ODid'] = $client['ODid']; $output['OD'] = $client['OD']; }
+	      if (!isset($output['OVid']) && !isset($output['OV'])) { $output['OVid'] = $client['OVid']; $output['OV'] = $client['OV']; }
+	      if (!isset($output['ODid']))
+	         {
+		  $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
+		  $query->execute([':odname' => $output['OD']]);
+		  $output['ODid'] = $query->fetchAll(PDO::FETCH_NUM);
+		  isset($output['ODid'][0][0]) ? $output['ODid'] = $output['ODid'][0][0] : $output['ODid'] = '';
+		 }
+	      if (!isset($output['OVid']))
+	         {
+		  $output['OVid'] = '';
+		  if ($output['ODid'] === '') break;
+		  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
+		  $query->execute([':id' => $output['ODid']]);
+		  foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $key => $View)
+		       if ($key != 'New view' && $key === $output['OV'])
+			  {
+			   $output['OVid'] = $View['element1']['id'];
+			   break;
+			  }
+		 }
 	      break;
 	 case 'SET':
 	 case 'RESET':
@@ -134,9 +154,9 @@ function WriteElement($db, &$client, &$output, $version)
  return true;
 }
 
-function GetCMD($db, &$client)
+function GetCMD($db, &$client, $cmdline = false)
 {
- $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE', '14'=>'SCHEDULE'])]['data']);
+ if (!$cmdline) $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE'])]['data']);
  if (!($len = strlen($cmdline))) return '';
  $i = -1;
  $newcmdline = '';
@@ -173,20 +193,24 @@ function GetCMD($db, &$client)
 }
 
 // Init variables
-$client	= json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
-$_client = ['ODid' => $client['ODid'], 'OD' => $client['OD'], 'OVid' => $client['OVid'], 'OV' => $client['OV'], 'params' => $client['params'], 'oId' => $client['oId'], 'eId' => $client['eId'], 'cid' => $client['cid'], 'uid' => $client['uid'], 'cmdId' => $client['cmdId']];
+$_client = $client = json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
 $output = [];
 
-if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
+if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $output))
    {
-    $output[$client['eId']]['cmd'] = $client['cmd'];
+    $output = [$client['eId'] => $output + ['cmd' => '']];
+   }
+else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
+   {
+    $output = [$client['eId'] => ['cmd' => $client['cmd']]];
    }
  else
    {
     if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
      else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
 
-    if (($cmdline = GetCMD($db, $client)) === '') exit;
+    if (isset($client['cmdline'])) $cmdline = $client['cmdline']; else $cmdline = false;
+    if (($cmdline = GetCMD($db, $client, $cmdline)) === '') exit;
     $output[$client['eId']] = [];
 
     exec($cmdline, $output[$client['eId']]);
@@ -196,10 +220,9 @@ if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
 switch ($output[$client['eId']]['cmd'])
        {
         case 'DIALOG':
-        case 'CALL':
         case 'EDIT':
-        case 'ALERT':
-	     $output = $output[$client['eId']] + $_client;
+        case '':
+	     $output = $output[$client['eId']];
 	     break;
         case 'SET':
         case 'RESET':
@@ -219,7 +242,7 @@ switch ($output[$client['eId']]['cmd'])
 	          $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
 	          $query->execute();
 	          $version = $query->fetchAll(PDO::FETCH_NUM); // Get selected version
-	          if (count($version) === 0) throw new Exception("Please refresh Object View, object with id=$client[oId] doesn't exist!"); // No rows found? Return an error
+	          if (count($version) === 0) throw new Exception("Object id $client[oId] doesn't exist! Please refresh Object View."); // No rows found? Return an error
 	          $version = intval($version[0][0]) + 1; // Increment version to use it as a new version of the object
 	          
 	          $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1"); // Unset last flag of the object current version and insert new object version with empty data
@@ -239,7 +262,7 @@ switch ($output[$client['eId']]['cmd'])
 		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
 	    	      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
 		    	      if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
-	    	      $output = ['cmd' => 'SET', 'data' => $output] + $_client;
+	    	      $output = ['cmd' => 'SET', 'data' => $output];
 
 		      if (isset($ruleresult['message']) && $ruleresult['message'])	$output['alert'] = $ruleresult['message'];
 	    	      if (isset($output['data'][$excludeid]['alert']))			$output['alert'] = $output['data'][$excludeid]['alert'];
@@ -260,9 +283,12 @@ switch ($output[$client['eId']]['cmd'])
 		 }
 	     $db->rollBack();
 	     if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
-	     $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $excludeid, 'value')]], 'alert' => $ruleresult['message']] + $_client;
-	     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+	     $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $excludeid, 'value')]], 'alert' => $ruleresult['message']];
+	     /*$query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
+	     $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);*/
+	     break;
+        case 'CALL':
+	     $output = $output[$client['eId']];
 	     break;
         case 'INIT':
 	     $data = $client['data'];
@@ -275,15 +301,15 @@ switch ($output[$client['eId']]['cmd'])
 		      exec($cmdline, $output[$eid]);
 		      if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]);
     		     }
-	     $output = InsertObject($db, $client, $output, $_client);
+	     AddObject($db, $client, $output);
 	     break;
         case 'DELETEOBJECT':
-	     $output = DeleteObject($db, $client, $_client);
+	     DeleteObject($db, $client, $output);
 	     break;
        }
 
 if ($output != [])
    {
     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-    $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+    $query->execute([':client' => json_encode($output + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
    }
