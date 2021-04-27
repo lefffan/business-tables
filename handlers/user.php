@@ -11,11 +11,11 @@ switch ($event)
 	     if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), '_style' => 'color: green;', 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '']);
 	     break;
 	case 'DBLCLICK':
-	     if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3], $_SERVER['argv'][4], $_SERVER['argv'][5])) break;
-	     $user = $_SERVER['argv'][2];
-	     $perm = $_SERVER['argv'][3];
-	     $groups = $_SERVER['argv'][4];
-	     $initiator = $_SERVER['argv'][5];
+	     if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3]) || !($arr = json_decode($_SERVER['argv'][2], true))) break;
+	     $user = $arr['value'];
+	     $perm = $arr['odaddperm'];
+	     $groups = $arr['groups'];
+	     $initiator = $_SERVER['argv'][3];
 	     if ($user == 'system') echo json_encode(['cmd' => 'ALERT', 'data' => "You can't change system account properties!"]);
 	      else if ($user == '') echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => ''] ]]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
 	      else if ($initiator != $user) echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);

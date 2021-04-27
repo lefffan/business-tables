@@ -23,18 +23,21 @@ switch($event)
 	    if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'EDIT', 'data' => $data['string']]);
 	    break;
        case 'INS':
-    	    if (isset($_SERVER['argv'][2])) $link = $_SERVER['argv'][2]; else $link = '';
-	    if (isset($_SERVER['argv'][3])) $linkoid = $_SERVER['argv'][3]; else $linkoid = '';
-	    if (isset($_SERVER['argv'][4])) $linkeid = $_SERVER['argv'][4]; else $linkeid = '';
-	    echo json_encode(
-			 ['cmd' => 'DIALOG',
-			  'data' => ['title' => 'User properties',
-				     'dialog' => ['pad' => ['profile' => ['element1' => ['type' => 'text', 'head' => "\nLink type:", 'data' => $link, 'line' => ''],
-				    					  'element2' => ['type' => 'text', 'head' => 'Remote object selection:', 'data' => $linkoid, 'line' => ''],
-									  'element3' => ['type' => 'text', 'head' => 'Remote object element selection:', 'data' => $linkeid, 'line' => ''],
-									 ]]],
-				     'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
-				     'flags'  => ['style' => 'width: 500px; height: 500px;']]]);
+    	    if (!isset($_SERVER['argv'][2]) || !($arr = json_decode($_SERVER['argv'][2], true))) break;
+	    $profile = [];
+	    $margin = "\n";
+	    foreach($arr as $key => $value)
+		   {
+		    if (!isset($value)) $arr[$key] = '';
+		    $profile[$key] = ['type' => 'text', 'head' => $margin."Enter element '$key' property value:", 'data' => $arr[$key], 'line' => ''];
+		    $margin = '';
+		   }
+	    echo json_encode(['cmd' => 'DIALOG',
+			      'data' => ['title' => 'User properties',
+					 'dialog' => ['pad' => ['profile' => $profile]],
+				         'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''],
+						       'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
+				         'flags'  => ['style' => 'width: 500px; height: 500px;']]]);
 	    
 	    break;
        case 'DEL':
@@ -55,10 +58,10 @@ switch($event)
 	    echo json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2], '_alert' => 'WTF????']);
 	    break;
        case 'CONFIRMDIALOG':
-    	    if (!isset($_SERVER['argv'][2]) || gettype($data = json_decode($_SERVER['argv'][2], true)) != 'array') break;
-	    echo json_encode(['cmd' => 'SET', 
-			      'link' => $data['dialog']['pad']['profile']['element1']['data'],
-			      'linkoid' => $data['dialog']['pad']['profile']['element2']['data'],
-			      'linkeid' => $data['dialog']['pad']['profile']['element3']['data']]);
+    	    if (!isset($_SERVER['argv'][2]) || gettype($arr = json_decode($_SERVER['argv'][2], true)) != 'array') break;
+	    $data = [];
+	    if (isset($arr['dialog']['pad']['profile'])) 
+	       foreach($arr['dialog']['pad']['profile'] as $key => $value) $data[$key] = $value['data'];
+	    echo json_encode(['cmd' => 'SET'] + $data);
 	    break;
       }

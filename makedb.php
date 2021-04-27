@@ -42,17 +42,13 @@ try {
      $newElement['element2']['data'] = "\nDouble click the username to change the password and other user properties";
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
-     $json1 = '{"prop": "value"}';
-     $json2 = '{"prop": "odaddperm"}';
-     $json3 = '{"prop": "groups"}';
+     $json = '{"props": {"value":"", "odaddperm":"", "groups":""}}';
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."user.php <event> '$json1' '$json2' '$json3' <user>";
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."user.php <event> '$json' <user>";
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
      $userOD['dialog']['Element']['User'] = $newElement;
 
-     $json1 = '{"prop": "link"}';
-     $json2 = '{"prop": "linkoid"}';
-     $json3 = '{"prop": "linkeid"}';
+     $json = '{"props": {"link":"", "linkoid":"", "linkeid":""}}';
      initNewODDialogElements();
      $newElement['element1']['id'] = '2';
      $newElement['element1']['data'] = 'Name';
@@ -62,7 +58,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
@@ -77,7 +73,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
@@ -92,7 +88,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
@@ -107,7 +103,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json1' '$json2' '$json3'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
@@ -119,7 +115,7 @@ try {
      $newElement['element2']['data'] = "\nDouble click appropriate cell to change color, font, background and other properties for the specified user";
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $json = '{"prop": "dialog"}';
+     $json = '{"props": "dialog"}';
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."customization.php <event> '$json'";
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event> <data>';

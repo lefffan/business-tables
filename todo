@@ -1,5 +1,4 @@
 --------------May 2021--------------------------------------------------------------
-- TAB
 - Tree constants to customization
 - Any props to text.php
 - single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);

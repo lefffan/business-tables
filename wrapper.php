@@ -166,10 +166,25 @@ function GetCMD($db, &$client, $cmdline = false)
         switch ($add = $cmdline[$i])
     	       {
     	        case "'":
-    		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)) && isset($arr['prop']))
+    		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)) && isset($arr['props']))
 	    	       {
+		        $add = NULL;
 	    		$i = $j;
-			$add = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], $arr['prop']);
+			cutKeys($arr, ['ODid', 'oId', 'eId', 'props']);
+			if (!isset($arr['ODid']) || gettype($arr['ODid']) != 'string') $arr['ODid'] = $client['ODid'];
+			if (!isset($arr['oId']) || gettype($arr['oId']) != 'string') $arr['oId'] = $client['oId'];
+			if (!isset($arr['eId']) || gettype($arr['eId']) != 'string') $arr['eId'] = $client['eId'];
+
+			if (gettype($arr['props']) === 'string')
+			   {
+			    $add = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $arr['props']);
+			   }
+			 else if (gettype($arr['props']) === 'array')
+			   {
+			    foreach($arr['props'] as $key => $value) $arr['props'][$key] = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $key);
+			    $add = json_encode($arr['props'], JSON_HEX_APOS | JSON_HEX_QUOT);
+			   }
+			
 			if (!isset($add)) $add = '';
 			$add = "'".str_replace("'", "'".'"'."'".'"'."'", $add)."'";
 	    	       }

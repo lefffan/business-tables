@@ -785,6 +785,7 @@ function ContextEventHandler(event)
 	      CellBorderToggleSelect(cursor.td, target);
 	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) inner = ACTIVEITEM + 'Add Object</div>' + ACTIVEITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
 	       else inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
+	      inner += ACTIVEITEM + 'Copy</div>';
 	      break;
 	     }
           break;
@@ -1168,6 +1169,10 @@ function CallController(data)
 	 case 'LOGIN':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
+	      break;
+	 case 'Copy':
+	      if (cursor.x != undefined && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data']);
+	      lg(mainTable[cursor.y]?.[cursor.x]?.['data']);
 	      break;
 	 case 'Description':
 	      let cell, hidden = msg = '';
@@ -1845,6 +1850,19 @@ function ContentEditableCursorSet(element)
  selection.addRange(range);
 }
 
+function CopyBuffer(text)
+{
+ const textarea = document.createElement('textarea');
+ textarea.value = text;
+ document.body.appendChild(textarea);
+ textarea.select();
+ 
+ try { document.execCommand('copy'); }
+ catch {}
+
+ document.body.removeChild(textarea);
+}
+      
 function escapeDoubleQuotes(string)
 { 
  return string.replace(/"/g,"&quot;");
