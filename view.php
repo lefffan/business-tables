@@ -117,7 +117,7 @@ function NewOD($db, &$client, &$output)
  // Getting created properties id
  $query = $db->prepare("SELECT LAST_INSERT_ID()");
  $query->execute();
- $id = $query->fetchAll(PDO::FETCH_NUM)[0][0];
+ $client['newODid'] = $id = $query->fetchAll(PDO::FETCH_NUM)[0][0];
  
  // Creating instance of Object Database (OD) for json "value" property (for 'uniq' object elements only)
  $query = $db->prepare("create table `uniq_$id` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -126,7 +126,7 @@ function NewOD($db, &$client, &$output)
  // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
  $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
- $query = $db->prepare('ALTER TABLE `data_$id` ADD INDEX (`lastversion`)');
+ $query = $db->prepare("ALTER TABLE `data_$id` ADD INDEX (`lastversion`)");
  $query->execute();
  
  // Insert new OD properties
@@ -171,12 +171,12 @@ function EditOD($db, &$client, &$output)
 
  // Decode current OD props
  $odprops = json_decode($odprops, true);
- if (!isset($odprops['dialog']['Database']['Permissions']))
+ if (!isset($odprops['dialog']['Database']['Properties']))
     {
      $output = ['cmd' => '', 'alert' => "Failed to get Object Database '$oldodname' properties!"];
      return;
     }
- $dbPermissions = $odprops['dialog']['Database']['Permissions'];
+ $section = $odprops['dialog']['Database']['Properties'];
   
  // Check current OD permissions to fetch new OD data from dialog box - $client['data']['dialog']['Database']['Permissions'])..
  $groups = getUserGroups($db, $client['uid']); // Get current user group list
@@ -186,8 +186,9 @@ function EditOD($db, &$client, &$output)
  // Check 'Database' pad change permissions
  if ($client['data']['dialog']['Database'] != $odprops['dialog']['Database'])
     {
-     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element2']['data'])), "strcmp"));
-     if (($count && $dbPermissions['element1']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element1']['data'] === ALLOWEDLIST))
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $section['element7']['data'])), "strcmp"));
+     $pos = strpos($section['element6']['data'], '+');
+     if (($count && $pos) || (!$count && !$pos))
 	{
 	 $alertstring .= "'Database', ";
 	 $client['data']['dialog']['Database'] = $odprops['dialog']['Database'];
@@ -198,8 +199,9 @@ function EditOD($db, &$client, &$output)
  // Check 'Element' pad change permissions
  if ($client['data']['dialog']['Element'] != $odprops['dialog']['Element'])
     {
-     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element4']['data'])), "strcmp"));
-     if (($count && $dbPermissions['element3']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element3']['data'] === ALLOWEDLIST))
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $section['element9']['data'])), "strcmp"));
+     $pos = strpos($section['element8']['data'], '+');
+     if (($count && $pos) || (!$count && !$pos))
 	{
 	 $alertstring .= "'Element', ";
 	 $client['data']['dialog']['Element'] = $odprops['dialog']['Element'];
@@ -209,8 +211,9 @@ function EditOD($db, &$client, &$output)
  // Check 'View' pad change permissions
  if ($client['data']['dialog']['View'] != $odprops['dialog']['View'])
     {
-     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element6']['data'])), "strcmp"));
-     if (($count && $dbPermissions['element5']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element5']['data'] === ALLOWEDLIST))
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $section['element11']['data'])), "strcmp"));
+     $pos = strpos($section['element10']['data'], '+');
+     if (($count && $pos) || (!$count && !$pos))
 	{
 	 $alertstring .= "'View', ";
 	 $client['data']['dialog']['View'] = $odprops['dialog']['View'];
@@ -220,8 +223,9 @@ function EditOD($db, &$client, &$output)
  // Check 'Rule' pad change permissions
  if ($client['data']['dialog']['Rule'] != $odprops['dialog']['Rule'])
     {
-     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $dbPermissions['element8']['data'])), "strcmp"));
-     if (($count && $dbPermissions['element7']['data'] === DISALLOWEDLIST) || (!$count && $dbPermissions['element7']['data'] === ALLOWEDLIST))
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $section['element13']['data'])), "strcmp"));
+     $pos = strpos($section['element12']['data'], '+');
+     if (($count && $pos) || (!$count && !$pos))
 	{
 	 $alertstring .= "'Rule', ";
 	 $client['data']['dialog']['Rule'] = $odprops['dialog']['Rule'];
@@ -311,11 +315,9 @@ try {
 		 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!";
 		 break;
 		}
-	     lg('Trying to prepare call request');
 	     // Return OV refresh command to the client with object selection sql query result as a main field data
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
-	     lg('Trying to fecth OD from DB');
 	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
 	     break;
         case 'New Object Database':
@@ -323,7 +325,14 @@ try {
 	     if ($client['data'] === '')
 		{
 	    	 initNewODDialogElements();
-		 $output = ['cmd' => 'DIALOG', 'data' => ['title'  => 'New Object Database', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => CREATECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']]];
+		 $output = ['cmd' => 'DIALOG',
+			    'data' => ['title'  => 'New Object Database',
+				       'dialog'  => ['Database' => ['Properties' => $newProperties],
+				    		     'Element' => ['New element' => $newElement],
+						     'View' => ['New view' => $newView],
+						     'Rule' => ['New rule' => $newRule]],
+					'buttons' => CREATECANCEL,
+					'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]]];
 		 $output['data']['buttons']['CREATE']['call'] = 'New Object Database';
 		 break;
 		}
@@ -361,15 +370,15 @@ catch (PDOException $e)
 	          $output = ['cmd' => '', 'error' => "Failed to get Object View: $msg"];
 	    	  break;
     	     case 'New Object Database':
-	    	  if (isset($id))
+	    	  if (isset($client['newODid']))
 		     {
-		      $query = $db->prepare("DELETE FROM `$` WHERE id=$id");
+		      $query = $db->prepare("DELETE FROM `$` WHERE id=$client[newODid]");
 		      $query->execute();
-		      $query = $db->prepare("DROP TABLE IF EXISTS `data_$id`");
+		      $query = $db->prepare("DROP TABLE IF EXISTS `data_$client[newODid]`");
 		      $query->execute();
-		      $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$id`");
+		      $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$client[newODid]`");
 		      $query->execute();
-		     }                                                                                                                         
+		     }
 		  if (preg_match("/Duplicate entry/", $msg) === 1)
 		     $output = ['cmd' => '', 'alert' => 'Failed to add new Object Database: its name or tables already exist!'];
 		   else

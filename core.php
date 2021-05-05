@@ -139,54 +139,57 @@ function initNewODDialogElements()
 {
  global $newProperties, $newPermissions, $newElement, $newView, $newRule;
  
- $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'line' => '', 'help' => "To remove database without recovery - set empty database name string and its description.<br>Remove all elements (see 'Element' tab) also."],
+ $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - set empty database name string and its description.<br>Remove all elements (see 'Element' tab) also."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Emtpy, undefined or zero value - no limit.', 'data' => '', 'line' => ''],
-		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Emtpy, undefined or zero value - no limit.', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']];
-		    
- $newPermissions = ['element1' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
-		    'element2' => ['type' => 'textarea', 'head' => "List of users/groups (one by line) allowed or disallowed (see above) to edit this database properties.\nYou must be aware of disallowing all users, so avoid user/group empty list with 'allowed' type list", 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
-		    'element4' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object elements', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
-		    'element6' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit object views', 'data' => '', 'line' => ''],
-		    'element7' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
-		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/edit database rules', 'data' => '', 'line' => '']];
+		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
+		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
+		    //'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']
+		    'element6' => ['type' => 'radio', 'data' => "User/groups allowed list to change 'Database' section|+Disallowed list (allowed for others)|"],
+		    'element7' => ['type' => 'textarea', '_head' => "You must be aware of disallowing all users via empty user/group allowed list", 'data' => ''],
+		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'Element' section|+Disallowed list (allowed for others)|"],
+		    'element9' => ['type' => 'textarea', 'data' => ''],
+		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'View' section|+Disallowed list (allowed for others)|"],
+		    'element11' => ['type' => 'textarea', 'data' => ''],
+		    'element12' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'Rule' section|+Disallowed list (allowed for others)|"],
+		    'element13' => ['type' => 'textarea', 'data' => '', 'line' => '']
+		   ];
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element4' => ['type' => 'text', 'head' => "Command line to process 'init' event:", 'data' => ''],
-		    'element5' => ['type' => 'text', 'head' => "Command line to process 'mouse double click' event:", 'data' => ''],
-		    'element6' => ['type' => 'text', 'head' => "Command line to process 'key press' event:", 'data' => ''],
-		    'element7' => ['type' => 'text', 'head' => "Command line to process 'INS press' event:", 'data' => ''],
-		    'element8' => ['type' => 'text', 'head' => "Command line to process 'DEL press' event:", 'data' => ''],
-		    'element9' => ['type' => 'text', 'head' => "Command line to process 'F2 press' event:", 'data' => ''],
-		    'element10' => ['type' => 'text', 'head' => "Command line to process 'F12 press' event:", 'data' => ''],
-		    'element11' => ['type' => 'text', 'head' => "Command line to process 'confirm edit' event:", 'data' => ''],
-		    'element12' => ['type' => 'text', 'head' => "Command line to process 'confirm dialog' event:", 'data' => ''],
-		    'element13' => ['type' => 'text', 'head' => "Command line to process 'object change' event:", 'data' => '', 'line' => ''],
-		    'element14' => ['type' => 'textarea', 'head' => 'Element scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."]];
+		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "Handler for 'INIT' event:", 'data' => '', 'help' => 'hhhhhhh'],
+		    'element5' => ['type' => 'text', 'label' => "Handler for 'DBLCLICK' event:", 'data' => ''],
+		    'element6' => ['type' => 'text', 'label' => "Handler for 'KEYPRESS' event:", 'data' => ''],
+		    'element7' => ['type' => 'text', 'label' => "Handler for 'INS' event:", 'data' => ''],
+		    'element8' => ['type' => 'text', 'label' => "Handler for 'DEL' event:", 'data' => ''],
+		    'element9' => ['type' => 'text', 'label' => "Handler for 'F2' event:", 'data' => ''],
+		    'element10' => ['type' => 'text', 'label' => "Handler for 'F12' event:", 'data' => ''],
+		    'element11' => ['type' => 'text', 'label' => "Handler for 'CONFIRM' event:", 'data' => ''],
+		    'element12' => ['type' => 'text', 'label' => "Handler for 'CONFIRMDIALOG' event:", 'data' => ''],
+		    'element13' => ['type' => 'text', 'label' => "Handler for 'CHANGE' event:", 'data' => '', 'line' => '']
+		   ];
 	
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'radio', 'head' => 'Type', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'line' => '', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => ''],
-		    'element5' => ['type' => 'text', 'head' => 'Object selection link type', 'data' => '', 'line' => ''],
+		    'element5' => ['type' => 'text', 'label' => 'Object selection link type', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element selection expression. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
-		    'element7' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
-		    'element8' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to display this view', 'data' => '', 'line' => ''],
-		    'element9' => ['type' => 'radio', 'data' => DISALLOWEDLIST],
-		    'element10' => ['type' => 'textarea', 'head' => 'List of users/groups (one by line) allowed or disallowed (see above) to add/change/delete objects in this view', 'data' => '', 'line' => '']];
+		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."],
+		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to read this view|+Disallowed list (allowed for others)|"],
+		    'element9' => ['type' => 'textarea', 'data' => ''],
+		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change this view objects|+Disallowed list (allowed for others)|"],
+		    'element11' => ['type' => 'textarea', 'data' => '']
+		   ];
 							  
- $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'line' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
+ $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action apply object changes, 'Reject' cancels."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
+		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'help' => 'Empty or error expression does nothing'],
 		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
-		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']];
+		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
+		   ];
 }
 
 function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
@@ -849,8 +852,9 @@ function Sidebar($db, &$client)
 	  $query->execute();
 	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
 		  {
-		   $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element8']['data'])), "strcmp"));
-		   if (($count && $View['element7']['data'] === DISALLOWEDLIST) || (!$count && $View['element7']['data'] === ALLOWEDLIST)) continue;
+		   $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
+		   $pos = strpos($View['element8']['data'], '+');
+		   if (($count && $pos) || (!$count && !$pos)) continue;
 		   $sidebar[$id]['view'][$View['element1']['id']] = $View['element1']['data'];
 		   if ($id === $client['ODid'] && $View['element1']['id'] === $client['OVid']) $sidebar[$id]['active'] = $client['OVid'];
 		  }
@@ -914,7 +918,6 @@ function Check($db, $flags, &$client, &$output)
     }
     
  if ($flags & GET_VIEWS)
- if ($client['cmd'] !== 'SCHEDULE')
     {
      // Get view section
      unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linktype']);
@@ -972,14 +975,13 @@ function Check($db, $flags, &$client, &$output)
     }
 
  if ($flags & CHECK_OID)
- if ($client['cmd'] !== 'SCHEDULE')
  if ($client['cmd'] === 'INIT')
     {
      $client['oId'] = 0;
     }
   else
     {
-     isset($client['oId']) ? $client['oId'] = $client['oId'] : $client['oId'] = 0;
+     if (!isset($client['oId'])) $client['oId'] = 0;
 
      // Check object identificator value existence
      if ($client['oId'] < STARTOBJECTID)
@@ -1013,14 +1015,13 @@ function Check($db, $flags, &$client, &$output)
     }
 
  if ($flags & CHECK_EID)
- if ($client['cmd'] !== 'SCHEDULE')
  if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
     {
      $client['eId'] = 0;
     }
   else
     {
-     isset($client['eId']) ? $client['eId'] = $client['eId'] : $client['eId'] = 0;
+     if (!isset($client['eId'])) $client['eId'] = 0;
      
      // Check eid element selection existence
      if (!isset(setElementSelectionIds($client)[strval($client['eId'])]))
@@ -1031,7 +1032,6 @@ function Check($db, $flags, &$client, &$output)
     }
 
  if ($flags & CHECK_ACCESS)
- if ($client['cmd'] !== 'SCHEDULE')
  if ($client['cmd'] === 'New Object Database')
     {
      if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|')
@@ -1053,8 +1053,9 @@ function Check($db, $flags, &$client, &$output)
 	 $groups[] = $client['auth'];				// and add username at the end of array
 	  
 	 // Check on 'display' permissions
-	 $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element8']['data'])), "strcmp"));
-	 if (($count && $View['element7']['data'] === DISALLOWEDLIST) || (!$count && $View['element7']['data'] === ALLOWEDLIST))
+	 $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
+	 $pos = strpos($View['element8']['data'], '+');
+	 if (($count && $pos) || (!$count && !$pos))
 	    {
 	     $output['error'] = "You're not allowed to display or modify this Object View!";
 	     return;
@@ -1063,8 +1064,9 @@ function Check($db, $flags, &$client, &$output)
 	 // Check 'writable' permissions for non-CALL event
 	 if ($client['cmd'] !== 'CALL')
 	    {
-	     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element10']['data'])), "strcmp"));
-	     if (($count && $View['element9']['data'] === DISALLOWEDLIST) || (!$count && $View['element9']['data'] === ALLOWEDLIST))
+	     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element11']['data'])), "strcmp"));
+	     $pos = strpos($View['element10']['data'], '+');
+	     if (($count && $pos) || (!$count && !$pos))
 	        {
 		 $output['alert'] = "You're not allowed to modify this Object View!";
 		 return;

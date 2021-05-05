@@ -189,7 +189,7 @@ while (true)
  $query->execute();
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
-	  $handler = json_decode($value['client'], true);lg($handler);
+	  $handler = json_decode($value['client'], true);
 	  isset($handler['cid']) ? $hid = $handler['cid'] : $hid = -1;
 	  
 	  if (isset($handler['passchange'])) foreach ($socketarray as $cid => $sock)

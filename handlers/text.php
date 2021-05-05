@@ -13,17 +13,23 @@ switch($event)
 	    echo json_encode(['cmd' => 'EDIT']);
 	    break;
        case 'KEYPRESS':
-    	    //if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'EDIT', 'data' => $_SERVER['argv'][2]]);
-	    $data = json_decode($_SERVER['argv'][2], true);
-	    if (isset($data['altkey']) && $data['altkey'] && $data['string'] === 'r')
-		{
-		 echo json_encode(['cmd' => 'SET', 'value' => '']);
-		 break;
-		}
-	    if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'EDIT', 'data' => $data['string']]);
+    	    if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
+	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'])
+	       {
+	        echo json_encode(['cmd' => '']);
+	        break;
+	       }
+
+	    echo json_encode(['cmd' => 'EDIT', 'data' => $data['string']]);
 	    break;
        case 'INS':
-    	    if (!isset($_SERVER['argv'][2]) || !($arr = json_decode($_SERVER['argv'][2], true))) break;
+    	    if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3]) || !($arr = json_decode($_SERVER['argv'][2], true)) || !($data = json_decode($_SERVER['argv'][3], true))) break;
+	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey'])
+	       {
+	        echo json_encode(['cmd' => '']);
+	        break;
+	       }
+
 	    $profile = [];
 	    $margin = "\n";
 	    foreach($arr as $key => $value)
@@ -44,9 +50,16 @@ switch($event)
     	    echo json_encode(['cmd' => 'SET', 'value' => '']);
 	    break;
        case 'SCHEDULE':
-    	    echo "OK";
+    	    echo "PIZ";
 	    break;
        case 'F2':
+    	    if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
+	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey'])
+	       {
+	        echo json_encode(['cmd' => '']);
+	        break;
+	       }
+	       
 	    echo json_encode(['cmd' => 'EDIT']);
 	    break;
        case 'F12':

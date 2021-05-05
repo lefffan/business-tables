@@ -4,7 +4,7 @@
 const DATABASENAME			= 'OE9';
 const DATABASEUSER			= 'root';
 const DATABASEPASS			= '123';
-const PHPBINARY				= '/usr/local/bin/php';
+const PHPBINARY				= 'php';
 const WRAPPERBINARY			= PHPBINARY.' wrapper.php';
 const HANDLERDIR			= '/usr/local/apache2/htdocs/handlers/';
 const IP				= '192.168.9.39';
@@ -25,8 +25,6 @@ const ELEMENTPROFILENAMEMAXCHAR		= 32;
 const ELEMENTPROFILENAMEADDSTRING	= ' (id';
 const UNIQKEYCHARLENGTH			= 300;
 const UNIQELEMENTTYPE			= '+unique|';
-const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';   
-const DISALLOWEDLIST			= 'allowed list (disallowed for others)|+disallowed list (allowed for others)|';
 const NEWOBJECTID			= 1;
 const TITLEOBJECTID			= 2;
 const STARTOBJECTID			= 3;
@@ -48,3 +46,5 @@ const CREATECANCEL			= ['CREATE' => ['value' => 'CREATE', 'call' => '', 'enterke
 const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const MINBUTTONTIMERMSEC		= 500;
 const MAXBUTTONTIMERMSEC		= 36000000;
+const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';   
+const DISALLOWEDLIST			= 'allowed list (disallowed for others)|+disallowed list (allowed for others)|';

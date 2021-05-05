@@ -1,11 +1,8 @@
 --------------May 2021--------------------------------------------------------------
-- Tree constants to customization
-- Any props to text.php
-- single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-
+- cron to view pad
 - if element json is NULL than element value should be retreived from last object element version with non NULL value.
   First object version should always be non NULL, but empty {"cmd":"SET", "value":""}
-- retreive at call event only necesecary props line value, hint, description, style..
+  retreive at call event only necesecary props line value, hint, description, style..
 
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
@@ -15,18 +12,20 @@
   Can i use sockets number more than 1024?
   socket incorrect data while task managers works long period of time
 
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git. !Help content during all code lookup
-
+- Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git.
+  !Help content during all code lookup
+  Instruct user how to remove unnesesary object versions
+  test dialog boxes on low resolution
+  
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-- SET command should refresh all database views that has refreshing object
 --------------June 2021----------------------------------------------------------------
 - Object view PIECHART, GRAPH, LOCATION.
 - telnet, snmp and diagnostic functions, current mrtg base convert to OD with to build the tree example
 - inner text in <td> can consists of <br>, <color> and <font> tags
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
 - System call open in a new tab
-- Object selection with non-empty link type for all view types (by now it is released for tree view type only)
+- Object selection with non-empty link type for all view types (by now it is released for tree view type only) and for scheduler.php
 - Task manager: restrict call of task manager for some users
 - Optimize mysql to highload app:
   for php ORM Doctrine can be used
@@ -41,7 +40,6 @@
 - OV Link between two objects! for example between two switches. So if object selection selects one object - then tree built till the last object with no/error link. In case of selection selects two or more objects - tree path built from first selected to the selected
 - show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
 - Release mechanism that allows handler to save dialog data element JSON data at a time or other commands with element json data set.
-- system command to copy data to the buffer
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - System call NEWOBJECT (to create object by user handlers)
@@ -104,6 +102,8 @@
 - event.which -> event.code https://learn.javascript.ru/keyboard-events
 - dialog interface element heads - not plain text but some <font> <color> tags?
 - multi cell selecting - copy (excel table), delete (removes all selected objects). User can select and copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+  single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
+  system command to copy data to the buffer
 - text.php as an option selection predefined data, for example operation selection (new podkl, udalenie, perekluchenie..)
 - tree element onclick: { 'OD': '', 'ODid': '', 'OV': '', 'OVid': '', 'params': {'Input_object_id': '', 'value4': '', } }
 ------------------------------------------------------------------------------------------

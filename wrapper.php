@@ -15,7 +15,7 @@ function ParseHandlerResult($db, &$output, &$client)
  if ($result = json_decode($output[0], true)) $output = $result;
   else $output = ['cmd' => 'SET', 'value' => implode("\n", $output)];
   
- if (!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET']) === false)
+ if (!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', '']) === false)
     {
      LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') returned undefined json!");
      return;
@@ -109,6 +109,8 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'SET':
 	 case 'RESET':
 	      ConvertToString($output, ['value', 'hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      break;
+	 case '':
 	      break;
 	}
 
@@ -320,6 +322,9 @@ switch ($output[$client['eId']]['cmd'])
 	     break;
         case 'DELETEOBJECT':
 	     DeleteObject($db, $client, $output);
+	     break;
+        case '':
+	     $output = [];
 	     break;
        }
 

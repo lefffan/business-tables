@@ -25,9 +25,7 @@ try {
      //------------------------------------------Create default OD 'Users'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
-     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = ALLOWEDLIST;
-     //$newPermissions['element1']['data'] = $newPermissions['element3']['data'] = ALLOWEDLIST;
-     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $userOD['buttons']['SAVE']['call'] = 'Edit Database Structure';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
@@ -58,8 +56,9 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Name'] = $newElement;
@@ -73,8 +72,9 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Telephone'] = $newElement;
@@ -88,8 +88,9 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Email'] = $newElement;
@@ -103,8 +104,9 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json'";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $userOD['dialog']['Element']['Comment'] = $newElement;
@@ -151,8 +153,8 @@ try {
      //------------------------------------------Create default OD 'Logs'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Logs';
-     $newPermissions['element1']['data'] = $newPermissions['element3']['data'] = $newPermissions['element7']['data'] = ALLOWEDLIST;
-     $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties, 'Permissions' => $newPermissions], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'display_single_profile' => '']];
+     $newPermissions['element6']['data'] = $newPermissions['element8']['data'] = $newPermissions['element12']['data'] = ALLOWEDLIST;
+     $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $logOD['buttons']['SAVE']['call'] = 'Edit Database Structure';
      $logOD['dialog']['Element']['New element']['element1']['id'] = '2';
      $logOD['dialog']['View']['New view']['element1']['id'] = '2';

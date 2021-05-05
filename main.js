@@ -34,7 +34,7 @@ const uiProfile = {
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
-		  "main field table cursor cell": { "outline": "red auto 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)" },
+		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "", "text-align": "center" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "", "text-align": "center" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
@@ -74,12 +74,12 @@ const uiProfile = {
 		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
 		  "dialog box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
 		  //
-		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 6px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
 		  "dialog box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
 		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
 		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 3px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 6px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
 		  "dialog box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
 		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
 		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
@@ -137,7 +137,7 @@ function CreateWebSocket()
  socket = new WebSocket(SOCKETADDR);
  socket.onmessage = FromController;
  socket.onopen	= CallController;
- socket.onclose = () => { displayMainError("The server connection is down! Try again") };
+ socket.onclose = () => { displayMainError("The server connection is down! Try again"); HideBox(); };
  socket.onerror = () => socket.onclose();
 }
 
@@ -456,7 +456,7 @@ function BuildTree(tree, y, x)
 
 function DrawTree(tree, direction)
 {
- let x, y, stockrow, arrowrow, objectrow, trs = '';
+ let x, y, stockrow, arrowrow, objectrow, content, title, value, trs = '';
 
  // Flush old data
  mainTableRemoveEventListeners();
@@ -491,16 +491,31 @@ function DrawTree(tree, direction)
 		}
 	     //----------------------
 	     objectrow += mainTable[y][x]['class'] + '>' + GetTreeElementContent(mainTable[y][x]['content']) + '</td>';
-	     stockrow += '><div class="treelink"><div style="justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription"><span>' + (mainTable[y][x]['content'][0]?.['title'] ? mainTable[y][x]['content'][0]['title'] : "'&nbsp;&nbsp;'") + '</span></div><div class="treelinkstock"></div><div style="justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription">' + (mainTable[y][x]['content'][0]?.['value'] ? mainTable[y][x]['content'][0]['value'] : "'&nbsp;&nbsp;'") + '</div></div></td>';
-	     if (mainTable[y][x]['content'][1])
-	        {
-		 arrowrow += '><div class="treelink"><div style="' + (mainTable[y][x]['content'][1]['title'] === undefined ? 'color: red; ' : '');
+	     //----------------------
+	     if (!mainTable[y][x]['content'][0] || !mainTable[y][x]['content'][0]['value'])
+		value = "'&nbsp;&nbsp;'";
+	      else
+	        value = EllipsesClip(mainTable[y][x]['content'][0]['value'], uiProfile['tree element']['object element value max chars']);
+	     if (!mainTable[y][x]['content'][0] || !mainTable[y][x]['content'][0]['title'])
+		title = "'&nbsp;&nbsp;'";
+	      else
+	        title = EllipsesClip(mainTable[y][x]['content'][0]['title'], uiProfile['tree element']['object element title max chars']);
+	     stockrow += '><div class="treelink"><div style="justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription"><span>' + title + '</span></div><div class="treelinkstock"></div><div style="justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription">' + value + '</div></div></td>';
+	     //----------------------
+	     if (content = mainTable[y][x]['content'][1])
+	        { 
+		 title = EllipsesClip(content['title'], uiProfile['tree element']['object element title max chars']);
+		 value = EllipsesClip(content['value'], uiProfile['tree element']['object element value max chars']);
+		 if (!title) title = "'&nbsp;&nbsp;'";
+		 if (!value) value = "'&nbsp;&nbsp;'";
+		 
+		 arrowrow += '><div class="treelink"><div style="' + (content['title'] === undefined ? 'color: red; ' : '');
 	         arrowrow += 'justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
-		 arrowrow += '<span>' + (mainTable[y][x]['content'][1]['title'] === undefined ? 'Unknown element:' : (mainTable[y][x]['content'][1]['title'] ? mainTable[y][x]['content'][1]['title'] : "'&nbsp;&nbsp;'")) + '</span></div>';
+		 arrowrow += '<span>' + (content['title'] === undefined ? 'Unknown element:' : title) + '</span></div>';
 		 arrowrow += '<div class="treelinkarrow' + direction + '"></div>';
-		 arrowrow += '<div style="' + (mainTable[y][x]['content'][1]['title'] === undefined ? 'color: red; ' : '');
+		 arrowrow += '<div style="' + (content['title'] === undefined ? 'color: red; ' : '');
 		 arrowrow += 'justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
-		 arrowrow += '<span>' + (mainTable[y][x]['content'][1]['title'] === undefined ? mainTable[y][x]['content'][1]['id'] : (mainTable[y][x]['content'][1]['value'] ? mainTable[y][x]['content'][1]['value'] : "'&nbsp;&nbsp;'")) + '</span></div></td>';
+		 arrowrow += '<span>' + (content['title'] === undefined ? EllipsesClip(content['id'], uiProfile['tree element']['object element value max chars']) : value) + '</span></div></td>';
 		}
 	     //----------------------
 	     x += mainTable[y][x]['colspan'];
@@ -1018,18 +1033,24 @@ function KeyboardEventHandler(event)
 		     }
 		  break;
 		 }
-	      if (cursor.td && cursor.td.contentEditable === 'true')
+	      if (cursor.td) if (cursor.td.contentEditable === 'true')
 		 {
 		  cursor.td.contentEditable = 'false';
 		  cursor.td.innerHTML = cursor.olddata;
 		  break;
 		 }
+	       else
+	         {
+		  CellBorderToggleSelect(null, cursor.td, false);
+		  break;
+		 }
 	      HideContextmenu();
 	      break;
 	 case 45: //Ins
-	      if (box || contextmenu || !cursor.td) break;
-	      if (cursor?.td?.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS'))
-	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === 'true') break;
+	      if (event.ctrlKey && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data'], cursor.td);
+
+	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS')) CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 case 46: //Del
 	      if (box || contextmenu || !cursor.td) break;
@@ -1053,18 +1074,19 @@ function KeyboardEventHandler(event)
 	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 default: // space, letters, digits
-	      if (!box && !contextmenu && cursor.td && cursor.td.contentEditable != 'true')
-	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
-	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID)
-	         {
-		  if (!rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) break;
-		  cmd = 'KEYPRESS';
-		  CallController({string: event.key, metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
-		  if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault(); // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
-		 }
-	       else
+	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === 'true') break;
+	      if (event.ctrlKey && event.keyCode == 67 && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data'], cursor.td);
+	      
+	      if (!mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId) || !rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) break;
+	      if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID && !event.ctrlKey && !event.altKey && !event.metaKey)
 	         {
 		  MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+		  break;
+		 }
+	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && (cmd = 'KEYPRESS'))
+	         {
+		  CallController({string: event.key, metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+		  if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault(); // Prevent default action - page down (space) and quick search bar in Firefox browser (keyboard and numpad forward slash)
 		 }
 	}
 }
@@ -1084,7 +1106,6 @@ function FromController(json)
  try { input = JSON.parse(json.data); }
  catch { input = json; }
  
- lg('Message from controller: ', input);
  if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
  if (input.auth != undefined)	{ user = input.auth; }
  if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
@@ -1154,7 +1175,6 @@ function FromController(json)
 function CallController(data)
 {
  let object;
- lg('Message to controller (cmd, data): ', cmd, data);
  
  switch (cmd)
 	{
@@ -1171,8 +1191,7 @@ function CallController(data)
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'Copy':
-	      if (cursor.x != undefined && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data']);
-	      lg(mainTable[cursor.y]?.[cursor.x]?.['data']);
+	      if (cursor.x != undefined && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data'], cursor.td);
 	      break;
 	 case 'Description':
 	      let cell, hidden = msg = '';
@@ -1445,7 +1464,7 @@ function ShowBox(scrollLeft, scrollTop)
 function getInnerDialog()
 {
  if (!box || !box.dialog || typeof box.dialog != 'object') return;
- let element, data, count = 0, readonly, inner = '';
+ let element, data, count = 0, readonly, checked, inner = '';
  
  //------------------Creating current pad and profile if not exist------------------
  if (!box.flags) box.flags = {};
@@ -1490,13 +1509,13 @@ function getInnerDialog()
  // No match - assing first profile for default
  if (typeof data === 'string') box.flags.profile = data;
  // Profiles count more than one? Creating profile select DOM element.
- if (count > 1 || box.flags.display_single_profile != undefined)
+ if (count > 1 || box.flags.padprofilehead?.[box.flags.pad] != undefined)
     {
      // Add profile head
      if (box.flags.padprofilehead != undefined && box.flags.padprofilehead[box.flags.pad] != undefined) inner += '<pre class="element-headers">' + box.flags.padprofilehead[box.flags.pad] + '</pre>';
      // In case of default first profile set zero value to use as a select attribute
      if (typeof data === 'string') data = 0;
-     // Add select block and divider
+     // Add header, select block and divider
      inner += '<div class="select" type="select-profile"><div value="' + data + '">' + box.flags.profile + '</div></div><div class="divider"></div>';
     }
     
@@ -1508,10 +1527,10 @@ function getInnerDialog()
       data = '';
       if (element.help != undefined && typeof element.help == "string") data = '<span name="' + name + '" class="help-icon"> ? </span>'
       // Display element head
-      if (element.head != undefined && typeof element.head == "string") inner += '<pre class="element-headers">' + toHTMLCharsConvert(element.head) + ' ' + data + '</pre>';
+      if (element.head === undefined || typeof element.head !== "string") inner += '<div></div>';
+       else inner += '<pre class="element-headers">' + toHTMLCharsConvert(element.head) + ' ' + data + '</pre>';
       // Filling interface element data, leave empty string in case of undefined
-      data = '';
-      if (element.data != undefined && typeof element.data == "string") data = element.data;
+      if (element.data != undefined && typeof element.data === "string") data = element.data; else data = '';
       switch (element.type)
 	     {
 	      case 'table':
@@ -1520,7 +1539,7 @@ function getInnerDialog()
 		       try   { data = JSON.parse(data); }
 		       catch { break; }
 		       let row, cell;
-		       inner += '<table class="boxtable"><tbody>';
+		       inner += `<table class="boxtable"><tbody>`;
 		       for (row in data)
 		    	   {
 			    inner += '<tr>';
@@ -1539,7 +1558,7 @@ function getInnerDialog()
 	      case 'select-multiple':
 		   if (data != '')
 		      {
-		       inner += '<div class="select" name="' + name + '" type="select-multiple">';
+		       inner += `<div class="select" name="${name}" type="select-multiple">`;
 		       for (data of data.split('|'))
 		    	   if (data != '')
 			      {
@@ -1559,7 +1578,7 @@ function getInnerDialog()
 		    	   {
 			    if (data[0] == '+')		// The option is selected (first char is '+')? Add it to the dialog interface
 			       {
-			        inner += '<div class="select" name="' + name + '" type="select-one"><div value="' + count + '">' + data.substr(1) + '</div></div>';
+			        inner += `<div class="select" name="${name}" type="select-one"><div value="${count}">${data.substr(1)}</div></div>`;
 			        break;
 			       }
 			    count ++;
@@ -1573,14 +1592,14 @@ function getInnerDialog()
 		       element.readonly != undefined ? readonly = ' disabled' : readonly = '';
 		       for (data of data.split('|')) if (data != '')
 			  {
-			   const pos = data.search(/[^\+]/);
-			   if (pos > 0) inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" checked' + readonly + '><label for="' + name + '">' + data.substr(pos) + '</label>';
-			    else inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '"' + readonly + '><label for="' + name + '">' + data + '</label>';
+			   (count = data.search(/[^\+]/)) > 0 ? checked = ' checked' : checked = '';
+			   inner += `<input type="${element.type}" class="${element.type}" name="${name}"${checked}${readonly}><label for="${name}">${data.substr(count)}</label>`;
 			  }
 		      }
 		   break;
 	      case 'password':
 	      case 'text':
+		   if (element.label) inner += `<label for="${name}" class="element-headers">${element.label}</label>`;
 	    	   element.readonly != undefined ? readonly = ' readonly' : readonly = '';
 		   inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '"' + readonly + '>';
 		   break;
@@ -1850,7 +1869,17 @@ function ContentEditableCursorSet(element)
  selection.addRange(range);
 }
 
-function CopyBuffer(text)
+function EllipsesClip(string, limit)
+{
+ if (typeof limit === 'string') limit = Number(limit);
+ if (!string || typeof string !== 'string' || typeof limit !== 'number') return '';
+ if (limit < 3) limit = 3;
+ 
+ if (string.length > limit) return string.substr(0, limit - 2) + '..';
+ return string;
+}
+
+function CopyBuffer(text, td)
 {
  const textarea = document.createElement('textarea');
  textarea.value = text;
@@ -1858,9 +1887,10 @@ function CopyBuffer(text)
  textarea.select();
  
  try { document.execCommand('copy'); }
- catch {}
+ catch { td = null; }
 
  document.body.removeChild(textarea);
+ if (td) td.style.outline = uiProfile['main field table cursor cell']['clipboard outline'];
 }
       
 function escapeDoubleQuotes(string)
