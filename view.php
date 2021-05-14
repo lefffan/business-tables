@@ -124,7 +124,7 @@ function NewOD($db, &$client, &$output)
  $query->execute();                                                                                                                                   
  
  // Creating 'Object Database' (OD), consists of actual multiple object versions and its elements json data
- $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+ $query = $db->prepare("create table `data_$id` (id MEDIUMINT NOT NULL, mask TEXT, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
  $query->execute();
  $query = $db->prepare("ALTER TABLE `data_$id` ADD INDEX (`lastversion`)");
  $query->execute();
@@ -309,7 +309,9 @@ try {
 	     // Get element selection query string, in case of empty result return no element message as an error
 	     $elementQueryString = '';
 	     $props = setElementSelectionIds($client);
-	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
+	     //foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
+	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_EXTRACT(eid$key, '$.value', '$.hint') as eid$key";
+	     //lg($elementQueryString );
 	     if ($elementQueryString === '')
 	        {
 		 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!";
@@ -319,6 +321,7 @@ try {
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
 	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
+	     lg($output);
 	     break;
         case 'New Object Database':
 	     if (!Check($db, CHECK_ACCESS, $client, $output)) break;

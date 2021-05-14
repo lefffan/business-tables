@@ -50,7 +50,7 @@ switch($event)
     	    echo json_encode(['cmd' => 'SET', 'value' => '']);
 	    break;
        case 'SCHEDULE':
-    	    echo "PIZ";
+    	    echo "ZOPA";
 	    break;
        case 'F2':
     	    if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;

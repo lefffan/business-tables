@@ -72,7 +72,7 @@ function ParseHandlerResult($db, &$output, &$client)
 			   if ($timer < MINBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MINBUTTONTIMERMSEC);
 			   if ($timer > MAXBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MAXBUTTONTIMERMSEC);
 			  }
-		      }	
+		      }
 	      break;
 	 case 'CALL':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
@@ -109,6 +109,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'SET':
 	 case 'RESET':
 	      ConvertToString($output, ['value', 'hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      $output += ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];
 	      break;
 	 case '':
 	      break;
@@ -215,6 +216,8 @@ $output = [];
 
 if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $output))
    {
+    if ($client['cmd'] === 'SCHEDULE')
+       isset($output['error']) ? LogMessage($db, $client, $output['error']) : LogMessage($db, $client, $output['alert']);
     $output = [$client['eId'] => $output + ['cmd' => '']];
    }
 else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
@@ -256,25 +259,41 @@ switch ($output[$client['eId']]['cmd'])
 	     if ($client['ODid'] === '1' && $excludeid === '1' && isset($output[$excludeid]['password'])) $passchange = '';
 	     try {
 	          $db->beginTransaction();
-	          $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
+	          $query = $db->prepare("SELECT version,mask FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
 	          $query->execute();
 	          $version = $query->fetchAll(PDO::FETCH_NUM); // Get selected version
 	          if (count($version) === 0) throw new Exception("Object id $client[oId] doesn't exist! Please refresh Object View."); // No rows found? Return an error
+	          $mask = $version[0][1];
 	          $version = intval($version[0][0]) + 1; // Increment version to use it as a new version of the object
 	          
 	          $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1"); // Unset last flag of the object current version and insert new object version with empty data
 	          $query->execute();
 	          $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,owner,version,lastversion) VALUES ($client[oId],:owner,$version,1)");
 	          $query->execute([':owner' => $client['auth']]);
+		  $newmask = '';
 		  foreach ($client['allelements'] as $eid => $value)
 			  {
 			   $client['eId'] = $eid;
-			   if (!WriteElement($db, $client, $output[$eid], $version)) unset($output[$eid]);
+			   if (!WriteElement($db, $client, $output[$eid], $version))
+			      {
+			       unset($output[$eid]);
+			       $newmask .= "eid$eid=NULL,";
+			      }
 			  }
 		    
 		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version), 'Change object');
 		  if ($ruleresult['action'] === 'Accept')
 		     {
+		      if ($newmask != '')
+		         {
+			  $query = $db->prepare("UPDATE `data_$client[ODid]` SET mask='".substr($newmask, 0, -1)."' WHERE id=$client[oId] AND version=$version");
+		          $query->execute();
+			 }
+		      if ($mask != '')
+		         {
+			  $query = $db->prepare("UPDATE `data_$client[ODid]` SET $mask WHERE id=$client[oId] AND version=".strval($version - 1));
+		          $query->execute();
+			 }
 	              $db->commit();
 		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
 	    	      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
@@ -301,8 +320,6 @@ switch ($output[$client['eId']]['cmd'])
 	     $db->rollBack();
 	     if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
 	     $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $excludeid, 'value')]], 'alert' => $ruleresult['message']];
-	     /*$query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
-	     $query->execute([':client' => json_encode($output, JSON_HEX_APOS | JSON_HEX_QUOT)]);*/
 	     break;
         case 'CALL':
 	     $output = $output[$client['eId']];
@@ -316,7 +333,7 @@ switch ($output[$client['eId']]['cmd'])
 		      $output[$eid] = [];
 		      if (($cmdline = GetCMD($db, $client)) === '') continue;
 		      exec($cmdline, $output[$eid]);
-		      if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]);
+		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];
     		     }
 	     AddObject($db, $client, $output);
 	     break;

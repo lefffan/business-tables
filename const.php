@@ -48,3 +48,4 @@ const MINBUTTONTIMERMSEC		= 500;
 const MAXBUTTONTIMERMSEC		= 36000000;
 const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';   
 const DISALLOWEDLIST			= 'allowed list (disallowed for others)|+disallowed list (allowed for others)|';
+const CLIENTELEMENTPROPS		= ['value', 'hint', 'description', 'style'];

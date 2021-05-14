@@ -392,15 +392,15 @@ function setElementSelectionIds(&$client)
  // |      | html table:     tablestyle      | x, y, style, collapse    	 | x, y, style				 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // |  1   | new object:     style     	     | new object:			 |		   -			 |
- // |      | 				     | x, y, style, event, _hint	 |					 |
+ // |      | 				     | x, y, style, event, hint*	 |					 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // |  2   | title object:   style           | title object:			 |		   -			 |
- // |      | 				     | x, y, style, _title, _hint	 |					 |
+ // |      | 				     | x, y, style, title*, hint*	 |					 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
  // | 3..  | exact object:   style     	     | exact object: 			 | object service info:			 |
  // |      | 				     | x, y, style, event, collapse	 | x, y, style				 |
  //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- 
+ // *props set automatically
  
  foreach (preg_split("/\n/", $client['elementselection']) as $value)
       if ($arr = json_decode($value, true, 2))
@@ -476,7 +476,7 @@ function setElementSelectionIds(&$client)
 			       $props[$eid][$oid]['title'] = $client['allelements'][$eid]['element1']['data'];
 			       $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'];
 			      }
-			   if (intval($oid) == NEWOBJECTID) $props[$eid][$oid]['hint'] = "Table cell to input new object data for element id: $eid";
+			   if (intval($oid) == NEWOBJECTID) $props[$eid][$oid]['hint'] = "Table cell to input new object text for element id: $eid";
 			  }
 		 }
 	 }
@@ -1035,7 +1035,7 @@ function Check($db, $flags, &$client, &$output)
  if ($client['cmd'] === 'New Object Database')
     {
      if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|')
-        $output['alert'] = "You're not allowed to add Object Databases!";
+        $output['alert'] = "New OD add operation is not allowed!";
     }
   else if (array_search($client['cmd'], ['CALL', 'DELETEOBJECT', 'INIT', 'DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'SCHEDULE']) !== false)
     {
@@ -1057,7 +1057,7 @@ function Check($db, $flags, &$client, &$output)
 	 $pos = strpos($View['element8']['data'], '+');
 	 if (($count && $pos) || (!$count && !$pos))
 	    {
-	     $output['error'] = "You're not allowed to display or modify this Object View!";
+	     $output['error'] = "OV read/write operations is not allowed!";
 	     return;
 	    }
 
@@ -1068,7 +1068,7 @@ function Check($db, $flags, &$client, &$output)
 	     $pos = strpos($View['element10']['data'], '+');
 	     if (($count && $pos) || (!$count && !$pos))
 	        {
-		 $output['alert'] = "You're not allowed to modify this Object View!";
+		 $output['alert'] = "OV write operation is not allowed!";
 		 return;
 		}
 	    }

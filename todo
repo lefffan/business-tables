@@ -1,8 +1,6 @@
 --------------May 2021--------------------------------------------------------------
-- cron to view pad
-- if element json is NULL than element value should be retreived from last object element version with non NULL value.
-  First object version should always be non NULL, but empty {"cmd":"SET", "value":""}
-  retreive at call event only necesecary props line value, hint, description, style..
+- retreive at call event only necesecary props line value, hint, description, style..
+- System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
 
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
@@ -16,10 +14,10 @@
   !Help content during all code lookup
   Instruct user how to remove unnesesary object versions
   test dialog boxes on low resolution
+  import in main.js
   
-- System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
-- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 --------------June 2021----------------------------------------------------------------
+- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 - Object view PIECHART, GRAPH, LOCATION.
 - telnet, snmp and diagnostic functions, current mrtg base convert to OD with to build the tree example
 - inner text in <td> can consists of <br>, <color> and <font> tags
