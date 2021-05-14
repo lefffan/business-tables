@@ -310,7 +310,7 @@ try {
 	     $elementQueryString = '';
 	     $props = setElementSelectionIds($client);
 	     //foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
-	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_EXTRACT(eid$key, '$.value', '$.hint') as eid$key";
+	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_EXTRACT(eid$key, '$.value', '$.style', '$.hint', '$.description') as eid$key";
 	     //lg($elementQueryString );
 	     if ($elementQueryString === '')
 	        {
@@ -321,7 +321,7 @@ try {
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
 	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
-	     lg($output);
+	     //lg($output);
 	     break;
         case 'New Object Database':
 	     if (!Check($db, CHECK_ACCESS, $client, $output)) break;
