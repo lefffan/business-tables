@@ -260,13 +260,22 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 	  if ((props[eid][oidnum] && props[eid][oidnum].collapse != undefined) || (props[eid]['0'] && props[eid]['0'].collapse != undefined) ||
 	      (props['0'] && props['0'][oidnum] && props['0'][oidnum].collapse != undefined)) mainTable[y][x]['collapse'] = '';
 	  //--------------Parse object data to JSON and fetch data (from value), hint and description-------------------
-	  try   { object = JSON.parse(object[eidstr]); }
+	  mainTable[y][x]['data'] = '';
+	  if (object[eidstr] && typeof object[eidstr] === 'string' && (object = object[eidstr].substr(1, object[eidstr].length - 2)))
+	     {
+	      object = object.split(', ');
+	      if (object[0]) mainTable[y][x]['data'] = object[0].substr(1, object[0].length - 2);
+	      if (object[1]) mainTable[y][x]['hint'] = object[1].substr(1, object[1].length - 2);
+	      if (object[2]) mainTable[y][x]['description'] = object[2].substr(1, object[2].length - 2);
+	      if (object[3].substr(1, object[3].length - 2)) mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, {style: object[3].substr(1, object[3].length - 2)});
+	     }
+	  /*try   { object = JSON.parse(object[eidstr]); }
 	  catch { object = {}; }
 	  if (object === null || object === undefined) object = {};
 	  typeof object.value === 'string' ? mainTable[y][x]['data'] = object.value : mainTable[y][x]['data'] = '';
 	  if (typeof object.hint === 'string') mainTable[y][x]['hint'] = object.hint;
 	  if (typeof object.description === 'string') mainTable[y][x]['description'] = object.description;
-	  mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, object);
+	  mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, object);*/
 	 }
     }
  if (oidnum === TITLEOBJECTID || oidnum === NEWOBJECTID || mainTable[y][x]['realobject'])
@@ -279,8 +288,6 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 
 function drawMain(data, props)
 {
-lg(typeof data[0].eid1);
-lg(typeof data[0].eid2);
  let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldcursor = JSON.parse(JSON.stringify(cursor));
  let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
  

@@ -26,7 +26,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'EDIT':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         { 
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'EDIT' command on object 'CHANGE' or 'INIT' event!");
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'EDIT' command on object '$client[cmd]' event!");
 		  return;
 		 }
 	      ConvertToString($output, ['data']);
@@ -36,7 +36,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'ALERT':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         {
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'ALERT' command on object 'CHANGE' or 'INIT' event!");
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'ALERT' command on object '$client[cmd]' event!");
 		  return;
 		 }
 	      if (!isset($output['data']) || !ConvertToString($output, ['data']))
@@ -49,7 +49,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'DIALOG':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         {
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'DIALOG' command on object 'CHANGE' or 'INIT' event!");
+		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'DIALOG' command on object '$client[cmd]' event!");
 		  return;
 		 }
 	      if (!isset($output['data']) || gettype($output['data']) != 'array')
@@ -77,7 +77,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'CALL':
 	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
 	         {
-	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'CALL' command on object 'CHANGE' or 'INIT' event!");
+	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'CALL' command on object '$client[cmd]' event!");
 		  return;
 		 }
 	      cutKeys($output, ['cmd', 'OD', 'OV', 'ODid', 'OVid', 'params']);
@@ -108,8 +108,48 @@ function ParseHandlerResult($db, &$output, &$client)
 	      break;
 	 case 'SET':
 	 case 'RESET':
-	      ConvertToString($output, ['value', 'hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
-	      $output += ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];
+	      ConvertToString($output, ['hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      $output += DEFAULTELEMENTPROPS;
+
+
+	      // <OD> or <ODid> - Object Database name or id to search from, both options absent - current OD is used.
+	      // <elementlist> - object element ids or service elements to search from separated by comma, absent element list - all elements are used.
+	      // <elementprop> - JSON object element property to search from, absent element prop - whole element data is used.
+	      // <regexp> - regular expression the searching element property is tested on, absent regular expression causes an error.
+	      
+	      // Parse value on JSON sql query with next format:
+	      // SELECT JSON_EXTRACT(eid<eid>, '$.<prop>')|<eid> FROM `data_<ODid>` WHERE <query> LIMIT 1;
+	      if (gettype($output['value']) === 'array' && isset($output['value']['eid']))
+	         {
+		  $query = 'SELECT ';
+		  // Cut $output['value'] keys to eid, prop, OD, ODid..
+		  
+		  ConvertToString($output['value'], ['eid', 'prop', 'OD', 'ODid']);
+		  // Check <element> first. In case built-in (service) elements use <eid> after SELECT instead of JSON_EXTRACT
+		  if (array_search($output['value']['eid'], SERVICEELEMENTS) === false)
+		     {
+		      if (!isset($output['value']['prop']) $output['value']['prop'] = 'value';
+		      $query .= "JSON_EXTRACT(eid$output[value][eid], '$.$output[value][prop]') FROM ";
+		     }
+		   else
+		     {
+		      $query .= "$output[value][eid] FROM ";
+		     }
+		  // Check OD id/name then.
+		  if (!isset($output['value']['ODid']) && !isset($output['value']['OD'])) $output['value']['ODid'] = $client['ODid'];
+	          if (!isset($output['value']['ODid']))
+	             {
+		      $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
+		      $query->execute([':odname' => $output['value']['OD']]);
+		      $ODid = $query->fetchAll(PDO::FETCH_NUM);
+		     }
+		  // Next - 
+		  if ($ODid)
+		     {
+		      $query .= "`data_$ODid` ";
+		     }
+		 }
+	      ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
 	      break;
 	 case '':
 	      break;
@@ -333,7 +373,7 @@ switch ($output[$client['eId']]['cmd'])
 		      $output[$eid] = [];
 		      if (($cmdline = GetCMD($db, $client)) === '') continue;
 		      exec($cmdline, $output[$eid]);
-		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];
+		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = DEFAULTELEMENTPROPS;
     		     }
 	     AddObject($db, $client, $output);
 	     break;

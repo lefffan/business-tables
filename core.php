@@ -576,7 +576,7 @@ function LogMessage($db, &$client, $log)
 							                                                                                                           
  $_client = ['ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs', 'allelements' => ['1' => ''], 'uniqelements' => [], 'params' => []];
  isset($client['auth']) ? $_client['auth'] = $client['auth'] : $_client['auth'] = 'system';
- $output = ['1' => ['cmd' => 'RESET', 'value' => $msg]];
+ $output = ['1' => ['cmd' => 'RESET', 'value' => $msg] + DEFAULTELEMENTPROPS];
  
  AddObject($db, $_client, $output);
  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");

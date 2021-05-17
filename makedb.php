@@ -144,10 +144,19 @@ try {
      $client['ODid'] = '1';
      $client['allelements'] = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
      $client['uniqelements'] = ['1' => ''];
-     $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'], '2' => ['cmd' => 'RESET', 'value' => ''], '3' => ['cmd' => 'RESET', 'value' => ''], '4' => ['cmd' => 'RESET', 'value' => ''], '5' => ['cmd' => 'RESET', 'value' => 'System account']];
+     $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'] + DEFAULTELEMENTPROPS,
+    		'2' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
+		'3' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
+		'4' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
+		'5' => ['cmd' => 'RESET', 'value' => 'System account'] + DEFAULTELEMENTPROPS];
      AddObject($db, $client, $output);
 
-     $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''], '2' => ['cmd' => 'RESET', 'value' => 'Charlie'], '5' => ['cmd' => 'RESET', 'value' => 'Administrator'], '2' => ['cmd' => 'RESET', 'value' => ''], '3' => ['cmd' => 'RESET', 'value' => ''], '4' => ['cmd' => 'RESET', 'value' => ''], '5' => ['cmd' => 'RESET', 'value' => ''], '6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]];
+     $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''] + DEFAULTELEMENTPROPS,
+    		'2' => ['cmd' => 'RESET', 'value' => 'Charlie'] + DEFAULTELEMENTPROPS,
+		'3' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
+		'4' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
+		'5' => ['cmd' => 'RESET', 'value' => 'Administrator'] + DEFAULTELEMENTPROPS,
+		'6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()] + DEFAULTELEMENTPROPS];
      AddObject($db, $client, $output);
 
      //------------------------------------------Create default OD 'Logs'------------------------------------------

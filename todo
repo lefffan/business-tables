@@ -1,6 +1,11 @@
 --------------May 2021--------------------------------------------------------------
 - retreive at call event only necesecary props line value, hint, description, style..
 - System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
+  select JSON_EXTRAC(<column>, '$.<prop>') from <odid> WHERE <query> order BY <order> LIMIT 1;
+  default prop=vlaue (but if column is built-in id time data.. prop property  ) odid=current order=no-order
+  
+  
+  SELECT * FROM pet WHERE name REGEXP '^b';
 
 - https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
   renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php

@@ -311,7 +311,6 @@ try {
 	     $props = setElementSelectionIds($client);
 	     //foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
 	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_EXTRACT(eid$key, '$.value', '$.style', '$.hint', '$.description') as eid$key";
-	     //lg($elementQueryString );
 	     if ($elementQueryString === '')
 	        {
 		 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!";
@@ -321,7 +320,6 @@ try {
 	     $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 	     $query->execute();
 	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
-	     //lg($output);
 	     break;
         case 'New Object Database':
 	     if (!Check($db, CHECK_ACCESS, $client, $output)) break;
@@ -351,7 +349,7 @@ try {
 		    	   if ($odprops = json_decode($odprops[1], true))
 			      {
 			       $odprops['flags']['callback'] = $client['data'];
-			       $odprops['title'] .= " - '$odname' (id $client[data])";
+			       $odprops['title'] .= " '$odname' (id $client[data])";
 			       ksort($odprops['dialog'], SORT_STRING);
 			       $output = ['cmd' => 'DIALOG', 'data' => $odprops];
 			       break;

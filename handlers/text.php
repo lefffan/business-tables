@@ -47,7 +47,8 @@ switch($event)
 	    
 	    break;
        case 'DEL':
-    	    echo json_encode(['cmd' => 'SET', 'value' => '']);
+    	    //echo json_encode(['cmd' => 'SET', 'value' => '{"AAA":"TTT"}']);
+	    echo json_encode(['cmd' => 'SET', 'value' => ['AAA'=>'BBB']]);
 	    break;
        case 'SCHEDULE':
     	    echo "ZOPA";
