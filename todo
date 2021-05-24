@@ -212,6 +212,13 @@ Search JSON values:
 - https://site-do.ru/db/sql4.php
 Secure:
 - Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
+WSS and Nginx wss proxy
+- https://taras.kramarets.net/php-websocket-сервер-обычный-и-для-ssl-работающие-об/
+- https://stackoverflow.com/questions/12102110/nginx-to-reverse-proxy-websockets-and-enable-ssl-wss
+- https://github.com/nicokaiser/nginx-websocket-proxy/blob/df67cd92f71bfcb513b343beaa89cb33ab09fb05/simple-wss.conf
+- https://taras.kramarets.net/php-websocket-сервер-обычный-и-для-ssl-работающие-об/
+Self-singed cert
+- https://qastack.ru/ubuntu/49196/how-do-i-create-a-self-signed-ssl-certificate
 -------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
 const range = document.createRange();   
 const selection = window.getSelection();

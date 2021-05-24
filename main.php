@@ -66,7 +66,7 @@ while (true)
 
  $now = strtotime("now");
  foreach($read as $socket)
-	{
+	{lg('read');
 	 $decoded = socket_read($socket, SOCKETREADMAXBYTES);
 	 $decoded = decode($decoded);
 	 // Client close socet connection event or unknown command?

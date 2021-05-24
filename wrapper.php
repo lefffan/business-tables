@@ -123,12 +123,12 @@ function ParseHandlerResult($db, &$output, &$client)
 	         {
 		  $query = 'SELECT ';
 		  // Cut $output['value'] keys to eid, prop, OD, ODid..
-		  
+		
 		  ConvertToString($output['value'], ['eid', 'prop', 'OD', 'ODid']);
 		  // Check <element> first. In case built-in (service) elements use <eid> after SELECT instead of JSON_EXTRACT
 		  if (array_search($output['value']['eid'], SERVICEELEMENTS) === false)
 		     {
-		      if (!isset($output['value']['prop']) $output['value']['prop'] = 'value';
+		      if (!isset($output['value']['prop'])) $output['value']['prop'] = 'value';
 		      $query .= "JSON_EXTRACT(eid$output[value][eid], '$.$output[value][prop]') FROM ";
 		     }
 		   else

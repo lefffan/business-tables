@@ -1,5 +1,4 @@
 <?php
-
 // Be aware of removing old ODs by using that script
 
 require_once 'core.php';

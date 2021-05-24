@@ -2,12 +2,12 @@
 
 /****************************Platform dependent constants*********************************/
 const DATABASENAME			= 'OE9';
-const DATABASEUSER			= 'root';
-const DATABASEPASS			= '123';
+const DATABASEUSER			= 'tabel';
+const DATABASEPASS			= '17MAy2001#';
 const PHPBINARY				= 'php';
 const WRAPPERBINARY			= PHPBINARY.' wrapper.php';
-const HANDLERDIR			= '/usr/local/apache2/htdocs/handlers/';
-const IP				= '192.168.9.39';
+const HANDLERDIR			= '/usr/local/src/tabels/handlers/';
+const IP				= '127.0.0.1';
 const PORT				= 7889;
 const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";
 const KILLWRAPPERPROCESSESCMD		= "kill -9";
@@ -46,6 +46,6 @@ const CREATECANCEL			= ['CREATE' => ['value' => 'CREATE', 'call' => '', 'enterke
 const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const MINBUTTONTIMERMSEC		= 500;
 const MAXBUTTONTIMERMSEC		= 36000000;
-const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';   
+const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
 const DISALLOWEDLIST			= 'allowed list (disallowed for others)|+disallowed list (allowed for others)|';
 const DEFAULTELEMENTPROPS		= ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];

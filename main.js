@@ -16,7 +16,7 @@ const GREYITEM = '<div class="contextmenuItems greyContextMenuItem">';
 const ACTIVEITEM = '<div class="contextmenuItems">';
 const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>';
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
-const SOCKETADDR = 'ws://192.168.9.39:7889/hui/pizda';
+const SOCKETADDR = 'wss://195.208.152.8/ws/';
 const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
 const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
 const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
