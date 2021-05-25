@@ -226,8 +226,8 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  
  // Calculate specified object element x,y table coordinates
  try { x = Math.trunc(eval(oe.x)); y = Math.trunc(eval(oe.y)); }
- catch { return `Specified view '${OV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`; }
- if (isNaN(x) || isNaN(y)) return `Specified view '${OV}' selection expression has some 'x','y' incorrect coordinate definitions!\nSee element selection expression help section`;
+ catch { return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element layout help section`; }
+ if (isNaN(x) || isNaN(y)) return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element element layout help section`;
  if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
     return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
     
@@ -1533,11 +1533,20 @@ function getInnerDialog()
      {
       element = box.dialog[box.flags.pad][box.flags.profile][name];
       // Display element hint icon
-      data = '';
-      if (element.help != undefined && typeof element.help == "string") data = '<span name="' + name + '" class="help-icon"> ? </span>'
+      //if (element.help != undefined && typeof element.help == "string") data = ' <span name="' + name + '" class="help-icon"> ? </span>'; else data = '';
       // Display element head
-      if (element.head === undefined || typeof element.head !== "string") inner += '<div></div>';
-       else inner += '<pre class="element-headers">' + toHTMLCharsConvert(element.head) + ' ' + data + '</pre>';
+      if (element.head === undefined || typeof element.head !== "string")
+	 {
+	  inner += '<div></div>';
+	 }
+       else
+	 {
+	  inner += '<pre class="element-headers"';
+	  if (element.style && typeof element.style === 'string') inner += ` style="${element.style}"`;
+	  inner += '>' + toHTMLCharsConvert(element.head);
+	  if (element.help && typeof element.help == "string") inner += ' <span name="' + name + '" class="help-icon"> ? </span>';
+	  inner += '</pre>';
+	 }
       // Filling interface element data, leave empty string in case of undefined
       if (element.data != undefined && typeof element.data === "string") data = element.data; else data = '';
       switch (element.type)
@@ -1968,7 +1977,7 @@ const help = { title: 'Help', dialog: {
 Every table consists of identical objects, which, in turn, are set of bult-in and user defined elements.
 Table data of itself is called Object Database (OD) and can be changed or created by
 appropriate sidebar context menu. OD contains Object Views (OV). Views define what objects
-(via 'object selection', see appropriate help section) and elements (via 'element selection',
+(via 'object selection', see appropriate help section) and elements (via 'element layout',
 see appropriate help section) should be displayed and how.
 
 OV allows users to operate its objects many different ways, so to display its data 
@@ -2003,7 +2012,7 @@ required objects effectively. Each object consists of next elements:
 In case of empty string default object selection 'WHERE lastversion=1 AND version!=0'
 is applied. Default object selection selects all relevant (lastversion=1) and non deleted objects (version!=0).
 To select objects from database controller applies next query based on object selection string:
-'SELECT <element selection> FROM data_<OD id> <object selection>'
+'SELECT <element layout selection> FROM data_<OD id> <object selection>'
 This query format together with object structure provides effective selection of any sets
 of objects via powerful SQL capabilities!
 
@@ -2015,9 +2024,9 @@ Object selection string example for 'Users' object database:
 That selection example OV call will display dialog to get input and pass it to the controller to build result query.`
 }}},
 
-"Element selection": { profile: { element: { head:
+"Element layout": { profile: { element: { head:
 `
-Element selection is a JSON strings list. Each JSON defines element and its behaviour (table cell position, style attribute, OV start event, etc..)
+Element layout is a JSON strings list. Each JSON defines element and its behaviour (table cell position, style attribute, OV start event, etc..)
 JSON possible properties are:
 - 'x','y'. Appropriate table cell coordinates defined by expression that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects)
 - 'oid','eid'. Object id, element id this behaviour is applied to. Real object identificators starts from 3. Title object id is 2.
@@ -2031,7 +2040,7 @@ JSON possible properties are:
 - 'style'. HTML style attribute for specified element, see appropriate css documentaion.
 - 'tablestyle'. HTML style attribute for tag <table>, can be defined only with undefined cell (oid=0, eid=0).
 
-Let's parse 'All logs' OV element selection of 'Logs' database:
+Let's parse 'All logs' OV element layout of 'Logs' database:
 {"eid":"id", "oid":"2", "x":"0", "y":"0"}
 {"eid":"id", "x":"0", "y":"n+1"}
 {"eid":"datetime", "oid":"2", "x":"1", "y":"0"}
@@ -2045,7 +2054,7 @@ Element 'id' for real objects is set to the  first column (x=0) and to the rows 
 First object in the selection with n=0 is set to the second row (y=1), second object in the selection with n=1 is set to the third row (y=2) and so on.
 Similarly to the 'datetime' element and first user-defined element (eid=1) that consists of real system log data. See 'OV example' help section also.
 
-In addition to JSONS above, element selection could be set to one of next values:
+In addition to JSONS above, element layout could be set to one of next values:
 '' - Empty value selects all user-defined database elements and diplays them as a classic table with the title as a first row.
 '*' - One asterisk behaves like empty value with one exception - 'new object' input row is added to the table just right after title row.
 '**' - Two asterisks behaves like empty value, but built-in elements ('id', 'version', 'owner'..) are added.
@@ -2176,7 +2185,7 @@ Second - create element for 'INIT' event with next handler command line: /usr/lo
 Handler text.php is a built-in script that implements text operation functions (much like excel cell :)
 
 Move on. Let's create view with next object selection 'WHERE lastversion=1 AND version!=0 ORDER BY id DESC'
-and next element selection:
+and next element layout:
 {"eid":"datetime", "x":"0", "y":"q-n-1"}
 {"eid":"owner", "x":"1", "y":"q-n-1"}
 {"eid":"1", "x":"2", "y":"q-n-1"}
@@ -2220,7 +2229,7 @@ And Of course, for both our chat restrictions action is set to 'reject'.
   - Mouse right button on sidebar, main field or main table area calls appropriate context menu
   - Any element 'mouseover' event for some time (default 1 sec) displays appropriate hint message if exist
   - Excel like mouse pointer table cells resizing are not implemented due to multiuser complicated cells
-    width/height values change. Use element selection (see appropriate help section) feature to set
+    width/height values change. Use element layout (see appropriate help section) feature to set
     initial width/height values. By default, widths and heights of the table and its cells are adjusted
     to fit the content.
   

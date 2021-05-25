@@ -1,6 +1,7 @@
 --------------May 2021--------------------------------------------------------------
+- text.php as an option selection predefined data, for example operation selection (new podkl, udalenie, perekluchenie..)
+- element header style (to hint some notes by red color for a example)
 - retreive object element property of specified version (for a example to display время создания заявки и время выполнения)
-- Element selection -> Element layout
 - Crontab element execution once immediately
 - retreive at call event only necesecary props line value, hint, description, style (remove hint,descr and style apply in case of empty)
 - Release setki.xls:
@@ -8,6 +9,7 @@
   OD/OV, order
   default prop=vlaue (but if column is built-in, then prop=id|time|version..)
   SELECT * FROM pet WHERE select JSON_EXTRAC(<column>, '$.<prop>') or name REGEXP '^b';
+- Imply tabels.app to dns
 
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git.
   !Help content during all code lookup
@@ -32,7 +34,6 @@
   Problems of deploying - can i use mysql on commerisal base? 
 
 --------------Questionable features-------------------------------------------------
-- Imply tabels.app to dns
 - Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   secure php.ini and can socket number be more than 1024?
 - What time and bytes limit should be set to php script execution
@@ -105,7 +106,6 @@
 - multi cell selecting - copy (excel table), delete (removes all selected objects). User can select and copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
   single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
   system command to copy data to the buffer
-- text.php as an option selection predefined data, for example operation selection (new podkl, udalenie, perekluchenie..)
 - tree element onclick: { 'OD': '', 'ODid': '', 'OV': '', 'OVid': '', 'params': {'Input_object_id': '', 'value4': '', } }
 ------------------------------------------------------------------------------------------
 
@@ -533,7 +533,7 @@ Model
 
 HD OD:
 Id
-Date (creation date, execution time, order last change time)
+Date (creation date, execution time, order last change time) Отправка почты по крону если время выполнения превышает лимит
 Решение
 Категория
 Клиент (название, адрес), контакт

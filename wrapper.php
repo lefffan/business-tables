@@ -111,7 +111,6 @@ function ParseHandlerResult($db, &$output, &$client)
 	      ConvertToString($output, ['hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
 	      $output += DEFAULTELEMENTPROPS;
 
-
 	      // <OD> or <ODid> - Object Database name or id to search from, both options absent - current OD is used.
 	      // <elementlist> - object element ids or service elements to search from separated by comma, absent element list - all elements are used.
 	      // <elementprop> - JSON object element property to search from, absent element prop - whole element data is used.
