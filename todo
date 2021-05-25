@@ -1,26 +1,21 @@
 --------------May 2021--------------------------------------------------------------
-- retreive at call event only necesecary props line value, hint, description, style..
-- System calls and its object views: QUERY (sql request just to select data from current (or other) OD, for example to release setki.xls)
+- retreive object element property of specified version (for a example to display время создания заявки и время выполнения)
+- Element selection -> Element layout
+- Crontab element execution once immediately
+- retreive at call event only necesecary props line value, hint, description, style (remove hint,descr and style apply in case of empty)
+- Release setki.xls:
   select JSON_EXTRAC(<column>, '$.<prop>') from <odid> WHERE <query> order BY <order> LIMIT 1;
-  default prop=vlaue (but if column is built-in id time data.. prop property  ) odid=current order=no-order
-  
-  
-  SELECT * FROM pet WHERE name REGEXP '^b';
-
-- https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
-  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-  secure php.ini
-  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
-  Can i use sockets number more than 1024?
-  socket incorrect data while task managers works long period of time
+  OD/OV, order
+  default prop=vlaue (but if column is built-in, then prop=id|time|version..)
+  SELECT * FROM pet WHERE select JSON_EXTRAC(<column>, '$.<prop>') or name REGEXP '^b';
 
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git.
   !Help content during all code lookup
   Instruct user how to remove unnesesary object versions
   test dialog boxes on low resolution
   import in main.js
-  
+  socket incorrect data while task managers works long period of time, execute task manager for the whole night, then see result
+
 --------------June 2021----------------------------------------------------------------
 - System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 - Object view PIECHART, GRAPH, LOCATION.
@@ -37,6 +32,9 @@
   Problems of deploying - can i use mysql on commerisal base? 
 
 --------------Questionable features-------------------------------------------------
+- Imply tabels.app to dns
+- Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+  secure php.ini and can socket number be more than 1024?
 - What time and bytes limit should be set to php script execution
 - prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
 - Scheduler should be OV based! Not element based
@@ -217,6 +215,10 @@ WSS and Nginx wss proxy
 - https://stackoverflow.com/questions/12102110/nginx-to-reverse-proxy-websockets-and-enable-ssl-wss
 - https://github.com/nicokaiser/nginx-websocket-proxy/blob/df67cd92f71bfcb513b343beaa89cb33ab09fb05/simple-wss.conf
 - https://taras.kramarets.net/php-websocket-сервер-обычный-и-для-ssl-работающие-об/
+  https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
+  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
+  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
+
 Self-singed cert
 - https://qastack.ru/ubuntu/49196/how-do-i-create-a-self-signed-ssl-certificate
 -------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
@@ -500,3 +502,112 @@ object=3, eid=3: link type=down, id=4, hui
 
 context menu (cmd TASKMANAGER) -> DIALOG cmd from controller
 REFRESH on timer (CONFIRMDIALOG) -> DIALOG cmd from controller 1
+
+apt-get update
+apt-get dist-upgrade
+apt-cache search nginx
+
+apt install nginx
+apt-get install mariadb-server
+db root pass 17...#: mysql_secure_installation                              	
+https://oblako.kz/help/linux/unstanovka-mysql-na-debian-9
+https://195.208.152.8
+
+apt install git
+git clone https://github.com/lefffan/business-tables .
+
+apt install net-tools
+
+
+
+
+
+
+Operation OD:
+ip
+hostname
+Location
+Ports (52) + Full diagnostic on F12 event + Any props (client name/id, tarif, ip, fiz addres..) on F2 event
+Mac (auto vendor definition) 
+Model
+
+HD OD:
+Id
+Date (creation date, execution time, order last change time)
+Решение
+Категория
+Клиент (название, адрес), контакт
+Выезд СКС/ВОЛС
+Назначено L1/L2
+Тип неполадки (возможно установка автоматом при изменении статуса на Closed) выбор из списка
+Родительская заявка (пробегать кроном и если установлено поле род заявка, то автоматом выставлять статус Closed)
+Провайдер (выбор из списка)
+Соответствие регламенту
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------NEW---------------------------
+$context = stream_context_create();
+stream_context_set_option($context, 'ssl', 'local_cert', 'server.cert');
+//stream_context_set_option($context, 'ssl', 'local_cert', 'cert1.pem');
+stream_context_set_option($context, 'ssl', 'local_pk', 'server.key');
+stream_context_set_option($context, 'ssl', 'passphrase', '');
+stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
+stream_context_set_option($context, 'ssl', 'verify_peer', false);
+stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
+$mainsocket = stream_socket_server('ssl://'.IP.':'.strval(PORT), $errno, $errstr, STREAM_SERVER_BIND|STREAM_SERVER_LISTEN, $context);
+---------------------NEW END---------------------------
+
+
+--------------------Comment lines below---------------------------
+// Create a socket
+/*if (false === ($mainsocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP))) { lg('Create socket connection error: '.socket_strerror(socket_last_error())); return; }
+if (false === socket_bind($mainsocket, IP, PORT)) { lg('Socket binding error: '.socket_strerror(socket_last_error())); return; }
+if (false === socket_listen($mainsocket)) { lg('Set socket option error: '.socket_strerror(socket_last_error())); return; }*/
+$socketarray = [$mainsocket];
+$clientsarray = [[]];
+
+while (true)
+{
+ $read = $socketarray; // Make copy of array of sockets
+ $write = $except = null;
+
+ if (stream_select($read, $write, $except, 0, SOCKETTIMEOUTUSEC) === false) // Waiting for the sockets accessable for reading without timeout
+    {
+     lg('Socket wait status error: '.socket_strerror(socket_last_error()));
+     return;
+    }
+
+ // Client array:
+ // 'auth': client username 
+ // 'authtime': user login time stamp
+ // 'uid': user id
+ // 'ip': client ip address
+ // 'port': client tcp/udp port
+ // 'User-Agent': Client user agent name
+ // 'ODid'/'OVid': Client OD/OV identificators
+ // 'OD'/'OV': Client OD/OV names
+ // 'params' object selection args array
+ // 'oId'/'eId': Object/element ids client event inited by
+ // 'cid': Socket array index, used as a client identificator
+
+---------------------SOME CHANGES---------------------------
+ if (in_array($mainsocket, $read))
+    {
+     if (($newsocket = stream_socket_accept($mainsocket)) && ($info = handshake($newsocket)))
+	{
+	 lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
+	 $socketarray[] = $newsocket;
+	 $clientsarray[] = ['ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => ''];
+	}
+else lg('Socket rejected!');
+     unset($read[array_search($mainsocket, $read)]);
+    }
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
