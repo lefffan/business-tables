@@ -91,10 +91,10 @@ while (true)
 	     unset($clientsarray[$cid]);
 	     continue;
 	    }
-	 
+	
 	 $input = json_decode($decoded['payload'], true);
 	 if (!isset($input['cmd'])) continue;
-	 
+	
 	 $client = &$clientsarray[$cid];
 	 $client['cid'] = $cid;
 	 
@@ -141,7 +141,7 @@ while (true)
 			   $user ? $output['log'] = "Wrong passowrd or username '$user' from $client[ip]" : $output['log'] = "Empty username login attempt from $client[ip]";
 			  }
 		       $output['data'] = getLoginDialogData($title);
-		       cutKeys($client, ['ip', 'port', 'User-Agent']);
+		       cutKeys($client, ['ip', 'port', 'User-Agent', 'streamdata']);
 		       break;
 		  case 'CALL': // Client OD data fetch event
 		       // Get client input OV params from dialog data if exist
@@ -219,7 +219,7 @@ while (true)
 		  case 'UPDATEDIALOG':
 		  case 'EDIT':
 		  case '':
-		       if (isset($socketarray[$hid]) && $clientsarray[$hid]['ODid'] === $handler['ODid'] && $clientsarray[$hid]['OVid'] === $handler['OVid'] && $clientsarray[$hid]['params'] === $handler['params'])
+		       if (isset($socketarray[$hid]) && $clientsarray[$hid]['ODid'] === $handler['ODid'] && $clientsarray[$hid]['OVid'] === $handler['OVid'] && ($handler['ODid'] === '' || $clientsarray[$hid]['params'] === $handler['params']))
 			  fwrite($socketarray[$hid], encode(json_encode($handler)));
 		       break;
 		  case 'SET':
