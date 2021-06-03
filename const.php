@@ -7,6 +7,7 @@ const DATABASEPASS			= '17MAy2001#';
 const PHPBINARY				= 'php';
 const WRAPPERBINARY			= PHPBINARY.' wrapper.php';
 const HANDLERDIR			= '/usr/local/src/tabels/handlers/';
+const APPDIR				= '/usr/local/src/tabels/';
 const IP				= '195.208.152.8';
 const PORT				= 7889;
 const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";

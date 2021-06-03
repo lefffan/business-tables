@@ -43,7 +43,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."user.php <event> '$json' <user>";
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
-     $userOD['dialog']['Element']['User'] = $newElement;
+     $userOD['dialog']['Element']['User (id1)'] = $newElement;
 
      $json = '{"props": {"link":"", "linkoid":"", "linkeid":""}}';
      initNewODDialogElements();
@@ -52,15 +52,15 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $userOD['dialog']['Element']['Name'] = $newElement;
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRMDIALOG <data>';
+     $userOD['dialog']['Element']['Name (id2)'] = $newElement;
      
      initNewODDialogElements();
      $newElement['element1']['id'] = '3';
@@ -68,15 +68,15 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $userOD['dialog']['Element']['Telephone'] = $newElement;
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRMDIALOG <data>';
+     $userOD['dialog']['Element']['Telephone (id3)'] = $newElement;
 
      initNewODDialogElements();
      $newElement['element1']['id'] = '4';
@@ -84,15 +84,15 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $userOD['dialog']['Element']['Email'] = $newElement;
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRMDIALOG <data>';
+     $userOD['dialog']['Element']['Email (id4)'] = $newElement;
 
      initNewODDialogElements();
      $newElement['element1']['id'] = '5';
@@ -100,15 +100,15 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php <event> '$json' <data>";
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event>';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $userOD['dialog']['Element']['Comment'] = $newElement;
+     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
+     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
+     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRMDIALOG <data>';
+     $userOD['dialog']['Element']['Comment (id5)'] = $newElement;
 
      initNewODDialogElements();
      $newElement['element1']['id'] = '6';
@@ -120,7 +120,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."customization.php <event> '$json'";
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event> <data>';
-     $userOD['dialog']['Element']['Customization'] = $newElement;
+     $userOD['dialog']['Element']['Customization (id6)'] = $newElement;
 
      $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
      $query->execute([':odprops' => json_encode($userOD)]);
@@ -179,7 +179,7 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $logOD['dialog']['Element']['Message type'] = $newElement;
+     $logOD['dialog']['Element']['Log message (id1)'] = $newElement;
 
      $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Logs',:odprops)");
      $query->execute([':odprops' => json_encode($logOD)]);
@@ -187,9 +187,9 @@ try {
      // Create Object Database (uniq instance)
      $query = $db->prepare("CREATE TABLE `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) AUTO_INCREMENT=".strval(STARTOBJECTID)." ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
      $query->execute();
-      
+
      // Create Object Database (actual data instance)
-     $query = $db->prepare("CREATE TABLE `data_2` (id MEDIUMINT NOT NULL, mask TEXT, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, eid2 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+     $query = $db->prepare("CREATE TABLE `data_2` (id MEDIUMINT NOT NULL, mask TEXT, lastversion BOOL DEFAULT 1, version MEDIUMINT NOT NULL, owner CHAR(64), datetime DATETIME DEFAULT NOW(), eid1 JSON, PRIMARY KEY (id, version)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
      $query->execute();
      $query = $db->prepare("ALTER TABLE `data_2` ADD INDEX (`lastversion`)");
      $query->execute();

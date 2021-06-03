@@ -284,7 +284,7 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 }
 
 function drawMain(data, props)
-{lg(data);
+{
  let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldcursor = JSON.parse(JSON.stringify(cursor));
  let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
  

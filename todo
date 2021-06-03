@@ -1,14 +1,12 @@
 --------------May 2021--------------------------------------------------------------
 - text.php as an option selection predefined data, for example operation selection (new podkl, udalenie, perekluchenie..)
 - retreive object element property of specified version (for a example to display время создания заявки и время выполнения)
-- Crontab element execution once immediately
-- retreive at call event only necesecary props line value, hint, description, style (remove hint,descr and style apply in case of empty)
+
 - Release setki.xls:
   select JSON_EXTRAC(<column>, '$.<prop>') from <odid> WHERE <query> order BY <order> LIMIT 1;
   OD/OV, order
   default prop=vlaue (but if column is built-in, then prop=id|time|version..)
   SELECT * FROM pet WHERE select JSON_EXTRAC(<column>, '$.<prop>') or name REGEXP '^b';
-- Imply tabels.app to dns
 
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git.
   !Help content during all code lookup
@@ -33,6 +31,7 @@
   Problems of deploying - can i use mysql on commerisal base? 
 
 --------------Questionable features-------------------------------------------------
+- Crontab element execution once immediately
 - Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   secure php.ini and can socket number be more than 1024?
 - What time and bytes limit should be set to php script execution

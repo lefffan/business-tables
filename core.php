@@ -15,8 +15,8 @@ function lg($arg, $title = 'LOG', $echo = false) // Function saves input $arg to
      echo "\n----------------------------".$title."-------------------------------\n";
      echo $arg;
     }
- file_put_contents('error.log', "\n----------------------------".$title."-------------------------------\n", FILE_APPEND);
- file_put_contents('error.log', var_export($arg, true), FILE_APPEND);
+ file_put_contents(APPDIR.'error.log', "\n----------------------------".$title."-------------------------------\n", FILE_APPEND);
+ file_put_contents(APPDIR.'error.log', var_export($arg, true), FILE_APPEND);
 }
 
 function adjustODProperties($db, $data, $ODid)
@@ -204,6 +204,7 @@ function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
  if (!isset($result[0][0])) return NULL;
  $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
  $result = str_replace('\\"', '"', $result);
+ $result = str_replace('\\/', '/', $result);
  return str_replace("\\\\", "\\", $result);
 }
 
@@ -495,13 +496,19 @@ function getUserId($db, $user)
 
 function getUserPass($db, $id)
 {
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.password') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
- $query->execute([':id' => $id]);
- $pass = $query->fetchAll(PDO::FETCH_NUM);
- if (isset($pass[0][0])) return substr($pass[0][0], 1, -1);
+ $pass = getElementProp($db, '1', $id, '1', 'password');
+ if (!isset($pass) || gettype($pass) != 'string') return '';
+ return $pass;
 }
 
 function getUserName($db, $id)
+{
+ $name = getElementProp($db, '1', $id, '1', 'value');
+ if (!isset($name) || gettype($name) != 'string') return '';
+ return $name;
+}
+
+function getUserName1($db, $id)
 {
  if (!isset($id)) return '';
  $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");

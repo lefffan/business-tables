@@ -1,40 +1,36 @@
 <?php
 
+require_once 'core.php';
 //sleep(3);
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
 
 switch($event)
       {
-       case 'INIT':
-    	    if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2], '_description' => 'HUI', '_hint' => 'FUCK OFF!', '_style' => 'color: red;']);
+       case 'EDIT':
+	    $out = ['cmd' => 'EDIT'];
+	    if (isset($_SERVER['argv'][2]) && ($data = json_decode($_SERVER['argv'][2], true)))
+	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey']) $out = ['cmd' => ''];
+	     else $out['data'] = $data['string'];
+	    echo json_encode($out);
 	    break;
-       case 'DBLCLICK':
-	    echo json_encode(['cmd' => 'EDIT']);
+       case 'SET':
+	    if (isset($_SERVER['argv'][2]) && $_SERVER['argv'][2]) echo $_SERVER['argv'][2]; else echo json_encode(['cmd' => 'SET', 'value' => '']);
 	    break;
-       case 'KEYPRESS':
-    	    if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
-	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'])
+       case 'CALL':
+	    echo json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Users', 'OV'=>'_qq', 'Params'=>[':input_user'=>'']]]);
+	    break;
+       case 'DIALOG':
+	    if (!isset($_SERVER['argv'][2]) || !($arr = json_decode($_SERVER['argv'][2], true)) || (isset($_SERVER['argv'][3]) && ($data = json_decode($_SERVER['argv'][3], true)) && ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey'])))
 	       {
 	        echo json_encode(['cmd' => '']);
 	        break;
 	       }
-
-	    echo json_encode(['cmd' => 'EDIT', 'data' => $data['string']]);
-	    break;
-       case 'INS':
-    	    if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3]) || !($arr = json_decode($_SERVER['argv'][2], true)) || !($data = json_decode($_SERVER['argv'][3], true))) break;
-	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey'])
-	       {
-	        echo json_encode(['cmd' => '']);
-	        break;
-	       }
-
 	    $profile = [];
 	    $margin = "\n";
 	    foreach($arr as $key => $value)
 		   {
-		    if (!isset($value)) $arr[$key] = '';
+		    if (!isset($value) || gettype($value) != 'string') $arr[$key] = '';
 		    $profile[$key] = ['type' => 'text', 'head' => $margin."Enter element '$key' property value:", 'data' => $arr[$key], 'line' => ''];
 		    $margin = '';
 		   }
@@ -44,32 +40,6 @@ switch($event)
 				         'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''],
 						       'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
 				         'flags'  => ['style' => 'width: 500px; height: 500px;']]]);
-	    
-	    break;
-       case 'DEL':
-    	    //echo json_encode(['cmd' => 'SET', 'value' => '{"AAA":"TTT"}']);
-	    echo json_encode(['cmd' => 'SET', 'value' => ['AAA'=>'BBB']]);
-	    break;
-       case 'SCHEDULE':
-    	    echo "ZOPA";
-	    break;
-       case 'F2':
-    	    if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
-	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey'])
-	       {
-	        echo json_encode(['cmd' => '']);
-	        break;
-	       }
-	       
-	    echo json_encode(['cmd' => 'EDIT']);
-	    break;
-       case 'F12':
-    	    //echo json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Operations', 'OV'=>'Operations', 'Params'=>[':input_user'=>'root']]]);
-	    echo json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Users', 'OV'=>'_qq', 'Params'=>[':input_user'=>'']]]);
-	    break;
-       case 'CONFIRM':
-	    if (!isset($_SERVER['argv'][2]) || gettype($_SERVER['argv'][2]) != 'string') break;
-	    echo json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2], '_alert' => 'WTF????']);
 	    break;
        case 'CONFIRMDIALOG':
     	    if (!isset($_SERVER['argv'][2]) || gettype($arr = json_decode($_SERVER['argv'][2], true)) != 'array') break;
