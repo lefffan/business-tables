@@ -16,7 +16,7 @@ const GREYITEM = '<div class="contextmenuItems greyContextMenuItem">';
 const ACTIVEITEM = '<div class="contextmenuItems">';
 const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>';
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
-const SOCKETADDR = 'wss://195.208.152.8/ws/';
+const SOCKETADDR = 'wss://tabels.app:7889';
 const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
 const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
 const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
@@ -213,7 +213,7 @@ function drawSidebar(data)
 
 function SetOEPosition(props, oid, eid, n, q, object = {})
 {
- let x, y, oe, oidnum = Number(oid);
+ let x, y, oe, cell, oidnum = Number(oid);
  
  // CHeck specified object element start event
  (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') ? eidstr = 'eid' + eid : eidstr = eid;
@@ -241,18 +241,19 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  // props[0][0] = { style, tablestyle, collapse }
  if (mainTable[y] === undefined) mainTable[y] = [];
  mainTable[y][x] = { oId: oidnum, eId: eid };
- if (oe['hint']) mainTable[y][x]['hint'] = oe['hint'];
+ cell = mainTable[y][x];
+ if (oe['hint']) cell['hint'] = oe['hint'];
  
  // Fill main table cell with data 
- if (oidnum === TITLEOBJECTID) mainTable[y][x]['data'] = oe['title'];
- if (oidnum === NEWOBJECTID) mainTable[y][x]['data'] = '';
+ if (oidnum === TITLEOBJECTID) cell['data'] = oe['title'];
+ if (oidnum === NEWOBJECTID) cell['data'] = '';
  if (oidnum >= STARTOBJECTID)
     {
-     mainTable[y][x]['version'] = object.version;
-     (object.lastversion === '1' && object.version != '0') ? mainTable[y][x]['realobject'] = true : mainTable[y][x]['realobject'] = false;
+     cell['version'] = object.version;
+     (object.lastversion === '1' && object.version != '0') ? cell['realobject'] = true : cell['realobject'] = false;
      if (eid === eidstr) // If element id is 'id', 'version', 'owner', 'datetime' or 'lastversion'
          {
-	  mainTable[y][x]['data'] = object[eidstr];
+	  cell['data'] = object[eidstr];
 	 }
       else
          {
@@ -260,15 +261,11 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 	  if ((props[eid][oidnum] && props[eid][oidnum].collapse != undefined) || (props[eid]['0'] && props[eid]['0'].collapse != undefined) ||
 	      (props['0'] && props['0'][oidnum] && props['0'][oidnum].collapse != undefined)) mainTable[y][x]['collapse'] = '';
 	  //--------------Parse object data to JSON and fetch data (from value), hint and description-------------------
-	  mainTable[y][x]['data'] = '';
-	  if (object[eidstr] && typeof object[eidstr] === 'string' && (object = object[eidstr].substr(1, object[eidstr].length - 2)))
-	     {
-	      object = object.split(', ');
-	      if (object[0]) mainTable[y][x]['data'] = object[0].substr(1, object[0].length - 2);
-	      if (object[1]) mainTable[y][x]['hint'] = object[1].substr(1, object[1].length - 2);
-	      if (object[2]) mainTable[y][x]['description'] = object[2].substr(1, object[2].length - 2);
-	      if (object[3].substr(1, object[3].length - 2)) mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, {style: object[3].substr(1, object[3].length - 2)});
-	     }
+	  cell['data'] = cell['style'] = cell['hint'] = cell['description'] = '';
+	  if (object[eidstr + 'value']) cell['data'] = object[eidstr + 'value'];
+	  if (object[eidstr + 'hint']) cell['hint'] = object[eidstr + 'hint'];
+	  if (object[eidstr + 'description']) cell['description'] = object[eidstr + 'description'];
+	  if (object[eidstr + 'style']) cell['style'] = ElementStyleFetch(props, eid, oidnum, {style: cell['style']});
 	  /*try   { object = JSON.parse(object[eidstr]); }
 	  catch { object = {}; }
 	  if (object === null || object === undefined) object = {};
@@ -287,7 +284,7 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 }
 
 function drawMain(data, props)
-{
+{lg(data);
  let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldcursor = JSON.parse(JSON.stringify(cursor));
  let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
  
@@ -600,7 +597,7 @@ function MainDivEventHandler(event)
 	      break;
 	 case 'mousemove':
 	      let x = event.target.cellIndex, y = event.target.parentNode.rowIndex;
-	      if (x != undefined && y != undefined && mainTable[y] && mainTable[y][x] && mainTable[y][x].hint != undefined && !box && !contextmenu)
+	      if (x != undefined && y != undefined && mainTable[y]?.[x]?.hint && !box && !contextmenu)
 	         {
 		  if (!hint || hint.x != x || hint.y != y)
 		     {
@@ -608,8 +605,9 @@ function MainDivEventHandler(event)
 		      clearTimeout(tooltipTimerId);
 		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), uiProfile['hint']['mouseover hint timer in msec']);
 		     }
+		  break;
 		 }
-	       else HideHint();
+	      HideHint();
 	      break;
 	 case 'dblclick':
 	      if (!box && event.target.contentEditable != 'true' && mainTable[cursor.y]?.[cursor.x])

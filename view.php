@@ -310,7 +310,7 @@ try {
 	     $elementQueryString = '';
 	     $props = setElementSelectionIds($client);
 	     //foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ',eid'.$key;
-	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_EXTRACT(eid$key, '$.value', '$.style', '$.hint', '$.description') as eid$key";
+	     foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
 	     if ($elementQueryString === '')
 	        {
 		 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!";

@@ -10,7 +10,7 @@ function MakeViewCall($db, &$socket, &$client, $handler)
  
  $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)");
  $query->execute([':id' => $handler['data'] = GenerateRandomString(), ':client' => json_encode($handler)]);
- socket_write($socket, encode(json_encode($handler)));
+ fwrite($socket, encode(json_encode($handler)));
 }
 
 error_reporting(E_ALL);	// Report all errors
@@ -23,10 +23,14 @@ $query->execute();
 $query = $db->prepare("DELETE FROM `$$$`");
 $query->execute();
 
-// Create a socket
-if (false === ($mainsocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP))) { lg('Create socket connection error: '.socket_strerror(socket_last_error())); return; }
-if (false === socket_bind($mainsocket, IP, PORT)) { lg('Socket binding error: '.socket_strerror(socket_last_error())); return; }
-if (false === socket_listen($mainsocket)) { lg('Set socket option error: '.socket_strerror(socket_last_error())); return; }
+$context = stream_context_create();
+stream_context_set_option($context, 'ssl', 'local_cert', '/etc/letsencrypt/archive/tabels.app/cert1.pem');
+stream_context_set_option($context, 'ssl', 'local_pk', '/etc/letsencrypt/archive/tabels.app/privkey1.pem');
+stream_context_set_option($context, 'ssl', 'passphrase', '');
+stream_context_set_option($context, 'ssl', 'verify_peer', false);
+stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
+#stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
+$mainsocket = stream_socket_server('ssl://'.IP.':'.strval(PORT), $errno, $errstr, STREAM_SERVER_BIND|STREAM_SERVER_LISTEN, $context);
 $socketarray = [$mainsocket];
 $clientsarray = [[]];
 
@@ -35,7 +39,7 @@ while (true)
  $read = $socketarray; // Make copy of array of sockets
  $write = $except = null;
 
- if (socket_select($read, $write, $except, 0, SOCKETTIMEOUTUSEC) === false) // Waiting for the sockets accessable for reading without timeout
+ if (stream_select($read, $write, $except, 0, SOCKETTIMEOUTUSEC) === false) // Waiting for the sockets accessable for reading without timeout
     {
      lg('Socket wait status error: '.socket_strerror(socket_last_error()));
      return;
@@ -53,27 +57,36 @@ while (true)
  // 'params' object selection args array
  // 'oId'/'eId': Object/element ids client event inited by
  // 'cid': Socket array index, used as a client identificator
+
  if (in_array($mainsocket, $read))
     {
-     if (($newsocket = socket_accept($mainsocket)) && ($info = handshake($newsocket)))
+     if (($newsocket = stream_socket_accept($mainsocket)) && ($info = handshake($newsocket)))
 	{
 	 //lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
+	 stream_set_blocking ($newsocket, false);
 	 $socketarray[] = $newsocket;
-	 $clientsarray[] = ['ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => ''];
+	 $clientsarray[] = ['ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => '', 'streamdata' => ''];
 	}
      unset($read[array_search($mainsocket, $read)]);
     }
 
  $now = strtotime("now");
- foreach($read as $socket)
-	{lg('read');
-	 $decoded = socket_read($socket, SOCKETREADMAXBYTES);
-	 $decoded = decode($decoded);
+ foreach($read as $cid => $socket)
+	{
+	 $decoded = stream_get_contents($socket);
+	 if (($length = strlen($decoded)) === 0) continue;
+	 if ($length === 16384)
+	    {
+	     $clientsarray[$cid]['streamdata'] .= $decoded;
+	     continue;
+	    }
+	 $decoded = decode($clientsarray[$cid]['streamdata'].$decoded);
+	 $clientsarray[$cid]['streamdata'] = '';
+
 	 // Client close socet connection event or unknown command?
 	 if (false === $decoded || 'close' === $decoded['type'])
 	    {
-	     socket_shutdown($socket);
-	     socket_close($socket);
+	     fclose($socket);
 	     unset($socketarray[$cid]);
 	     unset($clientsarray[$cid]);
 	     continue;
@@ -82,7 +95,7 @@ while (true)
 	 $input = json_decode($decoded['payload'], true);
 	 if (!isset($input['cmd'])) continue;
 	 
-	 $client = &$clientsarray[$cid = array_search($socket, $socketarray)];
+	 $client = &$clientsarray[$cid];
 	 $client['cid'] = $cid;
 	 
 	 // Init input args
@@ -103,12 +116,12 @@ while (true)
 			   $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
 			   Check($db, CHECK_OD_OV, $client, $output);
 			   $output['log'] = "Logged in from $client[ip] with user agent: ".$client['User-Agent']."!";
-		    	   $output['customization'] = getUserCustomization($db, $uid);
+			   $output['customization'] = getUserCustomization($db, $uid);
 			   //------------------Log out new login user from other session------------------------
-		    	   foreach ($socketarray as $sockid => $sock)
-		    	        if ($sock != $mainsocket && $sockid != $cid && isset($clientsarray[$sockid]['uid']) && $clientsarray[$sockid]['uid'] === $uid)
+			   foreach ($socketarray as $sockid => $sock)
+			        if ($sock != $mainsocket && $sockid != $cid && isset($clientsarray[$sockid]['uid']) && $clientsarray[$sockid]['uid'] === $uid)
 				   {
-				    socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData("\nUser other session detected!\n\nUsername"), 'sidebar' => [], 'auth' => '', 'error' => ''])));
+				    fwrite($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData("\nUser other session detected!\n\nUsername"), 'sidebar' => [], 'auth' => '', 'error' => ''])));
 				    cutKeys($clientsarray[$sockid], ['ip', 'port', 'User-Agent']);
 				    break;
 				   }
@@ -179,7 +192,7 @@ while (true)
 	     if (isset($output['log'])) LogMessage($db, $client, $output['log']);
 	     if (isset($output['error'])) $client['ODid'] = $client['OVid'] = $client['OD'] = $client['OV'] = '';
 	     if (isset($client['auth'])) $output['auth'] = $client['auth'];
-	     socket_write($socket, encode(json_encode($output)));
+	     fwrite($socket, encode(json_encode($output)));
 	    }
 	}
 
@@ -195,7 +208,7 @@ while (true)
 	  if (isset($handler['passchange'])) foreach ($socketarray as $cid => $sock)
 	  if (isset($clientsarray[$cid]['uid']) && $clientsarray[$cid]['uid'] === $handler['passchange'])
 	     {
-	      socket_write($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
+	      fwrite($sock, encode(json_encode(['cmd' => 'DIALOG', 'data' => getLoginDialogData(), 'sidebar' => [], 'auth' => '', 'error' => ''])));
 	      cutKeys($clientsarray[$cid], ['ip', 'port', 'User-Agent']);
 	     }
 	  unset($handler['passchange']);
@@ -207,7 +220,7 @@ while (true)
 		  case 'EDIT':
 		  case '':
 		       if (isset($socketarray[$hid]) && $clientsarray[$hid]['ODid'] === $handler['ODid'] && $clientsarray[$hid]['OVid'] === $handler['OVid'] && $clientsarray[$hid]['params'] === $handler['params'])
-			  socket_write($socketarray[$hid], encode(json_encode($handler)));
+			  fwrite($socketarray[$hid], encode(json_encode($handler)));
 		       break;
 		  case 'SET':
 		       if (isset($handler['alert'])) $alert = $handler['alert']; else unset($alert);
@@ -215,8 +228,8 @@ while (true)
 		       
 		       foreach ($socketarray as $cid => $sock)
 		    	    if (isset($clientsarray[$cid]['auth']) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
-			    if (isset($alert) && $cid === $hid) socket_write($sock, encode(json_encode($handler + ['alert' => $alert])));
-			     else socket_write($sock, encode(json_encode($handler)));
+			    if (isset($alert) && $cid === $hid) fwrite($sock, encode(json_encode($handler + ['alert' => $alert])));
+			     else fwrite($sock, encode(json_encode($handler)));
 			     
 		       break;
 	    	  case 'INIT':

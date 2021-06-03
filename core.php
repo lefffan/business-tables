@@ -577,7 +577,7 @@ function LogMessage($db, &$client, $log)
  $_client = ['ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs', 'allelements' => ['1' => ''], 'uniqelements' => [], 'params' => []];
  isset($client['auth']) ? $_client['auth'] = $client['auth'] : $_client['auth'] = 'system';
  $output = ['1' => ['cmd' => 'RESET', 'value' => $msg] + DEFAULTELEMENTPROPS];
- 
+
  AddObject($db, $_client, $output);
  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
  $query->execute([':client' => json_encode($output + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
@@ -682,7 +682,6 @@ function decode($data)
 		  //return false;
 	          return array('type' => '', 'payload' => '', 'error' => 'unknown opcode (1003)');
 	    }
-     
      if ($payloadLength === 126)
         {
 	 $mask = substr($data, 4, 4);
@@ -704,14 +703,14 @@ function decode($data)
 	 $payloadOffset = 6;
 	 $dataLength = $payloadLength + $payloadOffset;
 	}
-     
+
      // We have to check for large frames here - socket_recv cuts at 1024 bytes so if websocket-frame is > 1024 bytes, then we have to wait until whole data is transferd
      if (strlen($data) < $dataLength)
         {
 	 lg('Socket data is more than 1024 bytes, so wait until whole data is transferd, input data is '.strval(strlen($data)).'bytes, actual data is '.strval($dataLength).'bytes');
 	 return false;
 	}
-     
+
      if ($isMasked)
         {
 	 for ($i = $payloadOffset; $i < $dataLength; $i++)
@@ -730,7 +729,39 @@ function decode($data)
      return $decodedData;
 }
 
-function handshake($socket)
+function handshake($connect) {
+	$info = array();
+
+	$line = fgets($connect);
+	$header = explode(' ', $line);
+	$info['method'] = $header[0];
+	$info['uri'] = $header[1];
+
+	while ($line = rtrim(fgets($connect))) {
+	    if (preg_match('/\A(\S+): (.*)\z/', $line, $matches)) {
+		$info[$matches[1]] = $matches[2];
+	    } else {
+		break;
+	    }
+	}
+
+	$address = explode(':', stream_socket_get_name($connect, true)); //╨┐╨╛╨╗╤Г╤З╨░╨╡╨╝ ╨░╨┤╤А╨╡╤Б ╨║╨╗╨╕╨╡╨╜╤В╨░
+	$info['ip'] = $address[0];
+	$info['port'] = $address[1];
+
+	if (empty($info['Sec-WebSocket-Key'])) return false;
+
+	$SecWebSocketAccept = base64_encode(pack('H*', sha1($info['Sec-WebSocket-Key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+	$upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
+	    "Upgrade: websocket\r\n" .
+	    "Connection: Upgrade\r\n" .
+	    "Sec-WebSocket-Accept:".$SecWebSocketAccept."\r\n\r\n";
+	fwrite($connect, $upgrade);
+
+	return $info;
+    }
+
+function handshake1($socket)
 {
      $info = [];
      $data = socket_read($socket, 1000);
@@ -757,7 +788,7 @@ function handshake($socket)
      $info['ip'] = $ip;
      $info['port'] = $port;
      if (empty($info['Sec-WebSocket-Key'])) return false;
-     
+
      $SecWebSocketAccept = base64_encode(pack('H*', sha1($info['Sec-WebSocket-Key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
      $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
                 "Upgrade: websocket\r\n" .
