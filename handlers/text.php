@@ -1,6 +1,7 @@
 <?php
 
 //sleep(3);
+
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
 
@@ -8,7 +9,7 @@ switch($event)
       {
        case 'EDIT':
 	    $out = ['cmd' => 'EDIT'];
-	    if (isset($_SERVER['argv'][2]) && ($data = json_decode($_SERVER['argv'][2], true)))
+	    if (isset($_SERVER['argv'][2]) && gettype($data = json_decode($_SERVER['argv'][2], true)) === 'array')
 	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey']) $out = ['cmd' => '']; else $out['data'] = $data['string'];
 	    echo json_encode($out);
 	    break;
@@ -17,23 +18,19 @@ switch($event)
 	    break;
        case 'SET':
 	    if (isset($_SERVER['argv'][3]) && ($data = json_decode($_SERVER['argv'][3], true)) && ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey']))
+	       {
+	        echo json_encode(['cmd' => '']);
+	        break;
+	       }
 	    if (!isset($_SERVER['argv'][2]) || !$_SERVER['argv'][2]) 
 	       {
 		echo json_encode(['cmd' => 'SET', 'value' => '']);
 		break;
 	       }
-
-
-
-
-
-echo $_SERVER['argv'][2]; else 
-	    break;
-       case 'DIALOG':
-	    if (!isset($_SERVER['argv'][2]) || !($arr = json_decode($_SERVER['argv'][2], true)) || )
+	    if (!($arr = json_decode($_SERVER['argv'][2], true)) || gettype($arr) != 'array')
 	       {
-	        echo json_encode(['cmd' => '']);
-	        break;
+		echo json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2]]);
+		break;
 	       }
 	    $profile = [];
 	    $margin = "\n";
@@ -51,7 +48,7 @@ echo $_SERVER['argv'][2]; else
 				         'flags'  => ['style' => 'width: 500px; height: 500px;']]]);
 	    break;
        case 'CONFIRMDIALOG':
-    	    if (!isset($_SERVER['argv'][2]) || gettype($arr = json_decode($_SERVER['argv'][2], true)) != 'array') break;
+	    if (!isset($_SERVER['argv'][2]) || gettype($arr = json_decode($_SERVER['argv'][2], true)) != 'array') break;
 	    $data = [];
 	    if (isset($arr['dialog']['pad']['profile'])) 
 	       foreach($arr['dialog']['pad']['profile'] as $key => $value) $data[$key] = $value['data'];

@@ -116,7 +116,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	      
 	      // Parse value on JSON sql query with next format:
 	      // SELECT JSON_EXTRACT(eid<eid>, '$.<prop>')|<eid> FROM `data_<ODid>` WHERE <query> LIMIT 1;
-	      if (gettype($output['value']) === 'array' && isset($output['value']['eid']))
+	      if (isset($output['value']) && gettype($output['value']) === 'array' && isset($output['value']['eid']))
 	         {
 		  $query = 'SELECT ';
 		  // Cut $output['value'] keys to eid, prop, OD, ODid..
@@ -192,7 +192,7 @@ function WriteElement($db, &$client, &$output, $version)
  if ($output['cmd'] === 'RESET') $output += DEFAULTELEMENTPROPS;
 
  $query = $db->prepare("UPDATE `data_$client[ODid]` SET eid$client[eId]=:json WHERE id=$client[oId] AND version=$version");
- $query->execute([':json' => json_encode($output)]);
+ $query->execute([':json' => json_encode($output, JSON_UNESCAPED_UNICODE)]);
  return true;
 }
 
