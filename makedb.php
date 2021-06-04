@@ -55,7 +55,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php SET '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
@@ -71,7 +71,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php SET '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
@@ -87,7 +87,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php SET '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
@@ -103,7 +103,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php DIALOG '$json' <data>";
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR."text.php SET '$json' <data>";
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';

@@ -1,6 +1,5 @@
 <?php
 
-require_once 'core.php';
 //sleep(3);
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
@@ -10,18 +9,28 @@ switch($event)
        case 'EDIT':
 	    $out = ['cmd' => 'EDIT'];
 	    if (isset($_SERVER['argv'][2]) && ($data = json_decode($_SERVER['argv'][2], true)))
-	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey']) $out = ['cmd' => ''];
-	     else $out['data'] = $data['string'];
+	    if ($data['altkey'] || $data['ctrlkey'] || $data['metakey']) $out = ['cmd' => '']; else $out['data'] = $data['string'];
 	    echo json_encode($out);
-	    break;
-       case 'SET':
-	    if (isset($_SERVER['argv'][2]) && $_SERVER['argv'][2]) echo $_SERVER['argv'][2]; else echo json_encode(['cmd' => 'SET', 'value' => '']);
 	    break;
        case 'CALL':
 	    echo json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Users', 'OV'=>'_qq', 'Params'=>[':input_user'=>'']]]);
 	    break;
+       case 'SET':
+	    if (isset($_SERVER['argv'][3]) && ($data = json_decode($_SERVER['argv'][3], true)) && ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey']))
+	    if (!isset($_SERVER['argv'][2]) || !$_SERVER['argv'][2]) 
+	       {
+		echo json_encode(['cmd' => 'SET', 'value' => '']);
+		break;
+	       }
+
+
+
+
+
+echo $_SERVER['argv'][2]; else 
+	    break;
        case 'DIALOG':
-	    if (!isset($_SERVER['argv'][2]) || !($arr = json_decode($_SERVER['argv'][2], true)) || (isset($_SERVER['argv'][3]) && ($data = json_decode($_SERVER['argv'][3], true)) && ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey'])))
+	    if (!isset($_SERVER['argv'][2]) || !($arr = json_decode($_SERVER['argv'][2], true)) || )
 	       {
 	        echo json_encode(['cmd' => '']);
 	        break;

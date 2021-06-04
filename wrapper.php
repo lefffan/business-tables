@@ -109,8 +109,6 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'SET':
 	 case 'RESET':
 	      ConvertToString($output, ['hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
-	      $output += DEFAULTELEMENTPROPS;
-
 	      // <OD> or <ODid> - Object Database name or id to search from, both options absent - current OD is used.
 	      // <elementlist> - object element ids or service elements to search from separated by comma, absent element list - all elements are used.
 	      // <elementprop> - JSON object element property to search from, absent element prop - whole element data is used.
@@ -191,6 +189,8 @@ function WriteElement($db, &$client, &$output, $version)
 
  // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
  if ($output['cmd'] === 'SET' && gettype($oldData = getElementArray($db, $client['ODid'], $client['oId'], $client['eId'], $version - 1)) === 'array') $output = array_replace($oldData, $output);
+ if ($output['cmd'] === 'RESET') $output += DEFAULTELEMENTPROPS;
+
  $query = $db->prepare("UPDATE `data_$client[ODid]` SET eid$client[eId]=:json WHERE id=$client[oId] AND version=$version");
  $query->execute([':json' => json_encode($output)]);
  return true;
@@ -372,8 +372,9 @@ switch ($output[$client['eId']]['cmd'])
 		      $output[$eid] = [];
 		      if (($cmdline = GetCMD($db, $client)) === '') continue;
 		      exec($cmdline, $output[$eid]);
-		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = DEFAULTELEMENTPROPS;
-    		     }
+		      ParseHandlerResult($db, $output[$eid], $client);
+		      $output[$eid] += DEFAULTELEMENTPROPS;
+		     }
 	     AddObject($db, $client, $output);
 	     break;
         case 'DELETEOBJECT':

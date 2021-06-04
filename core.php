@@ -508,16 +508,6 @@ function getUserName($db, $id)
  return $name;
 }
 
-function getUserName1($db, $id)
-{
- if (!isset($id)) return '';
- $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.value') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
- $query->execute([':id' => $id]);
- $name = $query->fetchAll(PDO::FETCH_NUM);
- if (isset($name[0][0])) return substr($name[0][0], 1, -1);
- return '';
-}
-
 function getUserGroups($db, $id)
 {
  $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.groups') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
