@@ -1,5 +1,4 @@
 --------------May 2021--------------------------------------------------------------
-- text.php as an option selection predefined data, for example operation selection (new podkl, udalenie, perekluchenie..)
 - retreive object element property of specified version (for a example to display время создания заявки и время выполнения)
 - Release setki.xls:
   select JSON_EXTRAC(<column>, '$.<prop>') from <odid> WHERE <query> order BY <order> LIMIT 1;

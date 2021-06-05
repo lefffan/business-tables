@@ -194,15 +194,29 @@ function initNewODDialogElements()
 
 function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
 {
- if (!isset($ODid) || !isset($oid) || !isset($eid) || !isset($prop)) return NULL;
+ if (!isset($ODid) || !isset($oid) || !isset($eid)) return NULL;
 
- if (isset($version)) $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$ODid` WHERE id=$oid AND version='".strval($version)."'");
-  else $query = $db->prepare("SELECT JSON_EXTRACT(eid".strval($eid).", '$.".$prop."') FROM `data_$ODid` WHERE id=$oid AND lastversion=1 AND version!=0");
+ if (array_search($eid, SERVICEELEMENTS) === false)
+    {
+     if (!isset($prop) || !$prop) $prop = 'value';
+     $eid = 'JSON_EXTRACT(eid'.strval($eid).", '$.".$prop."')";
+    }
+  else
+    {
+     $prop = NULL;
+    }
+ if (isset($version)) $version = "version='".strval($version)."'";
+  else $version = 'lastversion=1 AND version!=0';
+
+ $query = $db->prepare("SELECT $eid FROM `data_$ODid` WHERE id=$oid AND $version");
  $query->execute();
  
  $result = $query->fetchAll(PDO::FETCH_NUM);
  if (!isset($result[0][0])) return NULL;
- $result = str_replace("\\n", "\n", substr($result[0][0], 1, -1));
+ $result = $result[0][0];
+ if (isset($props)) $result = substr($result, 1, -1);
+
+ $result = str_replace("\\n", "\n", $result);
  $result = str_replace('\\"', '"', $result);
  $result = str_replace('\\/', '/', $result);
  return str_replace("\\\\", "\\", $result);
@@ -215,18 +229,11 @@ function getElementArray($db, $ODid, $oid, $eid, $version = NULL)
 
 function getElementJSON($db, $ODid, $oid, $eid, $version = NULL)
 {
- if (isset($version))
-    {
-     if (intval($version) === 0) return NULL;
-     $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND version='".strval($version)."'");
-    }
-  else
-    {
-     $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND lastversion=1 AND version!=0");
-    }
-
+ if (isset($version)) $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND version='".strval($version)."'");
+  else $query = $db->prepare("SELECT eid".strval($eid)." FROM `data_$ODid` WHERE id=$oid AND lastversion=1 AND version!=0");
  $query->execute();
  $result = $query->fetchAll(PDO::FETCH_NUM);
+
  if (isset($result[0][0])) return $result[0][0];
  return NULL;
 }

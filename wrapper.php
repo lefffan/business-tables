@@ -153,8 +153,8 @@ function ParseHandlerResult($db, &$output, &$client)
 	}
 
  return true;
-}    
-    
+}
+
 function ConvertToString(&$arr, $keys, $limit = NULL)
 {
  $result = true;
@@ -206,24 +206,26 @@ function GetCMD($db, &$client, $cmdline = false)
  while (++$i < $len)
        {
         switch ($add = $cmdline[$i])
-    	       {
-    	        case "'":
-    		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)) && isset($arr['props']))
+	       {
+	        case "'":
+		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)))
 	    	       {
 		        $add = NULL;
 	    		$i = $j;
-			cutKeys($arr, ['ODid', 'oId', 'eId', 'props']);
+			cutKeys($arr, ['ODid', 'oId', 'eId', 'props', 'version']);
 			if (!isset($arr['ODid']) || gettype($arr['ODid']) != 'string') $arr['ODid'] = $client['ODid'];
 			if (!isset($arr['oId']) || gettype($arr['oId']) != 'string') $arr['oId'] = $client['oId'];
 			if (!isset($arr['eId']) || gettype($arr['eId']) != 'string') $arr['eId'] = $client['eId'];
+			if (!isset($arr['props'])) $arr['props'] = '';
+			if (!isset($arr['version'])) $arr['version'] = NULL;
 
 			if (gettype($arr['props']) === 'string')
 			   {
-			    $add = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $arr['props']);
+			    $add = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $arr['props'], $arr['version']);
 			   }
 			 else if (gettype($arr['props']) === 'array')
 			   {
-			    foreach($arr['props'] as $key => $value) $arr['props'][$key] = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $key);
+			    foreach($arr['props'] as $key => $value) $arr['props'][$key] = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $key, $arr['version']);
 			    $add = json_encode($arr['props'], JSON_HEX_APOS | JSON_HEX_QUOT);
 			   }
 			
