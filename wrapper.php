@@ -4,6 +4,37 @@ require_once 'core.php';
 
 CONST ARGVCLIENTINDEX = 9;
 
+function CalculateODVIDS($db, &$output, &$client)
+{
+ ConvertToString($output, ['OD', 'OV', 'ODid', 'OVid']);
+ if (!isset($output['params']) || gettype($output['params']) != 'array') $output['params'] = [];
+ //
+ if (!isset($output['ODid']) && !isset($output['OD'])) { $output['ODid'] = $client['ODid']; $output['OD'] = $client['OD']; }
+ if (!isset($output['OVid']) && !isset($output['OV'])) { $output['OVid'] = $client['OVid']; $output['OV'] = $client['OV']; }
+ //
+ if (!isset($output['ODid']))
+    {
+     $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
+     $query->execute([':odname' => $output['OD']]);
+     $output['ODid'] = $query->fetchAll(PDO::FETCH_NUM);
+     isset($output['ODid'][0][0]) ? $output['ODid'] = $output['ODid'][0][0] : $output['ODid'] = '';
+    }
+ //
+ if (!isset($output['OVid']) && $output['ODid'] != '')
+    {
+     $output['OVid'] = '';
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
+     $query->execute([':id' => $output['ODid']]);
+     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $key => $View) if ($key != 'New view' && $key === $output['OV'])
+	     {
+	      $output['OVid'] = $View['element1']['id'];
+	      break;
+	     }
+    }
+ //
+ if ($output['OVid'] != '' && $output['ODid'] != '') return true;
+}
+
 function ParseHandlerResult($db, &$output, &$client)
 {
  if (!isset($output[0]))
@@ -81,72 +112,61 @@ function ParseHandlerResult($db, &$output, &$client)
 		  return;
 		 }
 	      cutKeys($output, ['cmd', 'OD', 'OV', 'ODid', 'OVid', 'params']);
-	      ConvertToString($output, ['OD', 'OV', 'ODid', 'OVid']);
-	      if (!isset($output['params']) || gettype($output['params']) != 'array') $output['params'] = [];
-	      if (!isset($output['ODid']) && !isset($output['OD'])) { $output['ODid'] = $client['ODid']; $output['OD'] = $client['OD']; }
-	      if (!isset($output['OVid']) && !isset($output['OV'])) { $output['OVid'] = $client['OVid']; $output['OV'] = $client['OV']; }
-	      if (!isset($output['ODid']))
+	      if (!CalculateODVIDS($db, $output, $client))
 	         {
-		  $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
-		  $query->execute([':odname' => $output['OD']]);
-		  $output['ODid'] = $query->fetchAll(PDO::FETCH_NUM);
-		  isset($output['ODid'][0][0]) ? $output['ODid'] = $output['ODid'][0][0] : $output['ODid'] = '';
-		 }
-	      if (!isset($output['OVid']))
-	         {
-		  $output['OVid'] = '';
-		  if ($output['ODid'] === '') break;
-		  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
-		  $query->execute([':id' => $output['ODid']]);
-		  foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $key => $View)
-		       if ($key != 'New view' && $key === $output['OV'])
-			  {
-			   $output['OVid'] = $View['element1']['id'];
-			   break;
-			  }
+	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] calls undefined database or view!");
+		  return;
 		 }
 	      break;
 	 case 'SET':
 	 case 'RESET':
-	      ConvertToString($output, ['hint', 'description', 'alert'], ELEMENTDATAVALUEMAXCHAR);
-	      // <OD> or <ODid> - Object Database name or id to search from, both options absent - current OD is used.
-	      // <elementlist> - object element ids or service elements to search from separated by comma, absent element list - all elements are used.
-	      // <elementprop> - JSON object element property to search from, absent element prop - whole element data is used.
-	      // <regexp> - regular expression the searching element property is tested on, absent regular expression causes an error.
-	      
-	      // Parse value on JSON sql query with next format:
-	      // SELECT JSON_EXTRACT(eid<eid>, '$.<prop>')|<eid> FROM `data_<ODid>` WHERE <query> LIMIT 1;
-	      if (isset($output['value']) && gettype($output['value']) === 'array' && isset($output['value']['eid']))
+	      // Adjust hint, description, style, alert properties
+	      ConvertToString($output, ['hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      // SET command sql search request case?
+	      if (!isset($output['value']) || gettype($output['value']) != 'array' ||
+		  !isset($output['value']['operator']) || gettype($output['value']['operator']) != 'string' || $output['value']['operator'] === '')
 	         {
-		  $query = 'SELECT ';
-		  // Cut $output['value'] keys to eid, prop, OD, ODid..
-		
-		  ConvertToString($output['value'], ['eid', 'prop', 'OD', 'ODid']);
-		  // Check <element> first. In case built-in (service) elements use <eid> after SELECT instead of JSON_EXTRACT
-		  if (array_search($output['value']['eid'], SERVICEELEMENTS) === false)
-		     {
-		      if (!isset($output['value']['prop'])) $output['value']['prop'] = 'value';
-		      $query .= "JSON_EXTRACT(eid$output[value][eid], '$.$output[value][prop]') FROM ";
-		     }
-		   else
-		     {
-		      $query .= "$output[value][eid] FROM ";
-		     }
-		  // Check OD id/name then.
-		  if (!isset($output['value']['ODid']) && !isset($output['value']['OD'])) $output['value']['ODid'] = $client['ODid'];
-	          if (!isset($output['value']['ODid']))
-	             {
-		      $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
-		      $query->execute([':odname' => $output['value']['OD']]);
-		      $ODid = $query->fetchAll(PDO::FETCH_NUM);
-		     }
-		  // Next - 
-		  if ($ODid)
-		     {
-		      $query .= "`data_$ODid` ";
-		     }
+		  if (!isset($output['value']['operator']) || gettype($output['value']['operator']) != 'string' || $output['value']['operator'] === '')
+		     LogMessage($db, $client, "Handler (element id $client[eId], object id $client[oId]) sql operator is undefined!");
+		  ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
+		  break;
 		 }
-	      ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
+	      // Init some vars..
+	      $querystring = '';
+	      // <OD>/<ODid> and <OV>/<OVid> - Any options absent - current OD/OV is used.
+	      if (!CalculateODVIDS($db, $output['value'], $client))
+	         {
+	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] calls undefined database or view!");
+		  return;
+		 }
+	      // <searchelements> - object element ids or service elements to search from separated by comma, absent element list - all elements are used.
+	      // <searchprop> - JSON object element property to search from, absent element prop - property 'value' is used.
+	      // <operator> - SQL operator, for a example REGEXP or NOT REGEXP, absent case causes an error.
+	      // <condition> - SQL condition, 'OR' for default
+	      if (!isset($output['value']['condition'])) $output['value']['condition'] = 'OR';
+	      if (!isset($output['value']['searchelements']))
+		 {
+		  $output['value']['searchelements'] = '';
+		  foreach($client['allelements'] as $key => $value) $output['value']['searchelements'] .= strval($key).',';
+		  $output['value']['searchelements'] = substr($output['value']['searchelements'], 0, -1);
+	         }
+	      foreach (preg_split("/,/", $output['value']['searchelements']) as $value)
+		      $querystring .= CalculateElementPropQuery($value, $output['value']['searchprop']).' '.$output['value']['operator'].' '.$output['value']['condition'].' ';
+	      $querystring = substr($querystring, 0, 0 - strlen($output['value']['condition'].' '));
+	      if (!isset($output['value']['searchprop'])) $output['value']['searchprop'] = 'value';
+	      // element/prop value of the matched object to be set, absent case - matched <searchelements>/<searchprop> are used
+	      // SELECT element/prop FROM <data_ODid> WHERE JSON_EXTRACT(<column>, '$.<prop>')|id|version|datetime|user REGEXP '^b';
+	      if (!isset($output['value']['prop'])) $output['value']['prop'] = 'value';
+	      $querystring = 'SELECT '.CalculateElementPropQuery($output['value']['element'], $output['value']['prop']).' FROM `data_'.$output['value']['ODid']. "` WHERE $querystring";
+	      //$output['value'] = $querystring; Start searching
+	      $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']);
+	      if (gettype($client['objectselection']) === 'array')
+		 {
+		  LogMessage($db, $client, "Handler (element id $client[eId], object id $client[oId]) requested view has undefined user defined params in object selection!");
+		  ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
+		  break;
+		 }
+
 	      break;
 	 case '':
 	      break;
