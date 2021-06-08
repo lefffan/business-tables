@@ -20,7 +20,7 @@
 - inner text in <td> can consists of <br>, <color> and <font> tags
 - see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
 - System call open in a new tab
-- Object selection with non-empty link type for all view types (by now it is released for tree view type only) and for scheduler.php
+- Object selection with non-empty link type for all view types (by now it is released for tree view type only) and for scheduler.php and SET command (search case by JSON in value prop)
 - Task manager: restrict call of task manager for some users
 - Optimize mysql to highload app:
   for php ORM Doctrine can be used

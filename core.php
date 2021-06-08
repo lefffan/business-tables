@@ -960,7 +960,7 @@ function Check($db, $flags, &$client, &$output)
      $query->execute();
      foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $value)
 	  if ($value['element1']['id'] === $client['OVid'])
-    	     {
+	     {
 	      $client['viewtype'] = substr($value['element3']['data'], ($pos = strpos($value['element3']['data'], '+')) + 1, strpos($value['element3']['data'], '|', $pos) - $pos -1);
 	      $client['objectselection'] = trim($value['element4']['data']);
 	      $client['linktype'] = $value['element5']['data'];
