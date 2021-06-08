@@ -75,6 +75,6 @@ switch($event)
 				         'flags'  => ['style' => 'width: 500px; height: 300px;']]]);
 	    break;
        case 'SEARCH':
-	    echo json_encode(['cmd' => 'SET', 'value' => ['ODid'=>'2','OVid'=>'1','searchelements'=>'1','operator'=>"REGEXP 'root'",'element'=>'datetime']]);
+	    echo json_encode(['cmd' => 'SET', 'value' => ['ODid'=>'2','OVid'=>'1','searchelements'=>'1','operator'=>"REGEXP 'root'",'element'=>'id']]);
 	    break;
       }

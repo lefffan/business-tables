@@ -111,7 +111,7 @@ foreach ($output as $value)
 
 $dialog  = ['title'  => 'Task Manager',
 	    'dialog' => ['pad' => ['profile' =>
-			['element1' => ['head'=>''],
+			['element1' => ['head'=>' '],
 			 'element2' => ['type' => 'table', 'head' => '', 'data' => json_encode($table)]]]],
 	    //'buttons'=> ['REFRESH' => ['value' => 'REFRESH', 'call' => 'Task Manager', 'interactive' => '', 'timer' => '500'], 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;', 'timer_' => '1500']],
 	    'buttons'=> ['REFRESH' => ['value' => '', 'call' => 'Task Manager', 'interactive' => '', 'timer' => '1000'], 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;', 'timer_' => '1500']],

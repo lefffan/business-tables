@@ -128,7 +128,6 @@ while (true)
 			   //-----------------------------------------------------------------------------------
 			   break;
 		    	  }
-else {lg($user, 'user'); lg($pass, 'pass'); lg($hui, 'hui'); lg($uid, 'uid');}
 		  case 'LOGOUT': // Client context menu logout event or any other event from unauthorized client. Also wrong pass, pass change, timeout
 		       $output = ['cmd' => 'DIALOG', 'sidebar' => [], 'auth' => '', 'error' => ''];
 		       if ($client['cmd'] === 'LOGOUT')

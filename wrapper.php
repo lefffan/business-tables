@@ -27,16 +27,30 @@ function CalculateODVIDS($db, &$output, &$client)
      $query->execute([':id' => $output['ODid']]);
      foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $key => $View) if ($key != 'New view' && $key === $output['OV'])
 	     {
+	      $output['OVid'] = $View['element1']['id'];
 	      // What to do for the views with non table types? Should handlers be called for those view types (for example, in a sheduler case)? I think they should.
 	      // if (substr($View['element3']['data'], ($pos = strpos($View['element3']['data'], '+')) + 1, strpos($View['element3']['data'], '|', $pos) - $pos -1) != 'Table') break;
-	      $output['OVid'] = $View['element1']['id'];
 	      $output['objectselection'] = trim($View['element4']['data']);
 	      $output['linktype'] = $View['element5']['data'];
 	      break;
 	     }
     }
  //
- if ($output['OVid'] != '' && $output['ODid'] != '') return true;
+ if ($output['OVid'] != '' && $output['ODid'] != '')
+    {
+     if (isset($output['objectselection'])) return true;
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
+     $query->execute([':id' => $output['ODid']]);
+     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $View) if ($output['OVid'] === $View['element1']['id'])
+	     {
+	      // What to do for the views with non table types? Should handlers be called for those view types (for example, in a sheduler case)? I think they should.
+	      // if (substr($View['element3']['data'], ($pos = strpos($View['element3']['data'], '+')) + 1, strpos($View['element3']['data'], '|', $pos) - $pos -1) != 'Table') break;
+	      $output['objectselection'] = trim($View['element4']['data']);
+	      $output['linktype'] = $View['element5']['data'];
+	      break;
+	     }
+     return true;
+    }
 }
 
 function ParseHandlerResult($db, &$output, &$client)
