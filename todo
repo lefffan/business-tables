@@ -525,12 +525,11 @@ apt install net-tools
 
 
 Operation OD:
-ip
-hostname
-Location
+ip, hostname, Location, Hardware, Comment, mac/vendor (auto definition) 
+
 Ports (52) + Full diagnostic on F12 event + Any props (client name/id, tarif, ip, fiz addres..) on F2 event
-Mac (auto vendor definition) 
-Model
+for every port: port (number/id), type(client, link, service, free), link(3 props), name/id, tarif, ip, fiz addres, comment
+for razbor - загасить порт снять влан и PB и сделать порт тайп как free
 
 HD OD:
 Id
@@ -546,69 +545,13 @@ Date (creation date, execution time, order last change time) Отправка п
 Соответствие регламенту
 
 
+Разбор дескрипшена (все что после disabled удаляем)
 
+тип среды:
+Первое вхождение UTP/ВОЛС/SFP-1g SFP-100(кроме sfp-only)/RADIO
 
-
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
----------------------NEW---------------------------
-$context = stream_context_create();
-stream_context_set_option($context, 'ssl', 'local_cert', 'server.cert');
-//stream_context_set_option($context, 'ssl', 'local_cert', 'cert1.pem');
-stream_context_set_option($context, 'ssl', 'local_pk', 'server.key');
-stream_context_set_option($context, 'ssl', 'passphrase', '');
-stream_context_set_option($context, 'ssl', 'allow_self_signed', true);
-stream_context_set_option($context, 'ssl', 'verify_peer', false);
-stream_context_set_option($context, 'ssl', 'verify_peer_name', false);
-$mainsocket = stream_socket_server('ssl://'.IP.':'.strval(PORT), $errno, $errstr, STREAM_SERVER_BIND|STREAM_SERVER_LISTEN, $context);
----------------------NEW END---------------------------
-
-
---------------------Comment lines below---------------------------
-// Create a socket
-/*if (false === ($mainsocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP))) { lg('Create socket connection error: '.socket_strerror(socket_last_error())); return; }
-if (false === socket_bind($mainsocket, IP, PORT)) { lg('Socket binding error: '.socket_strerror(socket_last_error())); return; }
-if (false === socket_listen($mainsocket)) { lg('Set socket option error: '.socket_strerror(socket_last_error())); return; }*/
-$socketarray = [$mainsocket];
-$clientsarray = [[]];
-
-while (true)
-{
- $read = $socketarray; // Make copy of array of sockets
- $write = $except = null;
-
- if (stream_select($read, $write, $except, 0, SOCKETTIMEOUTUSEC) === false) // Waiting for the sockets accessable for reading without timeout
-    {
-     lg('Socket wait status error: '.socket_strerror(socket_last_error()));
-     return;
-    }
-
- // Client array:
- // 'auth': client username 
- // 'authtime': user login time stamp
- // 'uid': user id
- // 'ip': client ip address
- // 'port': client tcp/udp port
- // 'User-Agent': Client user agent name
- // 'ODid'/'OVid': Client OD/OV identificators
- // 'OD'/'OV': Client OD/OV names
- // 'params' object selection args array
- // 'oId'/'eId': Object/element ids client event inited by
- // 'cid': Socket array index, used as a client identificator
-
----------------------SOME CHANGES---------------------------
- if (in_array($mainsocket, $read))
-    {
-     if (($newsocket = stream_socket_accept($mainsocket)) && ($info = handshake($newsocket)))
-	{
-	 lg('New web socket connection from '.$info['ip'].':'.$info['port']." accepted.\nUser Agent: ".$info['User-Agent']);
-	 $socketarray[] = $newsocket;
-	 $clientsarray[] = ['ip' => $info['ip'], 'port' => $info['port'], 'User-Agent' => $info['User-Agent'], 'ODid' => '', 'OVid' => '', 'OD' => '', 'OV' => ''];
-	}
-else lg('Socket rejected!');
-     unset($read[array_search($mainsocket, $read)]);
-    }
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
+тип порта:
+сервисный порт? (конвертора лакмусы упсы сервера) UPS marshal
+ищем ip из диапазон свитчей (если есть uplink иначе downlink)
+free или пустое (trim) - порт пустой или только английские буквы
 
