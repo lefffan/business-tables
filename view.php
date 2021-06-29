@@ -142,7 +142,7 @@ function EditOD($db, &$client, &$output)
  $newodname = CheckODString($client['data']['dialog']['Database']['Properties']['element1']['data']);
  $client['data']['dialog']['Database']['Properties']['element1']['data'] = $newodname;
  $id = intval($client['data']['flags']['callback']);
- 
+
  // Getting old OD name in `$`
  $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
  $query->execute([':id' => $id]);
@@ -159,7 +159,11 @@ function EditOD($db, &$client, &$output)
  // In case of empty OD name string try to remove current OD from the system
  if ($newodname === '')
     {
-     if ($client['data']['dialog']['Database']['Properties']['element2']['data'] != '' || count($client['data']['dialog']['View']) != 1) return ['cmd' => '', 'alert' => "To remove Object Database (OD) - remove all views first, then empty 'name' and 'description' OD fields!"];
+     if ($client['data']['dialog']['Database']['element2']['data'] != '' || count($client['data']['dialog']['View']) != 1)
+	{
+	 $output = ['cmd' => '', 'alert' => "To remove Object Database (OD) - remove all views first, then empty 'name' and 'description' OD fields!"];
+	 return;
+	}
      $query = $db->prepare("DELETE FROM `$` WHERE id=:id");
      $query->execute([':id' => $id]);
      $query = $db->prepare("DROP TABLE IF EXISTS `uniq_$id`");

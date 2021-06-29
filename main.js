@@ -792,7 +792,7 @@ function ContextEventHandler(event)
     }
 
  // Context event on wrap icon cell? Use next DOM element
- let inner, target = event.target;                                             
+ let inner, target = event.target;
  if (event.target.classList.contains('wrap')) target = target.nextSibling;
   else if (cursor.td && event.which === 0) target = cursor.td;
  // Plus: event target is td.span, td.font or td.color?
@@ -940,15 +940,16 @@ function MouseEventHandler(event)
      OD = next.dataset.od;
      OV = next.dataset.ov;
      cmd = 'CALL';
-     displayMainError('Loading...', false);
+     displayMainError('Loading.', false);
      CallController();
      return;
     }
-    
+
  // Table type view mouse click event?
- if (event.target.tagName == 'TD' && OVtype === 'Table')
+ if (OVtype === 'Table')
+ if ((event.target.tagName == 'TD' && (next = event.target)) || (event.target.tagName == 'SPAN' && (next = event.target.parentNode) && next.tagName == 'TD'))
     {
-     CellBorderToggleSelect(cursor.td, event.target);
+     CellBorderToggleSelect(cursor.td, next);
      if (mainTable[cursor.y]?.[cursor.x] && cursor.td.contentEditable != EDITABLE && !isNaN(cursor.eId) && cursor.oId === NEWOBJECTID) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
      return;
     }
@@ -1067,9 +1068,9 @@ function KeyboardEventHandler(event)
 	      break;
 	 case 45: //Ins
 	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === EDITABLE) break;
-	      if (event.ctrlKey && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data'], cursor.td);
-
-	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS')) CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+	      if (event.ctrlKey) CopyBuffer(event.shiftKey);
+	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId) && (cmd = 'INS'))
+		 CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 case 46: //Del
 	      if (box || contextmenu || !cursor.td) break;
@@ -1094,7 +1095,7 @@ function KeyboardEventHandler(event)
 	      break;
 	 default: // space, letters, digits
 	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === EDITABLE) break;
-	      if (event.ctrlKey && event.keyCode == 67 && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data'], cursor.td);
+	      if (event.ctrlKey && event.keyCode == 67) CopyBuffer(event.shiftKey);
 	      
 	      if (!mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId) || !rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) break;
 	      if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID && !event.ctrlKey && !event.altKey && !event.metaKey)
@@ -1210,7 +1211,7 @@ function CallController(data)
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'Copy':
-	      if (cursor.x != undefined && mainTable[cursor.y]?.[cursor.x]?.['data']) CopyBuffer(mainTable[cursor.y][cursor.x]['data'], cursor.td);
+	      CopyBuffer();
 	      break;
 	 case 'Description':
 	      let cell, hidden = msg = '';
@@ -1264,6 +1265,7 @@ function CallController(data)
 		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
 	      break;
 	 case 'CONFIRM':
+	       cursor.td.innerHTML = toHTMLCharsConvert(htmlCharsConvert(cursor.td.innerHTML));
 	 case 'CONFIRMDIALOG':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
@@ -1307,7 +1309,7 @@ function displayMainError(errormsg, resetOV = true)
 {
  clearTimeout(loadTimerId);
 
- if (errormsg.substr(0, 7) === 'Loading') 
+ if (errormsg.substr(0, 7) === 'Loading')
     {
      errormsg === 'Loading...' ? errormsg = 'Loading' : errormsg += '.';
      loadTimerId = setTimeout(displayMainError, 500, errormsg, false);
@@ -1351,7 +1353,6 @@ function EncodeSpanTag(string)
  const length = string.lastIndexOf('<') - start;
  return string.substr(0, start) + EncodeHTMLSpecialChars(string.substr(start, length)) + string.substr(start + length);
 }
-
 
 function toHTMLCharsConvert(string, spantag = true)
 {
@@ -1938,18 +1939,25 @@ function EllipsesClip(string, limit)
  return string;
 }
 
-function CopyBuffer(text, td)
-{lg(text);
+function CopyBuffer(plaintext)
+{
  const textarea = document.createElement('textarea');
- textarea.value = text;
+ if (plaintext)
+    {
+     cursor.td.innerText ? textarea.value = cursor.td.innerText : textarea.value = '\u0000';
+    }
+  else
+    {
+     mainTable[cursor.y]?.[cursor.x]?.['data'] ? textarea.value = mainTable[cursor.y][cursor.x]['data'] : textarea.value = '\u0000';
+    }
  document.body.appendChild(textarea);
  textarea.select();
  
  try { document.execCommand('copy'); }
- catch { td = null; }
+ catch { document.body.removeChild(textarea); return; }
 
  document.body.removeChild(textarea);
- if (td) td.style.outline = uiProfile['main field table cursor cell']['clipboard outline'];
+ cursor.td.style.outline = uiProfile['main field table cursor cell']['clipboard outline'];
 }
 
 function escapeDoubleQuotes(string)
@@ -2007,7 +2015,7 @@ function styleUI()
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }
  style.innerHTML = inner;
- 
+
  //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);"); // Output uiProfile array to te console to use it as a default customization configuration
 }
 

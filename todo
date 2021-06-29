@@ -1,10 +1,9 @@
 --------------May 2021--------------------------------------------------------------
-- retreive object element property of specified version (for a example to display время создания заявки и время выполнения)
-- Release setki.xls:
-  select JSON_EXTRAC(<column>, '$.<prop>') from <odid> WHERE <query> order BY <order> LIMIT 1;
-  OD/OV, order
-  default prop=vlaue (but if column is built-in, then prop=id|time|version..)
-  SELECT * FROM pet WHERE select JSON_EXTRAC(<column>, '$.<prop>') or name REGEXP '^b';
+- ���������� �� ������ ��� ������ ������ � ������� �� �������
+- filter to rows/columns, if one cell=string collapse column/row, if all columns/rows cells=string collapse corresponded column/row
+- context on span tag doesn't work!
+- link property values separated by |. In that case tree is built by first found link value. So linkoid property (for examlpe one downlink port for multiple nodes)
+- Sort by header click for look like default element layout (*, **, ***; 1,2,3,4..;) when header line at the top, bottom, left, right
 
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git.
   !Help content during all code lookup
@@ -29,6 +28,7 @@
   Problems of deploying - can i use mysql on commerisal base? 
 
 --------------Questionable features-------------------------------------------------
+- CONFIRM -> CONFIRMEDIT, CONFIRMSET?
 - Crontab element execution once immediately
 - Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   secure php.ini and can socket number be more than 1024?
@@ -555,3 +555,21 @@ Date (creation date, execution time, order last change time) Отправка п
 ищем ip из диапазон свитчей (если есть uplink иначе downlink)
 free или пустое (trim) - порт пустой или только английские буквы
 
+
+
+php /usr/local/src/tabels/handlers/text.php SET '{"version":"1", "eId": "datetime"}' <data>
+php /usr/local/src/tabels/handlers/text.php SEARCH
+php /usr/local/src/tabels/handlers/text.php SELECT 'хуй|пезда|жопа|срака'
+
+
+adrbook
+chat
+hd
+setki
+oper
+mrtg
+slava upr
+�������
+zubbix
+wiki
+crm
