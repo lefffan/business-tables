@@ -42,6 +42,8 @@ const SESSIONLIFETIME			= 360000;
 const CALLTIMEOUT			= 15;
 const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
 const SERVICEELEMENTS			= ['id', 'version', 'owner', 'datetime', 'lastversion'];
+const SERVICEELEMENTTITLES		= ['Id', 'Version', 'Owner', 'Date and time', 'Actual version'];
+const SERVICEELEMENTHINTS		= ['Object identificator', 'Object version number', 'User created current object version', 'Date and time object version was created', 'Actual object version status'];
 const SAVECANCEL			= ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const CREATECANCEL			= ['CREATE' => ['value' => 'CREATE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];

@@ -73,37 +73,34 @@ while (true)
  $now = strtotime("now");
  foreach($read as $cid => $socket)
 	{
-	 $decoded = stream_get_contents($socket);
-	 if (($length = strlen($decoded)) === 0) continue;
-	 if ($length === 16384)
-	    {
-	     $clientsarray[$cid]['streamdata'] .= $decoded;
-	     continue;
-	    }
-	 $decoded = decode($clientsarray[$cid]['streamdata'].$decoded);
+	 // Read socket stream data and continue with storing it in case of case stream data defragmentaion
+	 if (($length = strlen($streamdata = stream_get_contents($socket))) === 0) continue;
+	 $decoded = decode($clientsarray[$cid]['streamdata'] .= $streamdata);
+	 if ($decoded === false) continue; // else lg($decoded, strval($length));
 	 $clientsarray[$cid]['streamdata'] = '';
 
-	 // Client close socet connection event or unknown command?
-	 if (false === $decoded || 'close' === $decoded['type'])
+	 // Client close socket connection event or unknown command?
+	 if (!isset($decoded['type']) || !isset($decoded['payload']) || 'close' === $decoded['type'])
 	    {
 	     fclose($socket);
 	     unset($socketarray[$cid]);
 	     unset($clientsarray[$cid]);
 	     continue;
 	    }
-	
-	 $input = json_decode($decoded['payload'], true);
+
+	 // Decode input json and con it in case of message defragmentation
+	 $decoded['type'] === 'continuation' ? $clientsarray[$cid]['payload'] .= $decoded['payload'] : $clientsarray[$cid]['payload'] = $decoded['payload'];
+	 $input= json_decode($clientsarray[$cid]['payload'], true);
 	 if (!isset($input['cmd'])) continue;
 	
+	 // Init input args
 	 $client = &$clientsarray[$cid];
 	 $client['cid'] = $cid;
-	 
-	 // Init input args
 	 $output = ['cmd' => ''];
 	 CopyArrayElements($input, $client, ['ODid', 'OVid', 'OD', 'OV', 'cmd', 'data', 'oId', 'eId']);
 	 unset($input);
 	 if ($client['cmd'] != 'LOGIN' && (!isset($client['auth']) || $now - $client['authtime'] > SESSIONLIFETIME)) $client['cmd'] = 'LOGOUT';
-	     
+	
 	 try {
 	      switch ($client['cmd'])
 	    	 {

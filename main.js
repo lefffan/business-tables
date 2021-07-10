@@ -1,12 +1,4 @@
-/*------------------------------VARIABLES------------------------------------*/
-let box = selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
-let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
-let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
-let user = cmd = OD = OV = ODid = OVid = OVtype = '';
-let sidebar = {}, cursor = {}, oldcursor = {};
 /*------------------------------CONSTANTS------------------------------------*/
-const EDITABLE = 'plaintext-only';
-const NOTEDITABLE = 'false';
 const TABLE_MAX_CELLS = 200000;
 const NEWOBJECTID = 1;  
 const TITLEOBJECTID = 2;
@@ -24,7 +16,17 @@ const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 
 const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const HTMLSPECIALCHARS = ['&amp;', '&lt;', '&gt;', '<br>', '&nbsp;'];
 const HTMLUSUALCHARS = ['&', '<', '>', '\n', ' '];
-const uiProfile = {
+const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
+/*------------------------------VARIABLES------------------------------------*/
+let EDITABLE = 'plaintext-only';
+let NOTEDITABLE = 'false';
+let box = selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
+let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
+let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
+let user = cmd = OD = OV = ODid = OVid = OVtype = '';
+let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
+let sidebar = {}, cursor = {}, oldcursor = {};
+let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values set no way to apply content editable changes by key combination." },
 		  // Sidebar
@@ -215,7 +217,7 @@ function drawSidebar(data)
  sidebar = data;
 }	 
 
-function SetOEPosition(props, oid, eid, n, q, object = {})
+/*function SetOEPosition(props, oid, eid, n, q, object = {})
 {
  let x, y, oe, cell, oidnum = Number(oid);
  
@@ -224,26 +226,14 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
  
  // Check props correctness
  if (object.lastversion != '1' || !props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') 
-    if (oidnum != TITLEOBJECTID && oid != NEWOBJECTID && props[eid]['0']) oid = '0';
+    if (oidnum != TITLEOBJECTID && oidnum != NEWOBJECTID && props[eid]['0']) oid = '0';
  if (!props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') return;
- oe = props[eid][oid];
- 
- // Calculate specified object element x,y table coordinates
- try { x = Math.trunc(eval(oe.x)); y = Math.trunc(eval(oe.y)); }
- catch { return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element layout help section`; }
- if (isNaN(x) || isNaN(y)) return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element element layout help section`;
- if ((Math.max(mainTableWidth, x + 1) * Math.max(mainTableHeight, y + 1)) > TABLE_MAX_CELLS || x < 0 || y < 0)
-    return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
-    
- // Calculate main table width and height
- mainTableWidth = Math.max(mainTableWidth, x + 1);
- mainTableHeight = Math.max(mainTableHeight, y + 1);
  
  // Fill main table cell with oid, eid and hint from props (for TITLEOBJECTID and NEWOBJECTID only)
  // mainTable[y][x] = { oId, eId, realobject, data, hint, description, collapse, style }
  // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x, y }
  // props[0][0] = { style, tablestyle, collapse }
- if (mainTable[y] === undefined) mainTable[y] = [];
+ 
  mainTable[y][x] = { oId: oidnum, eId: eid };
  cell = mainTable[y][x];
  if (oe['hint']) cell['hint'] = oe['hint'];
@@ -270,13 +260,6 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
 	  if (object[eidstr + 'hint']) cell['hint'] = object[eidstr + 'hint'];
 	  if (object[eidstr + 'description']) cell['description'] = object[eidstr + 'description'];
 	  if (object[eidstr + 'style']) cell['style'] = ElementStyleFetch(props, eid, oidnum, {style: cell['style']});
-	  /*try   { object = JSON.parse(object[eidstr]); }
-	  catch { object = {}; }
-	  if (object === null || object === undefined) object = {};
-	  typeof object.value === 'string' ? mainTable[y][x]['data'] = object.value : mainTable[y][x]['data'] = '';
-	  if (typeof object.hint === 'string') mainTable[y][x]['hint'] = object.hint;
-	  if (typeof object.description === 'string') mainTable[y][x]['description'] = object.description;
-	  mainTable[y][x]['style'] =  ElementStyleFetch(props, eid, oidnum, object);*/
 	 }
     }
  if (oidnum === TITLEOBJECTID || oidnum === NEWOBJECTID || mainTable[y][x]['realobject'])
@@ -285,68 +268,110 @@ function SetOEPosition(props, oid, eid, n, q, object = {})
      objectTable[oidnum][eid] = { x: x, y: y };
     }
  if (mainTable[y][x]['style'] === undefined) mainTable[y][x]['style'] = ElementStyleFetch(props, eid, oidnum);
+}*/
+
+function MergeStyles(...styles)
+{
+ let result, object = {};
+
+ styles.forEach((style) => {
+			    if (style && typeof style === 'string')
+			       for (let rule of style.split(';'))
+				   if ((result = (rule = rule.trim()).indexOf(':')) > 0 && rule.length > result + 1)
+				      object[rule.substr(0, result)] = rule.substr(result + 1); // Some chars before and after ':'?
+			   });
+
+ result = '';
+ for (let rule in object) result += `${rule}: ${object[rule]}; `;
+ return result;
+}
+
+function GetCoordinates(props, e, o, n)
+{
+ let oid;			// object id for current object (var o) or default object id='0'
+ let pos = {};			// return result, oid is object id for current object (var o) or default object id='0'
+ let q = objectsOnThePage;	// OV objects quantity. Variables n,q participate in x,y expression eval
+
+ // Take current object x,y (table coordiantes) props as more specific, then the default object (id=0) and return if failed. So for other props.
+ if (!((props[e][(oid = o)]?.x && props[e][oid].y) || (o >= STARTOBJECTID && props[e][(oid = '0')]?.x && props[e][oid].y))) return null;
+ try { pos.x = Math.trunc(eval(props[e][oid].x)); pos.y = Math.trunc(eval(props[e][oid].y)); } catch { pos = {}; }
+ if (isNaN(pos.x) || isNaN(pos.y))
+    return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element element layout help section`;
+ if ((Math.max(mainTableWidth, pos.x + 1) * Math.max(mainTableHeight, pos.y + 1)) > TABLE_MAX_CELLS || pos.x < 0 || pos.y < 0)
+    return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
+
+ // Get hidecol, hiderow and style props
+ if (props[e][(oid = o)]?.hidecol != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.hidecol != undefined)) pos.hidecol = props[e][oid].hidecol;
+ if (props[e][(oid = o)]?.hiderow != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.hiderow != undefined)) pos.hiderow = props[e][oid].hiderow;
+ props[0] ? pos.style = MergeStyles(props[0][o]) : pos.style = '';
+ if (props[e][(oid = o)]?.style != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.style != undefined)) pos.style = MergeStyles(pos.style, props[e][oid].style);
+
+ // Get event prop
+ if (cmd === 'CALL' && !cursor.oId) // If OV display call (not add/remove operations that also refresh OV) and event yet is undefined
+ if (props[e][(oid = o)]?.event != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.event != undefined))
+    {
+     cursor.oId = Number(o); // Event does exist, so get its object/elemnt ids
+     cursor.eId = Number(e);
+     if (props[e][oid]['event'].substr(0, 8) === 'KEYPRESS' && (cursor.cmd = 'KEYPRESS')) cursor.data = props[e][oid]['event'].substr(8);
+      else if (['DBLCLICK', 'INS', 'DEL', 'F2', 'F12'].indexOf(props[e][oid]['event']) !== -1) cursor.cmd = props[e][oid]['event'];
+    }
+
+ // Calculate main table width and height
+ mainTableWidth = Math.max(mainTableWidth, pos.x + 1);
+ mainTableHeight = Math.max(mainTableHeight, pos.y + 1);
+
+ // Create main table row if exist and return
+ if (mainTable[pos.y] === undefined) mainTable[pos.y] = [];
+ return pos;
 }
 
 function drawMain(data, props)
-{
- let oid, eid, n, q = data.length, warningtext, cell, result, attributes, oldcursor = JSON.parse(JSON.stringify(cursor));
- let undefinedcellclass = titlecellclass = newobjectcellclass = datacellclass = undefinedRow = '', rowHTML = '<table><tbody>';
- 
+{console.time('label');
  // Init some important vars such as tables, focus element and etc..
  mainTable = [];
  objectTable = {};
  mainTableWidth = mainTableHeight = 0;
- objectsOnThePage = q;
  OVtype = 'Table';
- if (cursor.td && cursor.td.contentEditable === EDITABLE)
-    {
-     cursor.td.contentEditable = NOTEDITABLE;
-     oldcursor.contentEditable = EDITABLE;
-     oldcursor.data = htmlCharsConvert(cursor.td.innerHTML);
-    }
+
+ // Current view refresh? Remember cursor position and editable status. Then clear current cursor
+ let obj, e, oldcursor = {};
+ if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid) oldcursor = { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) };
  cursor = { ODid: ODid, OVid: OVid };
 
- // Parse all props elements to calculate start event
- if (cmd === 'CALL')
- outer: for (eid in props)
-	for (oid in props[eid])
-	 if (props[eid][oid]['event'] != undefined)
-    	    {
-	     cursor.oId = Number(oid);
-	     cursor.eId = Number(eid);
-	     if (Number(oid) >= STARTOBJECTID && !isNaN(eid))
-	        {
-		 if (['DBLCLICK', 'INS', 'DEL', 'F2', 'F12'].indexOf(props[eid][oid]['event']) !== -1)
-		    {
-		     cursor.cmd = props[eid][oid]['event'];
-		    }
-		 else if (props[eid][oid]['event'].substr(0, 8) === 'KEYPRESS' && props[eid][oid]['event'].length > 8)
-		    {
-		     cursor.cmd = 'KEYPRESS';
-		     cursor.data = props[eid][oid]['event'].substr(8);
-		    }
-		}
-	     break outer;
-	    }
-
- // Parse all props elements to place all objects of that elements
- for (eid in props)
+ // Get x,y coordinates (and other properties) from props elements array 
+ let warningtext, pos, cell, hiderow = [], hidecol = [];
+ if (!(objectsOnThePage = data.length)) data = [{}];
+ for (let n in data) 	if (obj = data[n])
+ for (e in props)	if (e !== '0')
      {
-      oid = String(NEWOBJECTID);
-      if (result = SetOEPosition(props, oid, eid, 0, q)) warningtext = result;
-      props[eid][oid] = undefined; // Remove specified element new object prop, should be used only once
-	 
-      oid = String(TITLEOBJECTID);
-      if (result = SetOEPosition(props, oid, eid, 0, q)) warningtext = result;
-      if (props[eid][oid] && !(/n|q/.test(props[eid][oid].x)) && !(/n|q/.test(props[eid][oid].y))) props[eid][oid] = undefined; // In case of absent 'n' and 'q' variables - remove specified element title object prop. This object element placement is used only once.
-	 
-      for (n in data)
-	  {
-	   if (n != '0' && (result = SetOEPosition(props, oid, eid, Number(n), q))) warningtext = result;
-	   if (result = SetOEPosition(props, data[n].id, eid, Number(n), q, data[n])) warningtext = result;
-	  }
+      if (n === '0' && (pos = GetCoordinates(props, e, NEWOBJECTID, +n)) && (typeof pos !== 'string' || !(warningtext = pos))) // Place 'add-new-object' object only once (when n==0) for each element
+	 {
+	  mainTable[pos.y][pos.x] = { oId: NEWOBJECTID, eId: e, data: props[e][NEWOBJECTID]['value'], hint: props[e][NEWOBJECTID]['hint'], style: newobjectcellclass + (pos.style ? ` style="${pos.style}"` : '') };
+	 }
+      if (props[e][TITLEOBJECTID] && (pos = GetCoordinates(props, e, TITLEOBJECTID, +n)) && (typeof pos !== 'string' || !(warningtext = pos)))
+	 {
+	  mainTable[pos.y][pos.x] = { oId: TITLEOBJECTID, eId: e, data: props[e][TITLEOBJECTID]['value'], hint: props[e][TITLEOBJECTID]['hint'], style: titlecellclass + (pos.style ? ` style="${pos.style}"` : '') };
+	  if (n === '0' && !(/n|q/.test(props[e][TITLEOBJECTID].x)) && !(/n|q/.test(props[e][TITLEOBJECTID].y))) delete props[e][TITLEOBJECTID]; // In case of constant x,y coordinates (no 'n','q' variables) remove specified element title object prop to make it used only once
+	 }
+      if ('id' in obj && (pos = GetCoordinates(props, e, obj.id, +n)) && (typeof pos !== 'string' || !(warningtext = pos)))
+	 {
+	  mainTable[pos.y][pos.x] = { oId: +obj.id, eId: e, version: obj.version, realobject: ((obj.lastversion === '1' && obj.version != '0') ? true : false) };
+	  cell = mainTable[pos.y][pos.x];
+	  if (SERVICEELEMENTS.indexOf(e) !== -1)
+	     {
+	      cell.data = obj[e];
+	      cell.style = datacellclass + (pos.style ? ` style="${pos.style}"` : '');
+	      continue;
+	     }
+	  cell.data		= obj['eid' + e + 'value'];
+	  if (cell.data === pos.hiderow) hiderow[pos.y] = true;
+	  if (cell.data === pos.hidecol) hidecol[pos.x] = true;
+	  cell.hint		= obj['eid' + e + 'hint'];
+	  cell.description	= obj['eid' + e + 'description'];
+	  cell.style		= datacellclass + ((pos.style = MergeStyles(pos.style, obj['eid' + e + 'style'])) ? ` style="${pos.style}"` : '');
+	 }
      }
-     
+
  // Handle some errors
  if (!mainTableHeight)
     {
@@ -356,87 +381,53 @@ function drawMain(data, props)
     }
  if (warningtext) warning(warningtext);
 
- // Remove previous view event listeners
- mainTableRemoveEventListeners();
-
- // Define attribute class strings for default, undefined, title, newobject and data td cells
- if (!isObjectEmpty(uiProfile["main field table title cell"], 'target')) titlecellclass = ' class="titlecell"';
- if (!isObjectEmpty(uiProfile["main field table newobject cell"], 'target')) newobjectcellclass = ' class="newobjectcell"';
- if (!isObjectEmpty(uiProfile["main field table data cell"], 'target')) datacellclass = ' class="datacell"';
- if (!isObjectEmpty(uiProfile["main field table undefined cell"], 'target')) undefinedcellclass = ' class="undefinedcell"';
- if (props[0] != undefined && props[0][0] != undefined)
-    {
-     if (props[0][0]['style']) undefinedcellclass += ' style="' + props[0][0]['style'] + '"';
-     if (props[0][0]['tablestyle']) rowHTML = '<table style="' + props[0][0]['tablestyle'] + '"><tbody>';
-     // Remove 'collapse' property set main table rows and columns
-     if (props['0']['0']['collapse'] != undefined) collapseMainTable(true);
-      else collapseMainTable(false);
-    }
-  else collapseMainTable(false);
- 
- // Create 'undefined' html tr row
- const undefinedCell = '<td' + undefinedcellclass + '></td>';
- for (x = 0; x < mainTableWidth; x++) undefinedRow += undefinedCell;
- 
- // Create html table of mainTable array
+ // Create html table of mainTable array, props[0][0] = { style: , tablestyle: }
+ const undefinedCell = '<td' + undefinedcellclass + (props[0]?.[0]?.['style'] ? `style="${props[0][0]['style']}"` : '') + '></td>';
+ let rowHTML = props[0]?.[0]?.['tablestyle'] ? '<table style="' + props[0][0]['tablestyle'] + '"><tbody>' : '<table><tbody>';
+ let x, y, disp = 0, undefinedRow = '<tr>';
+ for (x = 0; x < mainTableWidth - hidecol.length; x++) undefinedRow += undefinedCell; // Create 'undefined' html tr element row
+ undefinedRow += '</tr>';
+ //
+ mainTableRemoveEventListeners(); // Remove previous view event listeners
  for (y = 0; y < mainTableHeight; y++)
      {
+      if (hiderow[y + disp]) { mainTable.splice(y, 1); mainTableHeight--; y--; disp++; continue; }
+      if (!mainTable[y] && (rowHTML += undefinedRow)) continue;
       rowHTML += '<tr>';
-      if (mainTable[y] === undefined) rowHTML += undefinedRow;
-       else for (x = 0; x < mainTableWidth; x++)
-	     if (!(cell = mainTable[y][x]))
-		{
-		 rowHTML += undefinedCell;
-		}
-	      else
-	        {
-	         if (cell.oId === TITLEOBJECTID) attributes = titlecellclass;
-	          else if (cell.oId === NEWOBJECTID) attributes = newobjectcellclass;
-	           else attributes = datacellclass;
-	         if (cell.style) attributes += ' style="' + cell.style + '"';
-	         rowHTML += '<td' + attributes + '>' + toHTMLCharsConvert(cell.data) + '</td>';
-	        }
+      for (x = 0; x < mainTableWidth; x++)
+	  {
+	   if (hidecol[x]) { mainTable[y].splice(x, 1); mainTableWidth--; x--; continue; }
+	   (cell = mainTable[y][x]) ? rowHTML += `<td${cell.style}>${toHTMLCharsConvert(cell.data)}</td>` : rowHTML += undefinedCell;
+	   if ((cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)) // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
+	      objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
+	  }
       rowHTML += '</tr>';
      }
- clearTimeout(loadTimerId);
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
+ mainTableAddEventListeners(); // Add current view event listeners
+ clearTimeout(loadTimerId);
 
- // Add current view event listeners
- mainTablediv.addEventListener('dblclick', MainDivEventHandler);
- mainTablediv.addEventListener('mouseleave', MainDivEventHandler);
- mainTablediv.addEventListener('mousemove', MainDivEventHandler); 
- mainTablediv.addEventListener('paste', (event) => {});
-
- // Focus element is not empty? Emulate mouse/keyboard start event!
- if (cursor.oId != undefined)
+ // Restore cursor position on refreshed view and emulate mouse/keyboard start event if exist
+ if (cursor.cmd && cursor.oId >= STARTOBJECTID && (cmd = cursor.cmd)) CallController(cursor.data);
+ if (cursor.oId || ((cursor.oId = oldcursor.oId) && (cursor.eId = oldcursor.eId)))
     {
-     CellBorderToggleSelect(null, mainTablediv.rows[objectTable[cursor.oId][cursor.eId].y].cells[objectTable[cursor.oId][cursor.eId].x]);
-     if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable(oldcursor.data);
-      else if (cursor.cmd)
-        {
-	 cmd = cursor.cmd;
-         CallController(cursor.data);
-	}
-    }
- else if (oldcursor.ODid === cursor.ODid && oldcursor.OVid === cursor.OVid && oldcursor.x != undefined)
-    {
-     if (objectTable[oldcursor.oId] && objectTable[oldcursor.oId][oldcursor.eId])
-        {
-         cursor.x = objectTable[oldcursor.oId][oldcursor.eId].x;
-         cursor.y = objectTable[oldcursor.oId][oldcursor.eId].y;
-	 CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
-	 if (oldcursor.contentEditable) MakeCursorContentEditable(oldcursor.data);
-	}
-      else
+     if (objectTable[cursor.oId]?.[cursor.eId])
 	{
-         cursor.x = Math.min(oldcursor.x, mainTableWidth - 1);
-         cursor.y = Math.min(oldcursor.y, mainTableHeight - 1);
-	 CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
-        }
+	 cursor.x = objectTable[cursor.oId][cursor.eId].x;
+	 cursor.y = objectTable[cursor.oId][cursor.eId].y;
+	}
+      else 
+	{
+	 cursor.oId = mainTable[cursor.y = Math.min(oldcursor.y, mainTableHeight - 1)][cursor.x = Math.min(oldcursor.x, mainTableWidth - 1)].oId;
+	 cursor.eId = mainTable[cursor.y][cursor.x].eId;
+	}
+     CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
+     if (cursor.oId === NEWOBJECTID || oldcursor.contentEditable === EDITABLE) MakeCursorContentEditable(oldcursor.data);
+     mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
+     mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
     }
- if (cursor.y) mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
- if (cursor.x) mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
+console.timeEnd('label');
 }
 
 function CalcTree(tree)
@@ -568,7 +559,7 @@ function GetTreeElementContent(content)
  return data;
 }
 
-function ElementStyleFetch(props, eid, oid, oe = {})
+/*function ElementStyleFetch(props, eid, oid, oe = {})
 {
  let style = '';
  if (typeof props[eid]['0'] === 'object') style = MergeStyleRules(props[eid]['0'].style);
@@ -592,6 +583,7 @@ function MergeStyleRules(...styles)
  for (rule in styleObject) resultStyle += rule + ': ' + styleObject[rule] + '; ';
  return resultStyle;
 }
+*/
 
 function MainDivEventHandler(event)
 {
@@ -775,7 +767,7 @@ function ContextEventHandler(event)
      event.preventDefault();
      return;
     }
-    
+
  // Is cursor element content editable? Apply changes in case of no event.target match
  if (cursor.td?.contentEditable === EDITABLE)
     {
@@ -793,9 +785,9 @@ function ContextEventHandler(event)
 
  // Context event on wrap icon cell? Use next DOM element
  let inner, target = event.target;
- if (event.target.classList.contains('wrap')) target = target.nextSibling;
-  else if (cursor.td && event.which === 0) target = cursor.td;
- // Plus: event target is td.span, td.font or td.color?
+ if (target.classList.contains('wrap')) target = target.nextSibling;
+  else if (cursor.td && event.button === 0) target = cursor.td; // If cursor and context key?
+  else if (target.tagName == 'SPAN' && target.parentNode.tagName == 'TD') target = target.parentNode;
  
  if (target.classList.contains('sidebar-od')) inner = ACTIVEITEM + 'New Object Database</div>' + ACTIVEITEM + 'Edit Database Structure</div>'; // Context event on OD
   else if (target.classList.contains('sidebar-ov') || target === sidebarDiv) inner = ACTIVEITEM + 'New Object Database</div>' + GREYITEM + 'Edit Database Structure</div>'; // Context event on OV
@@ -822,7 +814,7 @@ function ContextEventHandler(event)
      default:
           if (target === mainDiv) inner = '';
     }
-    
+
  if (inner != undefined)
     {
      event.preventDefault();
@@ -912,7 +904,7 @@ function MouseEventHandler(event)
      return;
     }
  HideContextmenu();
-    
+
  // OD item (or its wrap icon before) mouse click? Wrap/unwrap OV list
  let next = event.target;
  if (event.target.classList.contains('wrap')) next = next.nextSibling;
@@ -928,7 +920,7 @@ function MouseEventHandler(event)
 
  // OV item (or its wrap icon before) mouse click? Open OV in main field
  if (next.classList.contains('sidebar-ov'))
-    {
+    {console.time('label1');
      if (ODid != next.dataset.odid || OVid != next.dataset.ovid)
         {
 	 if (sidebar[ODid]?.['active']) delete sidebar[ODid]['active'];
@@ -1053,17 +1045,13 @@ function KeyboardEventHandler(event)
 		     }
 		  break;
 		 }
-	      if (cursor.td) if (cursor.td.contentEditable === EDITABLE)
+	      if (cursor.td?.contentEditable === EDITABLE)
 		 {
 		  cursor.td.contentEditable = NOTEDITABLE;
 		  cursor.td.innerHTML = cursor.olddata;
 		  break;
 		 }
-	       else
-	         {
-		  CellBorderToggleSelect(null, cursor.td, false);
-		  break;
-		 }
+	      CellBorderToggleSelect(null, cursor.td, false); // Normilize cell outline off buffered dashed style cell
 	      HideContextmenu();
 	      break;
 	 case 45: //Ins
@@ -1113,10 +1101,11 @@ function KeyboardEventHandler(event)
 
 function MakeCursorContentEditable(data)
 {
- cursor.td.contentEditable = EDITABLE;
+ try { cursor.td.contentEditable = EDITABLE; }
+ catch { cursor.td.contentEditable = (EDITABLE = 'true'); } // Fucking FF doesn't support 'plaintext' contentEditable type
  cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
  // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
- data != undefined ? cursor.td.innerHTML = toHTMLCharsConvert(data, false) : cursor.td.innerHTML = cursor.olddata;
+ typeof data === 'string' ? cursor.td.innerHTML = toHTMLCharsConvert(data, false) : cursor.td.innerHTML = cursor.olddata;
  if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
  cursor.td.focus();
 }
@@ -1175,7 +1164,7 @@ function FromController(json)
 	      break;
 	 case 'Table':
 	      paramsOV = input.params;
-	      drawMain(input.data, input.props);
+	      drawMain(input.data, input.props);console.timeEnd('label1');
 	      break;
 	 case 'Tree':
 	      DrawTree(input.tree, input.direction);
@@ -1273,11 +1262,11 @@ function CallController(data)
 	 case 'DEL':
 	 case 'F2':
 	 case 'F12':
-	      object = { "cmd": cmd };
-	      if (cursor.td && mainTable[cursor.y] && mainTable[cursor.y][cursor.x])
+	      object = { cmd: cmd };
+	      if (cursor.td && mainTable[cursor.y]?.[cursor.x])
 	         {
-	          object["oId"] = mainTable[cursor.y][cursor.x].oId;
-		  object["eId"] = mainTable[cursor.y][cursor.x].eId;
+	          object.oId = mainTable[cursor.y][cursor.x].oId;
+		  object.eId = mainTable[cursor.y][cursor.x].eId;
 		 }
 	      if (data != undefined) object.data = data;
 	      break;
@@ -1319,6 +1308,15 @@ function displayMainError(errormsg, resetOV = true)
 
  mainTableRemoveEventListeners();
  if (resetOV) OD = OV = ODid = OVid = OVtype = '';
+}
+
+function mainTableAddEventListeners()
+{
+ if (!mainTablediv) return;
+ mainTablediv.addEventListener('dblclick', MainDivEventHandler);
+ mainTablediv.addEventListener('mouseleave', MainDivEventHandler);
+ mainTablediv.addEventListener('mousemove', MainDivEventHandler); 
+ mainTablediv.addEventListener('paste', (event) => {});
 }
 
 function mainTableRemoveEventListeners()
@@ -1983,7 +1981,6 @@ function warning(text, title, log = true)
 function isObjectEmpty(object, excludeProp)
 {
  if (typeof object != 'object') return false;
- 
  for (let element in object) if (!(object[element] === '' || element === excludeProp)) return false;
  return true;
 }
@@ -1992,7 +1989,8 @@ function uiProfileSet(customization)
 {
  let selector, property;
  customization = customization.pad;
- 
+
+ // Fill uiProfile from customization dialog
  for (selector in customization)
      {
       for (property in customization[selector]) if (property != 'element0' && property != 'element1')
@@ -2000,6 +1998,12 @@ function uiProfileSet(customization)
       if (customization[selector]['element0'] != undefined && customization[selector]['element0']['target'] != undefined)
          uiProfile[selector]['target'] = customization[selector]['element0']['target'];
      }
+
+ // Define css classes attribute string for all table cell types
+ isObjectEmpty(uiProfile["main field table title cell"], 'target')	? titlecellclass = '' : titlecellclass = ' class="titlecell"';
+ isObjectEmpty(uiProfile["main field table newobject cell"], 'target')	? newobjectcellclass = '' : newobjectcellclass = ' class="newobjectcell"';
+ isObjectEmpty(uiProfile["main field table data cell"], 'target')	? datacellclass = '' : datacellclass = ' class="datacell"';
+ isObjectEmpty(uiProfile["main field table undefined cell"], 'target')	? undefinedcellclass = '' : undefinedcellclass = ' class="undefinedcell"';
 }
 
 function styleUI()

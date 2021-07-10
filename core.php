@@ -389,105 +389,64 @@ function CheckRule($db, &$client, $rule, $version)
 
 function setElementSelectionIds(&$client)
 {
- $props = [];
-
- //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- // |  \eid|                0                |              1..         	 | id,version,owner,datetime,lastversion |
- // |oid\  |                                 | 					 |					 |
- //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- // |  0   | undefined cell: style, collapse | object in selection:     	 | object service info:			 |
- // |      | html table:     tablestyle      | x, y, style, collapse    	 | x, y, style				 |
- //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- // |  1   | new object:     style     	     | new object:			 |		   -			 |
- // |      | 				     | x, y, style, event, hint*	 |					 |
- //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- // |  2   | title object:   style           | title object:			 |		   -			 |
- // |      | 				     | x, y, style, title*, hint*	 |					 |
- //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- // | 3..  | exact object:   style     	     | exact object: 			 | object service info:			 |
- // |      | 				     | x, y, style, event, collapse	 | x, y, style				 |
- //  ------ --------------------------------- ----------------------------------- ---------------------------------------
- // *props set automatically
+ //  ------- -------------------------------- ----------------------------------------------
+ // |  \eid |                 	     	     |   	  		  		    |
+ // |   \   |   0 (all for given object)     |	id,version,owner,datetime,lastversion,1-..  |
+ // |oid \  |                                | 					 	    |
+ //  ------- --------------------------------- ---------------------------------------------
+ // | 0     |   style (for undefined cell)   | x, y, style    	 			    |
+ // |selectn|   tablestyle (for html table)  | event, hiderow, hidecol	 		    |
+ //  ------- --------------------------------- ---------------------------------------------
+ // | 1     |	style	     		     | x, y, style				    |
+ // | new   | 				     | event, hiderow, hidecol, value, hint 	    |
+ //  ------- --------------------------------- ---------------------------------------------
+ // | 2     |	style			     | x, y, style				    |
+ // | title | 				     | event, hiderow, hidecol, value*, hint*	    |
+ //  ------ --------------------------------- ----------------------------------------------
+ // | 3..   |	style        		     | x, y, style 			 	    |
+ // | user  | 				     | event, hiderow, hidecol		 	    |
+ //  ------ --------------------------------- ----------------------------------------------
+ // *if not exist - props are set automatically OD props
  
+ $props = [];
  foreach (preg_split("/\n/", $client['elementselection']) as $value)
       if ($arr = json_decode($value, true, 2))
 	 {
-	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'collapse', 'event', 'tablestyle']); // Retrieve correct values only
-	  if (!key_exists('eid', $arr)) $arr['eid'] = '0'; // Set 'eid' key default value to zero
-	  if (!key_exists('oid', $arr)) $arr['oid'] = '0'; // Set 'oid' key default value to zero
+	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'hiderow', 'hidecol', 'event', 'tablestyle']); // Retrieve correct values only
+	  if (!isset($arr['eid'])) $arr['eid'] = '0'; // Set 'eid' key default value to zero
+	  if (!isset($arr['oid'])) $arr['oid'] = '0'; // Set 'oid' key default value to zero
 
-	  if (gettype($arr['eid']) != 'string' || gettype($arr['oid']) != 'string') continue; // JSON eid/oid properties are not strings? Continue
-	  if ($arr['eid'] != 'id' && $arr['eid'] != 'version' && $arr['eid'] != 'owner' && $arr['eid'] != 'datetime' && $arr['eid'] != 'lastversion')
-	  if (!ctype_digit($arr['eid']) || !ctype_digit($arr['oid'])) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
-	  
-	  $eid = $arr['eid'];	// Creating aliases
-	  $oid = $arr['oid'];	// Creating aliases
-	  if (!isset($props[$eid])) $props[$eid] = [];		// Result array $props has 'eid' element undefined? Create it
-	  if (!isset($props[$eid][$oid])) $props[$eid][$oid] = [];	// Result array $props has 'oid' of 'eid' element undefined? Create it
-	  
-	  switch ($eid)
-		 {
-		  case '0': // Parse zero element that defines styles for new, title, selection and exact objects
-		       if ($oid == '0')
-		          {
-			   if (key_exists('collapse', $arr)) $props[$eid][$oid]['collapse'] = '';
-			   if (key_exists('tablestyle', $arr)) $props[$eid][$oid]['tablestyle'] = $arr['tablestyle'];
-			  }
-		       if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
-		       break;
-		  case 'id': // Parse service elements that defines styles and x-y coordinates for selection and exact objects
-		  case 'version':
-		  case 'owner':
-		  case 'datetime':
-		  case 'lastversion':
-		       if ((intval($oid) == 0 || intval($oid) == TITLEOBJECTID || intval($oid) == NEWOBJECTID || intval($oid) >= STARTOBJECTID) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
-		          {
-			   $props[$eid][$oid] = ['x' => $arr['x'], 'y' => $arr['y']];
-			   if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
-			   if (intval($oid) == TITLEOBJECTID) switch ($eid)
-			      {
-			       case 'id':
-			    	    $props[$eid][$oid]['title'] = 'Id';
-				    $props[$eid][$oid]['hint'] = 'Object identificator';
-				    break;
-			       case 'version':
-			    	    $props[$eid][$oid]['title'] = 'Version';
-				    $props[$eid][$oid]['hint'] = 'Object version number';
-				    break;
-			       case 'owner':
-			    	    $props[$eid][$oid]['title'] = 'Owner';
-				    $props[$eid][$oid]['hint'] = 'User created object version';
-				    break;
-			       case 'datetime':
-			    	    $props[$eid][$oid]['title'] = 'Date and time';
-				    $props[$eid][$oid]['hint'] = 'Date and time object version was created';
-				    break;
-			       case 'lastversion':
-			    	    $props[$eid][$oid]['title'] = 'Last version';
-				    $props[$eid][$oid]['hint'] = 'Last version flag means actual object version';
-				    break;
-			      }
-			  }
-		       break;
-		  default: // Parse all other numeric elements that defines styles, x-y coordinates, 'collapse' capability and 'event' event for new, title, selection and exact objects
-		       if (!key_exists($eid, $client['allelements'])) break;
-		       if (key_exists('event', $arr)) $props[$eid][$oid]['event'] = $arr['event'];
-		       if (isset($arr['x'], $arr['y']) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string')
-		          {
-			   $props[$eid][$oid]['x'] = $arr['x'];
-			   $props[$eid][$oid]['y'] = $arr['y'];
-			   if (key_exists('collapse', $arr)) $props[$eid][$oid]['collapse'] = '';
-			   if (key_exists('style', $arr)) $props[$eid][$oid]['style'] = $arr['style'];
-			   if (intval($oid) == TITLEOBJECTID)
-			      {
-			       $props[$eid][$oid]['title'] = $client['allelements'][$eid]['element1']['data'];
-			       $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'];
-			      }
-			   if (intval($oid) == NEWOBJECTID) $props[$eid][$oid]['hint'] = "Table cell to input new object text for element id: $eid";
-			  }
+	  if (gettype($eid = $arr['eid']) != 'string' || gettype($oid = $arr['oid']) != 'string' || !ctype_digit($oid)) continue; // JSON eid/oid properties are not strings? Continue
+	  if ($oid !== '0' && ($oidnum = intval($oid)) !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum <= STARTOBJECTID) continue;
+	  if (array_search($eid, SERVICEELEMENTS) === false && (!ctype_digit($eid) || !isset($client['allelements'][$eid]))) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
+
+	  if (!isset($props[$eid])) $props[$eid] = []; // Result array $props has 'eid' element undefined? Create it
+	
+	  if ($eid === '0') // First check zero element for style and tablestyle props only. Tablestyle prop for zero object only
+	     {
+	      if (isset($arr['style']) && gettype($arr['style']) === 'string') $props[$eid][$oid] = ['style' => $arr['style']];
+	      if ($oid === '0' && isset($arr['tablestyle']) && gettype($arr['style']) === 'string')
+		 isset($props[$eid][$oid]) ? $props[$eid][$oid]['tablestyle'] = $arr['tablestyle'] : $props[$eid][$oid] = ['tablestyle' => $arr['tablestyle']];
+	      continue;
+	     }
+	  if (isset($arr['x'], $arr['y']) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string') // Then check x,y correctness and set corresponded x,y,style,hidecol and hiderow
+	     {
+	      $props[$eid][$oid] = ['x' => $arr['x'], 'y' => $arr['y']];
+	      if ($oidnum == NEWOBJECTID)
+	         {
+		  if (isset($arr['value']) && gettype($arr['value']) === 'string') $props[$eid][$oid]['value'] = $arr['value']; else $props[$eid][$oid]['value'] = '';
+		  if (isset($arr['hint']) && gettype($arr['hint']) === 'string') $props[$eid][$oid]['hint'] = $arr['hint']; else $props[$eid][$oid]['hint'] = '';
 		 }
+	      if ($oidnum == TITLEOBJECTID)
+	         {
+		  if (isset($arr['value']) && gettype($arr['value']) === 'string') $props[$eid][$oid]['value'] = $arr['value']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['value'] = $client['allelements'][$eid]['element1']['data'] : $props[$eid][$oid]['value'] = $eid;
+		  if (isset($arr['hint']) && gettype($arr['hint']) === 'string') $props[$eid][$oid]['hint'] = $arr['hint']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'] : $props[$eid][$oid]['hint'] = '';
+		 }
+	     }
+	  foreach (['event', 'style', 'hidecol', 'hiderow'] as $v)
+		  if (isset($arr[$v]) && gettype($arr[$v]) === 'string') 
+		     isset($props[$eid][$oid]) ? $props[$eid][$oid][$v] = $arr[$v] : $props[$eid][$oid] = [$v => $arr[$v]];
 	 }
-	 
  return $props;
 }
 
@@ -640,51 +599,26 @@ function encode($payload, $type = 'text', $masked = false)
     
 function decode($data)
 {
-     if (!strlen($data))
-        {
-	 lg('Socket data zero length!');
-	 return false;
-	}
-     
-     $unmaskedPayload = '';
-     $decodedData = array();
-     
-     // Estimate frame type:
-     $firstByteBinary = sprintf('%08b', ord($data[0]));
-     $secondByteBinary = sprintf('%08b', ord($data[1]));
-     $opcode = bindec(substr($firstByteBinary, 4, 4));
-     $isMasked = ($secondByteBinary[0] == '1') ? true : false;
-     $payloadLength = ord($data[1]) & 127;
-     
-     if (!$isMasked)
-        {
-	 lg('Unmasked frame is received!');
-	 //return false;
-	 return array('type' => '', 'payload' => '', 'error' => 'protocol error (1002)'); // Unmasked frame is received
-	}
-     
-     switch ($opcode)
-    	    {
-	     case 1:
-	          $decodedData['type'] = 'text'; // Text frame
-		  break;
-	     case 2:
-	          $decodedData['type'] = 'binary'; // Binary frame
-		  break;
-	     case 8:
-	          $decodedData['type'] = 'close'; // Connection close frame
-		  break;
-	     case 9:
-	          $decodedData['type'] = 'ping'; // Ping frame
-		  break;
-	     case 10:
-	          $decodedData['type'] = 'pong'; // Pong frame
-		  break;
-	     default:
-		  lg('Socket data unknown opcode (1003)!');
-		  //return false;
-	          return array('type' => '', 'payload' => '', 'error' => 'unknown opcode (1003)');
-	    }
+ $unmaskedPayload = '';
+ $decodedData = [];
+
+ // Estimate frame type:
+ $firstByteBinary = sprintf('%08b', ord($data[0]));
+ $secondByteBinary = sprintf('%08b', ord($data[1]));
+ $opcode = bindec(substr($firstByteBinary, 4, 4));
+ $isMasked = ($secondByteBinary[0] == '1') ? true : false;
+ $payloadLength = ord($data[1]) & 127;
+
+ if (!$isMasked) return ['type' => '', 'payload' => '', 'error' => 'Protocol error #1002: unmasked frame is received!'];
+
+ if ($opcode === 0) $decodedData['type'] = 'continuation';	// Continuation frame
+ elseif ($opcode === 1) $decodedData['type'] = 'text';		// Text frame
+ elseif ($opcode === 2) $decodedData['type'] = 'binary';	// Binary frame
+ elseif ($opcode === 8) $decodedData['type'] = 'close';		// Connection close frame
+ elseif ($opcode === 9) $decodedData['type'] = 'ping';		// Ping frame
+ elseif ($opcode === 10) $decodedData['type'] = 'pong';		// Pong frame
+ else return ['payload' => '', 'error' => "Protocol error #1003: unknown opcode $opcode!"];
+
      if ($payloadLength === 126)
         {
 	 $mask = substr($data, 4, 4);
@@ -707,12 +641,9 @@ function decode($data)
 	 $dataLength = $payloadLength + $payloadOffset;
 	}
 
-     // We have to check for large frames here - socket_recv cuts at 1024 bytes so if websocket-frame is > 1024 bytes, then we have to wait until whole data is transferd
-     if (strlen($data) < $dataLength)
-        {
-	 lg('Socket data is more than 1024 bytes, so wait until whole data is transferd, input data is '.strval(strlen($data)).'bytes, actual data is '.strval($dataLength).'bytes');
-	 return false;
-	}
+ // We have to check for large frames here - socket_recv cuts at 1024 bytes so if websocket frame is more than 1024 bytes, then we have to wait until whole data is transfered
+ if (strlen($data) < $dataLength) return false;
+ //lg('Socket data is more than 1024 bytes, so wait until whole data is transferd, input data is '.strval(strlen($data)).'bytes, actual data is '.strval($dataLength).'bytes');
 
      if ($isMasked)
         {
@@ -728,11 +659,12 @@ function decode($data)
 	 $payloadOffset = $payloadOffset - 4;
 	 $decodedData['payload'] = substr($data, $payloadOffset);
 	}
-     
-     return $decodedData;
+
+ return $decodedData;
 }
 
-function handshake($connect) {
+function handshake($connect)
+{
 	$info = array();
 
 	$line = fgets($connect);
@@ -763,43 +695,6 @@ function handshake($connect) {
 
 	return $info;
     }
-
-function handshake1($socket)
-{
-     $info = [];
-     $data = socket_read($socket, 1000);
-     $lines = explode("\r\n", $data);
-     
-     //lg($lines); // 7 => 'Origin: http://192.168.9.39' - so check origin header to be http or https to 192.168.9.39
-     foreach ($lines as $i => $line)
-    	     {
-	      if ($i)
-	         {
-		  if (preg_match('/\A(\S+): (.*)\z/', $line, $matches)) $info[$matches[1]] = $matches[2];
-		 }
-	       else
-	         {
-		  $header = explode(' ', $line);
-		  $info['method'] = $header[0];
-		  $info['uri'] = $header[1];
-		 }
-	      if (empty(trim($line))) break;
-	     }
-	     
-     $ip = $port = null;
-     if (!socket_getpeername($socket, $ip, $port)) return false;
-     $info['ip'] = $ip;
-     $info['port'] = $port;
-     if (empty($info['Sec-WebSocket-Key'])) return false;
-
-     $SecWebSocketAccept = base64_encode(pack('H*', sha1($info['Sec-WebSocket-Key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-     $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
-                "Upgrade: websocket\r\n" .
-		"Connection: Upgrade\r\n" .
-		"Sec-WebSocket-Accept:".$SecWebSocketAccept."\r\n\r\n";
-     socket_write($socket, $upgrade);
-     return $info;
-}
 
 function GenerateRandomString($length = USERPASSMINLENGTH)
 {
@@ -975,6 +870,19 @@ function Check($db, $flags, &$client, &$output)
 
      // List is empty or includes '*' chars for a 'Table' view? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
      if ($client['viewtype'] === 'Table')
+     /*if (gettype($arr = json_decode(preg_split("/\n/", ($layout = $client['elementselection']))[0], true, 2)) != 'array')
+	{
+	 $isnew = $landscape = false;
+	 if ($layout[0] === '!')
+	    {
+	     $landscape = true;
+	     $layout = substr($layout, 1);
+	    }
+	 foreach(preg_split("/,/", $layout) as $value)
+		{
+		 
+		}
+	}*/
      if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
         {
          $x = 0;

@@ -1,10 +1,4 @@
 --------------May 2021--------------------------------------------------------------
-- округление до целого при номере клетки и остаток от деления
-- filter to rows/columns, if one cell=string collapse column/row, if all columns/rows cells=string collapse corresponded column/row
-- context on span tag doesn't work!
-- link property values separated by |. In that case tree is built by first found link value. So linkoid property (for examlpe one downlink port for multiple nodes)
-- Sort by header click for look like default element layout (*, **, ***; 1,2,3,4..;) when header line at the top, bottom, left, right
-
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const, always check on macbook via git.
   !Help content during all code lookup
   Instruct user how to remove unnesesary object versions
@@ -28,49 +22,61 @@
   Problems of deploying - can i use mysql on commerisal base? 
 
 --------------Questionable features-------------------------------------------------
-- CONFIRM -> CONFIRMEDIT, CONFIRMSET?
+- link property values separated by |. In that case tree is built by first found link value. So linkoid property (for examlpe one downlink port for multiple nodes)
+- chetnie row(y coordinate)/object(oid) mark dark background: props[0][*/2]['style'] = dark background
+- Sort by header click for look like default element layout when header line at the top, bottom, left, right
+- Element layout (don't forget service elements hints for them) like !#+(0-9, id, owner, version..) and round cell x,y coordinates to whole number with an '%' in the expression string
+- system user readonly customization, it is default customization to allow all other users use it in case of error
 - Crontab element execution once immediately
 - Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   secure php.ini and can socket number be more than 1024?
 - What time and bytes limit should be set to php script execution
 - prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
-- Scheduler should be OV based! Not element based
 - OV Link between two objects! for example between two switches. So if object selection selects one object - then tree built till the last object with no/error link. In case of selection selects two or more objects - tree path built from first selected to the selected
 - show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
-- Release mechanism that allows handler to save dialog data element JSON data at a time or other commands with element json data set.
 - Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
 - EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
 - System call NEWOBJECT (to create object by user handlers)
+- Clone object, similar to add object, but copies current menu contexted object
 - Export OV data to xls, pdf or txt file
-- Tree element hint (mouseover), callOV or link in a new tab (mouse click), hide tree element rebuilds the tree (context menu hide)
+- Tree element layout - hint (based on eid), style (for example to see what nodes are down by seeing them via red background ) or callOV/link-in-a-new-tab by mouse double click, hide tree element rebuilds the tree (context menu hide)
 - Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
 - OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
 - Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
 - Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
 - Predefined system messages can be displayed on other languages
-- not all parameters of element data json should be passed to the browser. if to read JSON from OD, then decode it, then remove unnecessary props, then encode it back - to many manipulations can risk some corruptions. It is simplier hidden data to be saved in files for whole OD or for every element - this feature will be released.
 - Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
-- style/hint/description/image edit for text.php? The problem is that style/hint/description data should be transmitted automatically. There isno problem - make unversal text.php to keep not only text data, but dialog data also
-  and it is hard to insert style/hint/description props to every element in OD properties dialog
+- style/hint/description/image edit for text.php
 - fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
-- event json can send not only current objects elements, but other objects of current OD and other objects of another OD
+- Open OV in new tab in a read-only mode just by coping inner html of main div
 - Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
   should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
 - Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
 - socket rate limit https://javascript.info/websocket#rate-limiting
   To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user?
-- Make OD/OV array that consists of socket indexes that every OV of every OD are subscribed of. It is just to have quicker access on OV change to serve big amount of connects
 - Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
-- As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
-  So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG?
+- As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
+  (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
+  So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG? CONFIRM -> CONFIRMEDIT, CONFIRMDIALOG, CONFIRMPRESET?
   May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
 - Adaptivka after browser window size has changed dialog box has gone away
 - divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
 - Set OD users at least simple description
-- element selection when elements are selected not by exact numbers, but bu regular expr that defines that numbers or titles
+- element selection when elements are selected not by exact numbers, but by regular expr that defines that numbers or titles
+- application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
+  and reload main div or not;
+  autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
+- autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
+-----------
+- Paste file or image to object element - should it be realized via handler event just like KEYPRESS for pasting text
+- event.which -> event.code https://learn.javascript.ru/keyboard-events
+- dialog interface element heads - not plain text but some <font> <color> tags?
+- multi cell selecting - copy (excel table), delete (removes all selected objects). User can select and copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
+  single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
+  system command to copy data to the buffer
 - Some systems emulation:
   Corp chat
-  Corp book
+  Corp adrbook
   Any request app (Helpdesk, Jira)
   MRTG
   Zabbix
@@ -84,25 +90,17 @@
   Paraga mail functional
   Ask Hramcova analitiku po helpdesku
   See functions on Slava's management system
-- Operations.xls emulation:
-  Switch ip, switch description, switch location,
-  60 ports (description), for every port: type (uplink,downlink,free,service,client),
-  diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
-  In INFO scheme find mac on every switch in OV
-  In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
-  Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
-  see client mac, cable length, errors and all other data the switch allows to monitor
-  ping <switch ip>, on port ping <client ip>
-- application customization: current view refresh at sidebar OV select will show 'loading..' and reload main div or not; autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
-- Service demon for every element - is the demon that executes at the start of the server for example radius server
-- autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
-- Paste file or image to object element - should it be realized via handler event just like KEYPRESS for pasting text
-- event.which -> event.code https://learn.javascript.ru/keyboard-events
-- dialog interface element heads - not plain text but some <font> <color> tags?
-- multi cell selecting - copy (excel table), delete (removes all selected objects). User can select and copy whole object, then paste it (new object of buffered object instance will be inserted). INIT event won't be applied in that case
-  single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-  system command to copy data to the buffer
-- tree element onclick: { 'OD': '', 'ODid': '', 'OV': '', 'OVid': '', 'params': {'Input_object_id': '', 'value4': '', } }
+  tech uchet
+  wiki
+  Operations.xls emulation:
+    Switch ip, switch description, switch location,
+    60 ports (description), for every port: type (uplink,downlink,free,service,client),
+    diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
+    In INFO scheme find mac on every switch in OV
+    In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
+    Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
+    see client mac, cable length, errors and all other data the switch allows to monitor
+    ping <switch ip>, on port ping <client ip>
 ------------------------------------------------------------------------------------------
 
 
@@ -562,14 +560,3 @@ php /usr/local/src/tabels/handlers/text.php SEARCH
 php /usr/local/src/tabels/handlers/text.php SELECT 'я┘я┐п╧|п©п╣п╥п╢п╟|п╤п╬п©п╟|я│я─п╟п╨п╟'
 
 
-adrbook
-chat
-hd
-setki
-oper
-mrtg
-slava upr
-техучет
-zubbix
-wiki
-crm
