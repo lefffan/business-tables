@@ -11,7 +11,7 @@ const ACTIVEITEM = '<div class="contextmenuItems">';
 const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>';
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
 const SOCKETADDR = 'wss://tabels.app:7889';
-const EFFECTHELP = " effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Incorrect value makes 'none' effect."
+const EFFECTHELP = "effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Undefined or empty value - 'none' effect is used."
 const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
 const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const HTMLSPECIALCHARS = ['&amp;', '&lt;', '&gt;', '<br>', '&nbsp;'];
@@ -56,7 +56,7 @@ let uiProfile = {
 		  "context menu item active": { "target": ".activeContextMenuItem", "color": "#fff;", "background-color": "#0066aa;" },
 		  "context menu item grey": { "target": ".greyContextMenuItem", "color": "#dddddd;" },
 		  // Hint
-		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "border-radius": "3px;", "box-shadow": "2px 2px 4px #cfcfcf;", "padding": "5px;", "effect": "hotnews", "mouseover hint timer in msec": "1000", "_effect": "Hint " + EFFECTHELP },
+		  "hint": { "target": ".hint", "background-color": "#CAE4B6;", "color": "#7E5A1E;", "border": "none;", "border-radius": "3px;", "box-shadow": "2px 2px 4px #cfcfcf;", "padding": "3px;", "font": "11px sans-serif;", "effect": "hotnews", "mouseover hint timer in msec": "1000", "_effect": "Hint " + EFFECTHELP },
 		  // Box interface elements
 		  "dialog box": { "target": ".box", "background-color": "rgb(233,233,233);", "color": "#1166aa;", "border-radius": "5px;", "border": "solid 1px #dfdfdf;", "box-shadow": "2px 2px 4px #cfcfcf;", "effect": "slideleft", "_effect": "Dialog box " + EFFECTHELP, "filter": "grayscale(0.5)", "_filter": "Application css style filter applied to the sidebar and main field.<br>For a example: 'grayscale(0.5)' or 'blur(3px)'. See appropriate css documentaion." },
 		  "dialog box title": { "target": ".title", "background-color": "rgb(209,209,209);", "color": "#555;", "border": "#000000;", "border-radius": "5px 5px 0 0;", "font": "bold .9em Lato, Helvetica;", "padding": "5px;" },
@@ -116,7 +116,7 @@ window.onload = function()
  document.addEventListener('mouseup', MouseEventHandler);
  document.addEventListener('keydown', KeyboardEventHandler);
  document.addEventListener('contextmenu', ContextEventHandler);
- 
+
  // Define sidebar div
  sidebarDiv = document.querySelector('.sidebar');
 
@@ -143,7 +143,7 @@ function CreateWebSocket()
  socket = new WebSocket(SOCKETADDR);
  socket.onmessage = FromController;
  socket.onopen	= CallController;
- socket.onclose = () => { displayMainError("The server connection is down! Try again"); HideBox(); };
+ socket.onclose = () => { displayMainError("The server connection is down! Try again"); OD = OV = ODid = OVid = OVtype = ''; HideBox(); };
  socket.onerror = () => socket.onclose();
 }
 
@@ -164,10 +164,12 @@ function Hujax(url, callback, requestBody)
 {
  fetch(url, { method:	'POST',  
 	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'}, 
-	      body: 	JSON.stringify(requestBody) }).then(function(response) {
-			    if (response.ok) response.json().then(callback);
-			     else displayMainError('Request failed with response ' + response.status + ': ' + response.statusText); })
-							    .catch (function(error) { lg('Ajax request error: ', error); });
+	      body: 	JSON.stringify(requestBody) }).then(function(response)
+			    {
+			     if (response.ok) response.json().then(callback);
+			      else displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
+			    }).catch (function(error) { lg('Ajax request error: ', error);
+	    });
  return true;
 }
 
@@ -205,7 +207,7 @@ function drawSidebar(data)
 
       // Insert OD name
       sidebarHTML += `<td class="sidebar-od" data-odid="${odid}">${data[odid]['name']}</td></tr>`;
-     
+
       // Insert OV names list if OD is unwrapped
       if (data[odid]['wrap'] === false) sidebarHTML += ovlistHTML;
      }
@@ -215,60 +217,7 @@ function drawSidebar(data)
   
  // Reset sidebar to the new data
  sidebar = data;
-}	 
-
-/*function SetOEPosition(props, oid, eid, n, q, object = {})
-{
- let x, y, oe, cell, oidnum = Number(oid);
- 
- // CHeck specified object element start event
- (eid != 'id' && eid != 'version' && eid != 'owner' && eid != 'datetime' && eid != 'lastversion') ? eidstr = 'eid' + eid : eidstr = eid;
- 
- // Check props correctness
- if (object.lastversion != '1' || !props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') 
-    if (oidnum != TITLEOBJECTID && oidnum != NEWOBJECTID && props[eid]['0']) oid = '0';
- if (!props[eid][oid] || typeof props[eid][oid].x != 'string' || typeof props[eid][oid].y != 'string') return;
- 
- // Fill main table cell with oid, eid and hint from props (for TITLEOBJECTID and NEWOBJECTID only)
- // mainTable[y][x] = { oId, eId, realobject, data, hint, description, collapse, style }
- // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x, y }
- // props[0][0] = { style, tablestyle, collapse }
- 
- mainTable[y][x] = { oId: oidnum, eId: eid };
- cell = mainTable[y][x];
- if (oe['hint']) cell['hint'] = oe['hint'];
- 
- // Fill main table cell with data 
- if (oidnum === TITLEOBJECTID) cell['data'] = oe['title'];
- if (oidnum === NEWOBJECTID) cell['data'] = '';
- if (oidnum >= STARTOBJECTID)
-    {
-     cell['version'] = object.version;
-     (object.lastversion === '1' && object.version != '0') ? cell['realobject'] = true : cell['realobject'] = false;
-     if (eid === eidstr) // If element id is 'id', 'version', 'owner', 'datetime' or 'lastversion'
-         {
-	  cell['data'] = object[eidstr];
-	 }
-      else
-         {
-	  //--------------Set object element collapse property-----------------
-	  if ((props[eid][oidnum] && props[eid][oidnum].collapse != undefined) || (props[eid]['0'] && props[eid]['0'].collapse != undefined) ||
-	      (props['0'] && props['0'][oidnum] && props['0'][oidnum].collapse != undefined)) mainTable[y][x]['collapse'] = '';
-	  //--------------Parse object data to JSON and fetch data (from value), hint and description-------------------
-	  cell['data'] = cell['style'] = cell['hint'] = cell['description'] = '';
-	  if (object[eidstr + 'value']) cell['data'] = object[eidstr + 'value'];
-	  if (object[eidstr + 'hint']) cell['hint'] = object[eidstr + 'hint'];
-	  if (object[eidstr + 'description']) cell['description'] = object[eidstr + 'description'];
-	  if (object[eidstr + 'style']) cell['style'] = ElementStyleFetch(props, eid, oidnum, {style: cell['style']});
-	 }
-    }
- if (oidnum === TITLEOBJECTID || oidnum === NEWOBJECTID || mainTable[y][x]['realobject'])
-    {
-     if (objectTable[oidnum] === undefined) objectTable[oidnum] = {};
-     objectTable[oidnum][eid] = { x: x, y: y };
-    }
- if (mainTable[y][x]['style'] === undefined) mainTable[y][x]['style'] = ElementStyleFetch(props, eid, oidnum);
-}*/
+}
 
 function MergeStyles(...styles)
 {
@@ -326,7 +275,7 @@ function GetCoordinates(props, e, o, n)
 }
 
 function drawMain(data, props)
-{console.time('label');
+{
  // Init some important vars such as tables, focus element and etc..
  mainTable = [];
  objectTable = {};
@@ -427,7 +376,6 @@ function drawMain(data, props)
      mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
      mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
     }
-console.timeEnd('label');
 }
 
 function CalcTree(tree)
@@ -559,32 +507,6 @@ function GetTreeElementContent(content)
  return data;
 }
 
-/*function ElementStyleFetch(props, eid, oid, oe = {})
-{
- let style = '';
- if (typeof props[eid]['0'] === 'object') style = MergeStyleRules(props[eid]['0'].style);
- if (props['0'] && typeof props['0'][oid] === 'object') style = MergeStyleRules(style, props['0'][oid].style);
- if (typeof props[eid][oid] === 'object') style = MergeStyleRules(style, props[eid][oid].style);
- if (typeof oe.style === 'string') style = MergeStyleRules(style, oe.style);
- return style;
-}
-
-function MergeStyleRules(...styles)
-{
- let resultStyle = '', styleObject = {}, rule, pos;
- styles.forEach((style) => {
-			    if (style && typeof style === 'string') for (rule of style.split(';'))
-			       {
-			        rule = rule.trim();
-				if ((pos = rule.indexOf(':')) > 0 && rule.length > pos + 1) // Some chars before and after ':'?
-				styleObject[rule.substr(0, pos)] = rule.substr(pos + 1);
-			       }
-			   });
- for (rule in styleObject) resultStyle += rule + ': ' + styleObject[rule] + '; ';
- return resultStyle;
-}
-*/
-
 function MainDivEventHandler(event)
 {
  switch (event.type)
@@ -640,7 +562,7 @@ function BoxApply(buttonprop)
      return;
     }
 
- if (button['error']) displayMainError(button['error'], false);
+ if (button['error']) displayMainError(button['error']);
  button['warning'] ? warning(button['warning']) : HideBox();
 }
 
@@ -761,7 +683,7 @@ function ContextEventHandler(event)
 {
  HideHint();
 
- // Prevent default context menu while dialog box up, mouse click on already existed context menu or context key press
+ // Prevent default context menu while dialog box up, mouse click on already existed context menu or context key press, 0 - no mouse button pushed, 1 - left button, 2 - middle button, 3 - right (context) button
  if (box || event.target == contextmenuDiv || event.target.classList.contains('contextmenuItems') || (contextmenu && event.which === 0))
     {
      event.preventDefault();
@@ -786,17 +708,17 @@ function ContextEventHandler(event)
  // Context event on wrap icon cell? Use next DOM element
  let inner, target = event.target;
  if (target.classList.contains('wrap')) target = target.nextSibling;
-  else if (cursor.td && event.button === 0) target = cursor.td; // If cursor and context key?
+  else if (cursor.td && event.which === 0) target = cursor.td; // If cursor and context key?
   else if (target.tagName == 'SPAN' && target.parentNode.tagName == 'TD') target = target.parentNode;
  
- if (target.classList.contains('sidebar-od')) inner = ACTIVEITEM + 'New Object Database</div>' + ACTIVEITEM + 'Edit Database Structure</div>'; // Context event on OD
-  else if (target.classList.contains('sidebar-ov') || target === sidebarDiv) inner = ACTIVEITEM + 'New Object Database</div>' + GREYITEM + 'Edit Database Structure</div>'; // Context event on OV
+ if (target.classList.contains('sidebar-od')) inner = ACTIVEITEM + 'New Database</div>' + ACTIVEITEM + 'Database Configuration</div>'; // Context event on OD
+  else if (target.classList.contains('sidebar-ov') || target === sidebarDiv) inner = ACTIVEITEM + 'New Database</div>' + GREYITEM + 'Database Configuration</div>'; // Context event on OV
   else switch (OVtype)
     {
      case 'Table':
           if (target === mainDiv || target === mainTablediv) // Context event on main div with any OV displayed or on main table div in case od table edge click!
 	     {
-	      inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
+	      inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + GREYITEM + 'Description</div>';
 	      break;
 	     }
 	  if (target.tagName === 'TD')
@@ -826,7 +748,7 @@ function ContextEventHandler(event)
      contextmenuDiv.innerHTML = inner;
 
      // Context menu div left/top calculating
-     if (event.which === 0)
+     if (event.which === 0) // Context key? 0 - no mouse button pushed, 1 - left button, 2 - middle button, 3 - right (context) button
         {
 	 target = cursor.td;
 	 const left = target.offsetLeft - mainDiv.scrollLeft;
@@ -864,7 +786,7 @@ function MouseEventHandler(event)
 {
  HideHint();
 
- // Return if mouse non left button click
+ // Return if mouse non left button click, 0 - no mouse button pushed, 1 - left button, 2 - middle button, 3 - right (context) button
  if (event.which != 1) return;
 
  // Dialog box is up? Process its mouse left button click
@@ -920,7 +842,7 @@ function MouseEventHandler(event)
 
  // OV item (or its wrap icon before) mouse click? Open OV in main field
  if (next.classList.contains('sidebar-ov'))
-    {console.time('label1');
+    {
      if (ODid != next.dataset.odid || OVid != next.dataset.ovid)
         {
 	 if (sidebar[ODid]?.['active']) delete sidebar[ODid]['active'];
@@ -932,7 +854,7 @@ function MouseEventHandler(event)
      OD = next.dataset.od;
      OV = next.dataset.ov;
      cmd = 'CALL';
-     displayMainError('Loading.', false);
+     displayMainError('Loading.');
      CallController();
      return;
     }
@@ -1040,7 +962,7 @@ function KeyboardEventHandler(event)
 		     {
 		      let button = SeekObjJSONProp(box.buttons, 'call');
 		      if (!button || !(button = box.buttons[button])) break;
-    		      if (button['error']) displayMainError(button['error'], false);
+    		      if (button['error']) displayMainError(button['error']);
     		      button['warning'] ? warning(button['warning']) : HideBox();
 		     }
 		  break;
@@ -1158,13 +1080,13 @@ function FromController(json)
 	      break;
 	 case 'SIDEBAR':
 	 case 'CALL':
-	 case 'New Object Database':
-	 case 'Edit Database Structure':
+	 case 'New Database':
+	 case 'Database Configuration':
 	      Hujax("view.php", FromController, input.data);
 	      break;
 	 case 'Table':
 	      paramsOV = input.params;
-	      drawMain(input.data, input.props);console.timeEnd('label1');
+	      drawMain(input.data, input.props);
 	      break;
 	 case 'Tree':
 	      DrawTree(input.tree, input.direction);
@@ -1177,7 +1099,7 @@ function FromController(json)
 	
  if (input.sidebar)		drawSidebar(input.sidebar);
  if (input.log)			lg(input.log); 
- if (input.error != undefined)	displayMainError(input.error, false);
+ if (input.error != undefined)	displayMainError(input.error);
  if (input.alert)		warning(input.alert);
 }
 
@@ -1187,12 +1109,12 @@ function CallController(data)
 
  switch (cmd)
 	{
-	 case 'New Object Database':
+	 case 'New Database':
 	 case 'Task Manager':
 	      object = { "cmd": cmd };
 	      if (typeof data != 'string') object.data = data;
 	      break;
-	 case 'Edit Database Structure':
+	 case 'Database Configuration':
 	 case 'SIDEBAR':
 	 case 'CALL':
 	 case 'LOGIN':
@@ -1203,38 +1125,23 @@ function CallController(data)
 	      CopyBuffer();
 	      break;
 	 case 'Description':
-	      let cell, hidden = msg = '';
+	      let cell, msg = '', count = 1;
 	      //--------------Add object and element information to the result message---------------
-	      if (cursor.td != undefined && mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId)
-	      switch (cell.oId)
-	    	     {
-		      case NEWOBJECTID:
-		           if (Number(cell.eId) > 0) msg = 'Cursor table cell is input new object data for element id: ' + cell.eId;
-			   break;
-		      case TITLEOBJECTID:
-			   msg = 'Cursor table cell is title for element id: ' + cell.eId;
-			   break;
-		      default:
-			   msg = 'Cursor table cell object id: ' + cell.oId + '\nCursor table cell element id: ' + cell.eId;
-			   if (cell.version != '0')
-			      {
-			       msg += '\nObject version: ' + cell.version + '\nActual version: ';
-			       cell.realobject ? msg += 'yes' : msg += 'no';
-			       break;
-			      }
-			   msg += '\nObject version: object has been deleted';
-		     }
+	      if (cursor.td && mainTable[cursor.y]?.[cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId)
+	      if (cell.oId === NEWOBJECTID) msg = Number(cell.eId) > 0 ? `Cursor table cell is input new object data for element id: ${cell.eId}` : '';
+	       else if (cell.oId === TITLEOBJECTID) msg = `Cursor table cell is title for element id: ${cell.eId}`;
+	       else msg = `Cursor table cell object id: ${cell.oId}\nCursor table cell element id: ${cell.eId}`;
+	      msg += `\nTable cell 'x' coordinate: ${cursor.x}\nTable cell 'y' coordinate: ${cursor.y}\n`; // Add x and y coordinates to the result message
+	      //--------------Add object version information---------------
+	      if (cell?.version) cell.version === '0' ? msg += '\nObject version: object has been deleted' : msg += `\nObject version: ${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`;
 	      //--------------Add description to the result message---------------
-	      if (cell && typeof cell.description === 'string') msg += '\n\nElement description property:\n' + cell.description;
-	      //--------Add x and y coordinates to the result message-------------
-	      if (cell) msg += `\n\nTable cell 'x' coordinate: ${cursor.x}\nTable cell 'y' coordinate: ${cursor.y}\n\n`;
+	      if (cell?.description) msg += `\nElement description property:\n${cell.description}`;
 	      //--------------------Add database and view info--------------------
-	      if (OV.substr(0, 1) === '_') hidden = ' (hidden from sidebar)';
-	      msg += `Object Database: ${OD}\nObject View${hidden}: ${OV} (${objectsOnThePage} objects)\nMain table columns: ${mainTableWidth}\nMain table rows: ${mainTableHeight}`;
+	      msg += `\nObject Database: ${OD}\nObject View${OV[0] === '_' ? ' (hidden from sidebar)' : ''}: ${OV} (${objectsOnThePage} objects)\nTable columns: ${mainTableWidth}\nTable rows: ${mainTableHeight}`;
 	      //--------------Add part of sql string object selection-------------
-	      let parammsg = '', count = 1;
-	      for (cell in paramsOV) parammsg += `\n${count++}. ` + cell.substr(1).replace(/_/g, ' ') + ': ' + paramsOV[cell];
-	      if (parammsg != '') msg += '\n\nObject View input parameters:' + parammsg;
+	      cell = '';
+	      for (let param in paramsOV) cell += `\n${count++}. ${param.substr(1).replace(/_/g, ' ')}: ${paramsOV[param]}`;
+	      if (cell) msg += `\n\nObject View input parameters:${cell}`;
 	      //--------------Display result message in warning box---------------
 	      warning(msg, 'Description', false);
 	      break;
@@ -1294,20 +1201,20 @@ function CallController(data)
     }
 }
 
-function displayMainError(errormsg, resetOV = true)
+function displayMainError(errormsg, reset = true)
 {
  clearTimeout(loadTimerId);
 
  if (errormsg.substr(0, 7) === 'Loading')
     {
      errormsg === 'Loading...' ? errormsg = 'Loading' : errormsg += '.';
-     loadTimerId = setTimeout(displayMainError, 500, errormsg, false);
+     loadTimerId = setTimeout(displayMainError, 500, errormsg);
      errormsg = errormsg.replace(/Loading/, '').replace(/./g, '&nbsp;') + errormsg;
     }
  mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
 
  mainTableRemoveEventListeners();
- if (resetOV) OD = OV = ODid = OVid = OVtype = '';
+ if (reset) OVtype = '';
 }
 
 function mainTableAddEventListeners()
@@ -2019,36 +1926,131 @@ function styleUI()
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }
  style.innerHTML = inner;
-
- //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);"); // Output uiProfile array to te console to use it as a default customization configuration
+ // Output uiProfile array to te console to use it as a default customization configuration
+ // lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
 }
 
 const help = { title: 'Help', dialog: {
 
-"System description": { profile: { element: { head:
-`Tabels application is a set of custom data tables the user can interact many different ways.
-Every table consists of identical objects, which, in turn, are set of bult-in and user defined elements.
-Table data of itself is called Object Database (OD) and can be changed or created by
-appropriate sidebar context menu. OD contains Object Views (OV). Views define what objects
-(via 'object selection', see appropriate help section) and elements (via 'element layout',
-see appropriate help section) should be displayed and how.
+"System description": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+`Tabels application is a system to display, store and manage its data by lots of ways. Application data is a set of custom
+data tables, each table consists of identical objects, which, in turn, are set of service and user defined elements.
 
-OV allows users to operate its objects many different ways, so to display its data 
-generated by binded to elements appropriate handlers. Simple OV is a classic table with
-object list in 'y' order and its elements in 'x' order, so Object Database is similar to
-any SQL database, where objects are rows and elements are its fields.
+Data tables of itself is called Object Database (OD) and can be changed or created by appropriate sidebar context menu.
+OD contains Object Views (OV). Views define what objects (via 'object selection') and elements (via 'element layout')
+should be displayed and how. See appropriate help sections.
 
-As it was mentioned above each object is a ste of bult-in and user defined elements.
-Bult-in elements represent service data which is set automatically:
--id 
--user
-..
-User defined element represents itself JSON data type and stored in SQL database with that type.
-Each element JSON data can be managed by appropriate user defined element handlers (see 'handlers'
-help section).`
+As it was mentioned above - each object is a set of service and user-defined elements.
+Five bult-in service elements (id, owner, datetime, version, lastversion) represent service data,
+which is set automatically while object is changed or created. Each custom user-defined
+object element (with eid1, eid2.. as a column names in database structure) is created by the user and may have some
+handlers (any script or binary) to create and manage element data, see 'handler' help section. User-defined element data
+is a JSON, that may consist of any defined properties, but some of them have special assingment:
+- 'value' is displayed in a table cell as a main element text
+- 'hint' is displayed as element hint text on mouse cursor cell navigation
+- 'description' is element description displayed on context menu description click
+- 'style' is a css style attribute value applied to html table <td> tag.
+Other element properties are custom and used to store additional element data, see example below.
+
+Lets have a look to the simple OD example with only two elements - Name and Phone number.
+OD name will be 'Users', OV name - 'Address book', OV template - 'table', OV object selection - 
+all objects, OV element layout - default. See OD configuration help section.
+Additionally, first object element (Name) stores user password in a 'pass' JSON property.
+
+OV display will look like:
++------+--------------+
+| Name | Phone number |
++------+--------------+
+| Mary | +1 555 11111 |
++------+--------------+
+| John | +1 555 22222 |
++------+--------------+
+
+And internal object database structure will be:
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| id | owner | datetime            | version | lastversion | eid1                                   | eid2                      |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| 3  | root  | 1970-07-26 17:48:01 | 1       | 1           | '{"value": "Mary", "pass": "$6$WF.."}' | '{"value": "+1 555 111"}' |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| 4  | root  | 1970-07-26 17:49:33 | 1       | 1           | '{"value": "John", "pass": "$6$GH.."}' | '{"value": "+1 555 222"}' |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+
+After the 1st object (Mary) phone number change and the 2nd (John) remove the structure will be:
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| id | owner | datetime            | version | lastversion | eid1                                   | eid2                      |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| 3  | root  | 1970-07-26 17:48:01 | 1       | 0           | '{"value": "Mary", "pass": "$6$WF.."}' | '{"value": "+1 555 111"}' |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| 3  | root  | 1970-07-26 17:49:42 | 2       | 1           | '{"value": "Mary", "pass": "$6$WF.."}' | '{"value": "+1 555 333"}' |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| 4  | root  | 1970-07-26 17:48:33 | 1       | 0           | '{"value": "John", "pass": "$6$GH.."}' | '{"value": "+1 555 222"}' |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+| 4  | root  | 1970-07-26 17:49:54 | 0       | 1           | ''                                     | ''                        |
++----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
+
+John user record after phone number change by user 'root' has version 2 value and lastversion flag set, while object version 1
+has unset lastversion flag. Note that previous object version values for non-changed user-defined elements are set to NULL,
+so John phone number next change creates object version 3 with previous object version 2 element 'eid1' value set to NULL.
+Also deleted objects are not removed from database, but marked by zero version only, so all object history is transparent
+and available. This is a global application concept, all functionality is documented and clear.
+
+Authentication and authorization are password based. Usernames and their passwords are stores in 'Users' OD.
+To add new user click context menu 'Add Object' on any 'Users' view (on default view 'All users' for example), then double 
+click just-added 'user' element to call user properties (such as password, OD add permission and group membership) dialog box.
+User 'name' cannot be changed after creation. Also user cannot change his OD add permissions and group membership
+to avoid all priveleges granting by himself to himself. Note that users and groups must be all uniq, so user and group with
+one name 'root' is not allowed. Groups cannot be directly created, any group name in a user group membership list is
+considered as an existing group. So all user/group permission lists in a Database configuration (see appropriate help section)
+are treated as user name list, but in case of non-existent username - the name is treated as a name of a group.`
 }}},
 
-"Object Selection": { profile: { element: { head:
+"Database Configuration": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+`To create Object Database (OD) just enter its name in the dialog box called via 'New Database' sidebar context menu.
+Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
+Let's have a look at database configuration dialog box and its features.
+
+First is 'Database' tab. This configuration section sets up general database features (name, description, limits) and its permission.
+Database name can be changed after creation or removed (via empty name and description values set).
+Database permissions represent itself four user/group (one by line) list input text areas, one list for each configuration
+section which changes are restricted by that user/group list. Lists can be of two types,
+'allowed' type allowes changes for specified users and groups in the list and disallowed for others, thereby 'disallowed'
+type disallows changes for specified users and groups and allows for others. Be aware of empty 'allowed' lists - this setting
+'freezes' the tab, so any changes will not be allowed for any user. Also note that 'Database' section tab empty 'allowed'
+list blocks any permission changes for other database configuration sections ('Element', 'View' and 'Rule') for any user forever.
+
+Second configuration section is 'Element'. Each object consists of builtin service elements and custom user elements.
+To add any custom element select 'New element' profile and fill at least one field - name, description or any event handler.
+So all of them in an element profile should be set empty in order to remove element. Element name is used 
+as a default element header text and specified description text is displayed as a hint on object view element headers
+navigation. See 'Element layout' help section for details. Other element options are 'Element type'
+and event 'Handlers'. Unique element type sets element JSON property 'value' unuqueness among all objects in OD.
+For a example, first element (username) of builtin OD 'Users' defined as an uniq type, so duplicated names are excluded.
+Next - event handlers. Handler is a command line script or binary called on specified event occur. Handlers are optional
+and defined for necessary events only. Events are occured on object processes ('INIT' event at object creation, 'CHANGE'
+at object element data change), keyboard/mouse element push/click ('DBLCLICK', 'KEYPRESS', 'F2', 'F12', 'INS', 'DEL') and
+handler feedback ('CONFIRM', 'CONFIRMDIALOG'). See 'Handlers' help section for details.
+
+Last configuration section is 'Rule'. Object instances before and after CRUD operations (add, delete, change) are passed to the
+analyzer and tested on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a
+match is found, the action corresponding to the matching rule profile is performed. Default action is accept.
+Accept action applies changes, while reject action cancels all changes made by the operation. Rule test is a simple SQL query
+selection, so non empty result of that selection - match is found, empty result - no match. Query format:
+SELECT .. FROM 'OD' WHERE id=<object id> AND version=<version number> AND <(pre|post)-processing rule>
+Version number defines object instance version before (for pre-processing rule) and after (for post-processing rule) operation.
+Also both rules may contain a parameter :user, that is replaced with the actual username (initiated the operation) in the query
+string. Note that pre-processing rule for 'add object' operation is ignored - no object before operation, so nothing to check.
+Empty or error rules are match case, but error rule displays error message instead of a rule message.
+Simple example: pre-processing rule "JSON_EXTRACT(eid1, '$.value')='root'" with the action 'reject' and rule apply operation
+'delete object' prevents root user removal. Example query will look like:
+SELECT .. FROM data_1 WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'
+Next example with both rules empty and reject action for all operations freezes the database, so all changes are rejected.
+Another example: first profile with action accept preprocessing rule "owner=':user'" and second profile reject
+action with both empty rules allowes to change self-created objects only.
+
+`
+}}},
+
+"Object Selection": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `Object selection is a part of the sql query string that selects objects for the specified view.
 Let's have a quickly look to the object structure stored in database to select
 required objects effectively. Each object consists of next elements:
@@ -2077,7 +2079,7 @@ Object selection string example for 'Users' object database:
 That selection example OV call will display dialog to get input and pass it to the controller to build result query.`
 }}},
 
-"Element layout": { profile: { element: { head:
+"Element layout": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `
 Element layout is a JSON strings list. Each JSON defines element and its behaviour (table cell position, style attribute, OV start event, etc..)
 JSON possible properties are:
@@ -2115,7 +2117,7 @@ In addition to JSONS above, element layout could be set to one of next values:
 `
 }}},
 
-"Element handlers": { profile: { element: { head:
+"Element handlers": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `
 Element handler is any executable script or binary called by the contoller when specified event occurs.
 Events occur on user interaction with real object element (mouse double clicking or keypressing), adding
@@ -2229,10 +2231,10 @@ JSON dialog structure is a nested JSONs which draw dialog box with its interface
 `
 }}},
 
-"OV example": { profile: { element: { head:
+"OV example": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `
 Let's have a look to the chat like OV create example.
-First - create OD instance via sidebar context menu 'New Object Database'
+First - create OD instance via sidebar context menu 'New Database'
 
 Second - create element for 'INIT' event with next handler command line: /usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php INIT <data>
 Handler text.php is a built-in script that implements text operation functions (much like excel cell :)
@@ -2263,7 +2265,7 @@ And Of course, for both our chat restrictions action is set to 'reject'.
 `
 }}},
 
-"Keyboard/Mouse": { profile: { element: { head:
+"Keyboard/Mouse": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `  - CTRL with left button click on any object element opens new browser tab with the element text as url*
   - CTRL with arrow left/right key set table cursor to the left/right end of the table*
   - CTRL with Home/End key set table cursor to the upper/lower end of the table
@@ -2291,5 +2293,5 @@ And Of course, for both our chat restrictions action is set to 'reject'.
 },
 
 buttons: { OK: {value: "&nbsp;   OK   &nbsp;"}},
-flags:   { esc: "", style: "min-width: 700px; min-height: 600px; width: 860px; height: 720px;" }
+flags:   { esc: "", style: "min-width: 1100px; min-height: 600px; width: 1100px; height: 720px;" }
 };

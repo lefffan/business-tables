@@ -19,7 +19,7 @@ const ODSTRINGMAXCHAR			= 64;
 const OVSTRINGMAXCHAR			= 64;
 const USERSTRINGMAXCHAR			= '64';
 const USERPASSMINLENGTH			= '8';
-const SOCKETREADMAXBYTES		= 150000;
+const SOCKETREADMAXBYTES		= 15000000;
 const SOCKETTIMEOUTUSEC			= 200000;
 const ELEMENTDATAVALUEMAXCHAR		= 10000;
 const ELEMENTPROFILENAMEMAXCHAR		= 32;
@@ -49,6 +49,4 @@ const CREATECANCEL			= ['CREATE' => ['value' => 'CREATE', 'call' => '', 'enterke
 const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const MINBUTTONTIMERMSEC		= 500;
 const MAXBUTTONTIMERMSEC		= 36000000;
-const ALLOWEDLIST			= '+allowed list (disallowed for others)|disallowed list (allowed for others)|';
-const DISALLOWEDLIST			= 'allowed list (disallowed for others)|+disallowed list (allowed for others)|';
 const DEFAULTELEMENTPROPS		= ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];

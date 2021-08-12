@@ -38,7 +38,7 @@ switch ($event)
 	     if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
 	     
 	     CheckEffect($data['dialog']['pad']['context menu']['element12']['data']);
-	     CheckEffect($data['dialog']['pad']['hint']['element6']['data']);
+	     CheckEffect($data['dialog']['pad']['hint']['element9']['data']);
 	     CheckEffect($data['dialog']['pad']['dialog box']['element7']['data']);
 	     CheckEffect($data['dialog']['pad']['dialog box select']['element15']['data']);
 

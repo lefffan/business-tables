@@ -25,7 +25,7 @@ try {
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
      $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
-     $userOD['buttons']['SAVE']['call'] = 'Edit Database Structure';
+     $userOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
 
@@ -61,7 +61,7 @@ try {
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php CONFIRMDIALOG <data>';
      $userOD['dialog']['Element']['Name (id2)'] = $newElement;
-     
+
      initNewODDialogElements();
      $newElement['element1']['id'] = '3';
      $newElement['element1']['data'] = 'Telephone';
@@ -161,17 +161,16 @@ try {
      //------------------------------------------Create default OD 'Logs'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Logs';
-     $newPermissions['element6']['data'] = $newPermissions['element8']['data'] = $newPermissions['element12']['data'] = ALLOWEDLIST;
      $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
-     $logOD['buttons']['SAVE']['call'] = 'Edit Database Structure';
+     $logOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $logOD['dialog']['Element']['New element']['element1']['id'] = '2';
      $logOD['dialog']['View']['New view']['element1']['id'] = '2';
 
      $newView['element1']['id'] = '1';
      $newView['element1']['data'] = 'All logs';
      $newView['element6']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}';
-     $newView['element9']['data'] = ALLOWEDLIST;
-     $newView['element10']['data'] = 'root';
+     $newView['element10']['data'] = '+User/groups list allowed to change this view objects|Disallowed list (allowed for others)|';
+     $newView['element11']['data'] = 'root';
      $logOD['dialog']['View']['All logs'] = $newView;
 
      $newElement['element1']['id'] = '1';

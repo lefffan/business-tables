@@ -8,15 +8,13 @@ function rmSQLinjectionChars($str) // Function removes dangerous chars such as: 
  return str_replace(';', '', str_replace('"', '', str_replace("'", '', str_replace("%", '', $str))));
 }
 
-function lg($arg, $title = 'LOG', $echo = false) // Function saves input $arg to error.log and echo it
+function lg($arg, $title = '', $echo = false) // Save input $arg to error.log and echo it if necessary
 {
- if ($echo && gettype($arg) === 'string')
-    {
-     echo "\n----------------------------".$title."-------------------------------\n";
-     echo $arg;
-    }
- file_put_contents(APPDIR.'error.log', "\n----------------------------".$title."-------------------------------\n", FILE_APPEND);
+ if ($title) $title = '----------------------------'.$title.'----------------------------';
+ file_put_contents(APPDIR.'error.log', "\n".$title, FILE_APPEND);
+ file_put_contents(APPDIR.'error.log', "\n", FILE_APPEND);
  file_put_contents(APPDIR.'error.log', var_export($arg, true), FILE_APPEND);
+ if ($echo) echo $title, $arg;
 }
 
 function adjustODProperties($db, $data, $ODid)
@@ -25,7 +23,7 @@ function adjustODProperties($db, $data, $ODid)
  initNewODDialogElements();
  
  // Check some vars
- if (!isset($db, $ODid, $data['dialog']['Database']['Properties']['element1']['data'], $data['dialog']['Element']['New element'])) return NULL;
+ if (!isset($db, $ODid, $data['dialog']['Database']['Properties']['element1']['data'])) return NULL;
 
  // Element section handle
  if (!isset($data['dialog']['Element']['New element']['element1']['data'])) return NULL;
@@ -35,7 +33,7 @@ function adjustODProperties($db, $data, $ODid)
 	  // Fetching element id
 	  $eid = strval($value['element1']['id']);
 	  // Remove element from db and dialog props in case of empty name, description and all hanlders
-	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '' && $value['element5']['data'] === '' && $value['element6']['data'] === '' && $value['element7']['data'] === '')
+	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '' && $value['element5']['data'] === '' && $value['element6']['data'] === '' && $value['element7']['data'] === '' && $value['element8']['data'] === '' && $value['element9']['data'] === '' && $value['element10']['data'] === '' && $value['element11']['data'] === '' && $value['element12']['data'] === '' && $value['element13']['data'] === '')
 	     {
 	      if ($key === 'New element')
 	         {
@@ -56,11 +54,9 @@ function adjustODProperties($db, $data, $ODid)
 	     }
 	  // Limiting element title to ELEMENTDATAVALUEMAXCHAR as it is displayed as a regular element
 	  $element = &$data['dialog']['Element'][$key];
-	  if (strlen($element['element1']['data']) > ELEMENTDATAVALUEMAXCHAR) $element['element1']['data'] = substr($element['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR);
+	  $element['element1']['data'] = substr($element['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR);
 	  // Calculating current element profile name
-	  $profile = trim($value['element1']['data']);
-	  if (strlen($profile) > ELEMENTPROFILENAMEMAXCHAR) $profile = substr($profile, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
-	  $profile .= ELEMENTPROFILENAMEADDSTRING.$eid.')';
+	  $profile = substr(trim($value['element1']['data']), 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..'.ELEMENTPROFILENAMEADDSTRING.$eid.')';
 	  // Processing new element
 	  if ($key === 'New element')
 	     {
@@ -80,7 +76,7 @@ function adjustODProperties($db, $data, $ODid)
 	      $eidnew = strval(intval($eidnew) + 1);
 	      continue;
 	     }
-	  // Processing element new profile
+	  // Process element new profile after 'element name' rename
 	  if ($profile != $key)
 	     {
 	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
@@ -88,14 +84,16 @@ function adjustODProperties($db, $data, $ODid)
 	     }
 	 }
  $data['dialog']['Element']['New element'] = $newElement; // Reset 'New element' profile to default
- $data['dialog']['Element']['New element']['element1']['id'] = $eidnew;
+ $data['dialog']['Element']['New element']['element1']['id'] = $eidnew; // and set its possible id
  
  // New view section handle
  if (!isset($data['dialog']['View']['New view']['element1']['data'])) return NULL;
  $vidnew = strval($data['dialog']['View']['New view']['element1']['id']);
  $viewpad = &$data['dialog']['View'];
- foreach ($viewpad as $key => $value) if (!isset($value['element1']['data']) || !isset($value['element2']['data']) || $value['element1']['data'] === '') unset($data['dialog']['View'][$key]); // Dialog 'View' profile corrupted or view name is empty? Remove it
- foreach ($viewpad as $key => $value) 
+ foreach ($viewpad as $key => $value)
+	 if (!isset($value['element1']['data'], $value['element2']['data']) || $value['element1']['data'] === '')
+	    unset($data['dialog']['View'][$key]); // Dialog 'View' profile corrupted or view name is empty? Remove it
+ foreach ($viewpad as $key => $value)
 	 if (isset($viewpad[$value['element1']['data']]))
 	    {
 	     $viewpad[$key]['element1']['data'] = $key.''; // New view name already exists? Discard changes
@@ -107,12 +105,14 @@ function adjustODProperties($db, $data, $ODid)
 	     unset($viewpad[$key]);					// and remove old view
 	    }
  $data['dialog']['View']['New view'] = $newView; // Reset 'New view' profile to default
- $data['dialog']['View']['New view']['element1']['id'] = $vidnew;
+ $data['dialog']['View']['New view']['element1']['id'] = $vidnew; // and set its possible i
 
  // New rule section handle
  if (!isset($data['dialog']['Rule']['New rule']['element1']['data'])) return NULL;
  $rulepad = &$data['dialog']['Rule'];
- foreach ($rulepad as $key => $value) if (!isset($value['element1']['data']) || !isset($value['element2']['data']) || $value['element1']['data'] === '') unset($data['dialog']['Rule'][$key]); // Dialog 'Rule' profile corrupted or rule name is empty? Remove it
+ foreach ($rulepad as $key => $value)
+	 if (!isset($value['element1']['data'], $value['element2']['data']) || $value['element1']['data'] === '')
+	    unset($data['dialog']['Rule'][$key]); // Dialog 'Rule' profile corrupted or rule name is empty? Remove it
  foreach ($rulepad as $key => $value)
       if (isset($rulepad[$value['element1']['data']]))
          {
@@ -123,29 +123,28 @@ function adjustODProperties($db, $data, $ODid)
 	  $rulepad[$value['element1']['data']] = $rulepad[$key];	// Otherwise create new rule with new rule name
 	  unset($rulepad[$key]);					// and remove old rule
 	 }
- unset($data['dialog']['Rule']['New rule']);
- ksort($data['dialog']['Rule'], SORT_STRING);
- $data['dialog']['Rule']['New rule'] = $newRule; // Reset 'New rule' profile to default
- 
+ unset($data['dialog']['Rule']['New rule']);		// Remove 'New rule' option
+ ksort($data['dialog']['Rule'], SORT_STRING);		// and sort array in order rules are perfomed
+ $data['dialog']['Rule']['New rule'] = $newRule;	// Reset 'New rule' profile to default
+
  // Return result data
  $data['title'] = 'Edit Object Database Structure';
  $data['buttons'] = SAVECANCEL;
- $data['buttons']['SAVE']['call'] = 'Edit Database Structure';
+ $data['buttons']['SAVE']['call'] = 'Database Configuration';
  if (!isset($data['flags'])) $data['flags'] = [];
  return $data;
-}					
+}
 
 function initNewODDialogElements()
 {
- global $newProperties, $newPermissions, $newElement, $newView, $newRule;
- 
- $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - set empty database name string and its description.<br>Remove all elements (see 'Element' tab) also."],
+ global $newProperties, $newElement, $newView, $newRule;
+
+ $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - set empty database name string, its description.<br>and remove all elements (see 'Element' tab)."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
 		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
-		    //'element5' => ['type' => 'text', 'head' => 'Max object versions in range 0-65535. Emtpy or undefined string - zero value', 'data' => '', 'line' => '', 'help' => 'Each object has some instances (versions) beginning with version number 1.<br>Once some object data has been changed, its version is incremented by one. <br>Max version value limits object max possible stored instances. Values description:<br>0 - no object data versions stored at all, only one (last) version<br>1 - only last version stored also, but deleted objects remain in database (marked by zero version)<br>2 - any object has two versions stored<br>3 - any object has three versions stored<br>4 - ...<br><br>Once database created, this value can be increased or redused. Reducing max version number<br>has two options - first or last versions of each object will be removed from the database.']
 		    'element6' => ['type' => 'radio', 'data' => "User/groups allowed list to change 'Database' section|+Disallowed list (allowed for others)|"],
-		    'element7' => ['type' => 'textarea', '_head' => "You must be aware of disallowing all users via empty user/group allowed list", 'data' => ''],
+		    'element7' => ['type' => 'textarea', 'data' => ''],
 		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'Element' section|+Disallowed list (allowed for others)|"],
 		    'element9' => ['type' => 'textarea', 'data' => ''],
 		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'View' section|+Disallowed list (allowed for others)|"],
@@ -154,7 +153,7 @@ function initNewODDialogElements()
 		    'element13' => ['type' => 'textarea', 'data' => '', 'line' => '']
 		   ];
 
- $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element title to display in object view as a header', 'data' => '', 'id' => '1', 'help' => 'To remove object element - set empty element header, description and handler file'],
+ $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element name to display in object view as a header', 'data' => '', 'id' => '1', 'help' => 'To remove object element - set empty element header, description and handler file'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
 		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "Handler for 'INIT' event:", 'data' => '', 'help' => 'hhhhhhh'],
@@ -168,11 +167,11 @@ function initNewODDialogElements()
 		    'element12' => ['type' => 'text', 'label' => "Handler for 'CONFIRMDIALOG' event:", 'data' => ''],
 		    'element13' => ['type' => 'text', 'label' => "Handler for 'CHANGE' event:", 'data' => '', 'line' => '']
 		   ];
-	
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name can be changed, but if renamed view name already exists, changes won't be applied.<br>So view name 'New view' can't be set as it is used as an option to create new views.<br>Also symbol '_' as a first character in view name string keeps unnecessary views off sidebar,<br>so they can be called from element handler only.<br>To remove object view - set empty view name string."],
+
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so they can be called from element handler only."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on uplink and downlink property),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
-		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty string selects all objects, error string - no objects.', 'data' => ''],
+		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on object selection link type),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty expression selects all objects, error expression - no objects.', 'data' => ''],
 		    'element5' => ['type' => 'text', 'label' => 'Object selection link type', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element layout. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
 		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."],
@@ -181,31 +180,30 @@ function initNewODDialogElements()
 		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change this view objects|+Disallowed list (allowed for others)|"],
 		    'element11' => ['type' => 'textarea', 'data' => '']
 		   ];
-							  
- $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'help' => "Rule name is displayed as title on the dialog box.<br>Rule name can be changed, but if it already exists, changes won't be applied.<br>So rule name 'New rule' can't be set as it is used as a name for new rules creation.<br>To remove the rule - set rule name to empty string."],
-		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is match case log message displayed in dialog box.<br>Object element id in figure {#id} or square [#id] brackets retreives<br>appropriate element id value or element id title respectively.<br>Escape character is "\".'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action apply object changes, 'Reject' cancels."],
+
+ $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'help' => "Rule name is displayed as a dialog box title.<br>Rule name may be changed, but if renamed rule name already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty rule name removes the rule."],
+		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed in the dialog box.<br>Message text element id number in a figure brackets (example: {1}) retreives appropriate element name.'],
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action applies object changes made by operation, 'Reject' cancels all changes."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'help' => 'Empty or error expression does nothing'],
-		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => 'Empty or error expression does nothing'],
+		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=<object id> AND version=<version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
+		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=<object id> AND version=<version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
 		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
 
 function CalculateElementPropQuery($element, $prop = 'value')
 {
- if (array_search($element, SERVICEELEMENTS) === false)
-    {
-     if (!isset($prop) || !$prop) $prop = 'value';
-     $element = 'JSON_UNQUOTE(JSON_EXTRACT(eid'.strval($element).", '$.".$prop."'))";
-    }
- return $element;
+ if (array_search($element, SERVICEELEMENTS) !== false) return $element; // Service element match? Return its name
+ if (!$prop) $prop = 'value';
+ return 'JSON_UNQUOTE(JSON_EXTRACT(eid'.strval($element).", '$.".$prop."'))"; // Otherwise return unqouted eidid->>'$.prop'
 }
 
 function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
 {
+ // Check input
  if (!isset($ODid) || !isset($oid) || !isset($eid)) return NULL;
 
+ // Calculate query parts of element column name and version selection
  $eid = CalculateElementPropQuery($eid, $prop);
  isset($version) ? $version = "version='".strval($version)."'" : $version = 'lastversion=1 AND version!=0';
 
@@ -233,15 +231,15 @@ function getElementJSON($db, $ODid, $oid, $eid, $version = NULL)
  $query->execute();
  $result = $query->fetchAll(PDO::FETCH_NUM);
 
- if (isset($result[0][0])) return $result[0][0];
- return NULL;
+ if (!isset($result[0][0])) return NULL;
+ return $result[0][0];
 }
 
 function AddObject($db, &$client, &$output)
 {
  $query = $values = '';
  $params = [];
- 
+
  // Prepare uniq elements query
  foreach ($client['uniqelements'] as $eid => $value)
 	 {
@@ -256,12 +254,12 @@ function AddObject($db, &$client, &$output)
       $db->beginTransaction();
       $query = $db->prepare("INSERT INTO `uniq_$client[ODid]` ($query) VALUES ($values)");
       $query->execute($params);
- 
+
       // Get last inserted object id
       $query = $db->prepare("SELECT LAST_INSERT_ID()");
       $query->execute();
       $newId = $query->fetchAll(PDO::FETCH_NUM)[0][0];
- 
+
       // Prepare actual elements query
       $query  = "id,version,owner";
       $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
@@ -274,7 +272,7 @@ function AddObject($db, &$client, &$output)
 	      }
       $query = $db->prepare("INSERT INTO `data_$client[ODid]` ($query) VALUES ($values)");
       $query->execute($params);
-    
+
       $client['oId'] = $newId;
       $ruleresult = ProcessRules($db, $client, NULL, '1', 'Add object');
       if ($ruleresult['action'] === 'Accept')
@@ -306,15 +304,15 @@ function DeleteObject($db, &$client, &$output)
       $version = $query->fetchAll(PDO::FETCH_NUM);
       if (!isset($version[0][0])) { $db->rollBack(); return []; }
       $version = $version[0][0];
-      
+
       $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1");
       $query->execute();
       $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,version,lastversion,owner) VALUES ($client[oId],0,1,:owner)");
       $query->execute([':owner' => $client['auth']]);
       $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
       $query->execute();
-      
-      $ruleresult = ProcessRules($db, $client, $version, NULL, 'Delete object');
+
+      $ruleresult = ProcessRules($db, $client, $version, 0, 'Delete object');
       if ($ruleresult['action'] === 'Accept')
          {
 	  $db->commit();
@@ -336,30 +334,42 @@ function DeleteObject($db, &$client, &$output)
  $output = ['cmd' => '', 'alert' => $ruleresult['message']];
 }
 
+function ParseRuleMsgElementId(&$client, $msg)
+{
+ if (preg_match_all('|\{\d+\}|', $msg, $matches)) foreach($matches[0] as $value)
+    {
+     $id = substr($value, 1, -1);
+     if (isset($client[$id]['element1']['data'])) $msg = str_replace($value, $client[$id]['element1']['data'], $msg);
+    }
+ return $msg;
+}
+
 function ProcessRules($db, &$client, $preversion, $postversion, $operation)
 {
- // Get rule section json data
+ // Get rule profile json data
  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Rule') FROM $ WHERE id='$client[ODid]'");
  $query->execute();
  $Rules = $query->fetchAll(PDO::FETCH_NUM);
- 
- // Move on. Return default action in case of empty rule selection or decoding error
+
+ // Move on. Return default action in case of empty rule profiles or decoding error
  if (!isset($Rules[0][0]) || gettype($Rules = json_decode($Rules[0][0], true)) != 'array') return ['action' => 'Accept', 'message' => ''];
- unset($Rules['New rule']);
- 
+ unset($Rules['New rule']); // Exlude service 'New rule' profile
+
  // Process non empty expression rules one by one
  foreach ($Rules as $key => $value)
 	 {
-	  if (strpos($value['element4']['data'], '+'.$operation) === false) continue;
-	  strpos($value['element3']['data'], '+Accept') === false ? $action = 'Reject' : $action = 'Accept';
-	  $message = trim($value['element2']['data']);
+	  if (strpos($value['element4']['data'], '+'.$operation) === false) continue; // No apply operation selected? Continue
+	  strpos($value['element3']['data'], '+Accept') === false ? $action = 'Reject' : $action = 'Accept'; // Set accept/reject action
+	  $message = ParseRuleMsgElementId($client['allelements'], trim($value['element2']['data'])); // and rule message
 
-	  if (gettype($result = CheckRule($db, $client, trim($value['element5']['data']), $preversion)) === 'string') return ['action' => $action, 'message' => $result, 'log' => $result];
-	  if ($result === false) continue;
+	  if (gettype($result = CheckRule($db, $client, trim($value['element5']['data']), $preversion)) === 'string')
+	     return ['action' => $action, 'message' => $result, 'log' => $result]; // Return action in case of error (match case)
+	  if ($result === false) continue; // Continue to next rule in case of no match
 
-	  if (gettype($result = CheckRule($db, $client, trim($value['element6']['data']), $postversion)) === 'string') return ['action' => $action, 'message' => $result, 'log' => $result];
-	  if ($result === false) continue;
-	  
+	  if (gettype($result = CheckRule($db, $client, trim($value['element6']['data']), $postversion)) === 'string')
+	     return ['action' => $action, 'message' => $result, 'log' => $result]; // Return action in case of error (match case)
+	  if ($result === false) continue; // Continue to next rule in case of no match
+	
 	  // Rule match occured. Return its action
 	  $output = ['action' => $action, 'message' => $message];
 	  if (substr($value['element7']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$message'"; // Log rule message in case of approprate checkbox is set
@@ -370,21 +380,22 @@ function ProcessRules($db, &$client, $preversion, $postversion, $operation)
  return ['action' => 'Accept', 'message' => ''];
 }
 
+// Function returns next rule test results - true (match case), false (no match case) and string (pdo exception case query error)
 function CheckRule($db, &$client, $rule, $version)
 {
- if (!isset($rule, $version) || $rule === '' || $version === '') return true;
-
+ if (!isset($rule, $version) || $rule === '' || $version === '') return true; // Unset or empty rule or version - return true (match case)
+ $rule = str_replace(':user', $client['auth'], $rule); // Replace key :user with the actual username inited add/delete/change operation
  try {
       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND version=$version AND $rule");
       $query->execute();
      }
- catch (PDOException $e)      
+ catch (PDOException $e)
      {
       return 'Rule error: '.$e->getMessage();
      }
-     
- if (isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) return true;
- return false;
+
+ if (isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) return true; // Non empty result? Return true (match case)
+ return false; // Else return false (no match)
 }
 
 function setElementSelectionIds(&$client)
@@ -417,7 +428,7 @@ function setElementSelectionIds(&$client)
 	  if (!isset($arr['oid'])) $arr['oid'] = '0'; // Set 'oid' key default value to zero
 
 	  if (gettype($eid = $arr['eid']) != 'string' || gettype($oid = $arr['oid']) != 'string' || !ctype_digit($oid)) continue; // JSON eid/oid properties are not strings? Continue
-	  if ($oid !== '0' && ($oidnum = intval($oid)) !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum <= STARTOBJECTID) continue;
+	  if (($oidnum = intval($oid)) !== 0 && $oidnum !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum <= STARTOBJECTID) continue;
 	  if (array_search($eid, SERVICEELEMENTS) === false && (!ctype_digit($eid) || !isset($client['allelements'][$eid]))) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
 
 	  if (!isset($props[$eid])) $props[$eid] = []; // Result array $props has 'eid' element undefined? Create it
@@ -514,7 +525,7 @@ function getUserCustomization($db, $uid)
  return $customization;
 }
 
-function getLoginDialogData($title = NULL)
+function getLoginDialogData($title = '')
 {
  if (!$title) $title = "\nUsername";
  return [
@@ -565,7 +576,7 @@ function encode($payload, $type = 'text', $masked = false)
 		  $frameHead[0] = 138; // first byte indicates FIN, Pong frame (10001010)
 		  break;
 	    }
-	    
+
      if ($payloadLength > 65535) // set mask and payload length (using 1, 3 or 9 bytes)
         {
 	 $payloadLengthBin = str_split(sprintf('%064b', $payloadLength), 8);
@@ -596,71 +607,77 @@ function encode($payload, $type = 'text', $masked = false)
      
  return $frame;
 }
-    
+
 function decode($data)
 {
- $unmaskedPayload = '';
- $decodedData = [];
+ // Init some vars
+ lg("---------------------Function decode start---------------------");
+ $datalength = strlen($data);
+ lg("Input data length = $datalength");
+ ord($data[0]) > 127 ? $decoded = ['fin' => 1, 'datalength' => $datalength] : $decoded = ['fin' => 0, 'datalength' => $datalength];
 
- // Estimate frame type:
+ // Calculating opcode
  $firstByteBinary = sprintf('%08b', ord($data[0]));
  $secondByteBinary = sprintf('%08b', ord($data[1]));
  $opcode = bindec(substr($firstByteBinary, 4, 4));
+ if ($opcode == 8)
+    {
+     lg("---------------------Function decode finish: closed frame---------------------\n");
+     return;
+    }
+ if ($opcode > 8)
+    {
+     lg("---------------------Function decode finish: control frame---------------------\n");
+     return false;
+    }
+ lg("Data frame with opcode = $opcode and FIN flag = $decoded[fin]");
+
+ // Masked/unmasked frame calculating
  $isMasked = ($secondByteBinary[0] == '1') ? true : false;
+ if (!$isMasked)
+    {
+     lg("---------------------Function decode finish: unmasked frame---------------------\n");
+     return;
+    }
  $payloadLength = ord($data[1]) & 127;
+ lg("Frame is masked with payload length = $payloadLength");
 
- if (!$isMasked) return ['type' => '', 'payload' => '', 'error' => 'Protocol error #1002: unmasked frame is received!'];
-
- if ($opcode === 0) $decodedData['type'] = 'continuation';	// Continuation frame
- elseif ($opcode === 1) $decodedData['type'] = 'text';		// Text frame
- elseif ($opcode === 2) $decodedData['type'] = 'binary';	// Binary frame
- elseif ($opcode === 8) $decodedData['type'] = 'close';		// Connection close frame
- elseif ($opcode === 9) $decodedData['type'] = 'ping';		// Ping frame
- elseif ($opcode === 10) $decodedData['type'] = 'pong';		// Pong frame
- else return ['payload' => '', 'error' => "Protocol error #1003: unknown opcode $opcode!"];
-
-     if ($payloadLength === 126)
-        {
-	 $mask = substr($data, 4, 4);
-	 $payloadOffset = 8;
-	 $dataLength = bindec(sprintf('%08b', ord($data[2])) . sprintf('%08b', ord($data[3]))) + $payloadOffset;
-	}
-      elseif ($payloadLength === 127)
-        {
-	 $mask = substr($data, 10, 4);
-	 $payloadOffset = 14;
-	 $tmp = '';
-	 for ($i = 0; $i < 8; $i++) $tmp .= sprintf('%08b', ord($data[$i + 2]));
-	 $dataLength = bindec($tmp) + $payloadOffset;
-	 unset($tmp);
-	}
-      else
-        {
-	 $mask = substr($data, 2, 4);
-	 $payloadOffset = 6;
-	 $dataLength = $payloadLength + $payloadOffset;
-	}
+ // Calculating frame length
+ if ($payloadLength === 126)
+    {
+     $mask = substr($data, 4, 4);
+     $payloadOffset = 8;
+     $framelength = bindec(sprintf('%08b', ord($data[2])) . sprintf('%08b', ord($data[3]))) + $payloadOffset;
+    }
+  elseif ($payloadLength === 127)
+    {
+     $mask = substr($data, 10, 4);
+     $payloadOffset = 14;
+     $framelength = '';
+     for ($i = 0; $i < 8; $i++) $framelength .= sprintf('%08b', ord($data[$i + 2]));
+     $framelength = bindec($framelength) + $payloadOffset;
+    }
+  else
+    {
+     $mask = substr($data, 2, 4);
+     $payloadOffset = 6;
+     $framelength = $payloadLength + $payloadOffset;
+    }
+ lg("Frame length = ".strval($framelength));
+ $decoded['framelength'] = $framelength;
 
  // We have to check for large frames here - socket_recv cuts at 1024 bytes so if websocket frame is more than 1024 bytes, then we have to wait until whole data is transfered
- if (strlen($data) < $dataLength) return false;
- //lg('Socket data is more than 1024 bytes, so wait until whole data is transferd, input data is '.strval(strlen($data)).'bytes, actual data is '.strval($dataLength).'bytes');
+ if ($datalength < $framelength)
+    {
+     lg("---------------------Function decode finish: frame is defragmentated---------------------\n");
+     return $decoded;
+    }
 
-     if ($isMasked)
-        {
-	 for ($i = $payloadOffset; $i < $dataLength; $i++)
-	     {
-	      $j = $i - $payloadOffset;
-	      if (isset($data[$i])) $unmaskedPayload .= $data[$i] ^ $mask[$j % 4];
-	     }
-	 $decodedData['payload'] = $unmaskedPayload;
-	}
-      else
-        {
-	 $payloadOffset = $payloadOffset - 4;
-	 $decodedData['payload'] = substr($data, $payloadOffset);
-	}
-
- return $decodedData;
+ $payload ='';
+ for ($i = $payloadOffset; $i < $framelength; $i++) if (isset($data[$i])) $payload .= $data[$i] ^ $mask[($i - $payloadOffset) % 4];
+ $decoded['payload'] = $payload;
+ lg("---------------------Function decode finish: success---------------------\n");
+ return $decoded;
 }
 
 function handshake($connect)
@@ -838,6 +855,7 @@ function Check($db, $flags, &$client, &$output)
 	      $client['allelements'][$id] = $value;
 	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $client['uniqelements'][$id] = '';
 	     }
+
      if (!count($client['allelements']))
         {
 	 $output['error'] = "Database '$client[OD]' has no elements exist!";
@@ -938,16 +956,18 @@ function Check($db, $flags, &$client, &$output)
 	 $output['alert'] = 'System account cannot be deleted!';
 	 return;
 	}
-     
+
      // Check for changes of object selection
      if (gettype($client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth'])) === 'array')
         {
 	 $output['alert'] = "Object selection has been changed, please refresh Object View!";
 	 return;
 	}
-     
+
      // Check object existence
-     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] and lastversion=1 and concat(id,lastversion) IN (SELECT concat(id,lastversion) FROM `data_$client[ODid]` $client[objectselection])");
+     //$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND id=$client[oId] AND id IN (SELECT id FROM `data_$client[ODid]` $client[objectselection])");
+     //$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] and lastversion=1 and concat(id,lastversion) IN (SELECT concat(id,lastversion) FROM `data_$client[ODid]` $client[objectselection])");
+     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 AND id IN (SELECT id FROM (SELECT id FROM `data_$client[ODid]` $client[objectselection]) _)");
      $query->execute();
      if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]))
         {
@@ -974,7 +994,7 @@ function Check($db, $flags, &$client, &$output)
     }
 
  if ($flags & CHECK_ACCESS)
- if ($client['cmd'] === 'New Object Database')
+ if ($client['cmd'] === 'New Database')
     {
      if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|')
         $output['alert'] = "New OD add operation is not allowed!";
@@ -1036,8 +1056,26 @@ function cutKeys(&$arr, $keys) // Function cuts all keys of array $arr except of
 }
 
 function CopyKeys(&$arr, $keys)
-{                                                                     
+{
  $result = [];
  foreach ($keys as $value) if (isset($arr[$value])) $result[$value] = $arr[$value];
- return $result;                                                      
+ return $result;
+}
+
+function MakeViewCall($db, &$socket, &$client, $output, $cmd = 'CALL')
+{
+ CopyArrayElements($client, $output, ['auth', 'uid']); // Copy client auth info to the output event (INIT, DELETEOBJECT, CALL)
+ if (!isset($output['params'])) $output['params'] = $client['params'];  // and params if exist
+ $output['cmd'] = $cmd; 
+ $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)"); // Put request to the queue sql table that will be checked by view.php after client ajax request
+ $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($output)]);
+ fwrite($socket, encode(json_encode($output)));
+}
+
+function QueueViewCall($db, $socket, $id, &$message)
+{
+ // Put request to the queue sql table that will be checked by view.php after client ajax request
+ $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:message)");
+ $query->execute([':id' => $id, ':message' => $message]);
+ if ($socket) fwrite($socket, encode($message));
 }

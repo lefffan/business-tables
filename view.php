@@ -159,7 +159,7 @@ function EditOD($db, &$client, &$output)
  // In case of empty OD name string try to remove current OD from the system
  if ($newodname === '')
     {
-     if ($client['data']['dialog']['Database']['element2']['data'] != '' || count($client['data']['dialog']['View']) != 1)
+     if ($client['data']['dialog']['Database']['Properties']['element2']['data'] != '' || count($client['data']['dialog']['View']) != 1)
 	{
 	 $output = ['cmd' => '', 'alert' => "To remove Object Database (OD) - remove all views first, then empty 'name' and 'description' OD fields!"];
 	 return;
@@ -181,7 +181,7 @@ function EditOD($db, &$client, &$output)
      return;
     }
  $section = $odprops['dialog']['Database']['Properties'];
-  
+
  // Check current OD permissions to fetch new OD data from dialog box - $client['data']['dialog']['Database']['Permissions'])..
  $groups = getUserGroups($db, $client['uid']); // Get current user group list
  $groups[] = $client['auth']; // and add username at the end of array
@@ -257,8 +257,9 @@ try {
     }
 catch (PDOException $e)
     {
+     lg($e, 'View.php PDO exception');
      exit;
-    }    
+    }
 
 if (intval($client[0]) > CALLTIMEOUT)
    {
@@ -325,25 +326,25 @@ try {
 	     $query->execute();
 	     $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
 	     break;
-        case 'New Object Database':
+        case 'New Database':
 	     if (!Check($db, CHECK_ACCESS, $client, $output)) break;
 	     if ($client['data'] === '')
 		{
 	    	 initNewODDialogElements();
 		 $output = ['cmd' => 'DIALOG',
-			    'data' => ['title'  => 'New Object Database',
+			    'data' => ['title'  => 'New Database',
 				       'dialog'  => ['Database' => ['Properties' => $newProperties],
 				    		     'Element' => ['New element' => $newElement],
 						     'View' => ['New view' => $newView],
 						     'Rule' => ['New rule' => $newRule]],
 					'buttons' => CREATECANCEL,
 					'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]]];
-		 $output['data']['buttons']['CREATE']['call'] = 'New Object Database';
+		 $output['data']['buttons']['CREATE']['call'] = 'New Database';
 		 break;
 		}
 	     if (!NewOD($db, $client, $output) || !Check($db, CHECK_OD_OV, $client, $output)) break;
 	     break;
-        case 'Edit Database Structure':
+        case 'Database Configuration':
 	     if (gettype($client['data']) === 'string')
 		{
  		 $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
@@ -374,7 +375,7 @@ catch (PDOException $e)
     	     case 'CALL':
 	          $output = ['cmd' => '', 'error' => "Failed to get Object View: $msg"];
 	    	  break;
-    	     case 'New Object Database':
+    	     case 'New Database':
 	    	  if (isset($client['newODid']))
 		     {
 		      $query = $db->prepare("DELETE FROM `$` WHERE id=$client[newODid]");
@@ -389,7 +390,7 @@ catch (PDOException $e)
 		   else
 		     $output = ['cmd' => '', 'alert' => "Failed to add new Object Database: $msg"];
 	    	  break;
-    	     case 'Edit Database Structure':
+    	     case 'Database Configuration':
 	          $output = ['cmd' => '', 'alert' => "Failed to write Object Database properties: $msg"];
 	    	  break;
 	    }                                                                            	     
