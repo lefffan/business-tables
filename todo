@@ -1,84 +1,98 @@
 --------------2021--------------------------------------------------------------
-- :user in rule query
-  monospaced font style dialog box element heads
-  rule message warning
+- Linkoid property is (for examlpe one downlink port for multiple nodes) separated by |
+- Map pichar and graph display error (ov type are not implemented yet)
+
+- Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
+- Dodelat megacom MRTG emulation
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const.
   Help content during all code lookup
   test dialog boxes on low resolution, check on macbook via git
   socket incorrect data while task managers works long period of time, execute task manager for the whole night, then see result
+--------------------------------------------------------------------------------
 
-- System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-- Instruct user how to remove unnesesary object versions
-- Specify user the customization dialog called for
-- Object view PIECHART, GRAPH, LOCATION.
-- telnet, snmp and diagnostic functions, current mrtg base convert to OD with to build the tree example
-- inner text in <td> can consists of <br>, <color> and <font> tags
-- see through all OD properties dialog box and try to check/release their all features (output in edit OD real current DB size, object count and versions count)
-- System call open in a new tab
-- Object selection with non-empty link type for all view types (by now it is released for tree view type only) and for scheduler.php and SET command (search case by JSON in value prop)
-- Task manager: restrict call of task manager for some users
-- Optimize mysql to highload app:
-  for php ORM Doctrine can be used
-  index columns: alter table data_1 add index (`lastversion`);
-  unbuffered queries and partial OV output mysql_unbuffered_query()
-  Problems of deploying - can i use mysql on commerisal base? 
-- link property values separated by |. In that case tree is built by first found link value. So linkoid property (for examlpe one downlink port for multiple nodes)
-- chetnie row(y coordinate)/object(oid) mark dark background: props[0][*/2]['style'] = dark background
-- Sort by header click for look like default element layout when header line at the top, bottom, left, right
-- Element layout (don't forget service elements hints for them) like !#+(0-9, id, owner, version..) and round cell x,y coordinates to whole number with an '%' in the expression string
-- system user readonly customization, it is default customization to allow all other users use it in case of error
-- Crontab element execution once immediately
-- Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
-  secure php.ini and can socket number be more than 1024?
-- What time and bytes limit should be set to php script execution
-- prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
-- OV Link between two objects! for example between two switches. So if object selection selects one object - then tree built till the last object with no/error link. In case of selection selects two or more objects - tree path built from first selected to the selected
-- show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
-- Dialog Box features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
-  dialog interface element heads - not plain text but some <font> <color> tags?
-- EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
-- System call NEWOBJECT (to create object by user handlers)
-- Clone object, similar to add object, but copies current menu contexted object
-- Export OV data to xls, pdf or txt file
-- Tree element layout - hint (based on eid), style (for example to see what nodes are down by seeing them via red background ) or callOV/link-in-a-new-tab by mouse double click, hide tree element rebuilds the tree (context menu hide)
-- Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
-- OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
-- Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
-- Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
-- Predefined system messages can be displayed on other languages
-- Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
-- style/hint/description/image edit for text.php
-- fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
-- Open OV in new tab in a read-only mode just by coping inner html of main div
-- Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
-  should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
-- Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
-- socket rate limit https://javascript.info/websocket#rate-limiting
-  To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user?
-- Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
-- As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
-  (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
-  So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG? CONFIRM -> CONFIRMEDIT, CONFIRMDIALOG, CONFIRMPRESET?
-  May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
-- Adaptivka after browser window size has changed dialog box has gone away
-- divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
-- Set OD users at least simple description
-- element selection when elements are selected not by exact numbers, but by regular expr that defines that numbers or titles
-- Max object version stored in DB, possible options: no property at all, cut older version to fit the max versions, do not allow new versions at max versions exceeded
-  (Max object versions in range 0-65535. Emtpy or undefined string - zero value)
-- Element id number in a figure brackets {id} retreives appropriate element name
-- application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
-  and reload main div or not;
-  autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
-- autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
-- Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
-- Scroll lock behaviour like in Excel
-- Paste file or image to object element (or drag and drop to the corresponded cell)
+- Application:
+  Clone object, similar to add object, but copies current menu contexted object
+  Export OV data to xls, pdf or txt file
+  Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
+  Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
+  Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
+  autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
+  Paste file or image to object element (or drag and drop to the corresponded cell)
   should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
-- multi cell selecting - copy (excel table), delete (removes all selected objects).
-  User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
-  single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-  system command to copy data to the buffer
+  System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
+  OV/OD name/id as input arg for the handler
+  Object view PIECHART, GRAPH, LOCATION.
+  telnet, snmp and diagnostic functions
+  display current DB size and object count in EDITOD
+    make db size limit and object count limit work
+  System call 'OPENINANEWTAB', - System call NEWOBJECT (to create object by user handlers)
+  Object selection with non-empty link type for all view types (by now it is released for tree view type only) for scheduler.php and SET command (search case by JSON in value prop)
+  Object selection is a SQL queries list:
+    for table view - all queries unioned (or exluded?) to one selection
+    for tree view - scheme link betweens two objects (1st from 1st selection, 2nd - from second).
+  Element layout (don't forget service elements hints for them) like !#+(0-9, id, owner, version..) and round cell x,y coordinates to whole number with an '%' in the expression string
+    chetnie row(y coordinate)/object(oid) mark dark background: props[0][*/2]['style'] = dark background
+    Element layout when elements are selected not by exact numbers, but by regular expr that defines that numbers or titles
+    Tree element layout:
+	hint (based on eid)
+	style (for example to see what nodes are down by seeing them via red background)
+	callOV/link-in-a-new-tab by mouse double click
+    hide tree element rebuilds the tree (context menu hide)
+  Crontab element execution once immediately
+  Task manager: restrict call of task manager for some users
+  system user readonly customization, it is default customization to allow all other users use it in case of error
+  Handler no output is a standart behaviour, don't log it
+  User groups output in OV (select .. where ed1>>'groups' regexp..)
+
+- JS, PHP, SQL:
+  Optimize mysql to highload app:
+    for php ORM Doctrine can be used
+    index columns: alter table data_1 add index (`lastversion`);
+    unbuffered queries and partial OV output mysql_unbuffered_query()
+  Problems of deploying - can i use mysql on commerisal base? 
+  Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
+  secure php.ini and can socket number be more than 1024?
+  What time and bytes limit should be set to php script execution
+  Secure database and sources to avoid assignment of my intellectual property. Incuded php files should be on unaccessable for user and not application dir. Restrict function dir from observing at the browser.
+  socket rate limit https://javascript.info/websocket#rate-limiting
+  To prevent user DDOS by user pressing F2 (for a example) user handler should be executed as a apparent apps and only once by one user?
+  Secure: check origin header to be http or https to 192.168.9.39, The point here is, you have to check your websocket activity and determine rate limit: https://www.freecodecamp.org/news/how-to-secure-your-websocket-connections-d0be0996c556/
+  divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
+  Exclude UNION queries all SQL requests that are user defined and generated from user input (object selection, SET command queries?, uplink node object selection, pre-post processing rules). Crackeres and fools protection.
+  See how zabbix is installed to have a point of view of serious application
+
+- Front:
+  Sort by header click for look like default element layout when header line at the top, bottom, left, right
+  Adaptivka after browser window size has changed dialog box has gone away
+  multi cell selecting - copy (excel table), delete (removes all selected objects).
+    User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
+    single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
+    system command to copy data to the buffer
+  OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
+  Scroll lock behaviour like in Excel
+  application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
+   and reload main div or not;
+   autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
+  Dialog boxes:
+    show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
+    Features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
+    dialog interface element heads - not plain text but some <font> <color> tags?
+  Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
+  Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
+  when button is pushed no dialog refreshed, when pushed button is pushed and mouse cursir is out of button - make button released
+  Make handler intput lines longer, and Handler for 'INIT' event replace by 'INIT' event
+  After user pass change, the user is forced to logout (display it in help section)
+
+- Controller:
+  prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
+
+- Handlers:
+  As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
+    (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
+    So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG? CONFIRM -> CONFIRMEDIT, CONFIRMDIALOG, CONFIRMPRESET?
+    May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
+  EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
+
 - Some systems emulation:
   Corp chat
   Corp adrbook
@@ -106,6 +120,17 @@
   Paraga mail functional
   Ask Hramcova analitiku po helpdesku
   See functions on Slava's management system
+
+- Questionable features
+  Fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
+  Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
+    should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
+  Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
+  Predefined system messages can be displayed on other languages
+  Open OV in new tab in a read-only mode just by coping inner html of main div
+  Max object version stored in DB, possible options: no property at all, cut older version to fit the max versions, do not allow new versions at max versions exceeded
+    (Max object versions in range 0-65535. Emtpy or undefined string - zero value)
+
 ------------------------------------------------------------------------------------------
 
 
@@ -573,3 +598,15 @@ Element layout: *
 
 WHERE lastversion=1 AND version!=0 and JSON_EXTRACT(eid1, '$.value')=':Input_user'
 {"eid":"1", "x":"0", "y":"n"}
+{"eid":"id", "oid":"2", "x":"0", "y":"0"}
+{"eid":"id", "x":"0", "y":"n+1"}
+{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}
+{"eid":"datetime", "x":"1", "y":"n+1"}
+{"eid":"1", "oid":"2", "x":"2", "y":"0"}
+{"eid":"1", "x":"2", "y":"n+1"}
+{"eid":"2", "oid":"2", "x":"3", "y":"0"}
+{"eid":"2", "x":"3", "y":"n+1"}
+{"eid":"3", "oid":"2", "x":"4", "y":"0", "_event":"4", "hint":"color:red;"}
+{"eid":"3", "x":"4", "y":"n+1"}
+{"eid":"3", "oid":"3", "x":"0", "y":"q+10",  "style":"color:red;", "event":"4"}
+{"style":"background-color: green;"}

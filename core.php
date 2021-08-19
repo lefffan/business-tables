@@ -139,7 +139,7 @@ function initNewODDialogElements()
 {
  global $newProperties, $newElement, $newView, $newRule;
 
- $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - set empty database name string, its description.<br>and remove all elements (see 'Element' tab)."],
+ $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - remove all elements in 'Element' tab and set database name and its description empty."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
 		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
@@ -153,8 +153,8 @@ function initNewODDialogElements()
 		    'element13' => ['type' => 'textarea', 'data' => '', 'line' => '']
 		   ];
 
- $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Element name to display in object view as a header', 'data' => '', 'id' => '1', 'help' => 'To remove object element - set empty element header, description and handler file'],
-		    'element2' => ['type' => 'textarea', 'head' => 'Element description', 'data' => '', 'line' => '', 'help' => 'Specified description is displayed as a hint on object view element headers navigation.<br>It is used to describe element purpose and its possible values.'],
+ $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
+		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
 		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "Handler for 'INIT' event:", 'data' => '', 'help' => 'hhhhhhh'],
 		    'element5' => ['type' => 'text', 'label' => "Handler for 'DBLCLICK' event:", 'data' => ''],
@@ -168,12 +168,12 @@ function initNewODDialogElements()
 		    'element13' => ['type' => 'text', 'label' => "Handler for 'CHANGE' event:", 'data' => '', 'line' => '']
 		   ];
 
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so they can be called from element handler only."],
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on object selection link type),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty expression selects all objects, error expression - no objects.', 'data' => ''],
 		    'element5' => ['type' => 'text', 'label' => 'Object selection link type', 'data' => '', 'line' => ''],
-		    'element6' => ['type' => 'textarea', 'head' => 'Element layout. Defines what elements should be displayed and how.', 'data' => '', 'line' => ''],
+		    'element6' => ['type' => 'textarea', 'head' => 'Element layout', 'data' => '', 'line' => '', 'help' => "JSON list element layout defines what elements should be displayed and how. Each JSON defines element and its behaviour such as<br>table cell position, style attribute, event.. See 'Element layout' help section for details. JSON possible properties are:<br><br>- 'oid'. Object id: 0 (all objects in the selection), 1 (new object), 2 (Header object), 3 (specified database object).<br>- 'eid'. Element id: id, version, owner, datetime, lastversion or user defined element id number from 1..<br>- 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions<br>  that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects).<br>  For a example, expression \"y\": \"n+1\" will place first object in the selection (n=0) to the second row (y=1).<br>- 'event'. Mouse double click (DBLCLICK) or key press (F2, F12, INS, DEL, KEYPRESS) event emulation after OV has been opened.<br>  Symbol key push event 'KEYPRESS' should be specified with the additional string to be passed to the handler as an input arg.<br>  For example, \"event\": \"KEYPRESSa\" will emulate key 'a' pushed at the object view open. See 'Handler' help section. <br>- 'hidecol', 'hiderow'. These properties collapse (hide) table columns or rows with appropriate element values.<br>  For example, expression \"hiderow\": \"\" will hide all empty table rows.<br>- 'style'. HTML css style attribute (see appropriate css documentaion) for 'td' tag the specified object element is placed in.<br>  Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.<br>  Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).<br>- 'tablestyle'. HTML css style attribute for 'table' tag and for zero 'oid'/'eid' only.<br>- 'value'. Table cell element main text. For new/title objects only.<br>- 'hint'. Table cell element hint, displayed on a table cell cursor navigation. For new/header objects only."],
 		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."],
 		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to read this view|+Disallowed list (allowed for others)|"],
 		    'element9' => ['type' => 'textarea', 'data' => ''],
@@ -181,7 +181,7 @@ function initNewODDialogElements()
 		    'element11' => ['type' => 'textarea', 'data' => '']
 		   ];
 
- $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Rule name', 'data' => '', 'help' => "Rule name is displayed as a dialog box title.<br>Rule name may be changed, but if renamed rule name already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty rule name removes the rule."],
+ $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'help' => "Rule profile name. It may be changed, but if renamed profile already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty profile name removes the rule."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed in the dialog box.<br>Message text element id number in a figure brackets (example: {1}) retreives appropriate element name.'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action applies object changes made by operation, 'Reject' cancels all changes."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
@@ -291,7 +291,7 @@ function AddObject($db, &$client, &$output)
      }
 
  $db->rollBack();
- if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+ if ($client['ODid'] != '2' && isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
  $output = ['cmd' => '', 'alert' => $ruleresult['message']];
 }
 
@@ -330,7 +330,7 @@ function DeleteObject($db, &$client, &$output)
      }
 
  $db->rollBack();
- if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
+ if ($client['ODid'] != '2' && isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
  $output = ['cmd' => '', 'alert' => $ruleresult['message']];
 }
 
@@ -385,6 +385,7 @@ function CheckRule($db, &$client, $rule, $version)
 {
  if (!isset($rule, $version) || $rule === '' || $version === '') return true; // Unset or empty rule or version - return true (match case)
  $rule = str_replace(':user', $client['auth'], $rule); // Replace key :user with the actual username inited add/delete/change operation
+
  try {
       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND version=$version AND $rule");
       $query->execute();
@@ -400,46 +401,48 @@ function CheckRule($db, &$client, $rule, $version)
 
 function setElementSelectionIds(&$client)
 {
- //  ------- -------------------------------- ----------------------------------------------
- // |  \eid |                 	     	     |   	  		  		    |
- // |   \   |   0 (all for given object)     |	id,version,owner,datetime,lastversion,1-..  |
- // |oid \  |                                | 					 	    |
- //  ------- --------------------------------- ---------------------------------------------
- // | 0     |   style (for undefined cell)   | x, y, style    	 			    |
- // |selectn|   tablestyle (for html table)  | event, hiderow, hidecol	 		    |
- //  ------- --------------------------------- ---------------------------------------------
- // | 1     |	style	     		     | x, y, style				    |
- // | new   | 				     | event, hiderow, hidecol, value, hint 	    |
- //  ------- --------------------------------- ---------------------------------------------
- // | 2     |	style			     | x, y, style				    |
- // | title | 				     | event, hiderow, hidecol, value*, hint*	    |
- //  ------ --------------------------------- ----------------------------------------------
- // | 3..   |	style        		     | x, y, style 			 	    |
- // | user  | 				     | event, hiderow, hidecol		 	    |
- //  ------ --------------------------------- ----------------------------------------------
- // *if not exist - props are set automatically OD props
- 
+ // +---------+--------------------------------+----------------------------------------------+
+ // |   \ eid |                                | All elements: 	  		      	      |
+ // |    \    | 0 (default for all elements)   | id,version,owner,datetime,lastversion,1,2,.. |
+ // | oid \   |                                | 					      |
+ // +---------+--------------------------------+----------------------------------------------+
+ // | 0       | style (for undefined cell)     | x, y, style    	 		      |
+ // |selection| tablestyle (for html table)    | event, hiderow, hidecol	 	      |
+ // +---------+--------------------------------+----------------------------------------------+
+ // | 1       |	style	     		       | x, y, style				      |
+ // | new     | 			       | event, hiderow, hidecol, value, hint 	      |
+ // +---------+--------------------------------+----------------------------------------------+
+ // | 2       |	style			       | x, y, style				      |
+ // | title   | 			       | event, hiderow, hidecol, value*, hint*	      |
+ // +---------+--------------------------------+----------------------------------------------+
+ // | 3..     |	style        		       | x, y, style 			 	      |
+ // | user    | 			       | event, hiderow, hidecol		      |
+ // +---------+--------------------------------+----------------------------------------------+
+ // *Props are set automatically OD props if not exist
+
  $props = [];
  foreach (preg_split("/\n/", $client['elementselection']) as $value)
       if ($arr = json_decode($value, true, 2))
 	 {
-	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'hiderow', 'hidecol', 'event', 'tablestyle']); // Retrieve correct values only
+	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'hiderow', 'hidecol', 'event', 'tablestyle', 'value', 'hint']); // Retrieve correct values only
 	  if (!isset($arr['eid'])) $arr['eid'] = '0'; // Set 'eid' key default value to zero
 	  if (!isset($arr['oid'])) $arr['oid'] = '0'; // Set 'oid' key default value to zero
 
 	  if (gettype($eid = $arr['eid']) != 'string' || gettype($oid = $arr['oid']) != 'string' || !ctype_digit($oid)) continue; // JSON eid/oid properties are not strings? Continue
-	  if (($oidnum = intval($oid)) !== 0 && $oidnum !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum <= STARTOBJECTID) continue;
-	  if (array_search($eid, SERVICEELEMENTS) === false && (!ctype_digit($eid) || !isset($client['allelements'][$eid]))) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
+	  if (($oidnum = intval($oid)) !== 0 && $oidnum !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum < STARTOBJECTID) continue; // Object id is out of range? Continue
+	  if (array_search($eid, SERVICEELEMENTS) === false && $eid != '0' && (!ctype_digit($eid) || !isset($client['allelements'][$eid]))) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
 
 	  if (!isset($props[$eid])) $props[$eid] = []; // Result array $props has 'eid' element undefined? Create it
 	
-	  if ($eid === '0') // First check zero element for style and tablestyle props only. Tablestyle prop for zero object only
+	  if ($eid === '0') // First check zero element id for style and tablestyle props only. Tablestyle prop for zero object only
 	     {
 	      if (isset($arr['style']) && gettype($arr['style']) === 'string') $props[$eid][$oid] = ['style' => $arr['style']];
 	      if ($oid === '0' && isset($arr['tablestyle']) && gettype($arr['style']) === 'string')
 		 isset($props[$eid][$oid]) ? $props[$eid][$oid]['tablestyle'] = $arr['tablestyle'] : $props[$eid][$oid] = ['tablestyle' => $arr['tablestyle']];
 	      continue;
 	     }
+
+	  // Parse x,y properties and define new and title object element text and value
 	  if (isset($arr['x'], $arr['y']) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string') // Then check x,y correctness and set corresponded x,y,style,hidecol and hiderow
 	     {
 	      $props[$eid][$oid] = ['x' => $arr['x'], 'y' => $arr['y']];
@@ -450,10 +453,11 @@ function setElementSelectionIds(&$client)
 		 }
 	      if ($oidnum == TITLEOBJECTID)
 	         {
-		  if (isset($arr['value']) && gettype($arr['value']) === 'string') $props[$eid][$oid]['value'] = $arr['value']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['value'] = $client['allelements'][$eid]['element1']['data'] : $props[$eid][$oid]['value'] = $eid;
+		  if (isset($arr['value']) && gettype($arr['value']) === 'string') {lg($props[$eid][$oid]['value'] = $arr['value'], 'hui');} else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['value'] = $client['allelements'][$eid]['element1']['data'] : $props[$eid][$oid]['value'] = $eid;
 		  if (isset($arr['hint']) && gettype($arr['hint']) === 'string') $props[$eid][$oid]['hint'] = $arr['hint']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'] : $props[$eid][$oid]['hint'] = '';
 		 }
 	     }
+	  // Parse all other props
 	  foreach (['event', 'style', 'hidecol', 'hiderow'] as $v)
 		  if (isset($arr[$v]) && gettype($arr[$v]) === 'string') 
 		     isset($props[$eid][$oid]) ? $props[$eid][$oid][$v] = $arr[$v] : $props[$eid][$oid] = [$v => $arr[$v]];
@@ -495,9 +499,8 @@ function getUserGroups($db, $id)
 
 function UnsetEmptyArrayElements($arr)
 {
- if (!is_array($arr)) return [];
- foreach ($arr as $key => $value)
-	 if ($value === '' || gettype($value) != 'string') unset($arr[$key]);
+ if (!is_array($arr)) return []; // Return empty array in case of wrong input
+ foreach ($arr as $key => $value) if ($value === '' || gettype($value) != 'string') unset($arr[$key]);
  return $arr;
 }
 
@@ -507,7 +510,7 @@ function getUserODAddPermission($db, $id)
  $query->execute([':id' => $id]);
  $odaddperm = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($odaddperm[0][0])) return substr($odaddperm[0][0], 1, -1);
-  else return '';
+ return '';
 }
 
 function getUserCustomization($db, $uid)
@@ -546,7 +549,7 @@ function LogMessage($db, &$client, $log)
 
  if ($msg != '') $msg = '[ '.substr($msg, 0, -2).' ] ';
  lg($msg .= $log);
-							                                                                                                           
+
  $_client = ['ODid' => '2', 'OVid' => '1', 'OD' => 'Logs', 'OV' => 'All logs', 'allelements' => ['1' => ''], 'uniqelements' => [], 'params' => []];
  isset($client['auth']) ? $_client['auth'] = $client['auth'] : $_client['auth'] = 'system';
  $output = ['1' => ['cmd' => 'RESET', 'value' => $msg] + DEFAULTELEMENTPROPS];
@@ -560,7 +563,7 @@ function encode($payload, $type = 'text', $masked = false)
 {
  $frameHead = array();
  $payloadLength = strlen($payload);
-     
+
  switch ($type)
     	{
 	 case 'text':
@@ -568,79 +571,65 @@ function encode($payload, $type = 'text', $masked = false)
 	      break;
 	 case 'close':
 	      $frameHead[0] = 136; // first byte indicates FIN, Close Frame(10001000)
-		  break;
-	     case 'ping':
-		  $frameHead[0] = 137; // first byte indicates FIN, Ping frame (10001001)
-		  break;
-	     case 'pong':
-		  $frameHead[0] = 138; // first byte indicates FIN, Pong frame (10001010)
-		  break;
-	    }
+	      break;
+	 case 'ping':
+	      $frameHead[0] = 137; // first byte indicates FIN, Ping frame (10001001)
+	      break;
+	 case 'pong':
+	      $frameHead[0] = 138; // first byte indicates FIN, Pong frame (10001010)
+	      break;
+	}
 
-     if ($payloadLength > 65535) // set mask and payload length (using 1, 3 or 9 bytes)
-        {
-	 $payloadLengthBin = str_split(sprintf('%064b', $payloadLength), 8);
-	 $frameHead[1] = ($masked === true) ? 255 : 127;
-	 for ($i = 0; $i < 8; $i++) $frameHead[$i + 2] = bindec($payloadLengthBin[$i]);
-	 if ($frameHead[2] > 127) return array('type' => '', 'payload' => '', 'error' => 'frame too large (1004)'); // most significant bit MUST be 0
-	}
-      elseif ($payloadLength > 125)
-	{
-	 $payloadLengthBin = str_split(sprintf('%016b', $payloadLength), 8);
-	 $frameHead[1] = ($masked === true) ? 254 : 126;
-	 $frameHead[2] = bindec($payloadLengthBin[0]);
-	 $frameHead[3] = bindec($payloadLengthBin[1]);
-	}
-      else $frameHead[1] = ($masked === true) ? $payloadLength + 128 : $payloadLength;
-      
-     foreach (array_keys($frameHead) as $i) $frameHead[$i] = chr($frameHead[$i]); // Convert frame-head to string
-     
-     if ($masked === true) // generate a random mask:
-        {
-	 $mask = [];
-	 for ($i = 0; $i < 4; $i++) $mask[$i] = chr(rand(0, 255));
-	 $frameHead = array_merge($frameHead, $mask);
-	}
-     $frame = implode('', $frameHead);
-     
-     for ($i = 0; $i < $payloadLength; $i++) $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i]; // Append payload to frame
-     
+ if ($payloadLength > 65535) // set mask and payload length (using 1, 3 or 9 bytes)
+    {
+     $payloadLengthBin = str_split(sprintf('%064b', $payloadLength), 8);
+     $frameHead[1] = ($masked === true) ? 255 : 127;
+     for ($i = 0; $i < 8; $i++) $frameHead[$i + 2] = bindec($payloadLengthBin[$i]);
+     if ($frameHead[2] > 127) return array('type' => '', 'payload' => '', 'error' => 'frame too large (1004)'); // most significant bit MUST be 0
+    }
+  elseif ($payloadLength > 125)
+    {
+     $payloadLengthBin = str_split(sprintf('%016b', $payloadLength), 8);
+     $frameHead[1] = ($masked === true) ? 254 : 126;
+     $frameHead[2] = bindec($payloadLengthBin[0]);
+     $frameHead[3] = bindec($payloadLengthBin[1]);
+    }
+  else 
+    {
+     $frameHead[1] = ($masked === true) ? $payloadLength + 128 : $payloadLength;
+    }
+ foreach (array_keys($frameHead) as $i) $frameHead[$i] = chr($frameHead[$i]); // Convert frame-head to string
+
+ if ($masked === true) // generate a random mask:
+    {
+     $mask = [];
+     for ($i = 0; $i < 4; $i++) $mask[$i] = chr(rand(0, 255));
+     $frameHead = array_merge($frameHead, $mask);
+    }
+ $frame = implode('', $frameHead);
+ for ($i = 0; $i < $payloadLength; $i++) $frame .= ($masked === true) ? $payload[$i] ^ $mask[$i % 4] : $payload[$i]; // Append payload to frame
+
  return $frame;
 }
 
 function decode($data)
 {
- // Init some vars
- lg("---------------------Function decode start---------------------");
- $datalength = strlen($data);
- lg("Input data length = $datalength");
+ // Init some vars lg("---------------------Function decode start---------------------");
+ $datalength = strlen($data); //lg("Input data length = $datalength");
  ord($data[0]) > 127 ? $decoded = ['fin' => 1, 'datalength' => $datalength] : $decoded = ['fin' => 0, 'datalength' => $datalength];
 
  // Calculating opcode
  $firstByteBinary = sprintf('%08b', ord($data[0]));
  $secondByteBinary = sprintf('%08b', ord($data[1]));
  $opcode = bindec(substr($firstByteBinary, 4, 4));
- if ($opcode == 8)
-    {
-     lg("---------------------Function decode finish: closed frame---------------------\n");
-     return;
-    }
- if ($opcode > 8)
-    {
-     lg("---------------------Function decode finish: control frame---------------------\n");
-     return false;
-    }
- lg("Data frame with opcode = $opcode and FIN flag = $decoded[fin]");
+ if ($opcode == 8) return; // lg("---------------------Function decode finish: closed frame---------------------\n");
+ if ($opcode > 8) return false; //lg("---------------------Function decode finish: control frame---------------------\n");
+ //lg("Data frame with opcode = $opcode and FIN flag = $decoded[fin]");
 
  // Masked/unmasked frame calculating
  $isMasked = ($secondByteBinary[0] == '1') ? true : false;
- if (!$isMasked)
-    {
-     lg("---------------------Function decode finish: unmasked frame---------------------\n");
-     return;
-    }
- $payloadLength = ord($data[1]) & 127;
- lg("Frame is masked with payload length = $payloadLength");
+ if (!$isMasked) return; // lg("---------------------Function decode finish: unmasked frame---------------------\n");
+ $payloadLength = ord($data[1]) & 127; //lg("Frame is masked with payload length = $payloadLength");
 
  // Calculating frame length
  if ($payloadLength === 126)
@@ -663,61 +652,52 @@ function decode($data)
      $payloadOffset = 6;
      $framelength = $payloadLength + $payloadOffset;
     }
- lg("Frame length = ".strval($framelength));
- $decoded['framelength'] = $framelength;
+ $decoded['framelength'] = $framelength; // lg("Frame length = ".strval($framelength));
 
  // We have to check for large frames here - socket_recv cuts at 1024 bytes so if websocket frame is more than 1024 bytes, then we have to wait until whole data is transfered
- if ($datalength < $framelength)
-    {
-     lg("---------------------Function decode finish: frame is defragmentated---------------------\n");
-     return $decoded;
-    }
+ if ($datalength < $framelength) return $decoded; // lg("---------------------Function decode finish: frame is defragmentated---------------------\n");
 
  $payload ='';
  for ($i = $payloadOffset; $i < $framelength; $i++) if (isset($data[$i])) $payload .= $data[$i] ^ $mask[($i - $payloadOffset) % 4];
  $decoded['payload'] = $payload;
- lg("---------------------Function decode finish: success---------------------\n");
- return $decoded;
+
+ return $decoded; // lg("---------------------Function decode finish: success---------------------\n");
 }
 
 function handshake($connect)
 {
-	$info = array();
+ $info = array();
 
-	$line = fgets($connect);
-	$header = explode(' ', $line);
-	$info['method'] = $header[0];
-	$info['uri'] = $header[1];
+ $line = fgets($connect);
+ $header = explode(' ', $line);
+ $info['method'] = $header[0];
+ $info['uri'] = $header[1];
 
-	while ($line = rtrim(fgets($connect))) {
-	    if (preg_match('/\A(\S+): (.*)\z/', $line, $matches)) {
-		$info[$matches[1]] = $matches[2];
-	    } else {
-		break;
-	    }
-	}
+ while ($line = rtrim(fgets($connect)))
+       {
+	if (!(preg_match('/\A(\S+): (.*)\z/', $line, $matches))) break;
+	$info[$matches[1]] = $matches[2];
+       }
 
-	$address = explode(':', stream_socket_get_name($connect, true)); //╨┐╨╛╨╗╤Г╤З╨░╨╡╨╝ ╨░╨┤╤А╨╡╤Б ╨║╨╗╨╕╨╡╨╜╤В╨░
-	$info['ip'] = $address[0];
-	$info['port'] = $address[1];
+ $address = explode(':', stream_socket_get_name($connect, true));
+ $info['ip'] = $address[0];
+ $info['port'] = $address[1];
+ if (empty($info['Sec-WebSocket-Key'])) return false;
 
-	if (empty($info['Sec-WebSocket-Key'])) return false;
-
-	$SecWebSocketAccept = base64_encode(pack('H*', sha1($info['Sec-WebSocket-Key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
-	$upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
+ $SecWebSocketAccept = base64_encode(pack('H*', sha1($info['Sec-WebSocket-Key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
+ $upgrade = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
 	    "Upgrade: websocket\r\n" .
 	    "Connection: Upgrade\r\n" .
 	    "Sec-WebSocket-Accept:".$SecWebSocketAccept."\r\n\r\n";
-	fwrite($connect, $upgrade);
+ fwrite($connect, $upgrade);
 
-	return $info;
-    }
+ return $info;
+}
 
 function GenerateRandomString($length = USERPASSMINLENGTH)
 {
  $len = strlen($permittedchars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
  $randomstring = '';
- 
  for ($i = 0; $i < $length; $i++) $randomstring .= $permittedchars[mt_rand(0, $len - 1)];
  
  return $randomstring;
@@ -733,34 +713,36 @@ function GetObjectSelection($db, $objectSelection, $params, $user)
  $params[':user'] = $user;
  $isDialog = false;
  $objectSelectionNew = '';
+ $objectSelectionParamsDialogProfiles = [];
  
  // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
  while  (++$i <= $len)
+     // Parameter delimiter char  <'>, <">, <:>, < > detected
      if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
 	{
 	 if (isset($newparam))
-	 if (isset($params[$newparam]))
+	 if (isset($params[$newparam])) // Object selection input parameter key does exist? Do code below
 	    {
+	     // Add appropriate dialog element (html <input>) for the new parameter with existing parameter data
 	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $params[$newparam]];
-	     if (!$isDialog) $objectSelectionNew .= $params[$newparam];
+	     if (!$isDialog) $objectSelectionNew .= $params[$newparam]; // Insert appropriate pramater value to object selection
 	    }
-	  else
+	  else // Otherwise dialog is required, so add appropriate dialog element (html <input>) for the new parameter with empty data
 	    {
 	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
 	     $isDialog = true;
 	    }
-	 if ($i === $len) break;
-	 $newparam = NULL;
-	 if ($objectSelection[$i] === ':') $newparam = ':';
-	  else $objectSelectionNew .= $objectSelection[$i];
+	 if ($i === $len) break; // Break in case of end line
+	 $newparam = NULL;	 // No new paramter for default
+	 $objectSelection[$i] === ':' ? $newparam = ':' : $objectSelectionNew .= $objectSelection[$i]; // Char ':' starts new param, otherwise just record current char to the object selection string
 	}
-      else if (isset($newparam)) $newparam .= $objectSelection[$i];
-      else $objectSelectionNew .= $objectSelection[$i];
+      else if (isset($newparam)) $newparam .= $objectSelection[$i]; // Otherwise: if new parameter is being setting - record current char
+      else $objectSelectionNew .= $objectSelection[$i]; // Otherwise record current char to the object selection string
 
  //  In case of no dialog - return object selection string
  unset($params[':user']); // Is it needable?
  if (!$isDialog) return $objectSelectionNew;
- 
+
  // Otherwise return dialog array
  $buttons = OKCANCEL;
  $buttons['OK']['call'] = 'CALL';
@@ -782,30 +764,29 @@ function Swap(&$a, &$b)
 
 function Sidebar($db, &$client)
 {
- $groups = getUserGroups($db, $client['uid']);	// Get current user group list
- $groups[] = getUserName($db, $client['uid']);	// and add username at the end of array
-
+ $groups = getUserGroups($db, $client['uid']); // Get current user group list
+ $groups[] = getUserName($db, $client['uid']); // and add username at the end of array
  $sidebar = [];
- $query = $db->prepare("SELECT id,odname FROM `$`");
+
+ $query = $db->prepare("SELECT id,odname FROM `$`"); // Select OD list - ids and names
  $query->execute();
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
 	  $name = $value['odname'];
 	  $id = $value['id'];
-	  $sidebar[$id] = ['name' => $name, 'view' => []];
-	  
+	  $sidebar[$id] = ['name' => $name, 'view' => []]; // Make sidebar based on OD id array. Array values - OD name and view list array
+	  // Extract JSON OV structure
 	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$name'");
 	  $query->execute();
 	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
 		  {
 		   $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
 		   $pos = strpos($View['element8']['data'], '+');
-		   if (($count && $pos) || (!$count && !$pos)) continue;
-		   $sidebar[$id]['view'][$View['element1']['id']] = $View['element1']['data'];
+		   if (($count && $pos) || (!$count && !$pos)) continue; // Make OV off sidebar due to disallowed user/group intersection between requesting user and view display permissions ($View['element8-9']['data'])
+		   $sidebar[$id]['view'][$View['element1']['id']] = $View['element1']['data']; // Make OV based on its ids array and set active OD view below
 		   if ($id === $client['ODid'] && $View['element1']['id'] === $client['OVid']) $sidebar[$id]['active'] = $client['OVid'];
 		  }
 	 }
- 
  return $sidebar;
 }
 
@@ -815,62 +796,39 @@ function Check($db, $flags, &$client, &$output)
     {
      // Copy input OD/OV ids and names if exist
      $output['sidebar'] = Sidebar($db, $client);
-     
-     if (count($output['sidebar']) == 0)
-        {
-	 $output['error'] = 'Please create Object Database first!';
-	 return;
-	}
-     if ($client['ODid'] === '')
-        {
-	 $output['error'] = 'Please create/select Object View!';
-	 return;
-	}
-     if (!isset($output['sidebar'][$client['ODid']]['view'][$client['OVid']]))
-        {
-	 $output['error'] = "Database '$client[OD]' or its View '$client[OV]' not found!";
-	 return;
-	}
-     
+     if (count($output['sidebar']) == 0 && ($output['error'] = 'Please create Object Database first!')) return;
+     if ($client['ODid'] === '' && ($output['error'] = 'Please create/select Object View!')) return;
+     if (!isset($output['sidebar'][$client['ODid']]['view'][$client['OVid']]) && ($output['error'] = "Database '$client[OD]' or its View '$client[OV]' not found!")) return;
      $client['OD'] = $output['sidebar'][$client['ODid']]['name'];
      $client['OV'] = $output['sidebar'][$client['ODid']]['view'][$client['OVid']];
     }
 
  if ($flags & GET_ELEMENTS)
     {
-     $client['allelements'] = $client['uniqelements'] = [];
-     // Get element section
-     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$client[ODid]'");
+     $client['allelements'] = $client['uniqelements'] = []; // Flush all and uniq elements array and build them below
+     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$client[ODid]'"); // Get element section
      $query->execute();
-     if (!count($elements = $query->fetchAll(PDO::FETCH_NUM)))
-        { 
-	 $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!";
-	 return;
-	}
+     if (!count($elements = $query->fetchAll(PDO::FETCH_NUM)) && ($output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!")) return;
 
      // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
-     foreach (json_decode($elements[0][0], true) as $key => $value) if ($key != 'New element')
+     foreach (json_decode($elements[0][0], true) as $key => $value) if ($key != 'New element') // Go through all element profiles
     	     {
 	      $id = intval($value['element1']['id']); // Calculate current element id
 	      $client['allelements'][$id] = $value;
 	      if ($value['element3']['data'] === UNIQELEMENTTYPE) $client['uniqelements'][$id] = '';
 	     }
 
-     if (!count($client['allelements']))
-        {
-	 $output['error'] = "Database '$client[OD]' has no elements exist!";
-	 return;
-	}
+     if (!count($client['allelements']) && ($output['error'] = "Database '$client[OD]' has no elements exist!")) return;
      ksort($client['allelements'], SORT_NUMERIC);
     }
-    
+
  if ($flags & GET_VIEWS)
     {
-     // Get view section
+     // Flush object selection, element layout (ex-element-selection), view type (template) and link type
      unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linktype']);
-     
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
+
      foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $value)
 	  if ($value['element1']['id'] === $client['OVid'])
 	     {
@@ -880,42 +838,26 @@ function Check($db, $flags, &$client, &$output)
 	      $client['elementselection'] = trim($value['element6']['data']);
 	      break;
 	     }
-     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype']))
-        {
-	 $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!";
-	 return;
-	}
+     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype']) && ($output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!")) return;
 
-     // List is empty or includes '*' chars for a 'Table' view? Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
+     // List is empty or includes '*' chars for a 'Table' view?
+     // Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
      if ($client['viewtype'] === 'Table')
-     /*if (gettype($arr = json_decode(preg_split("/\n/", ($layout = $client['elementselection']))[0], true, 2)) != 'array')
-	{
-	 $isnew = $landscape = false;
-	 if ($layout[0] === '!')
-	    {
-	     $landscape = true;
-	     $layout = substr($layout, 1);
-	    }
-	 foreach(preg_split("/,/", $layout) as $value)
-		{
-		 
-		}
-	}*/
      if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
         {
-         $x = 0;
+	 $x = 0;
 	 $startline = 'n+1';
 	 if ($client['elementselection'] === '*' || $client['elementselection'] === '***') $startline = 'n+2';
 	 $arr = $client['allelements'];
 	 if ($client['elementselection'] === '**' || $client['elementselection'] === '***') $arr = ['id' => '', 'version' => '', 'owner' => '', 'datetime' => ''] + $arr;
 	 $client['elementselection'] = '';
          foreach ($arr as $id => $value)
-    	         {
-	          $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
-	          if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
+		 {
+		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
+		  if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
 		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
-	          $x++;
-	    	 }
+		  $x++;
+		 }
 	}
 
      // List is empty for a 'Tree' view? Set up default list for all elements appearance: {'title1': '', 'value1': '', 'title2': ''..} 
@@ -942,38 +884,16 @@ function Check($db, $flags, &$client, &$output)
   else
     {
      if (!isset($client['oId'])) $client['oId'] = 0;
-
      // Check object identificator value existence
-     if ($client['oId'] < STARTOBJECTID)
-        {
-	 $output['alert'] = 'Incorrect object identificator value!';
-	 return;
-	}
-
+     if ($client['oId'] < STARTOBJECTID && ($output['alert'] = 'Incorrect object identificator value!')) return;
      // Avoid object id = STARTOBJECTID (system user from User OD) to be deleted
-     if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT')
-        {
-	 $output['alert'] = 'System account cannot be deleted!';
-	 return;
-	}
-
+     if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT' && ($output['alert'] = 'System account cannot be deleted!')) return;
      // Check for changes of object selection
-     if (gettype($client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth'])) === 'array')
-        {
-	 $output['alert'] = "Object selection has been changed, please refresh Object View!";
-	 return;
-	}
-
+     if (gettype($client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth'])) === 'array' && ($output['alert'] = "Object selection has been changed, please refresh Object View!")) return;
      // Check object existence
-     //$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND id=$client[oId] AND id IN (SELECT id FROM `data_$client[ODid]` $client[objectselection])");
-     //$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] and lastversion=1 and concat(id,lastversion) IN (SELECT concat(id,lastversion) FROM `data_$client[ODid]` $client[objectselection])");
      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 AND id IN (SELECT id FROM (SELECT id FROM `data_$client[ODid]` $client[objectselection]) _)");
      $query->execute();
-     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]))
-        {
-	 $output['alert'] = "Please refresh Object View, specified object (id=$client[oId]) doesn't exist!";
-	 return;
-	}
+     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]) && ($output['alert'] = "Please refresh Object View, specified object (id=$client[oId]) doesn't exist!")) return;
     }
 
  if ($flags & CHECK_EID)
@@ -984,56 +904,37 @@ function Check($db, $flags, &$client, &$output)
   else
     {
      if (!isset($client['eId'])) $client['eId'] = 0;
-     
      // Check eid element selection existence
-     if (!isset(setElementSelectionIds($client)[strval($client['eId'])]))
-        {
-	 $output['alert'] = "Please refresh Object View, specified element id doesn't exist!";
-	 return;
-	}
+     if (!isset(setElementSelectionIds($client)[strval($client['eId'])]) && ($output['alert'] = "Please refresh Object View, specified element id doesn't exist!")) return;
     }
 
  if ($flags & CHECK_ACCESS)
  if ($client['cmd'] === 'New Database')
     {
-     if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|')
-        $output['alert'] = "New OD add operation is not allowed!";
+     if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|' && ($output['alert'] = "New OD add operation is not allowed!"))
+	return;
     }
   else if (array_search($client['cmd'], ['CALL', 'DELETEOBJECT', 'INIT', 'DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'SCHEDULE']) !== false)
     {
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
-     if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0)
-        {
-	 $output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!";
-	 return;
-	}
-      else
-	{	  
-	 $View = json_decode($View[0][0], true)[$client['OV']]; // Set current view array data
-	 $groups = getUserGroups($db, $client['uid']);		// Get current user group list
-	 $groups[] = $client['auth'];				// and add username at the end of array
-	  
-	 // Check on 'display' permissions
-	 $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
-	 $pos = strpos($View['element8']['data'], '+');
-	 if (($count && $pos) || (!$count && !$pos))
-	    {
-	     $output['error'] = "OV read/write operations is not allowed!";
-	     return;
-	    }
+     if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0 && ($output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!")) return;
 
-	 // Check 'writable' permissions for non-CALL event
-	 if ($client['cmd'] !== 'CALL')
-	    {
-	     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element11']['data'])), "strcmp"));
-	     $pos = strpos($View['element10']['data'], '+');
-	     if (($count && $pos) || (!$count && !$pos))
-	        {
-		 $output['alert'] = "OV write operation is not allowed!";
-		 return;
-		}
-	    }
+     $View = json_decode($View[0][0], true)[$client['OV']];	// Set current view array data
+     $groups = getUserGroups($db, $client['uid']);		// Get current user group list
+     $groups[] = $client['auth'];				// and add username at the end of array
+
+     // Check on 'display' permissions
+     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
+     $pos = strpos($View['element8']['data'], '+');
+     if ((($count && $pos) || (!$count && !$pos)) && ($output['error'] = "OV read/write operations are not allowed!")) return;
+
+     // Check 'writable' permissions for non-CALL event
+     if ($client['cmd'] !== 'CALL')
+	{
+	 $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element11']['data'])), "strcmp"));
+	 $pos = strpos($View['element10']['data'], '+');
+	 if ((($count && $pos) || (!$count && !$pos)) && ($output['alert'] = "OV write operation are not allowed!")) return;
 	}
     }
   else
@@ -1041,7 +942,7 @@ function Check($db, $flags, &$client, &$output)
      $output['error'] = "Unknown client event '$client[cmd]'!";
      return;
     }
-    
+
  return true;
 }
 
@@ -1060,16 +961,6 @@ function CopyKeys(&$arr, $keys)
  $result = [];
  foreach ($keys as $value) if (isset($arr[$value])) $result[$value] = $arr[$value];
  return $result;
-}
-
-function MakeViewCall($db, &$socket, &$client, $output, $cmd = 'CALL')
-{
- CopyArrayElements($client, $output, ['auth', 'uid']); // Copy client auth info to the output event (INIT, DELETEOBJECT, CALL)
- if (!isset($output['params'])) $output['params'] = $client['params'];  // and params if exist
- $output['cmd'] = $cmd; 
- $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:client)"); // Put request to the queue sql table that will be checked by view.php after client ajax request
- $query->execute([':id' => $output['data'] = GenerateRandomString(), ':client' => json_encode($output)]);
- fwrite($socket, encode(json_encode($output)));
 }
 
 function QueueViewCall($db, $socket, $id, &$message)

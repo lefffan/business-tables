@@ -138,9 +138,8 @@ function ParseHandlerResult($db, &$output, &$client)
 	      break;
 	 case 'SET':
 	 case 'RESET':
-	      // Adjust hint, description, style, alert properties
+	      // Adjust hint, description, style, alert properties, empty property is not allowed unset($output['']) ?
 	      ConvertToString($output, ['hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
-
 	      // SET command sql search request case?
 	      if (!isset($output['value']) || gettype($output['value']) != 'array')
 	         {

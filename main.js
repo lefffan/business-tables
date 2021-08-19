@@ -28,7 +28,7 @@ let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
 let sidebar = {}, cursor = {}, oldcursor = {};
 let uiProfile = {
 		  // Body
-		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values set no way to apply content editable changes by key combination." },
+		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
 		  // Sidebar
     		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
@@ -347,6 +347,7 @@ function drawMain(data, props)
 	  {
 	   if (hidecol[x]) { mainTable[y].splice(x, 1); mainTableWidth--; x--; continue; }
 	   (cell = mainTable[y][x]) ? rowHTML += `<td${cell.style}>${toHTMLCharsConvert(cell.data)}</td>` : rowHTML += undefinedCell;
+	   if (cell)
 	   if ((cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)) // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
 	      objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
 	  }
@@ -983,12 +984,9 @@ function KeyboardEventHandler(event)
 		 CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 case 46: //Del
-	      if (box || contextmenu || !cursor.td) break;
-	      if (cursor.td?.contentEditable != EDITABLE && mainTable[cursor.y]?.[cursor.x]?.['realobject'] && !isNaN(cursor.eId))
-	      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'DEL'))
-	         CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
-	       else
-		 mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
+	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === EDITABLE || isNaN(cursor.eId)) break;
+	      if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID && !(mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '')) break;
+	      if (mainTable[cursor.y]?.[cursor.x]?.['realobject'] && (cmd = 'DEL')) CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
 	      break;
 	 case 113: //F2
 	      if (box || contextmenu || !cursor.td) break;
@@ -1950,6 +1948,9 @@ is a JSON, that may consist of any defined properties, but some of them have spe
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
+- 'link_remote_object_selection' is a link remote object selection query, see 'Tree template' help section for details
+- 'link_remote_element_id' is a link remote element id number or service element name, see 'Tree template' for details
+- 'link_type' is a link type the tree is built on, see 'Tree template' for details
 Other element properties are custom and used to store additional element data, see example below.
 
 Lets have a look to the simple OD example with only two elements - Name and Phone number.
@@ -2004,7 +2005,7 @@ considered as an existing group. So all user/group permission lists in a Databas
 are treated as user name list, but in case of non-existent username - the name is treated as a name of a group.`
 }}},
 
-"Database Configuration": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+"Database Configuration": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `To create Object Database (OD) just enter its name in the dialog box called via 'New Database' sidebar context menu.
 Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
 Let's have a look at database configuration dialog box and its features.
@@ -2021,7 +2022,7 @@ list blocks any permission changes for other database configuration sections ('E
 Second configuration section is 'Element'. Each object consists of builtin service elements and custom user elements.
 To add any custom element select 'New element' profile and fill at least one field - name, description or any event handler.
 So all of them in an element profile should be set empty in order to remove element. Element name is used 
-as a default element header text and specified description text is displayed as a hint on object view element headers
+as a default element header text and specified description text is displayed as a hint on object view element header
 navigation. See 'Element layout' help section for details. Other element options are 'Element type'
 and event 'Handlers'. Unique element type sets element JSON property 'value' unuqueness among all objects in OD.
 For a example, first element (username) of builtin OD 'Users' defined as an uniq type, so duplicated names are excluded.
@@ -2045,55 +2046,92 @@ Simple example: pre-processing rule "JSON_EXTRACT(eid1, '$.value')='root'" with 
 SELECT .. FROM data_1 WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'
 Next example with both rules empty and reject action for all operations freezes the database, so all changes are rejected.
 Another example: first profile with action accept preprocessing rule "owner=':user'" and second profile reject
-action with both empty rules allowes to change self-created objects only.
-
-`
+action with both empty rules allowes to change self-created objects only.`
 }}},
 
 "Object Selection": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
-`Object selection is a part of the sql query string that selects objects for the specified view.
-Let's have a quickly look to the object structure stored in database to select
-required objects effectively. Each object consists of next elements:
+`Object selection is a part of the sql query string that selects objects for the specified view. Let's have a look to the
+object structure stored in database to select required objects effectively. Each object consists of next SQL table columns:
 - id. Object identificator.
-- lastversion. Element value can be 0 or 1 and indicates whether it is last object version or not. See 'version' field.
-- version. Indicates object version number started from '1' value, so new object has first version. 
-  After object any change, controller creates a new row with the changed object copy, increments its version and set lastversion flag to 1.
-  This mechanism allows to store every object version, so user can trace object data changing and find out when, how and who object is changed by.
-  Deleted objects are marked by zero version.
+- lastversion. Boolean value 0 or 1 indicates whether it is last object version or not. See 'version' field.
+- version. Indicates object version number started from '1', that is assinged to just created new objects.
+  After object any change, controller creates a new database record with the changed object copy, increments its version 
+  and set lastversion flag to 1. This mechanism allows to store every object version, so user can trace object data changing 
+  and find out when, how and who object was changed by. Deleted objects are marked by zero version and lastversion flag set.
 - owner. The user this object version was created by.
-- datetime. Date and time object version was created at.
-- eid<element id>. JSON type user-defined (via element handlers) data.
+- datetime. Date and time this object version was created at.
+- eid<element id>. JSON type element data. 
 
-In case of empty string default object selection 'WHERE lastversion=1 AND version!=0'
-is applied. Default object selection selects all relevant (lastversion=1) and non deleted objects (version!=0).
-To select objects from database controller applies next query based on object selection string:
+Error object selection string selects no objects, empty string - all actual objects.
+Controller selects objects via database query with next format:
 'SELECT <element layout selection> FROM data_<OD id> <object selection>'
-This query format together with object structure provides effective selection of any sets
-of objects via powerful SQL capabilities!
+Default object selection (empty string) selects all relevant (lastversion=1) and non deleted objects (version!=0), so
+selection string 'WHERE lastversion=1 AND version!=0' is applied and result query is:
+'SELECT .. FROM data_<OD id> WHERE lastversion=1 AND version!=0'
 
-To make object selection process more flexible user can use some parameters in 
-object selection string. These parameters should start from char ':' and finsh with space.
-Parsed parameter name is set as a question (with chars '_' reaplced with spaces) in client side dialog box at the object view call.
-Object selection string example for 'Users' object database:
-'WHERE lastversion=1 AND version!=0 AND eid1->>'$.value'!=':Input_user'.
-That selection example OV call will display dialog to get input and pass it to the controller to build result query.`
+This format together with object structure provides effective selection of object sets via powerful SQL capabilities!
+To make object selection process more flexible user can use some parameters in object selection string. These parameters
+should start from char ':' and finish with space, single or double qoutes or another ':'. Parsed parameter name is set as
+a question (with chars '_' replaced with spaces) in client side dialog box at the object view call open. Parameter name
+:user is reserved and replaced with the username the specified view is called by.
+
+Object selection string example for 'Logs' object database:
+'WHERE lastversion=1 AND version!=0 AND eid1->>'$.value'=':Select_log_string_to_search'.
+The selection example displays dialog with input question 'Select log string to search' and takes input data to pass it
+to the controller to build the result query that selects all objects (log messages) with .`
 }}},
 
-"Element layout": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
-`
-Element layout is a JSON strings list. Each JSON defines element and its behaviour (table cell position, style attribute, OV start event, etc..)
-JSON possible properties are:
-- 'x','y'. Appropriate table cell coordinates defined by expression that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects)
-- 'oid','eid'. Object id, element id this behaviour is applied to. Real object identificators starts from 3. Title object id is 2.
-  New object (cell to input text data for a new objects adding) id is 1. To match all real objects in the selection set oid property to 0.
-  Note that element id are user-defined elements with identificators started from 1
-  and built-in elements with identificators 'id', 'lastversion', 'version', 'owner' and 'datetime', see 'object selection' help section.
-  In case of undefined eid/oid - zero values are set. Both zero oid and eid defines behaviour for undefined cell, that has no any object element in.
-- 'event'. Mouse double click or key press emulation after OV call. Possible values are 'DBLCLICK' and 'KEYPRESS<any_string>', see 'handler' help section.
-  Any other values - no event emulation, but cursor is set to the specified by 'x','y' props position anyway.
-- 'collpase'. This property presence with any value - set collapse flag to the table cell. Any table column/row with empty cell and collapse flag set for each - will be collapsed.
-- 'style'. HTML style attribute for specified element, see appropriate css documentaion.
-- 'tablestyle'. HTML style attribute for tag <table>, can be defined only with undefined cell (oid=0, eid=0).
+"Element layout": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+`Element layout is a JSON strings list. Each JSON defines element and its behaviour such as table cell position, style
+attribute, OV start event and etc.. JSON possible properties are:
+
+- 'oid'. Object id number in range from 0. Attributes (x, y, style, ..) are applied to the specified object id together
+  with element id. New object (input text data to add new objects) id is 1. Header (title) object id is 2. Database object
+  identificators starts from 3. Absent 'oid' property is treated as property with zero value. Zero 'oid' attributes are
+  applied to all objects in the selection, while specific 'oid' numbers to the specified object only.
+- 'eid'. Built-in service elements (id, version, owner, datetime, lastversion) or user defined element id number started
+  from 1. Attributes (x, y, style, ..) are applied to the specified element id together with object id. Absent 'eid' property
+  is treated as property with zero value. Zero 'eid' attributes are applied to all elememnts of defined object - for zero
+  'oid' allowed properties are 'style' (css style attribute for <td> cell with no any object element in) and tablestyle (css
+  style attribute for <table> html element), for specific 'oid' - only css style for <td> cell with specific object element.
+  See table below for 'oid'/'eid' combinations allowed properties.
+- 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions
+  that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects). For a
+  example, "y": "n+1" will place first object in the selection to the second row (y=1), second object - to the  third
+  row (y=2). Note that column/row numeration starts from 0. See layout examples below. 
+- 'event'. Mouse double click (DBLCLICK) or key press (F2, F12, INS, DEL, KEYPRESS) event emulation after OV has been opened.
+  Symbol key push event 'KEYPRESS' should be specified with the additional string to be passed to the handler as an input arg.
+  For example, "event": "KEYPRESSa" will emulate key 'a' pushed at the object view open. See 'Handler' help section for
+  details. Incorrect event value - no emulation, but cursor is set to the position specified by 'x','y' properties.
+  Only first event entry is emalated, all others are ignored.
+- 'hidecol', 'hiderow'. These properties collapse (hide) table columns or rows with appropriate element 'hidecol'/'hiderow'
+  values. For example, "hiderow": "" will hide all empty table rows.
+- 'style'. HTML css style attribute (see appropriate css documentaion) for <td> tag the specified object element is placed in.
+  Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.
+  Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).
+- 'tablestyle'. HTML css style attribute for tag <table>, in zero 'oid'/'eid' only.
+- 'value'. Table cell element main text. For new/title objects only.
+- 'hint'. Table cell element hint, displayed as a hint on a table cell cursor navigation. For new/title objects only.
+
+  'oid'/'eid' combinations properties table:
+  +---------+--------------------------------+----------------------------------------------+
+  |   \\ eid |                                |                                              |
+  |    \\    | 0                              | id,version,owner,datetime,lastversion,1,2,.. |
+  | oid \\   |                                |                                              |
+  +---------+--------------------------------+----------------------------------------------+
+  | 0       | style (undefined cell style)   | x, y, style                                  |
+  |selection| tablestyle (html table style)  | event, hiderow, hidecol                      |
+  +---------+--------------------------------+----------------------------------------------+
+  | 1       | style                          | x, y, style                                  |
+  | new     |                                | event, hiderow, hidecol, value, hint         |
+  +---------+--------------------------------+----------------------------------------------+
+  | 2       | style                          | x, y, style                                  |
+  | title   |                                | event, hiderow, hidecol, value*, hint*       |
+  +---------+--------------------------------+----------------------------------------------+
+  | 3..     | style                          | x, y, style                                  |
+  |         |                                | event, hiderow, hidecol                      |
+  +---------+--------------------------------+----------------------------------------------+
+  *Properties are set automatically (value is element name, hint is element description) if not exist
 
 Let's parse 'All logs' OV element layout of 'Logs' database:
 {"eid":"id", "oid":"2", "x":"0", "y":"0"}
@@ -2103,21 +2141,21 @@ Let's parse 'All logs' OV element layout of 'Logs' database:
 {"eid":"1", "oid":"2", "x":"2", "y":"0"}
 {"eid":"1", "x":"2", "y":"n+1"}
 
-First two JSONS display 'id' object element title (oid=2) and 'id' object element for real objects in the selection (oid=0). 
-Title cell for 'id' is positioned to the first table column (x=0) and first table row (y=0)
-Element 'id' for real objects is set to the  first column (x=0) and to the rows in order starting from second row (y=n+1).
-First object in the selection with n=0 is set to the second row (y=1), second object in the selection with n=1 is set to the third row (y=2) and so on.
-Similarly to the 'datetime' element and first user-defined element (eid=1) that consists of real system log data. See 'OV example' help section also.
+First JSON defines 'id' element for title object (oid=2), it will be on the top left corner of the table (x=0, y=o).
+Second JSON defines 'id' element for database objects (oid=0) in the selection, all objects are placed to the first
+table column (y=0) and to the rows in order starting from second row (y=n+1) - first object (n=0) goes to the second
+row (y=1), second object (n=1) goes to the third row (y=2) and so on.
+Similarly for two next elements datetime and log message element id1 (eid=1), except that column ('x' coordinate)
+position for datetime is x=1 (second column) and for log message is x=2 (third column).
 
-In addition to JSONS above, element layout could be set to one of next values:
-'' - Empty value selects all user-defined database elements and diplays them as a classic table with the title as a first row.
-'*' - One asterisk behaves like empty value with one exception - 'new object' input row is added to the table just right after title row.
-'**' - Two asterisks behaves like empty value, but built-in elements ('id', 'version', 'owner'..) are added.
-'***' - Three asterisks behaves like one asterisk, but built-in elements ('id', 'version', 'owner'..) are added.
-`
+Element layout could be set to one of predefined templates, which are converted to JSONs anyway. Possible values are:
+'' - Empty layout value selects all user-defined elements and displays them as a classic table with the title first.
+'*' - One asterisk behaves like empty value, but 'new' object is added to the table just right after 'title' object.
+'**' - Two asterisks behaves like empty value, but built-in service elements ('id', 'version', 'owner'..) are added.
+'***' - Three asterisks behaves like one asterisk, but built-in service elements ('id', 'version', 'owner'..) are added.`
 }}},
 
-"Element handlers": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+"Handlers": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `
 Element handler is any executable script or binary called by the contoller when specified event occurs.
 Events occur on user interaction with real object element (mouse double clicking or keypressing), adding
@@ -2231,7 +2269,7 @@ JSON dialog structure is a nested JSONs which draw dialog box with its interface
 `
 }}},
 
-"OV example": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+"OV example": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `
 Let's have a look to the chat like OV create example.
 First - create OD instance via sidebar context menu 'New Database'
@@ -2265,7 +2303,7 @@ And Of course, for both our chat restrictions action is set to 'reject'.
 `
 }}},
 
-"Keyboard/Mouse": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+"Keyboard/Mouse": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `  - CTRL with left button click on any object element opens new browser tab with the element text as url*
   - CTRL with arrow left/right key set table cursor to the left/right end of the table*
   - CTRL with Home/End key set table cursor to the upper/lower end of the table
