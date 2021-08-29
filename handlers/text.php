@@ -38,7 +38,7 @@ switch($event)
 	    foreach($arr as $key => $value)
 		   {
 		    if (!isset($value) || gettype($value) != 'string') $arr[$key] = '';
-		    $profile[$key] = ['type' => 'text', 'head' => $margin."Enter element '$key' property value:", 'data' => $arr[$key], 'line' => ''];
+		    $profile[$key] = ['type' => 'textarea', 'head' => $margin."Enter element '$key' property value:", 'data' => $arr[$key], 'line' => ''];
 		    $margin = '';
 		   }
 	    echo json_encode(['cmd' => 'DIALOG',

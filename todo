@@ -1,5 +1,5 @@
 --------------2021--------------------------------------------------------------
-- Linkoid property is (for examlpe one downlink port for multiple nodes) separated by |
+- Main.js: 1. tree element no value exist, so should i use title instead? 2. error object text dolzhen byt perenesen
 - Map pichar and graph display error (ov type are not implemented yet)
 
 - Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
@@ -11,16 +11,17 @@
 --------------------------------------------------------------------------------
 
 - Application:
+  Restrict OD sidebar display for some users
   Clone object, similar to add object, but copies current menu contexted object
+  in cell: text, image, stream, table?
   Export OV data to xls, pdf or txt file
   Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
-  Per user separate OV permission to view-in-sidebar and add-edit-delete with low priority
+  Per user and group (!) separate OV permission to view-in-sidebar and add-edit-delete with low priority
   Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
   Paste file or image to object element (or drag and drop to the corresponded cell)
   should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
   System calls UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES (in case of 'image' prop set - image is displayed on the table insted of text value prop; don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-  OV/OD name/id as input arg for the handler
   Object view PIECHART, GRAPH, LOCATION.
   telnet, snmp and diagnostic functions
   display current DB size and object count in EDITOD
@@ -38,11 +39,13 @@
 	style (for example to see what nodes are down by seeing them via red background)
 	callOV/link-in-a-new-tab by mouse double click
     hide tree element rebuilds the tree (context menu hide)
+    Tree wire name (arrow name) to mark fiber cooper radio..
   Crontab element execution once immediately
   Task manager: restrict call of task manager for some users
   system user readonly customization, it is default customization to allow all other users use it in case of error
   Handler no output is a standart behaviour, don't log it
   User groups output in OV (select .. where ed1>>'groups' regexp..)
+  How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
 
 - JS, PHP, SQL:
   Optimize mysql to highload app:
@@ -68,6 +71,7 @@
     User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
     single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
     system command to copy data to the buffer
+    One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
   OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
   Scroll lock behaviour like in Excel
   application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
@@ -77,28 +81,36 @@
     show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
     Features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
     dialog interface element heads - not plain text but some <font> <color> tags?
+    content scrolling with pads stay on the top (now pads block is scrolled with the content)
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
   when button is pushed no dialog refreshed, when pushed button is pushed and mouse cursir is out of button - make button released
   Make handler intput lines longer, and Handler for 'INIT' event replace by 'INIT' event
-  After user pass change, the user is forced to logout (display it in help section)
+  Dialog boxes moving via mouse cursor!!
 
 - Controller:
   prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
+  Implement users per group display
+    and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection)
+  Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
 
 - Handlers:
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
     (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
     So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG? CONFIRM -> CONFIRMEDIT, CONFIRMDIALOG, CONFIRMPRESET?
-    May be set hint to these error cells and all cells with hint are merked with the footnote (snoska)
+    May be set hint to these error cells and all cells with hint are marked with the footnote (snoska).
+    Also implement footnotes for all four cell angles (hint, description, link, attached files)
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
+  OV/OD name/id, datetime as input arg for the handler
+  Non local server (cloud) implemented handlers
+  No handler output - no error log message, let it be handler standart behaviour to do nothing, when no action (such as SET/RESET or etc..) needed
 
 - Some systems emulation:
   Corp chat
   Corp adrbook
   Any request app (Helpdesk, Jira)
   MRTG
-  Zabbix
+  Zabbix (See how zabbix is install to have point of view of that kind of applications)
   CRM
   ACS
   Any accounting system (may be billing)
@@ -120,6 +132,9 @@
   Paraga mail functional
   Ask Hramcova analitiku po helpdesku
   See functions on Slava's management system
+
+- First stage: oper+slavina, setki, tech uchet, HD, adrbook
+- Second stage: zabbix, CRM, corp chat, wiki
 
 - Questionable features
   Fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
@@ -294,6 +309,7 @@ https://codex.so/ssl
 https://letsencrypt.org/ru/getting-started/
 Renew certificate:
 certbot renew --dry-run
+upd 29/08/2021: just run certbot, then sysmetctl restart nginx
 
 
 user.php
@@ -595,6 +611,18 @@ All users: WHERE lastversion=1 AND version!=0 LIMIT 100
 Postprocessing rule: JSON_EXTRACT(eid1, '$.value')='pid'
 MRTG view: WHERE lastversion=1 AND version!=0 LIMIT 9
 Element layout: *
+competitive advantages:
+    nice interface and full cutomiztion
+    Web access
+    SUBD based
+    Scheduler
+    Firewall
+    Base platform for corp portal
+    Objects Map
+    scalability for corp needs with unnecessary programming knowing (unlike CRM 1C example) - any system like chat billing crm hd techuchet may be implemented
+
+
+
 
 WHERE lastversion=1 AND version!=0 and JSON_EXTRACT(eid1, '$.value')=':Input_user'
 {"eid":"1", "x":"0", "y":"n"}

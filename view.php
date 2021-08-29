@@ -9,27 +9,21 @@ function CheckODString($odname)
 
 function GetTreeElementContent($db, &$client, &$content, $oid)
 {
- // Content is array of object elements:
- // first - downlink node linked object element,
- // second - local node linked object element,
- // next - other elements of local node object (defined in element layout) in a row.
- // Each array element consists of three props: identificator, title and value
- if (isset($content[1]['id'], $client['allelements'][$content[1]['id']]))
-    $content[1]['title'] = $client['allelements'][$content[1]['id']]['element1']['data'];
+ // Content is array of object elements: [<downlink node linked object element>, <local node linked object element>, <first layout element of local node>, <second..>]
+ // Each array element consists of three props: element identificator, its title and value
 
- // Go through all elements in the element layout and put them to the content
- foreach ($client['elementselection'] as $key => $value)
-	 if (array_search($key, SERVICEELEMENTS) !== false) $content[] = ['id' => $key, 'title' => $key, 'value' => ''];
-	  elseif (isset($client['allelements'][$key])) $content[] = ['id' => $key, 'title' => $client['allelements'][$key]['element1']['data'], 'value' => ''];
+ // First go through all elements in the layout and put them to the content
+ foreach ($client['elementselection'] as $eid => $value)
+	 if ($eid != 'direction') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
 
  // Make query string to select element values from DB
  $query = '';
- foreach ($content as $key => $value) if ($key)
+ foreach ($content as $key => $e) if ($key)
 	 {
-	  if (!isset($value['id'])) $query .= 'NULL,';
-	   else if (array_search($value['id'], SERVICEELEMENTS) !== false) $query .= $value['id'].',';
-	   else if (!isset($client['allelements'][$value['id']])) $query .= 'NULL,';
-	   else $query .= 'JSON_EXTRACT(eid'.$value['id'].", '$.value'),";
+	  if (!isset($e['id'])) $query .= 'NULL,';
+	   elseif (array_search($e['id'], SERVICEELEMENTS) !== false) $query .= $e['id'].',';
+	   elseif (!isset($client['allelements'][$e['id']])) $query .= 'NULL,';
+	   else $query .= 'JSON_EXTRACT(eid'.$e['id'].", '$.value'),";
 	 }
 
  // Select prepared elements above from object id $oid and put them to content array begining from index 1.
@@ -45,70 +39,134 @@ function GetTreeElementContent($db, &$client, &$content, $oid)
      }
 }
 
-function DefineNodeLinks($db, &$client, $oid, $type, &$tree, &$objects)
+function GetElementTitle($eid, &$allelements)
 {
- // Each $tree array element is class (content css class name), content and link (array of uplink nodes):
- // ['link' => [nodes array], 'content' => [eid, etitle, evalue], 'class' => '']
+ if (isset($allelements[$eid])) $title = $allelements[$eid]['element1']['data'];
+  elseif (array_search($eid, SERVICEELEMENTS) !== false) $title = $eid;
+  else  $title = "Unknown '$eid'";
 
- foreach ($client['allelements'] as $eid => $evalue)
+ return $title;
+}
+
+function LinksIntersection1(&$linknames, $linkprop, &$allelements)
+{
+ // Function takes view props link names (via '|' or '/') and element link prop to calc intersected names
+ $links = []; // Array of [<remote element id>, <uplink object selection>]
+ if (isset($linknames['active']))
+    {
+     $active = $linknames['active'];
+     unset($linknames['active']);
+    }
+
+ if ($linkprop) foreach (preg_split("/\n/", $linkprop) as $value)
+    if (trim($value) && gettype($last = preg_split("/\|/", $value, 3)) === 'array' && count($last) > 1) // Is linkprop line splited to 2 or 3 elements?
+    if (($last[0] = trim($last[0])) && in_array($last[0], $linknames)) // Check parsed linprop link name to match view props link names array
+    if (!isset($active) || !$active || $last[0] === $active)
+       {
+	if (!isset($last[2])) $last[2] = '';
+	$links[] = [trim($last[1]), trim($last[2])];
+	if (isset($active) && !$active) $active = $last[0];
+	if (isset($active)) break;
+       }
+
+ if (isset($active)) $linknames['active'] = $active;
+ return $links;
+}
+
+function LinksIntersection($linknames, $linkprop, &$allelements)
+{
+ if (gettype($linknames) === 'string') $linknames = [$linknames];
+ if (gettype($linknames) !== 'array') return [];
+ $links = []; // Array of [<remote element id>, <uplink object selection>]
+
+ // Takes view props link names (via '|' or '/') and element link prop to calc intersected names
+ if ($linkprop) foreach (preg_split("/\n/", $linkprop) as $value)
+    if (trim($value) && gettype($last = preg_split("/\|/", $value, 3)) === 'array') // Is linkprop line splited to 2 or 3 elements?
+    if (count($last) === 3)						// All fields are defined
+    if (($last[0] = trim($last[0])) && in_array($last[0], $linknames))	// Check linprop link names to match view props link names
+       $links[] = [trim($last[1]), trim($last[2])];
+
+ return $links;
+}
+
+// Each $tree array element is class (content css class name), content (elemnt list and its values) and link (array of uplink nodes): ['link' => [nodes array], 'content' => [eid, etitle, evalue], 'class' => '']
+function DefineNodeLinks($db, &$client, $oid, &$linknames, &$tree, &$objects)
+{
+ // Build a query for all elements to fetch their link and value props
+ $query = '';
+ foreach ($client['allelements'] as $eid => $element)
+	 $query .= "$eid, JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.link')), JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.value')), ";
+ if (!$query) return;
+ $query = substr($query, 0, -2);
+
+ // Execute the query
+ try {
+      $query = $db->prepare("SELECT $query FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0");
+      $query->execute();
+      $srcobject = $query->fetchAll(PDO::FETCH_NUM);
+     }
+ catch (PDOException $e)
+     {
+      unset($srcobject);
+     }
+ if (!isset($srcobject[0])) return; // No fetched object? Return
+ $srcobject = $srcobject[0];
+ $count = count($srcobject);
+
+ // Test all link names one by one for the first match in case of non OR ('|') names delimiter (isset($linknames['']))
+ $objlinknames = $linknames;
+ if (isset($objlinknames['']))
+    {
+     foreach ($objlinknames as $key => $name) if ($key !== '')
+     for ($i = 0; $i < $count; $i += 3)
+	 if (LinksIntersection($name, $srcobject[$i + 1], $client['allelements']) !== [] && ($match = [$name])) break 2;
+     if (!isset($match)) return;
+     $objlinknames = $match;
+    }
+
+ for ($i = 0; $i < $count; $i += 3)
+ if (($links = LinksIntersection($objlinknames, $srcobject[$i + 1], $client['allelements'])) !== [] && ($srccontent = [['id' => $srcobject[$i], 'title' => $client['allelements'][$srcobject[$i]]['element1']['data'], 'value' => $srcobject[$i + 2]]]))
+ foreach ($links as $value) // Get through all matched link names in a element link property
 	 {
-	  //--------------Link props fetch--------------
+	  $content = $srccontent;
+	  $content[] = ['id' => $value[0], 'title' => GetELementTitle($value[0], $client['allelements'])];
+	  // Search uplink object id
 	  try {
-	       foreach (preg_split("/\|/", $type) as $linktype) if ($linktype)
-		       {
-			$query = $db->prepare("SELECT JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.link_remote_object_selection')), JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.link_remote_element_id')), JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.value')), JSON_EXTRACT(eid$eid, '$.value') FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0 AND JSON_EXTRACT(eid$eid, '$.link_type')='$linktype'");
-			$query->execute();
-			$object = $query->fetchAll(PDO::FETCH_NUM);
-			if (isset($object[0][0], $object[0][1])) break;	// Remote object links (selection, element id) of current element eid$eid and current $linktype found
-		       }
-	       if (!isset($object[0][0], $object[0][1])) continue;	// No remote object links found in a cycle above
-	       $selection = $object[0][0];				// Uplink node object selection
-	       $content = [['id' => $eid, 'title' => $evalue['element1']['data'], 'value' => ''], ['id' => $object[0][1]]];
-	       if (isset($object[0][2])) $content[0]['value'] = $object[0][2];
+	       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND $value[1] LIMIT 1");
+	       $query->execute();
 	      }
+	  // Syntax error? Make virtual error node with error message as a content
 	  catch (PDOException $e)
 	      {
-	       $content[2]['value'] = "Error getting object id '$oid' element id '$eid' link properties: ".$e->getMessage();
+	       $content[2]['value'] = "Object selection syntax error:<br>'$value[1]'<br>See 'Element layout' help section for right syntax..";
 	       $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
-	       continue;
+	       continue; // Go to next uplink object search via $select
 	      }
 
-	  //--------------Uplink node object id calculation (via selection from 'linkoid' prop)--------------
-	  $contentinit = $content; // Remember base node content as initcontent
-	  foreach (preg_split("/\|/", $selection) as $select) if ($select)
-		  {
-		   $content = $contentinit;	// Init current content from init content
-		   try {			// Search uplink object id view $select
-			$query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND $select");
-			$query->execute();
-		       }
-		   catch (PDOException $e)	// Syntax error $select query? Make virtual error node with error message as a content
-		       {
-			$content[2]['value'] = "Object id '$oid' element id '$eid' linkoid property selection syntax error: ".$e->getMessage();
-			$tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
-			continue; // Go to next uplink object search via $select
-		       }
-		   $uplinkoid = $query->fetch(PDO::FETCH_NUM);	// Fetch uplink object id search result
-		   if (!isset($uplinkoid[0]))			// No uplink object found? Make virtual error node with error message as a content
-		      {
-		       $content[2]['value'] = "Object id '$oid' element id '$eid' links to unexisting object: '$selection'";
-		       $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
-		       continue;		// Go to next uplink object search via $select
-		      }
-		   $uplinkoid = $uplinkoid[0];	// Remember uplink object id
+	  // Uplink object not found? Make virtual error node with error message as a content and continue
+	  $uplinkoid = $query->fetch(PDO::FETCH_NUM);
+	  if (!isset($uplinkoid[0]))
+	     {
+	      $content[2]['value'] = "Object selection links to nonexistent object:<br>'$value[1]'";
+	      $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
+	      continue;
+	     }
 
-		   // Get tree element content, uplink and local linked elements
-		   GetTreeElementContent($db, $client, $content, $uplinkoid);
+	  // Check loop via uplink object id existence in $objects array that consists of object ids already in the tree. Continue if exists, otherwise remember uplink object id in $objects array
+	  if (isset($objects[$uplinkoid = $uplinkoid[0]]))
+	     {
+	      $content[2]['value'] = "Loop detected on link:<br>from remote node [object id'$oid']<br>to me [object id'$uplinkoid']!";
+	      $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
+	      continue;
+	     }
+	  $objects[$uplinkoid] = true; // Remember uplink object id for loop detection
 
-		   // Check loop via uplink object id existence in $objects array that consists of object ids already in the tree. Continue if exists, otherwise remember uplink object id in $objects array
-		   if (isset($objects[$uplinkoid]) && ($tree['link'][] = ['content' => [$content[0], $content[1], ['value' => "Loop detected on link from remote node [object id'$oid'] to me [object id'$uplinkoid']!"]], 'class' => 'treeerror'])) continue;
-		   $objects[$uplinkoid] = true;
+	  // Get tree element content, uplink and local linked elements
+	  GetTreeElementContent($db, $client, $content, $uplinkoid);
 
-		   // Build tree element and define uplink node tree via  recursive function call
-		   $tree['link'][] = ['link' => [], 'content' => $content, 'class' => 'treeelement'];
-		   end($tree['link']);
-		   DefineNodeLinks($db, $client, $uplinkoid, $type, $tree['link'][key($tree['link'])], $objects);
-		  }
+	  // Build tree element and define uplink node tree via  recursive function call
+	  $tree['link'][] = ['link' => [], 'content' => $content, 'class' => 'treeelement'];
+	  DefineNodeLinks($db, $client, $uplinkoid, $linknames, $tree['link'][array_key_last($tree['link'])], $objects);
 	 }
 }
 
@@ -278,12 +336,18 @@ try {
 		  // Get OV data for a 'Tree' view template
 		  if ($client['viewtype'] === 'Tree')
 		     {
-		      // Check link type
-		      if ($client['linktype'] === '' && ($output['error'] = "Specified view '".$client['OV']."' has no link type defined!")) break;
+		      // Check link names
+		      $linknames = [];
+		      (($posAND = strpos($client['linknames'], '/')) !== false && (($posOR = strpos($client['linknames'], '|')) === false || $posOR > $posAND)) ? $delimiter = '/' : $delimiter = '|';
+		      foreach (preg_split("/\\".$delimiter."/", $client['linknames']) as $name) if (trim($name)) $linknames[] = trim($name);
+		      if ($linknames === [] && ($output['error'] = "Specified view '".$client['OV']."' has no link names defined!")) break;
+		      if ($delimiter === '/') $linknames[''] = '';
+
 		      // Get object selection query string, array result is treated as dialog content to define view params
 		      $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']);
 		      if (gettype($client['objectselection']) === 'array' && ($output = ['cmd' => 'DIALOG', 'data' => $client['objectselection'], 'ODid' => $client['ODid'], 'ODid' => $client['OVid']] + $output)) break;
 
+		      // Get object selection head object id
 		      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` $client[objectselection]");
 		      $query->execute();
 		      $headid = $query->fetch(PDO::FETCH_ASSOC); // Get object selection first object to build the tree from
@@ -292,9 +356,10 @@ try {
 		      $objects = [$headid => true];	// Remember head object id in a global array for loop detection
 		      $content = [[], []];		// Init empty content for head object
 
+		      // Build the tree
 		      GetTreeElementContent($db, $client, $content, $headid);
 		      $tree = ['link' => [], 'content' => $content, 'class' => 'treeelement']; // Init tree with head object
-		      DefineNodeLinks($db, $client, $headid, $client['linktype'], $tree, $objects); // and build uplink part
+		      DefineNodeLinks($db, $client, $headid, $linknames, $tree, $objects); // and build uplink part
 		      $output = ['cmd' => 'Tree', 'tree' => $tree] + $output;
 		      (isset($client['elementselection']['direction']) && $client['elementselection']['direction'] === 'up') ? $output['direction'] = 'up' : $output['direction'] = 'down';
 		      break;

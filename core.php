@@ -56,7 +56,9 @@ function adjustODProperties($db, $data, $ODid)
 	  $element = &$data['dialog']['Element'][$key];
 	  $element['element1']['data'] = substr($element['element1']['data'], 0, ELEMENTDATAVALUEMAXCHAR);
 	  // Calculating current element profile name
-	  $profile = substr(trim($value['element1']['data']), 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..'.ELEMENTPROFILENAMEADDSTRING.$eid.')';
+	  $profile = trim($value['element1']['data']);
+	  if (strlen($profile) > ELEMENTPROFILENAMEMAXCHAR) $profile = substr($profile, 0, ELEMENTPROFILENAMEMAXCHAR - 2).'..';
+	  $profile .= ELEMENTPROFILENAMEADDSTRING.$eid.')';
 	  // Processing new element
 	  if ($key === 'New element')
 	     {
@@ -170,9 +172,9 @@ function initNewODDialogElements()
 
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on object selection link type),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
+		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on object selection link name),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
 		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty expression selects all objects, error expression - no objects.', 'data' => ''],
-		    'element5' => ['type' => 'text', 'label' => 'Object selection link type', 'data' => '', 'line' => ''],
+		    'element5' => ['type' => 'text', 'label' => 'Link name', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element layout', 'data' => '', 'line' => '', 'help' => "JSON list element layout defines what elements should be displayed and how. Each JSON defines element and its behaviour such as<br>table cell position, style attribute, event.. See 'Element layout' help section for details. JSON possible properties are:<br><br>- 'oid'. Object id: 0 (all objects in the selection), 1 (new object), 2 (Header object), 3 (specified database object).<br>- 'eid'. Element id: id, version, owner, datetime, lastversion or user defined element id number from 1..<br>- 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions<br>  that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects).<br>  For a example, expression \"y\": \"n+1\" will place first object in the selection (n=0) to the second row (y=1).<br>- 'event'. Mouse double click (DBLCLICK) or key press (F2, F12, INS, DEL, KEYPRESS) event emulation after OV has been opened.<br>  Symbol key push event 'KEYPRESS' should be specified with the additional string to be passed to the handler as an input arg.<br>  For example, \"event\": \"KEYPRESSa\" will emulate key 'a' pushed at the object view open. See 'Handler' help section. <br>- 'hidecol', 'hiderow'. These properties collapse (hide) table columns or rows with appropriate element values.<br>  For example, expression \"hiderow\": \"\" will hide all empty table rows.<br>- 'style'. HTML css style attribute (see appropriate css documentaion) for 'td' tag the specified object element is placed in.<br>  Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.<br>  Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).<br>- 'tablestyle'. HTML css style attribute for 'table' tag and for zero 'oid'/'eid' only.<br>- 'value'. Table cell element main text. For new/title objects only.<br>- 'hint'. Table cell element hint, displayed on a table cell cursor navigation. For new/header objects only."],
 		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."],
 		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to read this view|+Disallowed list (allowed for others)|"],
@@ -453,7 +455,7 @@ function setElementSelectionIds(&$client)
 		 }
 	      if ($oidnum == TITLEOBJECTID)
 	         {
-		  if (isset($arr['value']) && gettype($arr['value']) === 'string') {lg($props[$eid][$oid]['value'] = $arr['value'], 'hui');} else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['value'] = $client['allelements'][$eid]['element1']['data'] : $props[$eid][$oid]['value'] = $eid;
+		  if (isset($arr['value']) && gettype($arr['value']) === 'string') $props[$eid][$oid]['value'] = $arr['value']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['value'] = $client['allelements'][$eid]['element1']['data'] : $props[$eid][$oid]['value'] = $eid;
 		  if (isset($arr['hint']) && gettype($arr['hint']) === 'string') $props[$eid][$oid]['hint'] = $arr['hint']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'] : $props[$eid][$oid]['hint'] = '';
 		 }
 	     }
@@ -824,8 +826,8 @@ function Check($db, $flags, &$client, &$output)
 
  if ($flags & GET_VIEWS)
     {
-     // Flush object selection, element layout (ex-element-selection), view type (template) and link type
-     unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linktype']);
+     // Flush object selection, element layout (ex-element-selection), view type (template) and link name
+     unset($client['objectselection'], $client['elementselection'], $client['viewtype'], $client['linknames']);
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
 
@@ -834,7 +836,7 @@ function Check($db, $flags, &$client, &$output)
 	     {
 	      $client['viewtype'] = substr($value['element3']['data'], ($pos = strpos($value['element3']['data'], '+')) + 1, strpos($value['element3']['data'], '|', $pos) - $pos -1);
 	      $client['objectselection'] = trim($value['element4']['data']);
-	      $client['linktype'] = $value['element5']['data'];
+	      $client['linknames'] = $value['element5']['data'];
 	      $client['elementselection'] = trim($value['element6']['data']);
 	      break;
 	     }
@@ -864,15 +866,18 @@ function Check($db, $flags, &$client, &$output)
      if ($client['viewtype'] === 'Tree')
      if ($client['elementselection'] === '')
         {
-	 $client['elementselection'] = ['id' => '', 'datetime' => ''];
+	 $client['elementselection'] = ['id' => ''];
 	 foreach ($client['allelements'] as $id => $value) $client['elementselection'][$id] = '';
 	}
       else
         {
-	 $arr = [];
 	 foreach (preg_split("/\n/", $client['elementselection']) as $value)
 		 if (gettype($arr = json_decode($value, true, 2)) === 'array') break;
-	 gettype($arr) === 'array' ? $client['elementselection'] = $arr : $client['elementselection'] = [];
+	 if (gettype($arr) !== 'array') $arr = ['id' => ''];
+	 foreach ($arr as $id => $value)
+		 if (!isset($client['allelements'][$id]) && array_search($id, SERVICEELEMENTS) === false && $id !== 'direction')
+		    unset($arr[$id]);
+	 $client['elementselection'] = $arr;
 	}
     }
 

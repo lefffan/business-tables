@@ -429,6 +429,14 @@ function DrawTree(tree, direction)
       stockrow = arrowrow = objectrow = '';
       while (x < mainTable[y].length)
 	    {
+	     if (!mainTable[y][x])
+		{
+		 x++;
+		 stockrow += '<td></td>';
+		 arrowrow += '<td></td>';
+		 objectrow += '<td></td>';
+		 continue;
+		}
 	     //----------------------
 	     stockrow += '<td';
 	     arrowrow += '<td';
@@ -443,22 +451,14 @@ function DrawTree(tree, direction)
 	     //----------------------
 	     objectrow += mainTable[y][x]['class'] + '>' + GetTreeElementContent(mainTable[y][x]['content']) + '</td>';
 	     //----------------------
-	     if (!mainTable[y][x]['content'][0] || !mainTable[y][x]['content'][0]['value'])
-		value = "'&nbsp;&nbsp;'";
-	      else
-	        value = EllipsesClip(mainTable[y][x]['content'][0]['value'], uiProfile['tree element']['object element value max chars']);
-	     if (!mainTable[y][x]['content'][0] || !mainTable[y][x]['content'][0]['title'])
-		title = "'&nbsp;&nbsp;'";
-	      else
-	        title = EllipsesClip(mainTable[y][x]['content'][0]['title'], uiProfile['tree element']['object element title max chars']);
+	     if (!(value = '') && mainTable[y][x]['content'][0]['value']) value = EllipsesClip(mainTable[y][x]['content'][0]['value'], uiProfile['tree element']['object element value max chars']);
+	     title = EllipsesClip(mainTable[y][x]['content'][0]['title'], uiProfile['tree element']['object element title max chars']);
 	     stockrow += '><div class="treelink"><div style="justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription"><span>' + title + '</span></div><div class="treelinkstock"></div><div style="justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription">' + value + '</div></div></td>';
 	     //----------------------
 	     if (content = mainTable[y][x]['content'][1])
-	        { 
+	        {
 		 title = EllipsesClip(content['title'], uiProfile['tree element']['object element title max chars']);
 		 value = EllipsesClip(content['value'], uiProfile['tree element']['object element value max chars']);
-		 if (!title) title = "'&nbsp;&nbsp;'";
-		 if (!value) value = "'&nbsp;&nbsp;'";
 		 
 		 arrowrow += '><div class="treelink"><div style="' + (content['title'] === undefined ? 'color: red; ' : '');
 	         arrowrow += 'justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
@@ -488,23 +488,15 @@ function DrawTree(tree, direction)
 
 function GetTreeElementContent(content)
 {
- let add, data = '';
-
+ let title, value, data = '';
  for (let i = 2; i < content.length; i++)
      {
-      if (add = content[i]['title'])
-         {
-	  if (add.length > Number(uiProfile['tree element']['object element title max chars'])) add = add.substr(0, Number(uiProfile['tree element']['object element title max chars']) - 2) + '..';
-	  data += `<span class="underlined">${add}</span>: `;
-         }
-      if (add = content[i]['value'])
-         {
-	  if (add.length > Number(uiProfile['tree element']['object element value max chars']) && content[i]['title'] != undefined) add = add.substr(0, Number(uiProfile['tree element']['object element value max chars']) - 2) + '..';
-	  data += add;
-         }
+      if (title = content[i]['title'])
+	 data += `<span class="underlined">${EllipsesClip(title, uiProfile['tree element']['object element title max chars'])}</span>: `;
+      if (value = content[i]['value'])
+	 data += title === undefined ? value : EllipsesClip(value, uiProfile['tree element']['object element value max chars']);
       data += '<br>';
      }
- 
  return data;
 }
 
@@ -1837,7 +1829,7 @@ function EllipsesClip(string, limit)
  if (typeof limit === 'string') limit = Number(limit);
  if (!string || typeof string !== 'string' || typeof limit !== 'number') return '';
  if (limit < 3) limit = 3;
- 
+
  if (string.length > limit) return string.substr(0, limit - 2) + '..';
  return string;
 }
@@ -1948,9 +1940,8 @@ is a JSON, that may consist of any defined properties, but some of them have spe
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
-- 'link_remote_object_selection' is a link remote object selection query, see 'Tree template' help section for details
-- 'link_remote_element_id' is a link remote element id number or service element name, see 'Tree template' for details
-- 'link_type' is a link type the tree is built on, see 'Tree template' for details
+- 'link' is element connection list one by line, each connection is a link name and remote object and its element
+  selections,  all three divided by '|'.
 Other element properties are custom and used to store additional element data, see example below.
 
 Lets have a look to the simple OD example with only two elements - Name and Phone number.
@@ -1992,10 +1983,13 @@ After the 1st object (Mary) phone number change and the 2nd (John) remove the st
 John user record after phone number change by user 'root' has version 2 value and lastversion flag set, while object version 1
 has unset lastversion flag. Note that previous object version values for non-changed user-defined elements are set to NULL,
 so John phone number next change creates object version 3 with previous object version 2 element 'eid1' value set to NULL.
-Also deleted objects are not removed from database, but marked by zero version only, so all object history is transparent
-and available. This is a global application concept, all functionality is documented and clear.
+Other words - just to save some disk space non actual object versions consist of changed elements only.
+As object versions are object data instnces - deleted objects are not removed from database, but marked by zero version only.
+All previous versions object data is available in that case, but cannot be changed at all. Considering all of this, all object
+history is transparent and available. This is a global application conception - all functionality is documented and clear.
 
-Authentication and authorization are password based. Usernames and their passwords are stores in 'Users' OD.
+Go on. Authentication and authorization are password based. Usernames and their passwords are stores in 'Users' OD.
+Only one user instance can be logged in, so logged in instance automatically logs out another instance via other host/browser.
 To add new user click context menu 'Add Object' on any 'Users' view (on default view 'All users' for example), then double 
 click just-added 'user' element to call user properties (such as password, OD add permission and group membership) dialog box.
 User 'name' cannot be changed after creation. Also user cannot change his OD add permissions and group membership
@@ -2076,14 +2070,24 @@ a question (with chars '_' replaced with spaces) in client side dialog box at th
 :user is reserved and replaced with the username the specified view is called by.
 
 Object selection string example for 'Logs' object database:
-'WHERE lastversion=1 AND version!=0 AND eid1->>'$.value'=':Select_log_string_to_search'.
+'WHERE lastversion=1 AND version!=0 AND JSON_EXTRACT(eid1, '$.value')=':Select_log_string_to_search'.
 The selection example displays dialog with input question 'Select log string to search' and takes input data to pass it
-to the controller to build the result query that selects all objects (log messages) with .`
+to the controller to build the result query that selects all objects (log messages) with .
+
+Another object selection option is a link name. The option of itself represents one or multiple names divided
+by '|' or '/'. With that option specified the selection process takes only first selected/found object (others are
+ignored) and builds the tree (based on object elements 'link' property matched link-names) from that head object. Result
+selection is that tree object list. The tree for link names divided by '|' is built on all specified names, while for
+names divided by '/' - only for the first matched per object. Only one delimiter can be used for the view, so name list
+'name1|name2/name3' will be divided into two names: name1 and 'name2/name3'.
+See 'Element layout' help section for the tree template.`
 }}},
 
-"Element layout": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`Element layout is a JSON strings list. Each JSON defines element and its behaviour such as table cell position, style
-attribute, OV start event and etc.. JSON possible properties are:
+"Element layout": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
+`Element layout is a JSON strings list. JSON format depends on specified OV template. Let's first consider table template.
+It is is a main way to display and manage OD data and allows to format data many different ways - from classic tables
+to public chats, see examples below. Each JSON for a table template element layout defines elements and their behaviour -
+such as table cell position, style attribute, OV start event and etc.. JSON possible properties are:
 
 - 'oid'. Object id number in range from 0. Attributes (x, y, style, ..) are applied to the specified object id together
   with element id. New object (input text data to add new objects) id is 1. Header (title) object id is 2. Database object
@@ -2145,7 +2149,7 @@ First JSON defines 'id' element for title object (oid=2), it will be on the top 
 Second JSON defines 'id' element for database objects (oid=0) in the selection, all objects are placed to the first
 table column (y=0) and to the rows in order starting from second row (y=n+1) - first object (n=0) goes to the second
 row (y=1), second object (n=1) goes to the third row (y=2) and so on.
-Similarly for two next elements datetime and log message element id1 (eid=1), except that column ('x' coordinate)
+Similarly for two next elements datetime and log message element #1 (eid=1), except that column ('x' coordinate)
 position for datetime is x=1 (second column) and for log message is x=2 (third column).
 
 Element layout could be set to one of predefined templates, which are converted to JSONs anyway. Possible values are:
@@ -2153,6 +2157,91 @@ Element layout could be set to one of predefined templates, which are converted 
 '*' - One asterisk behaves like empty value, but 'new' object is added to the table just right after 'title' object.
 '**' - Two asterisks behaves like empty value, but built-in service elements ('id', 'version', 'owner'..) are added.
 '***' - Three asterisks behaves like one asterisk, but built-in service elements ('id', 'version', 'owner'..) are added.`
+},
+
+element2: { line: '', style: 'font-family: monospace, sans-serif;', head:
+`
+Next - 'Tree' template, it builds the tree from head object ('object selection' first found) to other objects based
+on their element link properties. Each link property is one or multiple (one by line) connections. Each connection
+has its link name, remote 'element' and remote object (tree node) 'selection' the connection links to.
+All three values are divided by '|'. Connection format: <link name>|<remote element>|<remote object selection>
+Remote object selection is a part of a query that calculates next object/node on the tree.
+Query format: SELECT id FROM <OD> WHERE lastversion=1 AND version!=0 AND <remote object selection>
+
+Example: five objects are linked with each other via next connections:
+
+      +-----------------------------------+
+      |            object  id7            |
+      |                                   |
+      |             element10             |
+      +-----------------------------------+
+                        ^
+                        |
+                        |l1
+                        |
+      +-----------------------------------+
+      |             element9              |
+      |            object id6             |
+      | element7                element8  |
+      +-----------------------------------+
+            ^                       ^
+            |                       |
+            |l1                     |l1
+            |                       |
+    +---------------+       +---------------+
+    |   element4    |       |   element6    |
+    |  object id4   |       |  object id5   |
+    |   element3    |       |   element5    |
+    +---------------+       +---------------+
+            ^                       ^
+            |                       |
+            |l1                     |l2
+            |                       |
+      +-----------------------------------+
+      | element1                element2  |
+      |         head object id3           |
+      |                                   |
+      +-----------------------------------+
+
+Head object3 has two routes to object7, first route - via object4, second - via object5.
+Let's create some views to display first route, second route and both routes.
+First view properties:
+- 'Name' = 'Main route'
+- 'Template' = 'Tree'
+- 'Object selection' = 'WHERE id=3' (head object #3 selection)
+- 'Link name' = 'l1'
+Second view properties:
+- 'Name' = 'Alternative route'
+- 'Template' = 'Tree'
+- 'Object selection' = 'WHERE id=3' (head object #3 selection)
+- 'Link name' = 'l2/l1'
+Third view properties:
+- 'Name' = 'Main and alternative routes'
+- 'Template' = 'Tree'
+- 'Object selection' = 'WHERE id=3' (head object #3 selection)
+- 'Link name' = 'l1|l2'
+
+First view 'Link name' is 'l1', so the tree is built on object elements links property containing connections with link name
+'l1', so object list will be routed via "object3 -> object4 -> object6 -> object7". Similarly for the second view, but link
+names 'l2/l1' will route via object5 instead of object4 (for the whole object3 first found 'l2' is used as one possible link
+name only), so result route will be "object3 -> object5 -> object6 -> object7".
+The third view link name list is 'l1|l2', so both names ('l1' and 'l2') are considered in a tree building process and the
+view will be displayed as on the scheme above, but with one feature - object6 will be shown as a looped tree node with the
+red color highlighted content background.
+
+Also object elements for our example must have next link property values:
+object3, element1: 'l1|3|id=4'  (link name 'l1', remote element id 3, remote object_selection 'id=4' selects object id 4)
+object3, element2: 'l2|5|id=5'  (link name 'l2', remote element id 5, remote object_selection 'id=5' selects object id 5)
+object4, element4: 'l1|7|id=6'  (..)
+object5, element6: 'l1|8|id=6'  (..)
+object6, element9: 'l1|10|id=7' (..)
+
+In addition to the tree template settings - view 'element layout' field defines tree node content and tree scheme direction.
+The object node content is a simple list of element titles and its values. Layout is a JSON list field generally, so first
+correct JSON is used for the template only. The JSON should contain element identificators (id,version,date,owner..1,2..)
+as a JSON property names (property values are ignored) plus 'direction' tree property 'up' or 'down' (for default).
+Empty layout field - all user defined elements plus 'id' with 'down' direction are used.
+Correct empty JSON '{}' as an 'element layout' displays no content, while all error JSONs - only 'id' element.`
 }}},
 
 "Handlers": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:

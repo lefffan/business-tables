@@ -46,7 +46,7 @@ try {
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
      $userOD['dialog']['Element']['User (id1)'] = $newElement;
 
-     $json = '{"props": {"link_remote_object_selection": "", "link_remote_element_id": "", "link_type": ""}}';
+     $json = '{"props": {"link": ""}}';
      initNewODDialogElements();
      $newElement['element1']['id'] = '2';
      $newElement['element1']['data'] = 'Name';
