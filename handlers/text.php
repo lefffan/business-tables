@@ -1,8 +1,11 @@
 <?php
 
-//sleep(3);
-//require_once 'core.php';
+function lg($arg)
+{
+ file_put_contents('/usr/local/src/tabels/error.log', var_export($arg, true), FILE_APPEND);
+}
 
+//sleep(2);
 if (!isset($_SERVER['argv'][1])) exit;
 $event = $_SERVER['argv'][1];
 
@@ -17,6 +20,12 @@ switch($event)
        case 'CALL':
 	    echo json_encode(['cmd' => 'CALL', 'data' => ['OD'=>'Users', 'OV'=>'_qq', 'Params'=>[':input_user'=>'']]]);
 	    break;
+       case 'SETTEXT':
+	    $string = '';
+	    foreach ($_SERVER['argv'] as $key => $value) if ($key !== 0 && $key !== 1) $string .= $value;
+	    echo json_encode(['cmd' => 'SET', 'value' => str_ireplace('<br>', "\n", $string)]);
+	    break;
+	    break;
        case 'SET':
 	    if (isset($_SERVER['argv'][3]) && ($data = json_decode($_SERVER['argv'][3], true)) && ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey']))
 	       {
@@ -30,7 +39,7 @@ switch($event)
 	       }
 	    if (!($arr = json_decode($_SERVER['argv'][2], true)) || gettype($arr) != 'array')
 	       {
-		echo json_encode(['cmd' => 'SET', 'value' => $_SERVER['argv'][2]]);
+		echo json_encode(['cmd' => 'SET', 'value' => str_ireplace('&nbsp;', " ", str_ireplace('<br>', "\n", $_SERVER['argv'][2]))]);
 		break;
 	       }
 	    $profile = [];

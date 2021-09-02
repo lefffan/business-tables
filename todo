@@ -1,7 +1,4 @@
 --------------2021--------------------------------------------------------------
-- Main.js: 1. tree element no value exist, so should i use title instead? 2. error object text dolzhen byt perenesen
-- Map pichar and graph display error (ov type are not implemented yet)
-
 - Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
 - Dodelat megacom MRTG emulation
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const.
@@ -27,7 +24,10 @@
   display current DB size and object count in EDITOD
     make db size limit and object count limit work
   System call 'OPENINANEWTAB', - System call NEWOBJECT (to create object by user handlers)
-  Object selection with non-empty link type for all view types (by now it is released for tree view type only) for scheduler.php and SET command (search case by JSON in value prop)
+  Object selection with non-empty link type:
+	for all view types (by now it is released for tree view type only)
+	for scheduler.php and system user permissions to display/write the view
+        handler JSON input arg as OD/OV search element valuse via object selection
   Object selection is a SQL queries list:
     for table view - all queries unioned (or exluded?) to one selection
     for tree view - scheme link betweens two objects (1st from 1st selection, 2nd - from second).
@@ -44,7 +44,8 @@
   Task manager: restrict call of task manager for some users
   system user readonly customization, it is default customization to allow all other users use it in case of error
   Handler no output is a standart behaviour, don't log it
-  User groups output in OV (select .. where ed1>>'groups' regexp..)
+  Display in aparent OV Users for input group (select .. where ed1>>value != :input_group and ed1>>'groups' regexp -w :input_group)
+    and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
 
 - JS, PHP, SQL:
@@ -82,6 +83,7 @@
     Features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side from the select div, highlite 'New rule|view|element' in the expanded div, radio tag (and may be not only this  tag) loses its positin after textarea tag in case of no 'line': '', input text tag whole parent div width
     dialog interface element heads - not plain text but some <font> <color> tags?
     content scrolling with pads stay on the top (now pads block is scrolled with the content)
+    dialog box element and its head style property (style and headstyle props in dialog element json)
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
   when button is pushed no dialog refreshed, when pushed button is pushed and mouse cursir is out of button - make button released
@@ -90,14 +92,12 @@
 
 - Controller:
   prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
-  Implement users per group display
-    and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection)
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
 
 - Handlers:
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
     (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
-    So should CONFIRM event be splited to CONFIRMEDIT and CONFIRMDIALOG? CONFIRM -> CONFIRMEDIT, CONFIRMDIALOG, CONFIRMPRESET?
+    So should CONFIRM event be renamed to CONFIRMEDIT? (i think no!)
     May be set hint to these error cells and all cells with hint are marked with the footnote (snoska).
     Also implement footnotes for all four cell angles (hint, description, link, attached files)
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
@@ -612,7 +612,7 @@ Postprocessing rule: JSON_EXTRACT(eid1, '$.value')='pid'
 MRTG view: WHERE lastversion=1 AND version!=0 LIMIT 9
 Element layout: *
 competitive advantages:
-    nice interface and full cutomiztion
+    nice, friendly and minimalistic interface and full (!) cutomiztion
     Web access
     SUBD based
     Scheduler

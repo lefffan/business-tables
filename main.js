@@ -97,7 +97,7 @@ let uiProfile = {
 		  "tree table": { target: ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
 		  "tree error element": { target: ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
 		  "tree element": { target: ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "object element value max chars": "60", "object element title max chars": "15", },
-		  "tree arrow stock": { target: ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "100px;", },
+		  "tree arrow stock": { target: ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "60px;", },
 		  "tree arrow down": { target: ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree arrow up": { target: ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree element description": { target: ".treelinkdescription", "display": "flex;", "flex": "1 10px;", "background-color": "transparent;", "border": "none;", "padding": "5px;", "font": "10px/11px arial;", "overflow": "hidden;", },
@@ -373,7 +373,8 @@ function drawMain(data, props)
 	 cursor.eId = mainTable[cursor.y][cursor.x].eId;
 	}
      CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
-     if (cursor.oId === NEWOBJECTID || oldcursor.contentEditable === EDITABLE) MakeCursorContentEditable(oldcursor.data);
+     if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable();
+      else if (oldcursor.contentEditable === EDITABLE) MakeCursorContentEditable(oldcursor.data);
      mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
      mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
     }
@@ -2025,6 +2026,32 @@ and defined for necessary events only. Events are occured on object processes ('
 at object element data change), keyboard/mouse element push/click ('DBLCLICK', 'KEYPRESS', 'F2', 'F12', 'INS', 'DEL') and
 handler feedback ('CONFIRM', 'CONFIRMDIALOG'). See 'Handlers' help section for details.
 
+Third configuration section - 'View'. The same way for add/delete operations is used - empty name removes the view, 'New view'
+option with any name specified creates it. View name first char '_' hides unnecessary views from user sidebar, so the view can
+be called from element handlers only (see 'Handler' help section for details).
+The object view (OV) of itself is a mechanism to output selective object data on specified template. Objects for the view are
+obtained from the selection process (see 'Object Selection' for details), their elements - from 'Element layout' (see
+appropriate help section for details).
+Next view configuration is a scheduler. It is a *nix like cron service which executes specified command line for specified
+element for all objects of the view. Scheduler field is an instructions list (one by line) of the general form:
+'run this command at this time on this date for this element id'.
+Blank lines and leading spaces and tabs are ignored. Instruction is an entry list separated by spaces with next format:
+<minute 0-59> <hour 0-23> <day of month 1-31> <month 1-12> <day of week 0-7> <element id number> <command line>
+First five entries are datetime parameters, sixth - element id number from 1 and the rest of the line is treated as a 
+command line to execute. Datetime parameters may be set to asterisk (*), which always stands for 'first-last'. Ranges of numbers
+are allowed. Ranges are two numbers separated with a hyphen. The specified range is inclusive. For example, 8-11 for an 'hours'
+entry specifies execution at hours 8, 9, 10 and 11. Lists are allowed. A list is a set of numbers (or ranges) separated by
+commas. Examples: '1,2,5,9', '0-4,8-12'. Step values can be used in conjunction with ranges. Following a range with '/<number>'
+specifies skips of the number's value through the range. For example, '0-3/2' can be used in the hours field to specify 0,2
+hours execution. Zero or 7 day of week values are Sunday.
+So the service tries to check all view schedules of all databases each minute. In case of datetime parameters match - the
+specified command line (handler) for specified element id is exexcuted for every object of the view. Next instruction or view
+schedule is not checked until the previous job finished. Next example clears (by setting empty value) element2 value every
+day at 3:00:
+0 3 * * * 2 php text.php SET
+And at the end - two text areas at the bottom are view permissions for read/write operations. 'Disallowed list' restricts
+specified users/groups and allows others, while 'Allowed list' allows specified and restricts others.
+
 Last configuration section is 'Rule'. Object instances before and after CRUD operations (add, delete, change) are passed to the
 analyzer and tested on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a
 match is found, the action corresponding to the matching rule profile is performed. Default action is accept.
@@ -2038,9 +2065,10 @@ Empty or error rules are match case, but error rule displays error message inste
 Simple example: pre-processing rule "JSON_EXTRACT(eid1, '$.value')='root'" with the action 'reject' and rule apply operation
 'delete object' prevents root user removal. Example query will look like:
 SELECT .. FROM data_1 WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'
+The query above is successfull, so perfomed action ('reject') disallowes user removal.
 Next example with both rules empty and reject action for all operations freezes the database, so all changes are rejected.
 Another example: first profile with action accept preprocessing rule "owner=':user'" and second profile reject
-action with both empty rules allowes to change self-created objects only.`
+action with both empty rules - allowes to change self-created objects only.`
 }}},
 
 "Object Selection": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
@@ -2166,7 +2194,7 @@ on their element link properties. Each link property is one or multiple (one by 
 has its link name, remote 'element' and remote object (tree node) 'selection' the connection links to.
 All three values are divided by '|'. Connection format: <link name>|<remote element>|<remote object selection>
 Remote object selection is a part of a query that calculates next object/node on the tree.
-Query format: SELECT id FROM <OD> WHERE lastversion=1 AND version!=0 AND <remote object selection>
+Query format: SELECT id FROM <OD> WHERE lastversion=1 AND version!=0 AND <remote object selection> LIMIT 1
 
 Example: five objects are linked with each other via next connections:
 

@@ -4,55 +4,6 @@ require_once 'core.php';
 
 CONST ARGVCLIENTINDEX = 9;
 
-function CalculateODVIDS($db, &$output, &$client)
-{
- ConvertToString($output, ['OD', 'OV', 'ODid', 'OVid']);
- if (!isset($output['params']) || gettype($output['params']) != 'array') $output['params'] = [];
- //
- if (!isset($output['ODid']) && !isset($output['OD'])) { $output['ODid'] = $client['ODid']; $output['OD'] = $client['OD']; }
- if (!isset($output['OVid']) && !isset($output['OV'])) { $output['OVid'] = $client['OVid']; $output['OV'] = $client['OV']; }
- //
- if (!isset($output['ODid']))
-    {
-     $query = $db->prepare("SELECT id FROM $ WHERE odname=:odname");
-     $query->execute([':odname' => $output['OD']]);
-     $output['ODid'] = $query->fetchAll(PDO::FETCH_NUM);
-     isset($output['ODid'][0][0]) ? $output['ODid'] = $output['ODid'][0][0] : $output['ODid'] = '';
-    }
- //
- if (!isset($output['OVid']) && $output['ODid'] != '')
-    {
-     $output['OVid'] = '';
-     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
-     $query->execute([':id' => $output['ODid']]);
-     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $key => $View) if ($key != 'New view' && $key === $output['OV'])
-	     {
-	      $output['OVid'] = $View['element1']['id'];
-	      // What to do for the views with non table types? Should handlers be called for those view types (for example, in a sheduler case)? I think they should.
-	      // if (substr($View['element3']['data'], ($pos = strpos($View['element3']['data'], '+')) + 1, strpos($View['element3']['data'], '|', $pos) - $pos -1) != 'Table') break;
-	      $output['objectselection'] = trim($View['element4']['data']);
-	      $output['linktype'] = $View['element5']['data'];
-	      break;
-	     }
-    }
- //
- if ($output['OVid'] != '' && $output['ODid'] != '')
-    {
-     if (isset($output['objectselection'])) return true;
-     $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id=:id");
-     $query->execute([':id' => $output['ODid']]);
-     foreach (json_decode($query->fetchAll(PDO::FETCH_NUM)[0][0], true) as $View) if ($output['OVid'] === $View['element1']['id'])
-	     {
-	      // What to do for the views with non table types? Should handlers be called for those view types (for example, in a sheduler case)? I think they should.
-	      // if (substr($View['element3']['data'], ($pos = strpos($View['element3']['data'], '+')) + 1, strpos($View['element3']['data'], '|', $pos) - $pos -1) != 'Table') break;
-	      $output['objectselection'] = trim($View['element4']['data']);
-	      $output['linktype'] = $View['element5']['data'];
-	      break;
-	     }
-     return true;
-    }
-}
-
 function ParseHandlerResult($db, &$output, &$client)
 {
  if (!isset($output[0]))
@@ -129,91 +80,12 @@ function ParseHandlerResult($db, &$output, &$client)
 	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'CALL' command on object '$client[cmd]' event!");
 		  return;
 		 }
-	      cutKeys($output, ['cmd', 'OD', 'OV', 'ODid', 'OVid', 'params']);
-	      if (!CalculateODVIDS($db, $output, $client))
-	         {
-	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] calls undefined database or view!");
-		  return;
-		 }
+	      cutKeys($output, ['cmd', 'ODid', 'OVid', 'params']);
 	      break;
 	 case 'SET':
 	 case 'RESET':
-	      // Adjust hint, description, style, alert properties, empty property is not allowed unset($output['']) ?
-	      ConvertToString($output, ['hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
-	      // SET command sql search request case?
-	      if (!isset($output['value']) || gettype($output['value']) != 'array')
-	         {
-		  ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
-		  break;
-		 }
-	      $data = $output['value'];
-	      if (!isset($data['operator']) || gettype($data['operator']) != 'string' || $data['operator'] === '')
-	         {
-		  LogMessage($db, $client, "Handler (element id $client[eId], object id $client[oId]) sql operator is undefined!");
-		  ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
-		  break;
-		 }
-
-	      // Init some vars..
-	      $searchresult = $searchquery = '';
-
-	      // <OD>/<ODid> and <OV>/<OVid> - Any options absent - current OD/OV is used.
-	      if (!CalculateODVIDS($db, $data, $client))
-	         {
-	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] calls undefined database or view!");
-		  return;
-		 }
-
-	      // <searchelements> - object element ids or service elements to search from separated by comma, absent element list - all elements are used.
-	      // <searchprop> - JSON object element property to search from, absent element prop - property 'value' is used.
-	      // <operator> - SQL operator, for a example REGEXP or NOT REGEXP, absent case causes an error.
-	      // <condition> - SQL condition, 'OR' for default
-	      if (!isset($data['condition'])) $data['condition'] = 'OR';
-	      if (!isset($data['searchelements']))
-		 {
-		  $data['searchelements'] = '';
-		  foreach($client['allelements'] as $key => $value) $data['searchelements'] .= strval($key).',';
-		  $data['searchelements'] = substr($data['searchelements'], 0, -1);
-	         }
-	      if (!isset($data['searchprop'])) $data['searchprop'] = 'value';
-	      foreach (preg_split("/,/", $data['searchelements']) as $value)
-		      $searchquery .= CalculateElementPropQuery($value, $data['searchprop']).' '.$data['operator'].' '.$data['condition'].' ';
-	      $searchquery = substr($searchquery, 0, 0 - strlen($data['condition'].' '));
-	      $searchquery = "SELECT id FROM `data_$data[ODid]` WHERE $searchquery";
-
-	      // element/prop value of the matched object to be set, absent case - 1st element of <searchelements>/<searchprop> are used
-	      // SELECT element/prop FROM <data_ODid> WHERE JSON_EXTRACT(<column>, '$.<prop>')|id|version|datetime|user REGEXP '^b';
-	      $data['objectselection'] = GetObjectSelection($db, $data['objectselection'], $data['params'], $client['auth']);
-	      if (gettype($data['objectselection']) === 'array')
-		 {
-		  LogMessage($db, $client, "Handler (element id $client[eId], object id $client[oId]) requested view has undefined user defined params in object selection!");
-		  ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
-		  break;
-		 }
-	      try {
-		   $query = $db->prepare("SELECT id,version FROM `data_$data[ODid]` $data[objectselection]");
-		   $query->execute();
-		   foreach($query->fetchAll(PDO::FETCH_ASSOC) as $value)
-		          {
-			   $search = $db->prepare("$searchquery AND (id=$value[id] AND version=$value[version])");
-			   $search->execute();
-			   if (!isset($search->fetchAll(PDO::FETCH_NUM)[0][0])) continue;
-			   if (!isset($data['element'])) (($pos = strpos($data['searchelements'], ',', 0)) === false) ? $data['element'] = $data['searchelements'] : $data['element'] = substr($data['searchelements'], 0, $pos);
-			   if (!isset($data['prop'])) $data['prop'] = $data['searchprop'];
-			   //
-			   $search = $db->prepare('SELECT '.CalculateElementPropQuery($data['element'], $data['prop'])." FROM `data_$data[ODid]` WHERE id=$value[id] AND version=$value[version]");
-			   $search->execute();
-			   $search = $search->fetchAll(PDO::FETCH_NUM);
-			   if (isset($search[0][0])) $searchresult = $search[0][0];
-			   break;
-			  }
-	    	   $output['value'] = $searchresult;
-	    	  }
-	      catch (PDOException $e)
-		  {
-		   LogMessage($db, $client, "Handler (element id $client[eId], object id $client[oId]) SET command sql error: ".$e->getMessage());
-		  }
-	      ConvertToString($output, ['value'], ELEMENTDATAVALUEMAXCHAR);
+	      // Adjust value, hint, description, style, alert properties, empty property is not allowed unset($output['']) ?
+	      ConvertToString($output, ['value', 'hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
 	      break;
 	 case '':
 	      break;
@@ -263,6 +135,48 @@ function WriteElement($db, &$client, &$output, $version)
  return true;
 }
 
+function GetElementProperty($db, $output, &$client)
+{
+ $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
+
+ // Fetch OD/OV, check them and their access
+ if (!isset($output['ODid'], $output['OD'])) $output['ODid'] = $client['ODid'];
+ if (!isset($output['OVid'], $output['OV'])) $output['OVid'] = $client['OVid'];
+ $output = ['cmd' => 'CALL', 'uid' => $client['uid']] + $output;
+ if (!Check($db, CHECK_OD_OV | GET_VIEWS | CHECK_ACCESS, $output, $output) && !LogMessage($db, $client, $errormessage.$output['error'])) return '';
+
+ // Fetch input array :parameters and unset all unknown
+ foreach ($output as $key => $value)
+	 if ($key[0] === ':')
+	 if (gettype($output[$key] = json_decode($value, true)) !== 'array') unset($output[$key]);
+	  else $output[$key] = GetElementProperty($db, $output[$key], $client);
+	  else if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'oselection', 'eselection'])) unset($output[$key]);
+
+ // Get OD/OV object selection
+ $output['objectselection'] = GetObjectSelection($db, $output['objectselection'], $output, $client['auth']);
+ if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
+
+ if (!isset($output['oselection']) || gettype($output['oselection']) !== 'string' || $output['oselection'] === '')
+    $output['oselection'] = "id=$client[oId] AND lastversion=1 AND version!=0";
+
+ try {
+      $query = $db->prepare("SELECT id FROM (SELECT * FROM `data_$output[ODid]` WHERE $output[oselection] LIMIT 1) _ $output[objectselection]");
+      $query->execute();
+     }
+ /*
+ $select = '*';
+ if ($arr['eselection'][0] !== '/' || $arr['eselection'][strlen($arr['eselection']) - 1] !== '/') $select = $arr['eselection'];
+ */
+ catch (PDOException $e)
+     {
+      LogMessage($db, $client, $errormessage.$e->getMessage());
+      return '';
+     }
+ $data = $query->fetchAll(PDO::FETCH_NUM);
+ if (!isset($data[0][0])) return '';
+ return $data;
+}
+
 function GetCMD($db, &$client, $cmdline = false)
 {
  if (!$cmdline) $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE'])]['data']);
@@ -272,50 +186,31 @@ function GetCMD($db, &$client, $cmdline = false)
 
  while (++$i < $len)
        {
-        switch ($add = $cmdline[$i])
-	       {
-	        case "'":
-		     if (($j = strpos($cmdline, "'", $i + 1)) !== false && ($arr = json_decode(substr($cmdline, $i + 1, $j - $i - 1), true)))
-	    	       {
-		        $add = NULL;
-	    		$i = $j;
-			cutKeys($arr, ['ODid', 'oId', 'eId', 'props', 'version']);
-			if (!isset($arr['ODid']) || gettype($arr['ODid']) != 'string') $arr['ODid'] = $client['ODid'];
-			if (!isset($arr['oId']) || gettype($arr['oId']) != 'string') $arr['oId'] = $client['oId'];
-			if (!isset($arr['eId']) || gettype($arr['eId']) != 'string') $arr['eId'] = $client['eId'];
-			if (!isset($arr['props'])) $arr['props'] = '';
-			if (!isset($arr['version'])) $arr['version'] = NULL;
-
-			if (gettype($arr['props']) === 'string')
-			   {
-			    $add = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $arr['props'], $arr['version']);
-			   }
-			 else if (gettype($arr['props']) === 'array')
-			   {
-			    foreach($arr['props'] as $key => $value) $arr['props'][$key] = getElementProp($db, $arr['ODid'], $arr['oId'], $arr['eId'], $key, $arr['version']);
-			    $add = json_encode($arr['props'], JSON_HEX_APOS | JSON_HEX_QUOT);
-			   }
-			
-			if (!isset($add)) $add = '';
-			$add = "'".str_replace("'", "'".'"'."'".'"'."'", $add)."'";
-	    	       }
-		    break;
-    	       case "<":
-    		    if (($j = strpos($cmdline, '>', $i + 1)) !== false && (($match = substr($cmdline, $i + 1, $j - $i - 1)) === 'data' || $match === 'user' || $match === 'oid' || $match === 'event' || $match === 'title')) // Check for <data|user|oid|title> match
-	    	       {	
-			$i = $j;
-			if ($match === 'data') $add = $client['data'];
-			 else if ($match === 'user') $add = $client['auth'];
-			 else if ($match === 'oid') $add = $client['oId'];
-			 else if ($match === 'event') $add = $client['cmd'];
-			 else $add = $client['allelements'][$client['eId']]['element1']['data'];
-			$add = "'".str_replace("'", "'".'"'."'".'"'."'", $add)."'";
-	    	       }
-	      }
+        if (($add = $cmdline[$i]) === '>') continue;
+    	if ($add === '<')
+	   {
+	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
+	    switch ($match = substr($cmdline, $i + 1, $j - $i - 1))
+		   {
+		    case 'data':  $add = DoubleQuote($client['data']); break;
+		    case 'user':  $add = DoubleQuote($client['auth']); break;
+		    case 'oid':   $add = DoubleQuote($client['oId']); break;
+		    case 'event': $add = DoubleQuote($client['cmd']); break;
+		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
+		    default: if ($add = json_decode($match, true)) $add = DoubleQuote(GetElementProperty($db, $add, $client));
+			      else $add = "'<$match>'"; // Quote pair angle brackets to avoid stdin/stdout
+		   }
+	    $i = $j;
+	   }
        $newcmdline .= $add;
       }
 
  return $newcmdline;
+}
+
+function DoubleQuote($string)
+{
+ return "'".str_replace("'", "'".'"'."'".'"'."'", $string)."'";
 }
 
 // Init variables

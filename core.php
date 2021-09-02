@@ -95,6 +95,8 @@ function adjustODProperties($db, $data, $ODid)
  foreach ($viewpad as $key => $value)
 	 if (!isset($value['element1']['data'], $value['element2']['data']) || $value['element1']['data'] === '')
 	    unset($data['dialog']['View'][$key]); // Dialog 'View' profile corrupted or view name is empty? Remove it
+	  elseif ($value['element1']['data'] === 'New view')
+	    $viewpad[$key]['element1']['data'] = $key.''; // Discard changes for the view named 'New view'
  foreach ($viewpad as $key => $value)
 	 if (isset($viewpad[$value['element1']['data']]))
 	    {
@@ -102,6 +104,7 @@ function adjustODProperties($db, $data, $ODid)
 	    }
 	  else
 	    {
+	     $viewpad[$key]['element1']['head'] = "View (id$vidnew) name";
 	     $vidnew = strval(intval($vidnew) + 1);
 	     $viewpad[$value['element1']['data']] = $viewpad[$key];	// Otherwise create new view with new view name
 	     unset($viewpad[$key]);					// and remove old view
@@ -141,7 +144,7 @@ function initNewODDialogElements()
 {
  global $newProperties, $newElement, $newView, $newRule;
 
- $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - remove all elements in 'Element' tab and set database name and its description empty."],
+ $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - remove all elements in 'Element' tab<br>and set database name with its description empty."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
 		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
@@ -158,7 +161,7 @@ function initNewODDialogElements()
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "Handler for 'INIT' event:", 'data' => '', 'help' => 'hhhhhhh'],
+		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "Handler for 'INIT' event:", 'data' => ''],
 		    'element5' => ['type' => 'text', 'label' => "Handler for 'DBLCLICK' event:", 'data' => ''],
 		    'element6' => ['type' => 'text', 'label' => "Handler for 'KEYPRESS' event:", 'data' => ''],
 		    'element7' => ['type' => 'text', 'label' => "Handler for 'INS' event:", 'data' => ''],
@@ -170,13 +173,13 @@ function initNewODDialogElements()
 		    'element13' => ['type' => 'text', 'label' => "Handler for 'CHANGE' event:", 'data' => '', 'line' => '']
 		   ];
 
- $newView	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
+ $newView	 = ['element1' => ['type' => 'text', 'head' => 'View name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'radio', 'head' => 'Template', 'data' => '+Table|Tree|Graph|Piechart|Map|', 'help' => "Select object view type from 'table' (displays objects in a form of a table),<br>'scheme' (displays object hierarchy built on object selection link name),<br>'graph' (displays object graphic with one element on 'X' axis, other on 'Y'),<br>'piechart' (displays specified element value statistic on the piechart) and<br>'map' (displays objects on the geographic map)"],
-		    'element4' => ['type' => 'textarea', 'head' => 'Object selection expression. Empty expression selects all objects, error expression - no objects.', 'data' => ''],
+		    'element4' => ['type' => 'textarea', 'head' => 'Object selection', 'help' => 'Object selection is a part of the sql query string, that selects objects for the view.<br>Empty string selection - all objects, error selection - no objects.<br>See appropriate help section for details.', 'data' => ''],
 		    'element5' => ['type' => 'text', 'label' => 'Link name', 'data' => '', 'line' => ''],
-		    'element6' => ['type' => 'textarea', 'head' => 'Element layout', 'data' => '', 'line' => '', 'help' => "JSON list element layout defines what elements should be displayed and how. Each JSON defines element and its behaviour such as<br>table cell position, style attribute, event.. See 'Element layout' help section for details. JSON possible properties are:<br><br>- 'oid'. Object id: 0 (all objects in the selection), 1 (new object), 2 (Header object), 3 (specified database object).<br>- 'eid'. Element id: id, version, owner, datetime, lastversion or user defined element id number from 1..<br>- 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions<br>  that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects).<br>  For a example, expression \"y\": \"n+1\" will place first object in the selection (n=0) to the second row (y=1).<br>- 'event'. Mouse double click (DBLCLICK) or key press (F2, F12, INS, DEL, KEYPRESS) event emulation after OV has been opened.<br>  Symbol key push event 'KEYPRESS' should be specified with the additional string to be passed to the handler as an input arg.<br>  For example, \"event\": \"KEYPRESSa\" will emulate key 'a' pushed at the object view open. See 'Handler' help section. <br>- 'hidecol', 'hiderow'. These properties collapse (hide) table columns or rows with appropriate element values.<br>  For example, expression \"hiderow\": \"\" will hide all empty table rows.<br>- 'style'. HTML css style attribute (see appropriate css documentaion) for 'td' tag the specified object element is placed in.<br>  Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.<br>  Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).<br>- 'tablestyle'. HTML css style attribute for 'table' tag and for zero 'oid'/'eid' only.<br>- 'value'. Table cell element main text. For new/title objects only.<br>- 'hint'. Table cell element hint, displayed on a table cell cursor navigation. For new/header objects only."],
-		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Each element scheduler string (one per line) executes its handler &lt;count> times starting at<br>specified date/time and represents itself one by one space separated args in next format:<br>&lt;minute> &lt;hour> &lt;mday> &lt;month> &lt;wday> &lt;event> &lt;event data> &lt;count><br>See crontab file *nix manual page for date/time args. Zero &lt;count> - infinite calls count.<br>Scheduled call emulates mouse/keyboard events (DBLCLICK and KEYPRESS) with specified<br>&lt;event data> (for KEYPRESS only) and passes 'system' user as an user initiated<br>specified event. Any undefined arg - no call."],
+		    'element6' => ['type' => 'textarea', 'head' => 'Element layout', 'data' => '', 'line' => '', 'help' => 'Element layout defines what elements should be displayed and how for the specified template.<br>Empty layout is a default behaviour, see appropriate help section for details.'],
+		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Scheduler is an instruction list (one per line), each instruction executes command line<br>at specified datetime for specified element for all objects of the view.<br>Instruction represents itself one by one space separated args in next format:<br>&lt;minute 0-59> &lt;hour 0-23> &lt;mday 1-31> &lt;month 1-12> &lt;wday 0-7> &lt;element id number> &lt;command line><br>See 'Database Configuration' help section for details."],
 		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to read this view|+Disallowed list (allowed for others)|"],
 		    'element9' => ['type' => 'textarea', 'data' => ''],
 		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change this view objects|+Disallowed list (allowed for others)|"],
@@ -439,7 +442,7 @@ function setElementSelectionIds(&$client)
 	  if ($eid === '0') // First check zero element id for style and tablestyle props only. Tablestyle prop for zero object only
 	     {
 	      if (isset($arr['style']) && gettype($arr['style']) === 'string') $props[$eid][$oid] = ['style' => $arr['style']];
-	      if ($oid === '0' && isset($arr['tablestyle']) && gettype($arr['style']) === 'string')
+	      if ($oid === '0' && isset($arr['tablestyle']) && gettype($arr['tablestyle']) === 'string')
 		 isset($props[$eid][$oid]) ? $props[$eid][$oid]['tablestyle'] = $arr['tablestyle'] : $props[$eid][$oid] = ['tablestyle' => $arr['tablestyle']];
 	      continue;
 	     }
@@ -716,7 +719,7 @@ function GetObjectSelection($db, $objectSelection, $params, $user)
  $isDialog = false;
  $objectSelectionNew = '';
  $objectSelectionParamsDialogProfiles = [];
- 
+
  // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
  while  (++$i <= $len)
      // Parameter delimiter char  <'>, <">, <:>, < > detected
@@ -796,10 +799,18 @@ function Check($db, $flags, &$client, &$output)
 {
  if ($flags & CHECK_OD_OV)
     {
-     // Copy input OD/OV ids and names if exist
      $output['sidebar'] = Sidebar($db, $client);
      if (count($output['sidebar']) == 0 && ($output['error'] = 'Please create Object Database first!')) return;
      if ($client['ODid'] === '' && ($output['error'] = 'Please create/select Object View!')) return;
+
+     // Fetch OD id in case of OD name exist
+     if (!isset($client['ODid']) && isset($client['OD']))
+	 foreach ($output['sidebar'] as $id => $value) if ($value['name'] === $client['OD'] && ($client['ODid'] = $id)) break;
+
+     // Fetch OV id in case of OV name exist
+     if (isset($client['ODid']) && !isset($client['OVid']) && isset($client['OV']))
+	 foreach ($output['sidebar'][$client['ODid']]['view'] as $id => $value) if ($value === $client['OV'] && ($client['OVid'] = $id)) break;
+
      if (!isset($output['sidebar'][$client['ODid']]['view'][$client['OVid']]) && ($output['error'] = "Database '$client[OD]' or its View '$client[OV]' not found!")) return;
      $client['OD'] = $output['sidebar'][$client['ODid']]['name'];
      $client['OV'] = $output['sidebar'][$client['ODid']]['view'][$client['OVid']];
@@ -895,10 +906,11 @@ function Check($db, $flags, &$client, &$output)
      if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT' && ($output['alert'] = 'System account cannot be deleted!')) return;
      // Check for changes of object selection
      if (gettype($client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth'])) === 'array' && ($output['alert'] = "Object selection has been changed, please refresh Object View!")) return;
-     // Check object existence
-     $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 AND id IN (SELECT id FROM (SELECT id FROM `data_$client[ODid]` $client[objectselection]) _)");
+     // Check object existence, uncommented query is more faster (cause no load for all object selection), but ignores LIMIT sql option
+     //$query = $db->prepare("SELECT id FROM (SELECT id,lastversion,version FROM `data_$client[ODid]` $client[objectselection]) _ WHERE id=$client[oId] AND lastversion=1 AND version!=0");
+     $query = $db->prepare("SELECT id FROM (SELECT * FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0) _ $client[objectselection]");
      $query->execute();
-     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]) && ($output['alert'] = "Please refresh Object View, specified object (id=$client[oId]) doesn't exist!")) return;
+     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]) && ($output['alert'] = "Please refresh, specified object (id=$client[oId]) doesn't exist in the view!")) return;
     }
 
  if ($flags & CHECK_EID)

@@ -48,31 +48,6 @@ function GetElementTitle($eid, &$allelements)
  return $title;
 }
 
-function LinksIntersection1(&$linknames, $linkprop, &$allelements)
-{
- // Function takes view props link names (via '|' or '/') and element link prop to calc intersected names
- $links = []; // Array of [<remote element id>, <uplink object selection>]
- if (isset($linknames['active']))
-    {
-     $active = $linknames['active'];
-     unset($linknames['active']);
-    }
-
- if ($linkprop) foreach (preg_split("/\n/", $linkprop) as $value)
-    if (trim($value) && gettype($last = preg_split("/\|/", $value, 3)) === 'array' && count($last) > 1) // Is linkprop line splited to 2 or 3 elements?
-    if (($last[0] = trim($last[0])) && in_array($last[0], $linknames)) // Check parsed linprop link name to match view props link names array
-    if (!isset($active) || !$active || $last[0] === $active)
-       {
-	if (!isset($last[2])) $last[2] = '';
-	$links[] = [trim($last[1]), trim($last[2])];
-	if (isset($active) && !$active) $active = $last[0];
-	if (isset($active)) break;
-       }
-
- if (isset($active)) $linknames['active'] = $active;
- return $links;
-}
-
 function LinksIntersection($linknames, $linkprop, &$allelements)
 {
  if (gettype($linknames) === 'string') $linknames = [$linknames];
