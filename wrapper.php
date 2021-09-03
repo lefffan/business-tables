@@ -137,36 +137,63 @@ function WriteElement($db, &$client, &$output, $version)
 
 function GetElementProperty($db, $output, &$client)
 {
- $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
+ if ($client['oId'] === 0) $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and new object (element id$client[eId]) handler call: ";
+  else $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
 
  // Fetch OD/OV, check them and their access
- if (!isset($output['ODid'], $output['OD'])) $output['ODid'] = $client['ODid'];
- if (!isset($output['OVid'], $output['OV'])) $output['OVid'] = $client['OVid'];
- $output = ['cmd' => 'CALL', 'uid' => $client['uid']] + $output;
- if (!Check($db, CHECK_OD_OV | GET_VIEWS | CHECK_ACCESS, $output, $output) && !LogMessage($db, $client, $errormessage.$output['error'])) return '';
+ if (!isset($output['ODid']) && !isset($output['OD'])) $output['ODid'] = $client['ODid'];
+ if (!isset($output['OVid']) && !isset($output['OV'])) $output['OVid'] = $client['OVid'];
+ $output = ['cmd' => 'CALL', 'uid' => $client['uid'], 'auth' => $client['auth']] + $output;
+ if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $output, $output) && !LogMessage($db, $client, $errormessage.$output['error'])) return '';
+ if ($output['viewtype'] !== 'Table' && !LogMessage($db, $client, $errormessage.'allowed for table templates only!')) return '';
 
  // Fetch input array :parameters and unset all unknown
  foreach ($output as $key => $value)
-	 if ($key[0] === ':')
-	 if (gettype($output[$key] = json_decode($value, true)) !== 'array') unset($output[$key]);
-	  else $output[$key] = GetElementProperty($db, $output[$key], $client);
-	  else if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'oselection', 'eselection'])) unset($output[$key]);
+	 if ($key[0] === ':' && gettype($arr = json_decode($value, true)) === 'array')
+	    {
+	     $output[$key] = GetElementProperty($db, $arr, $client);
+	    }
+	  else
+	    {
+	     if ($key[0] !== ':' && !in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop'])) unset($output[$key]);
+	    }
 
  // Get OD/OV object selection
  $output['objectselection'] = GetObjectSelection($db, $output['objectselection'], $output, $client['auth']);
  if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
 
- if (!isset($output['oselection']) || gettype($output['oselection']) !== 'string' || $output['oselection'] === '')
-    $output['oselection'] = "id=$client[oId] AND lastversion=1 AND version!=0";
+ // Set default input arg object selection
+ if (!isset($output['selection']) || gettype($output['selection']) !== 'string' || $output['selection'] === '')
+    $output['selection'] = "id=$client[oId] AND lastversion=1 AND version!=0";
+  else
+    $output['selection'] = GetObjectSelection($db, $output['selection'], $output, $client['auth']);
 
+ // Calculate prop
+ $prop = isset($output['prop']) ? trim($output['prop']) : 'value';
+
+ // Calculate element. Absent case - current element is used.
+ $element = isset($output['element']) ? trim($output['element']) : $client['eId'];
+
+ // Calculate select clause. In case of regular expression (/../) use all elements in a layout.
+ if ($element[0] === '/' && $element[strlen($element) - 1] === '/')
+    {
+     $regular = $select = '';
+     $props = setElementSelectionIds($output);
+     foreach ($props as $eid => $value)
+	     if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
+	      elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
+     if (!$select) return '';
+     $select = substr($select, 1);
+    }
+  elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
+  elseif (ctype_digit($element) && ($props = setElementSelectionIds($output)) && isset($props[$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))";
+  elseif (!LogMessage($db, $client, $errormessage."specified element doesn't exist in a view 'element layout' or incorrect!")) return '';
+
+ // Result query
  try {
-      $query = $db->prepare("SELECT id FROM (SELECT * FROM `data_$output[ODid]` WHERE $output[oselection] LIMIT 1) _ $output[objectselection]");
+      $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` WHERE $output[selection] LIMIT 1) _ $output[objectselection]");
       $query->execute();
      }
- /*
- $select = '*';
- if ($arr['eselection'][0] !== '/' || $arr['eselection'][strlen($arr['eselection']) - 1] !== '/') $select = $arr['eselection'];
- */
  catch (PDOException $e)
      {
       LogMessage($db, $client, $errormessage.$e->getMessage());
@@ -174,7 +201,9 @@ function GetElementProperty($db, $output, &$client)
      }
  $data = $query->fetchAll(PDO::FETCH_NUM);
  if (!isset($data[0][0])) return '';
- return $data;
+ if (!isset($regular)) return $data[0][0];
+ foreach ($data[0] as $value) if (preg_match($element, $value)) return $value;
+ return '';
 }
 
 function GetCMD($db, &$client, $cmdline = false)
@@ -186,7 +215,13 @@ function GetCMD($db, &$client, $cmdline = false)
 
  while (++$i < $len)
        {
-        if (($add = $cmdline[$i]) === '>') continue;
+    	if (($add = $cmdline[$i]) === "'" && ($j = strpos($cmdline, "'", $i + 1)) !== false)
+	   {
+	    $newcmdline .= "'".substr($cmdline, $i + 1, $j - $i - 1)."'";
+	    $i = $j;
+	    continue;
+	   }
+        if ($add === '>') continue;
     	if ($add === '<')
 	   {
 	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
@@ -197,8 +232,8 @@ function GetCMD($db, &$client, $cmdline = false)
 		    case 'oid':   $add = DoubleQuote($client['oId']); break;
 		    case 'event': $add = DoubleQuote($client['cmd']); break;
 		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
-		    default: if ($add = json_decode($match, true)) $add = DoubleQuote(GetElementProperty($db, $add, $client));
-			      else $add = "'<$match>'"; // Quote pair angle brackets to avoid stdin/stdout
+		    default: if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
+			      else $add = DoubleQuote(GetElementProperty($db, $add, $client));
 		   }
 	    $i = $j;
 	   }

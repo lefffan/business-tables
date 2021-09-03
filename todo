@@ -93,6 +93,7 @@
 - Controller:
   prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
+  If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise

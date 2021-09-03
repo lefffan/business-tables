@@ -25,7 +25,6 @@ switch($event)
 	    foreach ($_SERVER['argv'] as $key => $value) if ($key !== 0 && $key !== 1) $string .= $value;
 	    echo json_encode(['cmd' => 'SET', 'value' => str_ireplace('<br>', "\n", $string)]);
 	    break;
-	    break;
        case 'SET':
 	    if (isset($_SERVER['argv'][3]) && ($data = json_decode($_SERVER['argv'][3], true)) && ($data['altkey'] || $data['ctrlkey'] || $data['metakey'] || $data['shiftkey']))
 	       {
