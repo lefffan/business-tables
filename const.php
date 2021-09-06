@@ -50,3 +50,4 @@ const OKCANCEL				= ['OK' => ['value' => 'OK', 'call' => '', 'enterkey' => ''], 
 const MINBUTTONTIMERMSEC		= 500;
 const MAXBUTTONTIMERMSEC		= 36000000;
 const DEFAULTELEMENTPROPS		= ['value' => '', 'hint' => '', 'description' => '', 'style' => ''];
+const ARGRECURSIONNUM			= 3;

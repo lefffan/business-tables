@@ -283,8 +283,8 @@ function drawMain(data, props)
  OVtype = 'Table';
 
  // Current view refresh? Remember cursor position and editable status. Then clear current cursor
- let obj, e, oldcursor = {};
- if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid) oldcursor = { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) };
+ let obj, e, oldcursor;
+ oldcursor = (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid) ? { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) } : {};
  cursor = { ODid: ODid, OVid: OVid };
 
  // Get x,y coordinates (and other properties) from props elements array 
@@ -330,11 +330,17 @@ function drawMain(data, props)
     }
  if (warningtext) warning(warningtext);
 
- // Create html table of mainTable array, props[0][0] = { style: , tablestyle: }
+ // Create html table of mainTable array, props[0][0] = { style: , table: }
  const undefinedCell = '<td' + undefinedcellclass + (props[0]?.[0]?.['style'] ? `style="${props[0][0]['style']}"` : '') + '></td>';
- let rowHTML = props[0]?.[0]?.['tablestyle'] ? '<table style="' + props[0][0]['tablestyle'] + '"><tbody>' : '<table><tbody>';
+
+ // Add table attributes
+ let rowHTML = '<table';
+ if (props[0]?.[0]?.['table']) for (let attr in props[0][0]['table']) rowHTML += ` ${attr}="${props[0][0]['table'][attr]}"`;
+ rowHTML += '><tbody>';
+
+ // Create 'undefined' html tr element row
  let x, y, disp = 0, undefinedRow = '<tr>';
- for (x = 0; x < mainTableWidth - hidecol.length; x++) undefinedRow += undefinedCell; // Create 'undefined' html tr element row
+ for (x = 0; x < mainTableWidth - hidecol.length; x++) undefinedRow += undefinedCell;
  undefinedRow += '</tr>';
  //
  mainTableRemoveEventListeners(); // Remove previous view event listeners
@@ -358,26 +364,36 @@ function drawMain(data, props)
  mainTableAddEventListeners(); // Add current view event listeners
  clearTimeout(loadTimerId);
 
- // Restore cursor position on refreshed view and emulate mouse/keyboard start event if exist
- if (cursor.cmd && cursor.oId >= STARTOBJECTID && (cmd = cursor.cmd)) CallController(cursor.data);
- if (cursor.oId || ((cursor.oId = oldcursor.oId) && (cursor.eId = oldcursor.eId)))
+ // Start event?
+ if (cursor.oId)
     {
-     if (objectTable[cursor.oId]?.[cursor.eId])
-	{
-	 cursor.x = objectTable[cursor.oId][cursor.eId].x;
-	 cursor.y = objectTable[cursor.oId][cursor.eId].y;
-	}
-      else 
-	{
-	 cursor.oId = mainTable[cursor.y = Math.min(oldcursor.y, mainTableHeight - 1)][cursor.x = Math.min(oldcursor.x, mainTableWidth - 1)].oId;
-	 cursor.eId = mainTable[cursor.y][cursor.x].eId;
-	}
-     CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
-     if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable();
-      else if (oldcursor.contentEditable === EDITABLE) MakeCursorContentEditable(oldcursor.data);
-     mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
-     mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
+     if (cursor.cmd && cursor.oId >= STARTOBJECTID && (cmd = cursor.cmd)) CallController(cursor.data);
+     SetInitialCursorPosition(cursor);
     }
+ // Otherwise restore cursor (if exist) position on refreshed view
+ else if (oldcursor.oId)
+    {
+     SetInitialCursorPosition(oldcursor);
+    }
+ cmd = '';
+}
+
+function SetInitialCursorPosition(cursor)
+{
+ if (objectTable[cursor.oId]?.[cursor.eId])
+    {
+     cursor.x = objectTable[cursor.oId][cursor.eId].x;
+     cursor.y = objectTable[cursor.oId][cursor.eId].y;
+    }
+  else
+    {
+     cursor.oId = mainTable[cursor.y = Math.min(oldcursor.y, mainTableHeight - 1)][cursor.x = Math.min(oldcursor.x, mainTableWidth - 1)].oId;
+     cursor.eId = mainTable[cursor.y][cursor.x].eId;
+    }
+ CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
+ if (cursor.contentEditable === EDITABLE || cursor.oId === NEWOBJECTID) MakeCursorContentEditable(cursor.data);
+ mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
+ mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
 }
 
 function CalcTree(tree)
@@ -687,16 +703,12 @@ function ContextEventHandler(event)
  // Is cursor element content editable? Apply changes in case of no event.target match
  if (cursor.td?.contentEditable === EDITABLE)
     {
-     if (cursor.td != event.target)
-	{
-	 event.preventDefault();
-	 cursor.td.contentEditable = NOTEDITABLE;
-	 if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
-	  else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-	 // Main field table cell click?
-	 if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(cursor.td, event.target);
-	}
-     return;
+     if (cursor.td == event.target) return;
+     cursor.td.contentEditable = NOTEDITABLE;
+     if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
+      else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+     // Main field table cell click?
+     if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(cursor.td, event.target);
     }
 
  // Context event on wrap icon cell? Use next DOM element
@@ -848,7 +860,7 @@ function MouseEventHandler(event)
      OD = next.dataset.od;
      OV = next.dataset.ov;
      cmd = 'CALL';
-     displayMainError('Loading.');
+     displayMainError('Loading...');
      CallController();
      return;
     }
@@ -1145,7 +1157,11 @@ function CallController(data)
 	      object = { "cmd": 'INIT', "data": {} };
 	      if (objectTable[String(NEWOBJECTID)] != undefined)
 	         for (let eid in objectTable[String(NEWOBJECTID)])
-		     object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
+		     {
+		      object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
+		      mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'] = '';
+		      mainTablediv.rows[objectTable[String(NEWOBJECTID)][eid].y].cells[objectTable[String(NEWOBJECTID)][eid].x].innerHTML = '';
+		     }
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject)
@@ -1202,7 +1218,7 @@ function displayMainError(errormsg, reset = true)
      loadTimerId = setTimeout(displayMainError, 500, errormsg);
      errormsg = errormsg.replace(/Loading/, '').replace(/./g, '&nbsp;') + errormsg;
     }
- mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
+ if (errormsg !== 'Loading') mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
 
  mainTableRemoveEventListeners();
  if (reset) OVtype = '';
@@ -2124,8 +2140,8 @@ such as table cell position, style attribute, OV start event and etc.. JSON poss
 - 'eid'. Built-in service elements (id, version, owner, datetime, lastversion) or user defined element id number started
   from 1. Attributes (x, y, style, ..) are applied to the specified element id together with object id. Absent 'eid' property
   is treated as property with zero value. Zero 'eid' attributes are applied to all elememnts of defined object - for zero
-  'oid' allowed properties are 'style' (css style attribute for <td> cell with no any object element in) and tablestyle (css
-  style attribute for <table> html element), for specific 'oid' - only css style for <td> cell with specific object element.
+  'oid' allowed properties are 'style' (css style attribute for <td> cell with no object element placed in) and table (css
+  attributes for <table> html element), for specific 'oid' - only css style for <td> cell with specific object element.
   See table below for 'oid'/'eid' combinations allowed properties.
 - 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions
   that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects). For a
@@ -2141,7 +2157,7 @@ such as table cell position, style attribute, OV start event and etc.. JSON poss
 - 'style'. HTML css style attribute (see appropriate css documentaion) for <td> tag the specified object element is placed in.
   Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.
   Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).
-- 'tablestyle'. HTML css style attribute for tag <table>, in zero 'oid'/'eid' only.
+- 'table'. JSON HTML css attributes for tag <table> with attribute names as properties, for zero 'oid' and 'eid' only.
 - 'value'. Table cell element main text. For new/title objects only.
 - 'hint'. Table cell element hint, displayed as a hint on a table cell cursor navigation. For new/title objects only.
 
@@ -2152,7 +2168,7 @@ such as table cell position, style attribute, OV start event and etc.. JSON poss
   | oid \\   |                                |                                              |
   +---------+--------------------------------+----------------------------------------------+
   | 0       | style (undefined cell style)   | x, y, style                                  |
-  |selection| tablestyle (html table style)  | event, hiderow, hidecol                      |
+  |selection| table (html table attributes)  | event, hiderow, hidecol                      |
   +---------+--------------------------------+----------------------------------------------+
   | 1       | style                          | x, y, style                                  |
   | new     |                                | event, hiderow, hidecol, value, hint         |

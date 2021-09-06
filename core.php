@@ -412,7 +412,7 @@ function setElementSelectionIds(&$client)
  // | oid \   |                                | 					      |
  // +---------+--------------------------------+----------------------------------------------+
  // | 0       | style (for undefined cell)     | x, y, style    	 		      |
- // |selection| tablestyle (for html table)    | event, hiderow, hidecol	 	      |
+ // |selection| table (attr for html table)    | event, hiderow, hidecol	 	      |
  // +---------+--------------------------------+----------------------------------------------+
  // | 1       |	style	     		       | x, y, style				      |
  // | new     | 			       | event, hiderow, hidecol, value, hint 	      |
@@ -427,9 +427,9 @@ function setElementSelectionIds(&$client)
 
  $props = [];
  foreach (preg_split("/\n/", $client['elementselection']) as $value)
-      if ($arr = json_decode($value, true, 2))
+      if ($arr = json_decode($value, true, 3))
 	 {
-	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'hiderow', 'hidecol', 'event', 'tablestyle', 'value', 'hint']); // Retrieve correct values only
+	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'hiderow', 'hidecol', 'event', 'table', 'value', 'hint']); // Retrieve correct values only
 	  if (!isset($arr['eid'])) $arr['eid'] = '0'; // Set 'eid' key default value to zero
 	  if (!isset($arr['oid'])) $arr['oid'] = '0'; // Set 'oid' key default value to zero
 
@@ -439,11 +439,11 @@ function setElementSelectionIds(&$client)
 
 	  if (!isset($props[$eid])) $props[$eid] = []; // Result array $props has 'eid' element undefined? Create it
 	
-	  if ($eid === '0') // First check zero element id for style and tablestyle props only. Tablestyle prop for zero object only
+	  if ($eid === '0') // First check zero element id for style and table props only. Table prop for zero object only
 	     {
 	      if (isset($arr['style']) && gettype($arr['style']) === 'string') $props[$eid][$oid] = ['style' => $arr['style']];
-	      if ($oid === '0' && isset($arr['tablestyle']) && gettype($arr['tablestyle']) === 'string')
-		 isset($props[$eid][$oid]) ? $props[$eid][$oid]['tablestyle'] = $arr['tablestyle'] : $props[$eid][$oid] = ['tablestyle' => $arr['tablestyle']];
+	      if ($oid === '0' && isset($arr['table']) && gettype($arr['table']) === 'array')
+		 isset($props[$eid][$oid]) ? $props[$eid][$oid]['table'] = $arr['table'] : $props[$eid][$oid] = ['table' => $arr['table']];
 	      continue;
 	     }
 
@@ -708,7 +708,7 @@ function GenerateRandomString($length = USERPASSMINLENGTH)
  return $randomstring;
 }
 
-function GetObjectSelection($db, $objectSelection, $params, $user)
+function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
 {
  // Check input paramValues array and add reserved :user parameter value
  if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
@@ -744,9 +744,9 @@ function GetObjectSelection($db, $objectSelection, $params, $user)
       else if (isset($newparam)) $newparam .= $objectSelection[$i]; // Otherwise: if new parameter is being setting - record current char
       else $objectSelectionNew .= $objectSelection[$i]; // Otherwise record current char to the object selection string
 
- //  In case of no dialog - return object selection string
+ //  In case of no dialog (or anyway flag set) - return object selection string
  unset($params[':user']); // Is it needable?
- if (!$isDialog) return $objectSelectionNew;
+ if (!$isDialog || $anyway) return $objectSelectionNew;
 
  // Otherwise return dialog array
  $buttons = OKCANCEL;
@@ -905,7 +905,7 @@ function Check($db, $flags, &$client, &$output)
      // Avoid object id = STARTOBJECTID (system user from User OD) to be deleted
      if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT' && ($output['alert'] = 'System account cannot be deleted!')) return;
      // Check for changes of object selection
-     if (gettype($client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth'])) === 'array' && ($output['alert'] = "Object selection has been changed, please refresh Object View!")) return;
+     if (gettype($client['objectselection'] = GetObjectSelection($client['objectselection'], $client['params'], $client['auth'])) === 'array' && ($output['alert'] = "Object selection has been changed, please refresh Object View!")) return;
      // Check object existence, uncommented query is more faster (cause no load for all object selection), but ignores LIMIT sql option
      //$query = $db->prepare("SELECT id FROM (SELECT id,lastversion,version FROM `data_$client[ODid]` $client[objectselection]) _ WHERE id=$client[oId] AND lastversion=1 AND version!=0");
      $query = $db->prepare("SELECT id FROM (SELECT * FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0) _ $client[objectselection]");

@@ -135,10 +135,15 @@ function WriteElement($db, &$client, &$output, $version)
  return true;
 }
 
-function GetElementProperty($db, $output, &$client)
+function GetElementProperty($db, $output, &$client, $recursion)
 {
+ if (gettype($output) !== 'array') return '';
+
  if ($client['oId'] === 0) $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and new object (element id$client[eId]) handler call: ";
   else $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
+
+ $recursion++;
+ if ($recursion > ARGRECURSIONNUM && !LogMessage($db, $client, $errormessage."recursive calls exceed max allowed ($recursion)!")) return '';
 
  // Fetch OD/OV, check them and their access
  if (!isset($output['ODid']) && !isset($output['OD'])) $output['ODid'] = $client['ODid'];
@@ -149,24 +154,24 @@ function GetElementProperty($db, $output, &$client)
 
  // Fetch input array :parameters and unset all unknown
  foreach ($output as $key => $value)
-	 if ($key[0] === ':' && gettype($arr = json_decode($value, true)) === 'array')
+	 if ($key[0] === ':')
 	    {
-	     $output[$key] = GetElementProperty($db, $arr, $client);
+	     if (gettype($value) !== 'string') $output[$key] = GetElementProperty($db, $value, $client, $recursion);
 	    }
 	  else
 	    {
-	     if ($key[0] !== ':' && !in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop'])) unset($output[$key]);
+	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop'])) unset($output[$key]);
 	    }
 
  // Get OD/OV object selection
- $output['objectselection'] = GetObjectSelection($db, $output['objectselection'], $output, $client['auth']);
+ $output['objectselection'] = GetObjectSelection($output['objectselection'], $output, $client['auth']);
  if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
 
  // Set default input arg object selection
  if (!isset($output['selection']) || gettype($output['selection']) !== 'string' || $output['selection'] === '')
     $output['selection'] = "id=$client[oId] AND lastversion=1 AND version!=0";
   else
-    $output['selection'] = GetObjectSelection($db, $output['selection'], $output, $client['auth']);
+    $output['selection'] = GetObjectSelection($output['selection'], $output, $client['auth'], true);
 
  // Calculate prop
  $prop = isset($output['prop']) ? trim($output['prop']) : 'value';
@@ -184,6 +189,7 @@ function GetElementProperty($db, $output, &$client)
 	      elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
      if (!$select) return '';
      $select = substr($select, 1);
+     $element = GetObjectSelection($element, $output, $client['auth']);
     }
   elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
   elseif (ctype_digit($element) && ($props = setElementSelectionIds($output)) && isset($props[$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))";
@@ -232,8 +238,9 @@ function GetCMD($db, &$client, $cmdline = false)
 		    case 'oid':   $add = DoubleQuote($client['oId']); break;
 		    case 'event': $add = DoubleQuote($client['cmd']); break;
 		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
+		    case 'datetime': $datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
 		    default: if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
-			      else $add = DoubleQuote(GetElementProperty($db, $add, $client));
+			      else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
 		   }
 	    $i = $j;
 	   }

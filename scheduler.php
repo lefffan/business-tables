@@ -104,7 +104,7 @@ while (true)
 		     'ip' => IP];
 
 	  // Object selection consists of incomplete params? Continue, otherwise execute a query to fetch view all object ids
-	  if (gettype($objectselection = GetObjectSelection($db, trim($view['element4']['data']), $client['params'], $client['auth'])) === 'array') continue;
+	  if (gettype($objectselection = GetObjectSelection(trim($view['element4']['data']), $client['params'], $client['auth'])) === 'array') continue;
 	  $query = $db->prepare("SELECT DISTINCT id FROM `data_$od[0]` $objectselection");
 	  $query->execute();
 

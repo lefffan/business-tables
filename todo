@@ -1,6 +1,7 @@
 --------------2021--------------------------------------------------------------
 - Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
-- Dodelat megacom MRTG emulation
+  while OV refresh don't clear new object or new message in chat is cleared if someone post a mesage
+- Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const.
   Help content during all code lookup
   test dialog boxes on low resolution, check on macbook via git
@@ -89,6 +90,7 @@
   when button is pushed no dialog refreshed, when pushed button is pushed and mouse cursir is out of button - make button released
   Make handler intput lines longer, and Handler for 'INIT' event replace by 'INIT' event
   Dialog boxes moving via mouse cursor!!
+  Outline, shadow per view in eid=0,oid=0 table style property (for example in chats just not to outline input area)
 
 - Controller:
   prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event

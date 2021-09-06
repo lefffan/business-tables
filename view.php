@@ -319,7 +319,7 @@ try {
 		      if ($delimiter === '/') $linknames[''] = '';
 
 		      // Get object selection query string, array result is treated as dialog content to define view params
-		      $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']);
+		      $client['objectselection'] = GetObjectSelection($client['objectselection'], $client['params'], $client['auth']);
 		      if (gettype($client['objectselection']) === 'array' && ($output = ['cmd' => 'DIALOG', 'data' => $client['objectselection'], 'ODid' => $client['ODid'], 'ODid' => $client['OVid']] + $output)) break;
 
 		      // Get object selection head object id
@@ -344,7 +344,7 @@ try {
 		  if ($client['viewtype'] === 'Table')
 		     {
 		      // Get object selection query string, array result is treated as dialog content to define view params
-		      $client['objectselection'] = GetObjectSelection($db, $client['objectselection'], $client['params'], $client['auth']);
+		      $client['objectselection'] = GetObjectSelection($client['objectselection'], $client['params'], $client['auth']);
 		      if (gettype($client['objectselection']) === 'array' && ($output = ['cmd' => 'DIALOG', 'data' => $client['objectselection'], 'ODid' => $client['ODid'], 'ODid' => $client['OVid']] + $output)) break;
 
 		      // Get element selection query string, in case of empty result return no element message as an error
