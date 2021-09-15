@@ -1,4 +1,10 @@
 --------------2021--------------------------------------------------------------
+examples: ping, group user list, tip-tap-toe, jira-helpdesk
+handler help section
+builtin handlers help section
+main.js
+const.php
+
 - Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
   while OV refresh don't clear new object or new message in chat is cleared if someone post a mesage
 - Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
@@ -9,6 +15,7 @@
 --------------------------------------------------------------------------------
 
 - Application:
+  Version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Restrict OD sidebar display for some users
   Clone object, similar to add object, but copies current menu contexted object
   in cell: text, image, stream, table?
@@ -49,7 +56,7 @@
     and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
 
-- JS, PHP, SQL:
+- JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
     for php ORM Doctrine can be used
     index columns: alter table data_1 add index (`lastversion`);
@@ -65,6 +72,7 @@
   divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
   Exclude UNION queries all SQL requests that are user defined and generated from user input (object selection, SET command queries?, uplink node object selection, pre-post processing rules). Crackeres and fools protection.
   See how zabbix is installed to have a point of view of serious application
+  Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE, so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
 
 - Front:
   Sort by header click for look like default element layout when header line at the top, bottom, left, right

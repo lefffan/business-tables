@@ -37,6 +37,7 @@ let uiProfile = {
 		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
 		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;", "font": "1.1em Lato, Helvetica;"  },
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "", "font": "0.9em Lato, Helvetica;" },
+		  "sidebar view changes count": { "target": ".changescount", "vertical-align": "super;", "padding": "2px 3px 2px 3px;", "color": "rgb(232,187,174);", "font": "0.6em Lato, Helvetica;", "background-color": "rgb(251,11,22);", "border-radius": "35%"},
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
@@ -176,18 +177,19 @@ function Hujax(url, callback, requestBody)
 function drawSidebar(data)
 {
  if (typeof data != 'object') return;
- let text, ovlistHTML, sidebarHTML = '';
+ let text, count, ovlistHTML, sidebarHTML = '';
  
  for (let odid in data)
      {
       // Set wrap status (empty string key) to true for default or to old instance of sidebar OD wrap status
       (sidebar[odid] === undefined || sidebar[odid]['wrap'] === undefined) ? data[odid]['wrap'] = true : data[odid]['wrap'] = sidebar[odid]['wrap'];
-      
+       if (!data[odid]['count']) data[odid]['count'] = {};
+
       // Create OV names list with active OV check 
       ovlistHTML = '';
       for (let ovid in data[odid]['view'])
     	  {
-	   text = '';
+	   count = text = '';
 	   if (data[odid]['active'] === ovid)
 	      {
 	       text = ' class="itemactive"';
@@ -197,7 +199,10 @@ function drawSidebar(data)
 	       OV = data[odid]['view'][ovid];
 	      }
 	   if (data[odid]['view'][ovid].substr(0, 1) != '_')
-	      ovlistHTML += `<tr${text}><td class="wrap"></td><td class="sidebar-ov" data-odid="${odid}" data-ovid="${ovid}" data-od="${data[odid]['name']}" data-ov="${data[odid]['view'][ovid]}">${data[odid]['view'][ovid]}</td></tr>`;
+	      {
+	       if (sidebar[odid]?.['count']?.[ovid] && (data[odid]['count'][ovid] = sidebar[odid]['count'][ovid])) count =  ' <span class="changescount">'+ sidebar[odid]['count'][ovid] + '</span>';
+	       ovlistHTML += `<tr${text}><td class="wrap"></td><td class="sidebar-ov" data-odid="${odid}" data-ovid="${ovid}" data-od="${data[odid]['name']}" data-ov="${data[odid]['view'][ovid]}">${data[odid]['view'][ovid]}${count}</td></tr>`;
+	      }
 	  }
 
       // Draw wrap icon
@@ -276,19 +281,32 @@ function GetCoordinates(props, e, o, n)
 
 function drawMain(data, props)
 {
+ ResetUnreadMessages();
+ // Current view refresh? Remember cursor position and editable status.
+ let oldcursor;
+ if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid)
+    {
+     oldcursor = { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) };
+     if (objectTable[NEWOBJECTID])
+	{
+	 oldcursor.newobject = [];
+	 for (let eid in objectTable[NEWOBJECTID]) oldcursor.newobject[eid] = mainTable[objectTable[NEWOBJECTID][eid].y][objectTable[NEWOBJECTID][eid].x].data;
+	}
+    }
+  else
+    {
+     oldcursor = {};
+    }
+
  // Init some important vars such as tables, focus element and etc..
+ cursor = { ODid: ODid, OVid: OVid };
  mainTable = [];
  objectTable = {};
  mainTableWidth = mainTableHeight = 0;
  OVtype = 'Table';
 
- // Current view refresh? Remember cursor position and editable status. Then clear current cursor
- let obj, e, oldcursor;
- oldcursor = (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid) ? { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) } : {};
- cursor = { ODid: ODid, OVid: OVid };
-
  // Get x,y coordinates (and other properties) from props elements array 
- let warningtext, pos, cell, hiderow = [], hidecol = [];
+ let obj, e, warningtext, pos, cell, hiderow = [], hidecol = [];
  if (!(objectsOnThePage = data.length)) data = [{}];
  for (let n in data) 	if (obj = data[n])
  for (e in props)	if (e !== '0')
@@ -352,10 +370,18 @@ function drawMain(data, props)
       for (x = 0; x < mainTableWidth; x++)
 	  {
 	   if (hidecol[x]) { mainTable[y].splice(x, 1); mainTableWidth--; x--; continue; }
-	   (cell = mainTable[y][x]) ? rowHTML += `<td${cell.style}>${toHTMLCharsConvert(cell.data)}</td>` : rowHTML += undefinedCell;
-	   if (cell)
-	   if ((cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)) // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
-	      objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
+	   if (cell = mainTable[y][x])
+	      {
+	       if (cell.oId === NEWOBJECTID && oldcursor.newobject?.[cell.eId]) cell.data = oldcursor.newobject[cell.eId];
+	       rowHTML += `<td${cell.style}>${toHTMLCharsConvert(cell.data)}</td>`;
+	       // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
+	       if ((cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID))
+		  objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
+	      }
+	    else
+	      {
+	       rowHTML += undefinedCell;
+	      }
 	  }
       rowHTML += '</tr>';
      }
@@ -708,7 +734,7 @@ function ContextEventHandler(event)
      if (mainTable[cursor.y][cursor.x].oId != NEWOBJECTID && (cmd = 'CONFIRM')) CallController(htmlCharsConvert(cursor.td.innerHTML));
       else mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
      // Main field table cell click?
-     if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov')) CellBorderToggleSelect(cursor.td, event.target);
+     if (event.target.tagName == 'TD' && !event.target.classList.contains('wrap') && !event.target.classList.contains('sidebar-od') && !event.target.classList.contains('sidebar-ov') && !event.target.classList.contains('changescount')) CellBorderToggleSelect(cursor.td, event.target);
     }
 
  // Context event on wrap icon cell? Use next DOM element
@@ -835,7 +861,10 @@ function MouseEventHandler(event)
 
  // OD item (or its wrap icon before) mouse click? Wrap/unwrap OV list
  let next = event.target;
- if (event.target.classList.contains('wrap')) next = next.nextSibling;
+ if (next.classList.contains('wrap')) next = next.nextSibling;
+  else if (next.classList.contains('changescount')) next = next.parentNode;
+
+ // OD item (or its wrap icon before) mouse click? Refresh sidebar and wrap/unwrap database view list
  if (next.classList.contains('sidebar-od'))
     {
      /*if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) return;
@@ -869,6 +898,7 @@ function MouseEventHandler(event)
  if (OVtype === 'Table')
  if ((event.target.tagName == 'TD' && (next = event.target)) || (event.target.tagName == 'SPAN' && (next = event.target.parentNode) && next.tagName == 'TD'))
     {
+     ResetUnreadMessages();
      CellBorderToggleSelect(cursor.td, next);
      if (mainTable[cursor.y]?.[cursor.x] && cursor.td.contentEditable != EDITABLE && !isNaN(cursor.eId) && cursor.oId === NEWOBJECTID) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
      return;
@@ -877,7 +907,7 @@ function MouseEventHandler(event)
 		 
 function KeyboardEventHandler(event)
 {
- HideHint();	      
+ HideHint();
  switch (event.keyCode)
 	{
 	 case 36: //Home
@@ -1081,8 +1111,8 @@ function FromController(json)
 			 CellBorderToggleSelect(null, cursor.td, false);
 		        }
 	      break;
-	 case 'SIDEBAR':
 	 case 'CALL':
+	 case 'SIDEBAR':
 	 case 'New Database':
 	 case 'Database Configuration':
 	      Hujax("view.php", FromController, input.data);
@@ -1104,6 +1134,21 @@ function FromController(json)
  if (input.log)			lg(input.log); 
  if (input.error != undefined)	displayMainError(input.error);
  if (input.alert)		warning(input.alert);
+ if (input.count)		IncreaseUnreadMessages(input.count.odid, input.count.ovid);
+}
+
+function IncreaseUnreadMessages(odid, ovid)
+{
+ if (!sidebar[odid]['count'][ovid]) sidebar[odid]['count'][ovid] = 0;
+ sidebar[odid]['count'][ovid] ++;
+ drawSidebar(sidebar);
+}
+
+function ResetUnreadMessages()
+{
+ if (!sidebar[ODid]['count'][OVid]) return;
+ sidebar[ODid]['count'][OVid] = 0;
+ drawSidebar(sidebar);
 }
 
 function CallController(data)
@@ -1957,6 +2002,7 @@ is a JSON, that may consist of any defined properties, but some of them have spe
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
+- 'alert' property is reserved by the controller to send alert messages to the client side
 - 'link' is element connection list one by line, each connection is a link name and remote object and its element
   selections,  all three divided by '|'.
 Other element properties are custom and used to store additional element data, see example below.
@@ -2109,9 +2155,9 @@ selection string 'WHERE lastversion=1 AND version!=0' is applied and result quer
 
 This format together with object structure provides effective selection of object sets via powerful SQL capabilities!
 To make object selection process more flexible user can use some parameters in object selection string. These parameters
-should start from char ':' and finish with space, single or double qoutes or another ':'. Parsed parameter name is set as
-a question (with chars '_' replaced with spaces) in client side dialog box at the object view call open. Parameter name
-:user is reserved and replaced with the username the specified view is called by.
+should start from char ':' and finish with space, single or double qoutes, backslash or another ':'. Parsed parameter
+name is set as a question (with chars '_' replaced with spaces) in client side dialog box at the object view call open.
+Parameter name :user is reserved and replaced with the username the specified view is called by.
 
 Object selection string example for 'Logs' object database:
 'WHERE lastversion=1 AND version!=0 AND JSON_EXTRACT(eid1, '$.value')=':Select_log_string_to_search'.
@@ -2290,9 +2336,79 @@ Correct empty JSON '{}' as an 'element layout' displays no content, while all er
 
 "Handlers": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `
-Element handler is any executable script or binary called by the contoller when specified event occurs.
-Events occur on user interaction with real object element (mouse double clicking or keypressing), adding
-new object, changing the object and other object processes:
+Element handler is any executable script or binary called by the contoller when specified event occurs. Events occur on
+user interaction with actual objects (mouse double click or keypress), new objects add, object data change and other object
+or database processes. Client-server interaction model represents next scheme: client (browser) generates event which is
+passed to the server (controller). Controller accepts the event and processes it either by itself (new database, object
+delete..) or by calling/executing appropriate handler, which output result is parsed by the controller and passed to the
+client:
+
+
++-----------+                                        +-----------+                                       +-----------+
+|           |                                        |           |                                       |           |
+|           |             USER EVENT                 |           |            HANDLER CALL               |           |
+|           |        ---------------------->         |           |        ---------------------->        |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
+|           |           CONTROLLER COMMAND           |           |         JSON OR ANY TEXT DATA         |           |
+|           |        <----------------------         |           |        <----------------------        |           |
+|           |                                        |           |                                       |           |
+|           |                                        |           |                                       |           |
++-----------+                                        +-----------+                                       +-----------+
+                                                           ^
+                                                           |
+                                                           |
+                                                           ∨
+                                            +-----------------------------+
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            |                             |
+                                            +-----------------------------+
+
+
+
+
+
+Client, controller and element-handler interaction:
+------Client (browser) input event------	-------Controller------							------Element handler------
+
+REFRESHMAIN					data..
+{cmd,OD,OV,sId}					<=
+-----------------------------------------------------------------------------------------------------------
+REFRESHMENU					data..
+{cmd,OD,OV,sId}					<=
+-----------------------------------------------------------------------------------------------------------
+NEWOBJECT					=>									{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert" }
+{cmd,["data": array[id]=element],OD,OV,sId}	{ "cmd": "INFO", "log", "error", "alert" }				<=
+						{ "cmd": "REFRESH", "OD", "OV" }
+-----------------------------------------------------------------------------------------------------------
+DELETEOBJECT					=>
+{cmd,OD,OV,oId,sId}				{ "cmd": "INFO", "log", "error", "alert" }				<=
+						{ "cmd": "REFRESH", "OD", "OV" }
+-----------------------------------------------------------------------------------------------------------
+DBLCLICK,F2,F12,INS,DEL				=>									{ "cmd": "EDIT", "oId", "eId", "data", "lines" }
+{cmd,OD,OV,oId,eId,sId}													{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert", "log" }
+															{ "cmd": "NEWOD|NEWOV|NEWELEMENT", "data" }
+CONFIRM,KEYPRESS,OBJCHANGE			{ "cmd": "INFO", "log", "error", "alert" }				<=
+{cmd,data,OD,OV,oId,eId,sId}			{ "cmd": "REFRESH", "OD", "OV" }					
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 - KEYPRESS. Event occurs when keyboard input for letters, digits and space is registered.
 - INS,DEL,F2,F12. Event occurs when keyboard input for appropriate non symbol keys is registered.
 - DBLCLICK. Left button mouse double click event.
@@ -2402,39 +2518,95 @@ JSON dialog structure is a nested JSONs which draw dialog box with its interface
 `
 }}},
 
-"OV example": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"Examples": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
+`Example 1 - simple corporate chat.
+First step - create database and 'Table' templated view.
+Second - all database actual objects (user messages) should be selected (default behaviour), so 'Object selection' should be empty.
+Third - 'Element layout' should display messages in descending order with old messages on the top and new object (new message input)
+on the bottom, plus some cell spacing and cell highlighting. Input three JSONs in element layout field:
+{"table": {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}}
+{"eid":"1", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
+{"eid":"1", "oid":"1", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
+
+First JSON is for zero object (oid) and element (eid) ids. Absent (zero) oid and eid describes html table attributes and undefined
+cell css style. Our case property "table" is an attribute list for <table> tag: width value set is a necessary condition to set
+table cells width in pixels (in <td> tag). Border-collapse separate set allows cell spacing of 15 pixels between chat messages.
+Second JSON describes all chat messages (all objects in object selection [oid=0] for element id 1 [eid=1]). All these cells are
+styled via 'style' property with left text align, rounded border (5px) and light grey background color (#DDD). Object element
+horizontal position is 'x=0' (first column) and vertical is 'n' - sequence number in a selection - first object (first message)
+is placed in a fist row (n=0), second object in a second row (n=1) and so on. Variable 'q' is an object selection count number,
+so 'input' object (third JSON for a new message input [oid=1]) goes to row number 'q'. For example - ten chat messages layout
+is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input.
+
+Next step - to be able to create chat messages object element should be created in a 'Element' tab of database configuration.
+Just for 'INIT' event (add new object) only. Enter next handler command line for that event:
+php text.php SETTEXT
+<span><</span>span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">
+<user>@
+<{"ODid":"1", "OVid":"1", "selection":"lastversion=1 and version!=0 and JSON_EXTRACT(eid1, '$.value')=':user'", "element":"2"}>
+</span>
+' '
+<span><</span>span style="color: #999;"><datetime></span><br>
+<data>
+
+Script 'text.php' is a regular application handler for text and other operations, its behaviour and input args are described in
+a 'Handlers' help section. First input arg (SETTEXT) is for setting element text data of all remaining input args concatenated
+to one string. As it was mentioned in a 'Handler' help section - every angle brackets quoted string is parsed for JSON or service
+strings such as <user> (our case), <datetime>, <data>  and others. String <user> is replaced by the username the handler is called
+from, in our chat context - the user the message is posted by. Next arg is user first (last) name as it is in OD 'Users' (ODid=1)
+and OV 'All users' (OVid=1). This arg is retrieved via JSON that searches user object ("selection" property) and takes its second 
+element ("element" property). Retrieved construction (user@firstname) is styled by <span> tag: deep blue color (RGB(44,72,131)
+and bold font. After user@firstname - space (' ') and light grey color styled datetime (<datetime>) on the same line.
+Then - user chat message text of itself (<data>) on the next line (<br>).
+
+Last step - to block empty messages and/or already posted messages removal create two rules. First create rule profile for
+'Delete object' operation with 'reject' action and  both empty pre- and post- processing rules (empty rule is a match case),
+so any delete operation will be blocked. To allow user to delete his own messages just add preprocessing rule: owner!=':user'.
+Second rule profile is a little bit more complicated - 'Add operation' with 'reject' action and next postprocessing rule:
+JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) NOT REGEXP '\\\\n.'
+'Empty' message in our chat consists of 'user@name datetime\\n' string anyway. Non empty message matches '\\n.' regular
+expression, so no match (NOT REGEXP) of non empty message equals 'match empty'.
+Since the chat message (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))) matches empty - the rule profile blocks (rejects) the
+operation - new message post in our case.
+
+That's all! As a result we have a nice chat with no much efforts for customization.`},
+element2: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
-Let's have a look to the chat like OV create example.
-First - create OD instance via sidebar context menu 'New Database'
+Example 2 - host alive diagnostic. 
+Create database with two elements - one for host names or ip addresses, second for ping result of appropriate hosts in 1st
+element. To input element id 1 text data (host, ip) add some handlers for 'DBLCLICK' event (edit content on double click):
+php text.php EDIT
+for 'CONFIRM' event (confirm content after edit fininshed):
+php text.php SET <data>
+and may be for 'DEL' event (content clear on del key press):
+php text.php SET
 
-Second - create element for 'INIT' event with next handler command line: /usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php INIT <data>
-Handler text.php is a built-in script that implements text operation functions (much like excel cell :)
-
-Move on. Let's create view with next object selection 'WHERE lastversion=1 AND version!=0 ORDER BY id DESC'
-and next element layout:
-{"eid":"datetime", "x":"0", "y":"q-n-1"}
-{"eid":"owner", "x":"1", "y":"q-n-1"}
-{"eid":"1", "x":"2", "y":"q-n-1"}
-{"eid":"1", "oid":"1", "x":"2", "y":"q", "event":""}
-New message coordinates to be at the bottom equal 'q' - total objects (messages) count.
-Last message (but first message in query with n=0) goes one row above with y=q-n-1=q-0-1=q-1
-Second last (n=1) goes two rows above new message cell - y=q-n-1=q-1-1=q-2. And so on.
-
-Next - create object database rules (see 'Rules' tab in Object Database structure dialog).
-OD rule of itself is a part of sql query string to apply to the obejct instance before (pre-rule) and 
-after (post-rule) specified operation (object add/delete/chagne), so in case of no operation specified - post and pre rules are ignored. 
-Controller check rules in rule names alphabetical order and when a match is found, the action (accept or reject)
-corresponding to the matching rule is performed. The search terminates. No any rule match - default action (accept) is applied.
-Match case occurs at successfull query select (at least one row selected) for both pre and post rules.
-Empty rule - no selection made, but selection is considered successfull, so both pre and post rules empty case causes a match case.
-Query format: SELECT * FROM data_<ODid> where id=<oid> AND version=<version_before|version_after> AND <pre-rule|post-rule>;
-For a kind of chat OV some rules needed. First - disallow empty messages, so the post-rule for operation 'Add object' should be:
-eid1->>'$.value'=''. Pre-rule for 'add' operation type is ignored.
-Second OD rule - disallow to delete chat messages, so pre-rule for our case should be blank to match all objects.
-Post-rule for 'delete' operation type is ignored (for 'change' operation type - both pre and post rules are checked).
-And Of course, for both our chat restrictions action is set to 'reject'.
+No handler needed for the second element. To check continuously element id 1 hosts via ping utility create the view -
+just set its name and one scheduler line: */10 * * * * 2 ping -c 1 <{"element":"1"}> | grep loss
+First field (*/10) and next four asterisks makes scheduler execute specified handler (ping .. grep loss)
+for specified element id (2) every ten minutes. Ping utiltiy sends one icmp request packet (-c 1) to retrieved hostname/ip
+(JSON <{"element":"1"}>) and output 'loss' result to stdout. Non JSON handler output result is automatically converted to be
+set as an element value, so ping loss redsults will be displayed in a table every 10 minutes. 
+To check hosts on demand - set handler 'ping -c 1 <{"element":"1"}>' for 'CHANGE' event for element id2. The handler will be
+called just right after element id 1 data (host/ip) is changed.
+`},
+element3: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
-}}},
+Example 3 - Group users list.
+php text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
+`},
+element4: { line: '', style: 'font-family: monospace, sans-serif;', head: 
+`
+Example 4 - echo '{"cmd":"SET", "style":"background-color:red;"}'
+`},
+element5: { line: '', style: 'font-family: monospace, sans-serif;', head: 
+`
+Example 5 - tip tap toe
+`},
+element6: { line: '', style: 'font-family: monospace, sans-serif;', head: 
+`
+Example 6 - helpdesk, jira
+`}}},
 
 "Keyboard/Mouse": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `  - CTRL with left button click on any object element opens new browser tab with the element text as url*
@@ -2445,7 +2617,7 @@ And Of course, for both our chat restrictions action is set to 'reject'.
   - CTRL+V pastes text data to the current via 'KEYPRESS' event (see handler section help) or
     clones clipboard object*
   - CTRL+Shift+F search on user input regular expression among current view object elements
-  - CTRL+Z/Y usual undo actions are not implemented int the system, cos it is hard to undo element
+  - CTRL+Z/Y usual undo actions are not implemented, cos it is hard to undo element
     handlers action due to its complicated and unique behaviour. To see previous element values
     use object older versions selection feature
   - Left/right/up/down arrow keys move cursor to appropriate direction
@@ -2466,3 +2638,4 @@ And Of course, for both our chat restrictions action is set to 'reject'.
 buttons: { OK: {value: "&nbsp;   OK   &nbsp;"}},
 flags:   { esc: "", style: "min-width: 1100px; min-height: 600px; width: 1100px; height: 720px;" }
 };
+

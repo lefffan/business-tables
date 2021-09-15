@@ -4,17 +4,25 @@ require_once 'core.php';
 
 CONST ARGVCLIENTINDEX = 9;
 
+function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
+{
+ // Function goes through all elements except current (element initiated object data change) and calls its 'CHANGE' event handlers
+ // No handler or its execution result - unset output array data for appropriate index as element id
+ $client['cmd'] = 'CHANGE';
+ foreach ($client['allelements'] as $eid => $profile) if ($eid != $currenteid)
+	 {
+	  $client['eId'] = $eid;
+	  if (($cmdline = GetCMD($db, $client)) === '') continue; // No handler
+	  exec($cmdline, $output[$eid]);
+	  if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]); // Parse handler result data, if failed - unset output
+	 }
+}
+
 function ParseHandlerResult($db, &$output, &$client)
 {
- if (!isset($output[0]))
-    {
-     if ($client['cmd'] != 'INIT')
-        LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') didn't return any data!");
-     return;
-    }
- if ($result = json_decode($output[0], true)) $output = $result;
-  else $output = ['cmd' => 'SET', 'value' => implode("\n", $output)];
-  
+ if (!isset($output[0])) return;
+ $output = gettype($result = json_decode($output[0], true)) === 'array' ? $result : ['cmd' => 'SET', 'value' => implode("\n", $output)];
+
  if (!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', '']) === false)
     {
      LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') returned undefined json!");
@@ -86,6 +94,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'RESET':
 	      // Adjust value, hint, description, style, alert properties, empty property is not allowed unset($output['']) ?
 	      ConvertToString($output, ['value', 'hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      if ($client['cmd'] === 'CHANGE') unset($output['alert']);
 	      break;
 	 case '':
 	      break;
@@ -160,8 +169,12 @@ function GetElementProperty($db, $output, &$client, $recursion)
 	    }
 	  else
 	    {
-	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop'])) unset($output[$key]);
+	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop', 'limit'])) unset($output[$key]);
 	    }
+
+ // Fetch result lines limit
+ $limit = 1;
+ if (isset($output['limit']) && ctype_digit($output['limit']) && intval($output['limit']) > 0) $limit = strval(min(intval($output['limit']), ARGRESULTLIMITNUM));
 
  // Get OD/OV object selection
  $output['objectselection'] = GetObjectSelection($output['objectselection'], $output, $client['auth']);
@@ -197,7 +210,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
 
  // Result query
  try {
-      $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` WHERE $output[selection] LIMIT 1) _ $output[objectselection]");
+      $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` WHERE $output[selection] LIMIT $limit) _ $output[objectselection]");
       $query->execute();
      }
  catch (PDOException $e)
@@ -207,9 +220,23 @@ function GetElementProperty($db, $output, &$client, $recursion)
      }
  $data = $query->fetchAll(PDO::FETCH_NUM);
  if (!isset($data[0][0])) return '';
- if (!isset($regular)) return $data[0][0];
- foreach ($data[0] as $value) if (preg_match($element, $value)) return $value;
- return '';
+
+ // Search element in result $data
+ $result = '';
+ if (isset($regular))
+    {
+     foreach ($data as $value) foreach ($value as $val) if (preg_match($element, $val))
+	     {
+	      $result .= $val."\n";
+	      if (strlen($result) > ELEMENTDATAVALUEMAXCHAR) return substr($result, 0, ELEMENTDATAVALUEMAXCHAR);
+	     }
+    }
+  else
+    {
+     foreach ($data as $value) $result .= $value[0]."\n";
+    }
+ if (strlen($result) > ELEMENTDATAVALUEMAXCHAR) return substr($result, 0, ELEMENTDATAVALUEMAXCHAR);
+ return substr($result, 0, -1);
 }
 
 function GetCMD($db, &$client, $cmdline = false)
@@ -246,7 +273,6 @@ function GetCMD($db, &$client, $cmdline = false)
 	   }
        $newcmdline .= $add;
       }
-
  return $newcmdline;
 }
 
@@ -277,12 +303,12 @@ else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
     if (isset($client['cmdline'])) $cmdline = $client['cmdline']; else $cmdline = false;
     if (($cmdline = GetCMD($db, $client, $cmdline)) === '') exit;
     $output[$client['eId']] = [];
-
     exec($cmdline, $output[$client['eId']]);
     if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
    }
 
-switch ($output[$client['eId']]['cmd'])
+$currenteid = $client['eId'];
+switch ($output[$currenteid]['cmd'])
        {
         case 'DIALOG':
         case 'EDIT':
@@ -291,17 +317,9 @@ switch ($output[$client['eId']]['cmd'])
 	     break;
         case 'SET':
         case 'RESET':
-	     $excludeid = $client['eId'];
-	     foreach ($client['allelements'] as $eid => $profile) if ($eid != $excludeid)
-	    	     {
-		      $client['eId'] = $eid;
-		      $client['cmd'] = 'CHANGE';
-		      if (($cmdline = GetCMD($db, $client)) === '') continue;
-		      $output[$eid] = [];
-		      exec($cmdline, $output[$eid]);
-		      if (!ParseHandlerResult($db, $output[$eid], $client)) $output[$eid] = [];
-		     }
-	     if ($client['ODid'] === '1' && $excludeid === '1' && isset($output[$excludeid]['password'])) $passchange = '';
+	     // Password property for Users OD element id 1 is set? Note it to logout appropriate user
+	     if ($client['ODid'] === '1' && $currenteid === '1' && isset($output[$currenteid]['password'])) $passchange = '';
+	     // Write all object data
 	     try {
 	          $db->beginTransaction();
 	          $query = $db->prepare("SELECT version,mask FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
@@ -316,16 +334,22 @@ switch ($output[$client['eId']]['cmd'])
 	          $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,owner,version,lastversion) VALUES ($client[oId],:owner,$version,1)");
 	          $query->execute([':owner' => $client['auth']]);
 		  $newmask = '';
-		  foreach ($client['allelements'] as $eid => $value)
+
+		  if (isset($output[$currenteid]['alert'])) $alert = $output[$currenteid]['alert'];
+		  unset($output[$currenteid]['alert']);
+		  WriteElement($db, $client, $output[$currenteid], $version);
+		  ProcessCHANGEevent($db, $client, $output, $currenteid);
+		  foreach ($client['allelements'] as $eid => $value) if ($eid != $currenteid)
 			  {
 			   $client['eId'] = $eid;
+			   if (!isset($output[$eid])) $output[$eid] = [];
 			   if (!WriteElement($db, $client, $output[$eid], $version))
 			      {
 			       unset($output[$eid]);
 			       $newmask .= "eid$eid=NULL,";
 			      }
 			  }
-		    
+
 		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version), 'Change object');
 		  if ($ruleresult['action'] === 'Accept')
 		     {
@@ -339,14 +363,15 @@ switch ($output[$client['eId']]['cmd'])
 			  $query = $db->prepare("UPDATE `data_$client[ODid]` SET $mask WHERE id=$client[oId] AND version=".strval($version - 1));
 		          $query->execute();
 			 }
-	              $db->commit();
+	              try { $db->commit(); }
+		      catch (PDOException $e) { }
 		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
 	    	      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
-		    	      if (array_search($prop, ['hint', 'description', 'value', 'style']) === false) unset($output[$eid][$prop]);
+		    	      if (array_search($prop, ['hint', 'description', 'value', 'style', 'alert']) === false) unset($output[$eid][$prop]);
 	    	      $output = ['cmd' => 'SET', 'data' => $output];
 
 		      if (isset($ruleresult['message']) && $ruleresult['message'])	$output['alert'] = $ruleresult['message'];
-	    	      if (isset($output['data'][$excludeid]['alert']))			$output['alert'] = $output['data'][$excludeid]['alert'];
+	    	      if (isset($alert))						$output['alert'] = $alert;
 			 
 	    	      if (isset($passchange)) $output['passchange'] = strval($client['oId']);
 	    	      if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
@@ -364,7 +389,7 @@ switch ($output[$client['eId']]['cmd'])
 		 }
 	     $db->rollBack();
 	     if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
-	     $output = ['cmd' => 'SET', 'data' => [$excludeid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $excludeid, 'value')]], 'alert' => $ruleresult['message']];
+	     $output = ['cmd' => 'SET', 'data' => [$currenteid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $currenteid, 'value')]], 'alert' => $ruleresult['message']];
 	     break;
         case 'CALL':
 	     $output = $output[$client['eId']];

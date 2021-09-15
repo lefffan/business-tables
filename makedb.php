@@ -40,9 +40,10 @@ try {
      $newElement['element2']['data'] = "\nDouble click the username to change the password and other user properties";
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
-     $json = '{"props": {"value":"", "odaddperm":"", "groups":""}}';
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR."user.php <event> '$json' <user>";
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user>';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user>';
+     $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
      $userOD['dialog']['Element']['User (id1)'] = $newElement;
 

@@ -722,8 +722,8 @@ function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
 
  // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
  while  (++$i <= $len)
-     // Parameter delimiter char  <'>, <">, <:>, < > detected
-     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ')
+     // Parameter delimiter char  "'", '"', ':', ' ' detected
+     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ' || $objectSelection[$i] === '\\')
 	{
 	 if (isset($newparam))
 	 if (isset($params[$newparam])) // Object selection input parameter key does exist? Do code below

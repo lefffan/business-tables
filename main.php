@@ -201,6 +201,8 @@ while (true)
 		   LogoutUser($socketarray, $clientsarray, $handler['passchange'], "\nUser password has been changed!\n\nUsername");
 		   unset($handler['passchange']);
 		  }
+	       $count = ['cmd' => '', 'count' => ['odid' => $handler['ODid'], 'ovid' => $handler['OVid']]];
+	       $countmessage = encode(json_encode($count));
 	       switch ($handler['cmd'])
 	              {
 		       // For dialog, edit or empty (warning box message) commands search appropriate socket (the handler was called from) to write the command.
@@ -212,21 +214,20 @@ while (true)
 			       fwrite($socketarray[$hid], encode(json_encode($handler)));
 			    break;
 		       case 'SET':
-			    unset($encodedmessageany);
-			    if (isset($handler['alert']))
-			       {
-				$encodedmessage = encode(json_encode($handler)); // Encode message for the client called the handler
-				unset($handler['alert']);
-				$encodedmessageany = encode(json_encode($handler)); // Encode message for other clients with the same OD/OV without alert message
-			       }
-			     else
-			       {
-				$encodedmessage = encode(json_encode($handler)); // Encode message for the client called the handler
-				$encodedmessageany = &$encodedmessage; // Both messages are the same
-			       }
-			    foreach ($socketarray as $cid => $socket) // Search all clients with the OD/OV the 'SET' command was called for and write object element data change
-				 if (isset($clientsarray[$cid]['auth']) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
-				    $cid === $hid ? fwrite($socket, $encodedmessage) : fwrite($socket, $encodedmessageany);
+			    $encodedmessage = encode(json_encode($handler)); // Encode message for the client called the handler
+			    unset($handler['alert']);
+			    $encodedmessageany = encode(json_encode($handler + $count)); // Encode message for other clients with the same OD/OV without alert message
+			    // Search all auth clients with the OD/OV the 'SET' command was called for and write object element data change
+			    foreach ($socketarray as $cid => $socket) if (isset($clientsarray[$cid]['auth']))
+				 if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
+				    {
+				     if ($clientsarray[$cid]['params'] !== $handler['params']) continue;
+				     $cid === $hid ? fwrite($socket, $encodedmessage) : fwrite($socket, $encodedmessageany);
+				    }
+				  else
+				    {
+				     fwrite($socket, $countmessage);
+				    }
 			    break;
 		       case 'INIT':
 		       case 'DELETEOBJECT':
@@ -234,25 +235,30 @@ while (true)
 			    isset($handler['alert']) ? $alert = ['alert' => $handler['alert']] : $alert = [];
 			    unset($handler['alert']);
 			    // Cycle all sockets which client OD/OV the INIT/DELETEOBJECT commands was called for
-			    foreach ($socketarray as $cid => $socket)
-				 if (isset($clientsarray[$cid]['auth']) && $clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'] && $clientsarray[$cid]['params'] === $handler['params'])
+			    foreach ($socketarray as $cid => $socket) if (isset($clientsarray[$cid]['auth']))
+				 if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
 				    {
+				     if ($clientsarray[$cid]['params'] !== $handler['params']) continue;
 				     CopyArrayElements($clientsarray[$cid], $handler, ['auth', 'uid']);
 				     $handler['cmd'] = 'CALL';
 				     $handler['data'] = GenerateRandomString();
-				     $cid === $hid ? $message = json_encode($handler + $alert) : $message = json_encode($handler);
+				     $cid === $hid ? $message = json_encode($handler + $alert) : $message = json_encode($handler + $count);
 				     QueueViewCall($db, $socket, $handler['data'], $message);
 				    }
-		       break;
-		  case 'CALL':
-		       if (Check($db, CHECK_OD_OV, $handler, $output)) //MakeViewCall($db, $socketarray[$hid], $clientsarray[$hid], $handler);
-			  {
-			   CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);
-			   $handler['data'] = GenerateRandomString();
-			   QueueViewCall($db, $socketarray[$hid], $handler['data'], json_encode($handler)); //$handler['cmd'] = 'CALL';
-			  }
-		       break;
-		 }
+				  else
+				    {
+				     fwrite($socket, $countmessage);
+				    }
+			    break;
+		       case 'CALL':
+			    if (Check($db, CHECK_OD_OV, $handler, $output)) //MakeViewCall($db, $socketarray[$hid], $clientsarray[$hid], $handler);
+			       {
+				CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);
+				$handler['data'] = GenerateRandomString();
+				QueueViewCall($db, $socketarray[$hid], $handler['data'], json_encode($handler)); //$handler['cmd'] = 'CALL';
+			       }
+			    break;
+		      }
 	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");
 	  $query->execute();
 	 }
