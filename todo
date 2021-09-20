@@ -15,6 +15,7 @@ const.php
 --------------------------------------------------------------------------------
 
 - Application:
+  Change favicon -> tabels
   Version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Restrict OD sidebar display for some users
   Clone object, similar to add object, but copies current menu contexted object

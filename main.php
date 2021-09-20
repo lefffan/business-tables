@@ -255,7 +255,8 @@ while (true)
 			       {
 				CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);
 				$handler['data'] = GenerateRandomString();
-				QueueViewCall($db, $socketarray[$hid], $handler['data'], json_encode($handler)); //$handler['cmd'] = 'CALL';
+				$message = json_encode($handler); // Var $handler['cmd'] already equals 'CALL'
+				QueueViewCall($db, $socketarray[$hid], $handler['data'], $message);
 			       }
 			    break;
 		      }

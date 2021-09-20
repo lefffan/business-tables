@@ -5,7 +5,7 @@ function lg($arg)
  file_put_contents('/usr/local/src/tabels/error.log', var_export($arg, true), FILE_APPEND);
 }
 
-//sleep(2);
+sleep(23);
 
 if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
    {

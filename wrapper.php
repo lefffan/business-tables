@@ -3,6 +3,7 @@
 require_once 'core.php';
 
 CONST ARGVCLIENTINDEX = 9;
+CONST GROUPEVENTS = ['CHANGE', 'INIT', 'SCHEDULE'];
 
 function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 {
@@ -14,7 +15,8 @@ function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 	  $client['eId'] = $eid;
 	  if (($cmdline = GetCMD($db, $client)) === '') continue; // No handler
 	  exec($cmdline, $output[$eid]);
-	  if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]); // Parse handler result data, if failed - unset output
+	  // Parse handler result data, if failed - unset output
+	  if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]);
 	 }
 }
 
@@ -22,79 +24,65 @@ function ParseHandlerResult($db, &$output, &$client)
 {
  if (!isset($output[0])) return;
  $output = gettype($result = json_decode($output[0], true)) === 'array' ? $result : ['cmd' => 'SET', 'value' => implode("\n", $output)];
+ $logmsg = "Element id$client[eId] handler for object id$client[oId] ";
 
- if (!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', '']) === false)
-    {
-     LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] (OD: '$client[OD]', OV: '$client[OV]') returned undefined json!");
-     return;
-    }
+ // Incorrect handler response JSON
+ if ((!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', '']) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
 
+ // Parse handler output array
  switch ($output['cmd'])
 	{
 	 case 'EDIT':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
-	         { 
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'EDIT' command on object '$client[cmd]' event!");
-		  return;
-		 }
+	      // Unsupported command
+	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'EDIT' command on '$client[cmd]' event!")) return;
 	      ConvertToString($output, ['data']);
 	      if (!isset($output['data'])) $output['data'] = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], 'value');
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'ALERT':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
-	         {
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'ALERT' command on object '$client[cmd]' event!");
-		  return;
-		 }
-	      if (!isset($output['data']) || !ConvertToString($output, ['data']))
-	         {
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] returned undefined 'ALERT' message!");
-		  return;
-		 }
+	      // Unsupported command
+	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'ALERT' command on '$client[cmd]' event!")) return;
+	      // Undefined alert
+	      if ((!isset($output['data']) || !ConvertToString($output, ['data'])) && !LogMessage($db, $client, $logmsg."returned undefined 'ALERT' message!")) return;
 	      $output = ['cmd' => '', 'alert' => $output['data']];
 	      break;
 	 case 'DIALOG':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
-	         {
-		  LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'DIALOG' command on object '$client[cmd]' event!");
-		  return;
-		 }
-	      if (!isset($output['data']) || gettype($output['data']) != 'array')
-	         {
-	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] returned incorrect 'DIALOG' command data!");
-		  return;
-		 }
+	      // Unsupported command
+	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'DIALOG' command on '$client[cmd]' event!")) return;
+	      // Undefined dialog
+	      if ((!isset($output['data']) || gettype($output['data']) != 'array') && !LogMessage($db, $client, $logmsg."returned incorrect 'DIALOG' command data!")) return;
 	      cutKeys($output, ['cmd', 'data']);
+	      // User handler dialog should always be escapeable to avoid interface lock
 	      $output['data']['flags']['esc'] = '';
 	      foreach ($output['data']['buttons'] as $button => $value)
-	    	      {
+		      {
+		       // Always set 'CONFIRMDIALOG' as a handler dialog button event (if 'call' exists), otherwise unset enterkey prop to not call button event on 'enter' key
 		       if (isset($value['call'])) $output['data']['buttons'][$button]['call'] = 'CONFIRMDIALOG';
 		        else unset($output['data']['buttons'][$button]['enterkey']);
+		       // Continue for no button timer
 		       if (!isset($output['data']['buttons'][$button]['timer'])) continue;
-		       
-		       if (isset($timer) || !ctype_digit($output['data']['buttons'][$button]['timer'])) unset($output['data']['buttons'][$button]['timer']);
-		       if (isset($output['data']['buttons'][$button]['timer']))
-		          {
-			   $timer = intval($output['data']['buttons'][$button]['timer']);                                             
-			   if ($timer < MINBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MINBUTTONTIMERMSEC);
-			   if ($timer > MAXBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MAXBUTTONTIMERMSEC);
+		       // Timer for previous buttons already exists or non-digital timer string? Unset timer prop and continue
+		       if (isset($timer) || !ctype_digit($output['data']['buttons'][$button]['timer']))
+			  {
+			   unset($output['data']['buttons'][$button]['timer']);
+			   continue;
 			  }
+		       // No previous button timers and new button timer does exist and digital? Set it
+		       $timer = intval($output['data']['buttons'][$button]['timer']);
+		       if ($timer < MINBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MINBUTTONTIMERMSEC);
+		       if ($timer > MAXBUTTONTIMERMSEC) $output['data']['buttons'][$button]['timer'] = strval(MAXBUTTONTIMERMSEC);
 		      }
 	      break;
 	 case 'CALL':
-	      if ($client['cmd'] === 'CHANGE' || $client['cmd'] === 'INIT' || $client['cmd'] === 'SCHEDULE')
-	         {
-	          LogMessage($db, $client, "Handler for element id $client[eId] and object id $client[oId] shouldn't return 'CALL' command on object '$client[cmd]' event!");
-		  return;
-		 }
+	      // Unsupported command
+	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'CALL' command on '$client[cmd]' event!")) return;
 	      cutKeys($output, ['cmd', 'ODid', 'OVid', 'params']);
 	      break;
 	 case 'SET':
 	 case 'RESET':
-	      // Adjust value, hint, description, style, alert properties, empty property is not allowed unset($output['']) ?
+	      // Adjust value, hint, description, style, alert properties
 	      ConvertToString($output, ['value', 'hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
-	      if ($client['cmd'] === 'CHANGE') unset($output['alert']);
+	      if ($client['cmd'] === 'CHANGE') unset($output['alert']); // Alert is not supported for object 'CHANGE' event
 	      break;
 	 case '':
 	      break;
@@ -111,10 +99,10 @@ function ConvertToString(&$arr, $keys, $limit = NULL)
 	 {
 	  if (gettype($arr[$value]) === 'integer') $arr[$value] = strval($arr[$value]);
 	   else if (gettype($arr[$value]) === 'array') $arr[$value] = json_encode($arr[$value]);
-	   else if (gettype($arr[$value]) != 'string') { unset($arr[$value]); $result = false; }
+	   else if (gettype($arr[$value]) != 'string' && !($result = false)) unset($arr[$value]);
 	  if (isset($arr[$value]) && isset($limit) && strlen($arr[$value]) > $limit) $arr[$value] = substr($arr[$value], 0, $limit);
 	 }
-	 
+
  return $result;
 }
 
@@ -136,7 +124,8 @@ function WriteElement($db, &$client, &$output, $version)
     }
 
  // Read current element json data to merge it with new data in case of 'SET' command, then write to DB
- if ($output['cmd'] === 'SET' && gettype($oldData = getElementArray($db, $client['ODid'], $client['oId'], $client['eId'], $version - 1)) === 'array') $output = array_replace($oldData, $output);
+ if ($output['cmd'] === 'SET' && gettype($oldData = getElementArray($db, $client['ODid'], $client['oId'], $client['eId'], $version - 1)) === 'array')
+    $output = array_replace($oldData, $output);
  if ($output['cmd'] === 'RESET') $output += DEFAULTELEMENTPROPS;
 
  $query = $db->prepare("UPDATE `data_$client[ODid]` SET eid$client[eId]=:json WHERE id=$client[oId] AND version=$version");
@@ -287,9 +276,9 @@ $output = [];
 
 if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $output))
    {
-    if ($client['cmd'] === 'SCHEDULE')
+    if ($client['cmd'] === 'SCHEDULE') // Log error result for 'SCHEDULE' event, otherwise error is displayed as a main view message
        isset($output['error']) ? LogMessage($db, $client, $output['error']) : LogMessage($db, $client, $output['alert']);
-    $output = [$client['eId'] => $output + ['cmd' => '']];
+    $output = [$client['eId'] => ['cmd' => ''] + $output];
    }
 else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
    {
@@ -300,8 +289,8 @@ else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
     if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
      else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
 
-    if (isset($client['cmdline'])) $cmdline = $client['cmdline']; else $cmdline = false;
-    if (($cmdline = GetCMD($db, $client, $cmdline)) === '') exit;
+    // CMD line already defined (for 'SCHEDULE' event)? Pass it to GetCMD
+    if (($cmdline = GetCMD($db, $client, isset($client['cmdline']) ? $client['cmdline'] : false)) === '') exit;
     $output[$client['eId']] = [];
     exec($cmdline, $output[$client['eId']]);
     if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
@@ -312,6 +301,7 @@ switch ($output[$currenteid]['cmd'])
        {
         case 'DIALOG':
         case 'EDIT':
+        case 'CALL':
         case '':
 	     $output = $output[$client['eId']];
 	     break;
@@ -322,23 +312,29 @@ switch ($output[$currenteid]['cmd'])
 	     // Write all object data
 	     try {
 	          $db->beginTransaction();
+		  // Block last object version row for update and calculate last version number
 	          $query = $db->prepare("SELECT version,mask FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
 	          $query->execute();
-	          $version = $query->fetchAll(PDO::FETCH_NUM); // Get selected version
-	          if (count($version) === 0) throw new Exception("Object id $client[oId] doesn't exist! Please refresh Object View."); // No rows found? Return an error
+	          $version = $query->fetchAll(PDO::FETCH_NUM);
+		  // No rows found? Return an error
+	          if (!isset($version[0])) throw new Exception("Object id $client[oId] doesn't exist! Please refresh the View.");
 	          $mask = $version[0][1];
 	          $version = intval($version[0][0]) + 1; // Increment version to use it as a new version of the object
-	          
-	          $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1"); // Unset last flag of the object current version and insert new object version with empty data
+		  // Unset last flag of the object current version and insert new object version with empty data
+	          $query = $db->prepare("UPDATE `data_$client[ODid]` SET lastversion=0 WHERE id=$client[oId] AND lastversion=1");
 	          $query->execute();
+		  // Insert new object empty version
 	          $query = $db->prepare("INSERT INTO `data_$client[ODid]` (id,owner,version,lastversion) VALUES ($client[oId],:owner,$version,1)");
 	          $query->execute([':owner' => $client['auth']]);
 		  $newmask = '';
-
+		  // Remember initiated 'SET/RESET' commands element alert message
 		  if (isset($output[$currenteid]['alert'])) $alert = $output[$currenteid]['alert'];
 		  unset($output[$currenteid]['alert']);
+		  // Write current element
 		  WriteElement($db, $client, $output[$currenteid], $version);
+		  // Process 'CHANGE' event for other elements on object element change
 		  ProcessCHANGEevent($db, $client, $output, $currenteid);
+		  // Write all other elements 'CHANGE' event data 
 		  foreach ($client['allelements'] as $eid => $value) if ($eid != $currenteid)
 			  {
 			   $client['eId'] = $eid;
@@ -349,37 +345,38 @@ switch ($output[$currenteid]['cmd'])
 			       $newmask .= "eid$eid=NULL,";
 			      }
 			  }
-
+		  // Check changed object on existing rules
 		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version), 'Change object');
 		  if ($ruleresult['action'] === 'Accept')
 		     {
-		      if ($newmask != '')
-		         {
+		      if ($newmask != '') // Update new object version with new element data
+			 {
 			  $query = $db->prepare("UPDATE `data_$client[ODid]` SET mask='".substr($newmask, 0, -1)."' WHERE id=$client[oId] AND version=$version");
-		          $query->execute();
+			  $query->execute();
 			 }
-		      if ($mask != '')
-		         {
+		      if ($mask != '') // Remove object previous version non-changed element data
+			 {
 			  $query = $db->prepare("UPDATE `data_$client[ODid]` SET $mask WHERE id=$client[oId] AND version=".strval($version - 1));
-		          $query->execute();
+			  $query->execute();
 			 }
-	              try { $db->commit(); }
+		      try { $db->commit(); } // Commit object update operation
 		      catch (PDOException $e) { }
-		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
-	    	      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
-		    	      if (array_search($prop, ['hint', 'description', 'value', 'style', 'alert']) === false) unset($output[$eid][$prop]);
-	    	      $output = ['cmd' => 'SET', 'data' => $output];
-
+		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']); // Log rule
+		      // Unset properties of all element of the object different from 'hint', 'description', 'value', 'style' and 'alert'
+		      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
+			      if (array_search($prop, ['hint', 'description', 'value', 'style', 'alert']) === false) unset($output[$eid][$prop]);
+		      $output = ['cmd' => 'SET', 'data' => $output];
+		      // Log rule message if main element alert doesn't exist
 		      if (isset($ruleresult['message']) && $ruleresult['message'])	$output['alert'] = $ruleresult['message'];
-	    	      if (isset($alert))						$output['alert'] = $alert;
-			 
-	    	      if (isset($passchange)) $output['passchange'] = strval($client['oId']);
-	    	      if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
-	    		 {
+		      if (isset($alert))						$output['alert'] = $alert;
+		      // Check pass or customization change
+		      if (isset($passchange)) $output['passchange'] = strval($client['oId']);
+		      if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
+			 {
 			  $output['customization'] = getUserCustomization($db, $client['uid']);
 			  if (!isset($output['customization'])) unset($output['customization']);
 			 }
-	    	      break;
+		      break;
 		     }
 		 }
 	     catch (PDOException $e)
@@ -391,15 +388,12 @@ switch ($output[$currenteid]['cmd'])
 	     if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
 	     $output = ['cmd' => 'SET', 'data' => [$currenteid => ['cmd' => 'SET', 'value' => getElementProp($db, $client['ODid'], $client['oId'], $currenteid, 'value')]], 'alert' => $ruleresult['message']];
 	     break;
-        case 'CALL':
-	     $output = $output[$client['eId']];
-	     break;
         case 'INIT':
 	     $data = $client['data'];
 	     foreach ($client['allelements'] as $eid => $profile)
-    		     {
+		     {
 		      $client['eId'] = $eid;
-		      if (isset($data[$eid])) $client['data'] = $data[$eid]; else $client['data'] = '';
+		      $client['data'] = isset($data[$eid]) ? $data[$eid] : '';
 		      $output[$eid] = [];
 		      if (($cmdline = GetCMD($db, $client)) === '') continue;
 		      exec($cmdline, $output[$eid]);

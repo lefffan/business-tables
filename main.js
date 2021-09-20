@@ -2002,9 +2002,10 @@ is a JSON, that may consist of any defined properties, but some of them have spe
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
-- 'alert' property is reserved by the controller to send alert messages to the client side
 - 'link' is element connection list one by line, each connection is a link name and remote object and its element
   selections,  all three divided by '|'.
+- 'alert' property is reserved by the controller to send alert messages to the client side
+- 'cmd' property is reserved by the controller to identify handler command
 Other element properties are custom and used to store additional element data, see example below.
 
 Lets have a look to the simple OD example with only two elements - Name and Phone number.
@@ -2049,7 +2050,8 @@ so John phone number next change creates object version 3 with previous object v
 Other words - just to save some disk space non actual object versions consist of changed elements only.
 As object versions are object data instnces - deleted objects are not removed from database, but marked by zero version only.
 All previous versions object data is available in that case, but cannot be changed at all. Considering all of this, all object
-history is transparent and available. This is a global application conception - all functionality is documented and clear.
+history is transparent and available and all data is native. This is a global application conception - all functionality is
+documented and clear.
 
 Go on. Authentication and authorization are password based. Usernames and their passwords are stores in 'Users' OD.
 Only one user instance can be logged in, so logged in instance automatically logs out another instance via other host/browser.
@@ -2343,152 +2345,149 @@ passed to the server (controller). Controller accepts the event and processes it
 delete..) or by calling/executing appropriate handler, which output result is parsed by the controller and passed to the
 client:
 
++--------------+                                   +--------------+                                   +--------------+
+|              |                                   |              |                                   |              |
+|              |            USER EVENT             |              |            HANDLER CALL           |              |
+|              |      ---------------------->      |              |      ---------------------->      |              |
+|   Client     |                                   |    Server    |                                   |   Handler    |
+|  (browser)   |                                   | (controller) |                                   |              |
+|              |        CONTROLLER COMMAND         |              |          HANDLER COMMAND          |              |
+|              |      <----------------------      |              |      <----------------------      |              |
+|              |                                   |              |                                   |              |
++--------------+                                   +--------------+                                   +--------------+
+                                                          ^
+                                                          |
+                                                          | CRUD operations
+                                                          |
+                                                          ∨
+                                              +------------------------+
+                                              |                        |
+                                              |                        |
+                                              |        Database        |
+                                              |                        |
+                                              |                        |
+                                              +------------------------+
 
-+-----------+                                        +-----------+                                       +-----------+
-|           |                                        |           |                                       |           |
-|           |             USER EVENT                 |           |            HANDLER CALL               |           |
-|           |        ---------------------->         |           |        ---------------------->        |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-|           |           CONTROLLER COMMAND           |           |         JSON OR ANY TEXT DATA         |           |
-|           |        <----------------------         |           |        <----------------------        |           |
-|           |                                        |           |                                       |           |
-|           |                                        |           |                                       |           |
-+-----------+                                        +-----------+                                       +-----------+
-                                                           ^
-                                                           |
-                                                           |
-                                                           ∨
-                                            +-----------------------------+
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            |                             |
-                                            +-----------------------------+
+					    USER EVENT.
+As it was mentioned above user events are generated after database object manipulations, so they are:
+ - mouse event:
+    DBLCLICK (user double clicks object element by left mouse button)
+ - keyboard events:
+    KEYPRESS (user presses symbol keys such as space, digits or letters on object element)
+    F2 (user presses F2 key on object element)
+    F12 (user presses F12 key on object element)
+    INS (user presses insert key on object element)
+    DEL (user presses delete key on object element)
+ - feedback events:
+    CONFIRM (editable content after edit finish returns back to the controller and then to the handler to be processed)
+    CONFIRMDIALOG (dialog box data after apply returns back to the controller and then to the handler to be processed)
+ - new object:
+    INIT (user adds/create new object via context menu or new object input)
+ - delete object:
+    DELETEOBJECT (user removes the object via context menu, the only event which is not passed to the handler - controller
+		  just removes the object from DB (via zero marked version) with no any handler call)
 
+Also there are some events generated by the controller only, they are:
+    CHANGE (after one element data is changed via SET/RESET handler commands the event 'CHANGE' occurs for other elements
+	    of the object. It is necessary for these other elements to react on any element change, so one handler changes
+	    its element data, other elements of the object receives 'CHANGE' event)
+    SCHEDULE (event is generated by system scheduler, handler command line executed for that event is retrieved from
+	      appropriate field in a 'View' section of Database configuration)
 
+					    HANDLER CALL.
+User events above are received from the client side by the controller and passed to the handler for the initiated element
+(or all elements) via executing specified handler command line (set in database configuration). Note, that 'INIT' client event
+(new object creation) is passed to all elements of the object, while others events - to initiated element only. 
+Handler command line is executed as it is specified in a database configuration ('Elemnt' tab) with one moment - angle
+brackets quoted arguments are parsed to be replaced by the next values:
+ - <user> is replaced by user name the specified event was initiated by. 'SCHEDULER' event is initiated by built-in 'system' user.
+ - <oid> is replaced by object id the event was initiated on.
+ - <event> is replaced by event name (DBLCLICK, KEYPRESS, CHANGE..) the handler is called on.
+ - <title> is replaced by element title (element name in Database configuration) the event was initiated on.
+ - <datetime> is replaced by date and time in format 'Y-m-d H:i:s'.
+ - <data> is replaced by event data.
+    For KEYPRESS event data is a JSON string with next format:
+    {"string": "<key char>", "altkey": "",  "ctrlkey": "", "metakey": "shiftkey", "": ""}
+    Property "string" is one key char, other properties do exist only in case of appropriate key pushed. Meta key for Mac OS
+    is 'Cmd' key, for Window OS - 'Window' key.
+    For INIT event data argument text content in 'new object' element table cells if exist, otherwise <data> is empty string ''.
+    For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
+    For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
+    For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
+ - <JSON argument> is replaced by retrieved element data and should be in next format:
+    {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
+    First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted 
+    datavase/view names ("OD"/"OV") is used. Both identificator and name omitted - current database or view is used.
+    Specified view must have 'Table' template.
+    Next two properties "selection" and "limit" are SQL query parts to select necessary objects which element data need to be
+    retrieved: SELECT .. FROM .. WHERE "selection" LIMIT "limit". Omitted "selection" property - current object is used,
+    omitted "limit" - number is set to 1.
+    Last two properties "element" and "prop" select element of the selected object. Omitted "element" current element (the
+    event was initiated on) is used. Omitted "prop" - property "value" of element JSON data is used. Property "element"
+    is exact element id (user element id number or service element name - id,owner,datetime..) or regular expression ("/../")
+    to search first match among all elements specified in database view 'Element layout'. <JSON argument> may consist of some
+    replacements - property names with first char ':'. So these properties act as another JSON argument, so its values are
+    retrieved and replaced in "element" regular expressions and "selection". It is a kind of a recursion, max recursive calls
+    number is 3. See 'Examples' help section. In case of exact element id and multiple objects selection - final result is 
+    element JSON property of all selected objects ((each of new line).
+    Therefore, 'JSON argument' selects database view objects (based on "selection" and "limit"), takes element and its property
+    (based on "element" and "prop") or searches necessary element via first match "element" regular expression and then
+    replaces <JSON argument> with the retrieved value. All properties are optional, so any JSON (event empty <{}>) is treated
+    as a correct argument to be replaced. Empty (or with unknown props) JSON is replaced by the current database view object
+    element value. 
+Not listed above argument cases remain untouched, but passed without angle brackets to avoid stdin/stdout redirections, so any
+single angle brackets are truncated in a result command line.
 
+					    HANDLER COMMAND.
+To make database changes or client side actions user handlers should return (output to stdout) some commands in JSON
+format: {"cmd": "<command>", "<prop1>": "<value1>",.., "<propN>": "<valueN>"}
+Empty output or unknown commands (see available command list below) are ignored and make no actions. Output in non-JSON
+format is automatically converted to the next command to be set as an element value (see 'SET' command description below):
+{"cmd": "SET", "value": "<handler output>"}
 
+Available handler commands are:
+ - 'EDIT'. Format: '{"cmd": "EDIT", "data": "<some text>"}'. The command makes the client side table cell content be editable.
+   Property 'data' is optional and set as an editable content. No 'data' property - current table cell content (element value)
+   is used as an editable content. For example, 'mouse double click' calls the handler, which response is 'EDIT' command.
+   Just like in Excel :) Handler command is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
+ - 'ALERT'. Format: '{"cmd": "ALERT", "data": "<some text>"}'. The command displays client side warning dialog box with
+   <some text> as a warning/info text and 'OK' button. No 'data' property - the command is ignored. Handler command is ignored
+   for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
+ - 'DIALOG'. Format: '{"cmd": "DIALOG", "data": {<JSON dialog>}}'. The command displays client side dialog box based on 
+   <JSON dialog>* format, which allows to generate 'powerful' dialog boxes with any combination of text input, text areas,
+   multiple/single select, radio-buttons, check-boxes, interface buttons.. No 'data' property - the command is ignored.
+   Handler command is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
+ - 'CALL'. Format: '{"cmd": "CALL", "ODid": "<database id>", "OVid": "<view id>", "params": {<JSON params>}}'. The command
+   calls specified by OD/OV identificators database view as if the user clicks specified view on the sidebar. It is useful
+   for some views to be called from a handler as a responce on user events (mouse or keyboard, for a example) and according
+   to specific handler behaviour. <JSON params> is a JSON formatted object selection parameters, see 'Object Selection' help
+   section for details. For a example, some object element mouse double click displays the view, which searches objects
+   matched the clicked element value, that is passed in a "params" property. Handler command is ignored for 'CHANGE', 'INIT'
+   and 'SCHEDULE' user/controller events.
+ - 'SET'/'RESET'. Object element data set. 'SET' command updates all specified element JSON properties only. 'RESET' command
+   does the same, but additionally removes all other (not specified) properties, so in case of RESET command element JSON
+   data is just replaced by handler output JSON.
 
-Client, controller and element-handler interaction:
-------Client (browser) input event------	-------Controller------							------Element handler------
+Some handlers may take long time for a execution, so to avoid any script/binary freezing or everlasting runtime - user
+can manage handler processes via context menu 'Task Manager'. Its table columns are PID (process identificator), Handler
+(handler command line), Exe time (handler running time in sec), Initiator (user name initiated event for handler call),
+Ip (client ip address), Event (user event name), Database/view (database/view names), OId/Eid (object and element
+identificators) and Kill (column with buttons 'X' to kill appropriate handler process). Task manager info is refreshed
+automatically every second. Any column header mouse click (except 'Kill') sorts handler process list in ascending or
+descending order.
 
-REFRESHMAIN					data..
-{cmd,OD,OV,sId}					<=
------------------------------------------------------------------------------------------------------------
-REFRESHMENU					data..
-{cmd,OD,OV,sId}					<=
------------------------------------------------------------------------------------------------------------
-NEWOBJECT					=>									{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert" }
-{cmd,["data": array[id]=element],OD,OV,sId}	{ "cmd": "INFO", "log", "error", "alert" }				<=
-						{ "cmd": "REFRESH", "OD", "OV" }
------------------------------------------------------------------------------------------------------------
-DELETEOBJECT					=>
-{cmd,OD,OV,oId,sId}				{ "cmd": "INFO", "log", "error", "alert" }				<=
-						{ "cmd": "REFRESH", "OD", "OV" }
------------------------------------------------------------------------------------------------------------
-DBLCLICK,F2,F12,INS,DEL				=>									{ "cmd": "EDIT", "oId", "eId", "data", "lines" }
-{cmd,OD,OV,oId,eId,sId}													{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert", "log" }
-															{ "cmd": "NEWOD|NEWOV|NEWELEMENT", "data" }
-CONFIRM,KEYPRESS,OBJCHANGE			{ "cmd": "INFO", "log", "error", "alert" }				<=
-{cmd,data,OD,OV,oId,eId,sId}			{ "cmd": "REFRESH", "OD", "OV" }					
----------------------------------------------------------------------------------------------------------------------------------------------------
+					    CONTROLLER COMMAND.
+Handler commands 'EDIT', 'ALERT', 'DIALOG' and 'CALL' are passed from the handler by the controller directly to the client
+with no changes. These commands are client side specific and execute client (browser) actions such as edit content, alert
+message, dialog box and specified view open/call.
+Another handler commands 'SET' and 'RESET' makes the controller to do some database operations (new object version create,
+write initiated element data from handler command, process 'CHANGE' event for other elemens of the object, check result object
+version on database rules) and then to pass object changed data to the client.
+Two user events 'INIT' (passed to the handler for all elements of the new object) and 'DELETEOBJECT' (no handler call) are
+processed by the controller (create new object and remove specified object(s) respectively), which then calls client side
+to refresh the current view.
 
-
-- KEYPRESS. Event occurs when keyboard input for letters, digits and space is registered.
-- INS,DEL,F2,F12. Event occurs when keyboard input for appropriate non symbol keys is registered.
-- DBLCLICK. Left button mouse double click event.
-- CONFIRM. Event occurs when cell content editable data returns to the handler to be confirmed after the user has applied editable content.
-- CONFIRMDIALOG. Event occurs when dialog box data returns to the handler to be confirmed after the user has applied dialog.
-- INIT. Event occurs when the new object has been created.
-- CHANGE. Event occurs after one of elements have been changed by handler command SET or RESET.
-- SCHEDULE. Event is generated by system scheduler.
-
-For any of events above specified element handler is called.
-Handler command line is defined in Object Database structure dialog (you can call it via appropriate context menu) on 'Element' tab.
-There are some command line arguments enclosed by '<>' - they are replaced by the service data:
-- <event>. Event name the handler is called on.
-- <user>. User name the event was initiated by. Arg is qouted automatically. 
-- <oid>. Object id the event was initiated on.
-- <title>. Element id title the event was initiated on. Arg is qouted automatically. 
-- <data>. Event data passed to the hanlder. Arg is qouted automatically. 
-  For KEYPRESS it will be key char. In case of text paste operation - KEYPRESS event is also generated and <data> arg will be the pasted text.
-  For INIT event <data> argument will be text in 'new object' table cells, for empty or undefined cells <data> arg value is ''.
-  For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
-  For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
-  For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
-
-Besides all above user can pass any strings as an arguments, but since they are in JSON format the specified property of specified object element is retrieved.
-Format: {"ODid": "<OD id>", "OVid": "<OV id>", "oid": "<object id>", "eid": "<element id>", "prop": "<property name>"}
-Next argument example will retrieve object id=4 and element id=1 property "password" value stored in current object database: '{"oid": "4", "eid": "1", "prop": "password"}'.
-In case of ODid/OVid/oid/eid omitted, current ODid/OVid/oid/eid identificators are used, "prop" is mandatory, so empty string an is used as an arg in case of absent or nonexistent "prop".
-
-Since handlers want to make some actions they should output string in JSON format to stdout:
-- '{ "cmd": "EDIT", "data": "<text data>" }'. EDIT handler command makes element content editable.
-- '{ "cmd": "ALERT", "data": "<text data>" }'. Command output alert box on the client (browser).
-- '{ "cmd": "DIALOG", "data": <JSON dialog structure> }'. Command output dialog box on the client (browser).*
-- '{ "cmd": "CALL", "data": {"ODid": "", "OD": "", "OVid": "", "OV": "", "params": ""} }'. Command calls specified object database view.
-  In case OD/OV omitted current values are used. Property "params" is optional, its value is a JSON with object selection args list (as a properties) with its values. 
-  Absent object selection args in "params" JSON will be requested via dialog box.
-  Example: '{ "cmd": "CALL", "data": {"OD": "Users", "OV": "User", "params": {":Input_user": "root"} } }'.
-  Let OV 'User' of OD 'Users' have next object selection: WHERE lastversion=1 AND version!=0 AND eid1->>'$.value'=':Input_user'.
-  So example command above calls view 'User' that displays only root user object.
-  In case of absent "params" property - example call will dislpay dialog box to input user to select it from db.
-- '{ "cmd": "SET|RESET", .. }'. SET or RESET stores any JSON properties to the object database. RESET rewrites specified JSON instead current actual element JSON version, while SET adds specified properties to the current version only.
-  These two commands can write any props, but setting of some reserved props causes element specific behaviour:
-  - 'cmd'. SET or RESET.
-  - 'value'. Object element visible text data displayed in OV output.
-  - 'image'. Object element file name displayed in OV as an image. 
-  - 'alert'. Alert text to inform the user after object change via 'SET|RESET' commands.
-  - 'link'. 
-  - 'location'. 
-  - 'hint'. Element hint pops up after mouse cursor element navigation.
-  - 'description'. Description information displayed in info-box via appropriate context menu item select.
-  - 'style'. Object element visible text data css, see css documentation.
-  
-  Note that any non-JSON handler output doesn't cause an error, output data is set as a "value" property of element JSON, so handler command becomes look like that:
-  '{ "cmd": "SET", "value": "non-JSON output" }'
-  It is usefull for ordinary utils/scripts. For a example, using ping as a handler allows to store and display this diagnostic utility output.
-
-* JSON dialog structure:
- '{ "title": "dialog box title",
-    "dialog": { "pad name1": { "profile name1": { "element name1": { "type": "select|multiple|checkbox|radio|textarea|password|text",
-								     "head": "<interface element head text>",
-								     "data": "<interface element initial data>",
-								     "help": "<help text displayed as a hint>",
-								     "line": "",
-								     "readonly": "",
-								   }
-						 "element name2": {}..
-						},
-			       "profile name2": {}..
-			     },
-		"pad name2": {}..
-	      }
-    "buttons": { "button text1": "", "button text2": "".. }, 
-    "flags": { "style": "dialog box content html style attribute",
-	       "pad": "active (current selected) dialog box pad (if exists)",
-	       "profile": "active (current selected) dialog box profile (if exist)",
-	       "display_single_pad": "display pad area flag",
-	       "display_single_profile": "display profile area flag",
-	     }
- }'
-    
-JSON dialog structure is a nested JSONs which draw dialog box with its interface elements and specific behaviour:
+*JSON dialog structure is a nested JSONs which draw dialog box with its interface elements and specific behaviour:
 - "title" property is a dialog box text title, empty or undefined title - no box title area drawn.
 - "dialog" property is a dialog content of itself with pads, profiles for every pad and input interface elements for every profile.
   Pads, profiles and element names are arbitrary. See OD structure dialog with pads and its profiles as an example.
@@ -2569,7 +2568,7 @@ expression, so no match (NOT REGEXP) of non empty message equals 'match empty'.
 Since the chat message (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))) matches empty - the rule profile blocks (rejects) the
 operation - new message post in our case.
 
-That's all! As a result we have a nice chat with no much efforts for customization.`},
+That's all. As a result we have a nice chat with no much efforts for customization!`},
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 2 - host alive diagnostic. 
@@ -2638,4 +2637,3 @@ Example 6 - helpdesk, jira
 buttons: { OK: {value: "&nbsp;   OK   &nbsp;"}},
 flags:   { esc: "", style: "min-width: 1100px; min-height: 600px; width: 1100px; height: 720px;" }
 };
-
