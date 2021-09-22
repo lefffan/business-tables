@@ -25,7 +25,7 @@ let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
 let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
 let user = cmd = OD = OV = ODid = OVid = OVtype = '';
 let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
-let sidebar = {}, cursor = {}, oldcursor = {};
+let sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
 let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
@@ -41,11 +41,12 @@ let uiProfile = {
 		  // Main field
 		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
-		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "", "text-align": "center" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "", "text-align": "center" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
 		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background": "" },
+		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
+		  "main field table selected cell": { "target": ".selectedcell", "background-color": "#ddd;" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=" + EDITABLE + "])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
@@ -117,6 +118,7 @@ window.onload = function()
  document.addEventListener('mouseup', MouseEventHandler);
  document.addEventListener('keydown', KeyboardEventHandler);
  document.addEventListener('contextmenu', ContextEventHandler);
+ document.addEventListener('mousemove', MouseMoveEventHandler); 
 
  // Define sidebar div
  sidebarDiv = document.querySelector('.sidebar');
@@ -543,26 +545,74 @@ function GetTreeElementContent(content)
  return data;
 }
 
+function DrawBoxDiv()
+{
+ boxDiv.style.left = drag.left;
+ boxDiv.style.top = drag.top;
+}
+
+function SelectTableArea(x1, y1, x2, y2)
+{
+ for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
+ for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++)
+     if (x != x1 || y != y1) mainTablediv.rows[y].cells[x].classList.add('selectedcell');
+}
+
+function UnSelectTableArea(x1, y1, x2, y2)
+{
+ for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
+ for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++)
+     if (x != x1 || y != y1) mainTablediv.rows[y].cells[x].classList.remove('selectedcell');
+}
+
+function MouseMoveEventHandler(event)
+{
+ if (drag.element)
+ if (drag.element === boxDiv)
+    {
+     drag.left = String(event.clientX - drag.dispx) + 'px';
+     drag.top = String(event.clientY - drag.dispy) + 'px';
+     window.requestAnimationFrame(DrawBoxDiv);
+     return;
+    }
+  else if (OVtype === 'Table')
+    {
+     const next = event.target.tagName === 'TD' ? event.target : event.target.parentNode;
+     if (next.tagName !== 'TD') return;
+     if (next.classList.contains('datacell') || next.classList.contains('titlecell') || next.classList.contains('newobjectcell') || next.classList.contains('undefinedcell'))
+	{
+	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+	 SelectTableArea(drag.x1, drag.y1, drag.x2 = next.cellIndex, drag.y2 = next.parentNode.rowIndex);
+	}
+    }
+
+ if (!box && !contextmenu)
+    {
+     let x, y;
+     const next = event.target.tagName === 'TD' ? event.target : event.target.parentNode;
+     if (next.tagName !== 'TD') return;
+     if (next.classList.contains('datacell') || next.classList.contains('titlecell') || next.classList.contains('newobjectcell'))
+     if (mainTable[y = next.parentNode.rowIndex][x = next.cellIndex].hint)
+	{
+	 if (!hint || hint.x != x || hint.y != y)
+	    {
+	     hint = { x: x, y: y };
+	     clearTimeout(tooltipTimerId);
+	     tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(next, 'middle'), getAbsoluteY(next, 'end')), uiProfile['hint']['mouseover hint timer in msec']);
+	    }
+	 return;
+	}
+    }
+
+ HideHint();
+}
+
 function MainDivEventHandler(event)
 {
  switch (event.type)
 	{
 	 case 'mouseleave':
 	      if (!box) HideHint();
-	      break;
-	 case 'mousemove':
-	      let x = event.target.cellIndex, y = event.target.parentNode.rowIndex;
-	      if (x != undefined && y != undefined && mainTable[y]?.[x]?.hint && !box && !contextmenu)
-	         {
-		  if (!hint || hint.x != x || hint.y != y)
-		     {
-		      hint = { x: x, y: y };
-		      clearTimeout(tooltipTimerId);
-		      tooltipTimerId = setTimeout(() => ShowHint(mainTable[y][x].hint, getAbsoluteX(event.target, 'middle'), getAbsoluteY(event.target, 'end')), uiProfile['hint']['mouseover hint timer in msec']);
-		     }
-		  break;
-		 }
-	      HideHint();
 	      break;
 	 case 'dblclick':
 	      if (!box && event.target.contentEditable != EDITABLE && mainTable[cursor.y]?.[cursor.x])
@@ -755,7 +805,20 @@ function ContextEventHandler(event)
 	     }
 	  if (target.tagName === 'TD')
 	     {
-	      CellBorderToggleSelect(cursor.td, target);
+	      if (drag.x1 !== undefined)//
+		 {
+		  const x = target.cellIndex, y = target.parentNode.rowIndex;
+		  if (!(x >= Math.min(drag.x1, drag.x2) && x <= Math.max(drag.x1, drag.x2) && y >= Math.min(drag.y1, drag.y2) && y <= Math.max(drag.y1, drag.y2)))
+		     {
+		      UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+		      delete drag.x1;
+		      CellBorderToggleSelect(cursor.td, target);
+		     }
+		 }
+	       else
+		 {
+		  CellBorderToggleSelect(cursor.td, target);
+		 }
 	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) inner = ACTIVEITEM + 'Add Object</div>' + ACTIVEITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
 	       else inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
 	      inner += ACTIVEITEM + 'Copy</div>';
@@ -821,9 +884,17 @@ function MouseEventHandler(event)
  // Return if mouse non left button click, 0 - no mouse button pushed, 1 - left button, 2 - middle button, 3 - right (context) button
  if (event.which != 1) return;
 
+ if (event.type === 'mouseup') drag.element = null;
+
  // Dialog box is up? Process its mouse left button click
  if (box)
     {
+     if (event.type === 'mousedown' && event.target.classList.contains('title'))
+	{
+	 drag.element = boxDiv;
+	 drag.dispx = event.clientX - boxDiv.offsetLeft;
+	 drag.dispy = event.clientY - boxDiv.offsetTop;
+	}
      BoxEventHandler(event);
      return;
     }
@@ -899,8 +970,22 @@ function MouseEventHandler(event)
  if ((event.target.tagName == 'TD' && (next = event.target)) || (event.target.tagName == 'SPAN' && (next = event.target.parentNode) && next.tagName == 'TD'))
     {
      ResetUnreadMessages();
+     if (drag.x1 !== undefined)
+	{
+	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+	 delete drag.x1;
+	}
      CellBorderToggleSelect(cursor.td, next);
-     if (mainTable[cursor.y]?.[cursor.x] && cursor.td.contentEditable != EDITABLE && !isNaN(cursor.eId) && cursor.oId === NEWOBJECTID) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+     if (mainTable[cursor.y]?.[cursor.x] && cursor.td.contentEditable != EDITABLE && !isNaN(cursor.eId) && cursor.oId === NEWOBJECTID)
+	{
+	 MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	}
+      else
+	{
+	 drag.element = next;
+	 drag.x1 = drag.x2 = cursor.x;
+	 drag.y1 = drag.y2 = cursor.y;
+	}
      return;
     }
 }		 
@@ -1274,7 +1359,6 @@ function mainTableAddEventListeners()
  if (!mainTablediv) return;
  mainTablediv.addEventListener('dblclick', MainDivEventHandler);
  mainTablediv.addEventListener('mouseleave', MainDivEventHandler);
- mainTablediv.addEventListener('mousemove', MainDivEventHandler); 
  mainTablediv.addEventListener('paste', (event) => {});
 }
 
@@ -1283,7 +1367,6 @@ function mainTableRemoveEventListeners()
  if (!mainTablediv) return;
  mainTablediv.removeEventListener('dblclick', MainDivEventHandler);
  mainTablediv.removeEventListener('mouseleave', MainDivEventHandler);
- mainTablediv.removeEventListener('mousemove', MainDivEventHandler); 
  mainTablediv.removeEventListener('paste', MainDivEventHandler); 
 }
 
@@ -2469,7 +2552,7 @@ Available handler commands are:
    data is just replaced by handler output JSON.
 
 Some handlers may take long time for a execution, so to avoid any script/binary freezing or everlasting runtime - user
-can manage handler processes via context menu 'Task Manager'. Its table columns are PID (process identificator), Handler
+can manage handler processes via 'Task Manager' (context menu). Its table columns are PID (process identificator), Handler
 (handler command line), Exe time (handler running time in sec), Initiator (user name initiated event for handler call),
 Ip (client ip address), Event (user event name), Database/view (database/view names), OId/Eid (object and element
 identificators) and Kill (column with buttons 'X' to kill appropriate handler process). Task manager info is refreshed
@@ -2588,6 +2671,8 @@ for specified element id (2) every ten minutes. Ping utiltiy sends one icmp requ
 set as an element value, so ping loss redsults will be displayed in a table every 10 minutes. 
 To check hosts on demand - set handler 'ping -c 1 <{"element":"1"}>' for 'CHANGE' event for element id2. The handler will be
 called just right after element id 1 data (host/ip) is changed.
+
+Describe host names fetch from other OD (like setki.xls)
 `},
 element3: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `

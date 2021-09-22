@@ -5,6 +5,7 @@ builtin handlers help section
 main.js
 const.php
 
+- change context menu description item
 - Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
   while OV refresh don't clear new object or new message in chat is cleared if someone post a mesage
 - Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
