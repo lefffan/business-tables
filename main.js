@@ -103,6 +103,8 @@ let uiProfile = {
 		  "tree arrow down": { target: ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree arrow up": { target: ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree element description": { target: ".treelinkdescription", "display": "flex;", "flex": "1 10px;", "background-color": "transparent;", "border": "none;", "padding": "5px;", "font": "10px/11px arial;", "overflow": "hidden;", },
+		  // Misc
+		  "chart colors": { "Color #1": "#4CAF50", "Color #2": "#00BCD4", "Color #3": "#E91E63", "Color #4": "#FFC107", "Color #5": "#9E9E9E", "Color #6": "#FFFF00", "Color #7": "#E32DF2", "Color #8": "#BDDDFD", "Color #9": "#BCF11B", "Color #10": "#DBDBDB", "Color #11": "#343E54", "Color #12": "#1465B0" },
 		  };
 /*---------------------------------------------------------------------------*/
 
@@ -112,13 +114,13 @@ document.head.appendChild(style);				// Append document style tag
 
 window.onload = function()
 {
- // Define document html and add appropriate event listeners for it
+ // Define document html and add appropriate event listeners
  document.body.innerHTML = '<div class="sidebar"></div><div class="main"></div><div class="contextmenu ' + uiProfile["context menu"]["effect"] + 'hide"></div><div class="hint ' + uiProfile["hint"]["effect"] + 'hide"></div><div class="box ' + uiProfile["dialog box"]["effect"] + 'hide"></div><div class="select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide"></div>';
  document.addEventListener('mousedown', MouseEventHandler);
  document.addEventListener('mouseup', MouseEventHandler);
  document.addEventListener('keydown', KeyboardEventHandler);
  document.addEventListener('contextmenu', ContextEventHandler);
- document.addEventListener('mousemove', MouseMoveEventHandler); 
+ document.addEventListener('mousemove', MouseMoveEventHandler);
 
  // Define sidebar div
  sidebarDiv = document.querySelector('.sidebar');
@@ -126,8 +128,8 @@ window.onload = function()
  // Define main field div and add 'scroll' event for it
  mainDiv = document.querySelector('.main');
  mainDiv.addEventListener('scroll', () => { HideHint(); HideContextmenu(); });
- 
- // Define context menu div and add some mouse events for it
+
+ // Define context menu div and add some mouse events
  contextmenuDiv = document.querySelector('.contextmenu');
  contextmenuDiv.addEventListener('mouseover', event => { if (event.target.classList.contains('contextmenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target); });
  contextmenuDiv.addEventListener('mouseout', () => { SetContextmenuItem(null); });
@@ -136,7 +138,7 @@ window.onload = function()
  hintDiv = document.querySelector('.hint');
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
- 
+
  cmd = 'CALL';
  CreateWebSocket();
 }
@@ -165,13 +167,12 @@ function loog(...data)
 
 function Hujax(url, callback, requestBody)
 {
- fetch(url, { method:	'POST',  
-	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'}, 
+ fetch(url, { method:	'POST',
+	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'},
 	      body: 	JSON.stringify(requestBody) }).then(function(response)
-			    {
-			     if (response.ok) response.json().then(callback);
-			      else displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
-			    }).catch (function(error) { lg('Ajax request error: ', error);
+			{
+			 response.ok ? response.json().then(callback) : displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
+			}).catch (function(error) { lg('Ajax request error: ', error);
 	    });
  return true;
 }
@@ -180,7 +181,7 @@ function drawSidebar(data)
 {
  if (typeof data != 'object') return;
  let text, count, ovlistHTML, sidebarHTML = '';
- 
+
  for (let odid in data)
      {
       // Set wrap status (empty string key) to true for default or to old instance of sidebar OD wrap status
@@ -221,7 +222,7 @@ function drawSidebar(data)
 
  // Push calculated html text to sidebar div
  sidebarHTML != '' ? sidebarDiv.innerHTML = '<table style="margin: 0px;"><tbody>' + sidebarHTML + '</tbody></table>' : sidebarDiv.innerHTML = '';
-  
+
  // Reset sidebar to the new data
  sidebar = data;
 }
@@ -284,6 +285,8 @@ function GetCoordinates(props, e, o, n)
 function drawMain(data, props)
 {
  ResetUnreadMessages();
+ delete drag.x1;
+
  // Current view refresh? Remember cursor position and editable status.
  let oldcursor;
  if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid)
@@ -442,7 +445,7 @@ function BuildTree(tree, y, x)
  if (tree.link && tree.link.length)
     {
      y++;
-     for (let i in tree.link) 
+     for (let i in tree.link)
          {
           BuildTree(tree.link[i], y, x);
 	  x += tree.link[i]['colspan'];
@@ -457,7 +460,7 @@ function DrawTree(tree, direction)
  // Flush old data
  mainTableRemoveEventListeners();
  clearTimeout(loadTimerId);
- 
+
  // Calculate and build object tree
  mainTable = [];
  OVtype = 'Tree';
@@ -527,7 +530,7 @@ function DrawTree(tree, direction)
           trs += '<tr>' + objectrow + '</tr>';
 	 }
      }
-     
+
  mainDiv.innerHTML = '<table class="treetable"><tbody>' + trs + '</tbody></table>';
 }
 
@@ -594,7 +597,7 @@ function MouseMoveEventHandler(event)
      if (next.classList.contains('datacell') || next.classList.contains('titlecell') || next.classList.contains('newobjectcell'))
      if (mainTable[y = next.parentNode.rowIndex][x = next.cellIndex].hint)
 	{
-	 if (!hint || hint.x != x || hint.y != y)
+	 if (!hint || hint.x != x || hint.y != y) // No current hint or position is changed? Set timeout to new hint display
 	    {
 	     hint = { x: x, y: y };
 	     clearTimeout(tooltipTimerId);
@@ -637,7 +640,7 @@ function BoxApply(buttonprop)
  if (!box || typeof buttonprop != 'string' || typeof box.buttons[buttonprop] != 'object') return;
  const button = box.buttons[buttonprop];
  clearTimeout(buttonTimerId);
- 
+
  if (button['call'])
     {
      saveDialogProfile(); // Save dialog box content and send it to the controller
@@ -660,7 +663,7 @@ function BoxEventHandler(event)
      box.flags.buttonpush.classList.remove("buttonpush");
      delete box.flags.buttonpush;
     }
-    
+
  // Dialog 'hint icon' event? Display element hint
  if (event.target.classList.contains('help-icon'))
     {
@@ -668,14 +671,14 @@ function BoxEventHandler(event)
      ShowHint(box.dialog[box.flags.pad][box.flags.profile][event.target.attributes.name.value]["help"], hint.x, hint.y);
      return;
     }
- 
+
  // Any dialog button event? Existing dataset-call attribute calls the controller, otherwise do nothing and hide dialog box
  if (event.target.classList.contains('button'))
     {
      event.type === 'mouseup' ? BoxApply(event.target.dataset.button) : (box.flags.buttonpush = event.target).classList.add("buttonpush");
      return;
     }
-    
+
  // Mouse up event for a dialog box interface element except buttons? No actions left, so return
  if (event.type != 'mousedown') return;
 
@@ -687,8 +690,8 @@ function BoxEventHandler(event)
      cmd = box.cmd;
      CallController(box);
      return;
-    } 
- 
+    }
+
  // Dialog expanded div mousedown event?
  if (event.target.parentNode.classList && event.target.parentNode.classList.contains('expanded'))
     {
@@ -707,7 +710,7 @@ function BoxEventHandler(event)
      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide'; // Hide expanded div and break;
      return;
     }
-		 
+
  // Dialog box 'select' interface element mouse down event?
  if (event.target.parentNode.classList && event.target.parentNode.classList.contains('select') && (event.target.parentNode.attributes.name === undefined || box.dialog[box.flags.pad][box.flags.profile][event.target.parentNode.attributes.name.value]['readonly'] === undefined))
     {
@@ -747,14 +750,14 @@ function BoxEventHandler(event)
 	    }
      return;
     }
-		 
+
  // Expanded div still visible and non expanded div mouse click?
  if ((/show$/).test(expandedDiv.classList[2]) === true && !event.target.classList.contains('expanded'))
     {
      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
      return;
     }
-    
+
  // Non active pad is selected?
  if (event.target.classList.contains('pad'))
     {
@@ -792,7 +795,7 @@ function ContextEventHandler(event)
  if (target.classList.contains('wrap')) target = target.nextSibling;
   else if (cursor.td && event.which === 0) target = cursor.td; // If cursor and context key?
   else if (target.tagName == 'SPAN' && target.parentNode.tagName == 'TD') target = target.parentNode;
- 
+
  if (target.classList.contains('sidebar-od')) inner = ACTIVEITEM + 'New Database</div>' + ACTIVEITEM + 'Database Configuration</div>'; // Context event on OD
   else if (target.classList.contains('sidebar-ov') || target === sidebarDiv) inner = ACTIVEITEM + 'New Database</div>' + GREYITEM + 'Database Configuration</div>'; // Context event on OV
   else switch (OVtype)
@@ -805,7 +808,8 @@ function ContextEventHandler(event)
 	     }
 	  if (target.tagName === 'TD')
 	     {
-	      if (drag.x1 !== undefined)//
+	      let chart = '';
+	      if (drag.x1 !== undefined)
 		 {
 		  const x = target.cellIndex, y = target.parentNode.rowIndex;
 		  if (!(x >= Math.min(drag.x1, drag.x2) && x <= Math.max(drag.x1, drag.x2) && y >= Math.min(drag.y1, drag.y2) && y <= Math.max(drag.y1, drag.y2)))
@@ -814,6 +818,7 @@ function ContextEventHandler(event)
 		      delete drag.x1;
 		      CellBorderToggleSelect(cursor.td, target);
 		     }
+		  if (drag.x1 !== undefined && (drag.x1 != drag.x2 || drag.y1 != drag.y2)) chart = ACTIVEITEM + 'Chart</div>';
 		 }
 	       else
 		 {
@@ -821,7 +826,7 @@ function ContextEventHandler(event)
 		 }
 	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) inner = ACTIVEITEM + 'Add Object</div>' + ACTIVEITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
 	       else inner = ACTIVEITEM + 'Add Object</div>' + GREYITEM + 'Delete Object</div>' + ACTIVEITEM + 'Description</div>';
-	      inner += ACTIVEITEM + 'Copy</div>';
+	      inner += ACTIVEITEM + 'Copy</div>' + chart;
 	      break;
 	     }
           break;
@@ -873,7 +878,7 @@ function ContextEventHandler(event)
      contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'show';
      return;
     }
- 
+
  HideContextmenu();
 }
 
@@ -988,8 +993,8 @@ function MouseEventHandler(event)
 	}
      return;
     }
-}		 
-		 
+}
+
 function KeyboardEventHandler(event)
 {
  HideHint();
@@ -1123,8 +1128,12 @@ function KeyboardEventHandler(event)
 	      break;
 	 default: // space, letters, digits
 	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === EDITABLE) break;
-	      if (event.ctrlKey && event.keyCode == 67) CopyBuffer(event.shiftKey);
-	      
+	      if (event.ctrlKey)
+		 {
+		  if (event.keyCode == 65 && OVtype === 'Table') SelectTableArea(drag.x1 = 0, drag.y1 = 0, drag.x2 = mainTableWidth - 1, drag.y2 = mainTableHeight - 1);
+		  if (event.keyCode == 67) CopyBuffer(event.shiftKey);
+		 }
+
 	      if (!mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId) || !rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) break;
 	      if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID && !event.ctrlKey && !event.altKey && !event.metaKey)
 	         {
@@ -1224,6 +1233,7 @@ function FromController(json)
 
 function IncreaseUnreadMessages(odid, ovid)
 {
+ if (!sidebar[odid]) return;
  if (!sidebar[odid]['count'][ovid]) sidebar[odid]['count'][ovid] = 0;
  sidebar[odid]['count'][ovid] ++;
  drawSidebar(sidebar);
@@ -1234,6 +1244,18 @@ function ResetUnreadMessages()
  if (!sidebar[ODid]['count'][OVid]) return;
  sidebar[ODid]['count'][OVid] = 0;
  drawSidebar(sidebar);
+}
+
+function DrawPie(ctx, centr, beginAngle, endAngle, color)
+{
+ if (beginAngle == endAngle) return;
+ ctx.beginPath();
+ ctx.fillStyle = color;
+ ctx.moveTo(centr, centr);
+ ctx.arc(centr, centr, centr * 0.8, beginAngle, endAngle);
+ ctx.lineTo(centr, centr);
+ ctx.stroke();
+ ctx.fill();
 }
 
 function CallController(data)
@@ -1257,25 +1279,103 @@ function CallController(data)
 	 case 'Copy':
 	      CopyBuffer();
 	      break;
+	 case 'Chart':
+	      if (drag.x1 === undefined) break;
+	      let sum = 0, key, value, chart = {};
+	      const horizontal = drag.x1 === drag.x2 ? false : true;				// X-axis is horiszontal?
+	      if (drag.x1 === drag.x2) drag.x2++; else if (drag.y1 === drag.y2) drag.y2++;	// Extend selected area
+
+	      for (let y = Math.min(drag.y1, drag.y2); y <= Math.max(drag.y1, drag.y2); y++)
+	      for (let x = Math.min(drag.x1, drag.x2); x <= Math.max(drag.x1, drag.x2); x++)
+		  {
+		   if ((horizontal && y === Math.min(drag.y1, drag.y2)) || (!horizontal && x === Math.min(drag.x1, drag.x2)))
+		      {
+		       if (mainTable[y]?.[x]) key = mainTable[y][x].data; else key = '';
+		       continue;
+		      }
+		   if (horizontal) if (mainTable[Math.min(drag.y1, drag.y2)]?.[x]) key = mainTable[Math.min(drag.y1, drag.y2)][x].data; else key = '';
+		   if (mainTable[y]?.[x]) value = Math.trunc(Number(mainTable[y][x].data)); else value = 0;
+		   if (typeof key !== 'string') key = '';
+		   if (typeof value !== 'number' || isNaN(value)) value = 0;
+		   if (chart[key] === undefined) chart[key] = 0;
+		   chart[key] += value;
+		   sum += value;
+		  }
+	      if (!sum)
+		 {
+		  warning("No numerical data found!");
+		  break;
+		 }
+
+	      mainDiv.innerHTML = '<canvas id="chart"><h1>Please update your browser! Canvas is not supported</h1></canvas>';
+	      const canvas = document.getElementById('chart');
+	      canvas.width = Math.trunc(mainDiv.offsetWidth * 0.9);
+	      canvas.height = Math.trunc(mainDiv.offsetHeight * 0.9);
+	      const ctx = canvas.getContext('2d');
+	      /*ctx.mozImageSmoothingEnabled = false;
+	      ctx.webkitImageSmoothingEnabled = false;
+	      ctx.msImageSmoothingEnabled = false;
+	      ctx.imageSmoothingEnabled = false;*/
+
+	      let endAngle = beginAngle = Math.PI * 1.5, pies = [];
+	      const centr = Math.min(canvas.width, canvas.height) * 0.45;
+	      for (key in chart) pies.push({name: key, angle: (chart[key]/sum) * Math.PI * 2});
+	      pies.sort(function(a, b) { return b.angle - a.angle; });
+	      value = 0;
+	      for (key in uiProfile['chart colors']) if (pies[value]) pies[value++]['color'] = uiProfile['chart colors'][key];
+	      sum = 0;
+	      for (let pie of pies)
+		  {
+		   if (pie['color'] === undefined)
+		      {
+		       sum += pie.angle;
+		       value = true;
+		       continue;
+		      }
+		   beginAngle = endAngle;
+		   endAngle += pie.angle;
+		   DrawPie(ctx, centr, beginAngle, endAngle, pie['color'])
+		  }
+	      break;
 	 case 'Description':
 	      let cell, msg = '', count = 1;
-	      //--------------Add object and element information to the result message---------------
-	      if (cursor.td && mainTable[cursor.y]?.[cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId)
-	      if (cell.oId === NEWOBJECTID) msg = Number(cell.eId) > 0 ? `Cursor table cell is input new object data for element id: ${cell.eId}` : '';
-	       else if (cell.oId === TITLEOBJECTID) msg = `Cursor table cell is title for element id: ${cell.eId}`;
-	       else msg = `Cursor table cell object id: ${cell.oId}\nCursor table cell element id: ${cell.eId}`;
-	      msg += `\nTable cell 'x' coordinate: ${cursor.x}\nTable cell 'y' coordinate: ${cursor.y}\n`; // Add x and y coordinates to the result message
-	      //--------------Add object version information---------------
-	      if (cell?.version) cell.version === '0' ? msg += '\nObject version: object has been deleted' : msg += `\nObject version: ${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`;
-	      //--------------Add description to the result message---------------
-	      if (cell?.description) msg += `\nElement description property:\n${cell.description}`;
-	      //--------------------Add database and view info--------------------
-	      msg += `\nObject Database: ${OD}\nObject View${OV[0] === '_' ? ' (hidden from sidebar)' : ''}: ${OV} (${objectsOnThePage} objects)\nTable columns: ${mainTableWidth}\nTable rows: ${mainTableHeight}`;
-	      //--------------Add part of sql string object selection-------------
-	      cell = '';
-	      for (let param in paramsOV) cell += `\n${count++}. ${param.substr(1).replace(/_/g, ' ')}: ${paramsOV[param]}`;
-	      if (cell) msg += `\n\nObject View input parameters:${cell}`;
-	      //--------------Display result message in warning box---------------
+	      if (cursor.td && mainTable[cursor.y]?.[cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId) // Cursor cell info
+		 {
+		  msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Cursor cell:</span>\n';
+		  if (cell.oId === NEWOBJECTID && Number(cell.eId) > 0) msg += `Input new object data for element id: ${cell.eId}`;
+		   else if (cell.oId === TITLEOBJECTID) msg += `Title for element id: ${cell.eId}`;
+		   else msg += `Object id: ${cell.oId}\nElement id: ${cell.eId}`;
+		  msg += `\nPosition 'x': ${cursor.x}\nPosition 'y': ${cursor.y}`;
+		 }
+	      if (cell && cell.oId >= STARTOBJECTID) // Object element info
+		 {
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element:</span>\n';
+	          if (cell.version) cell.version === '0' ? msg += 'Object version: object has been deleted' : msg += `Object version: ${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`;
+		  if (cell.description) msg += `Element description property:\n${cell.description}`;
+		 }
+	      if (true) // Database info
+		 {
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Database:</span>\n';
+		  msg += `Object Database: ${OD}\nObject View${OV[0] === '_' ? ' (hidden from sidebar)' : ''}: ${OV} (${objectsOnThePage} objects)`;
+	          cell = '';
+		  for (let param in paramsOV) cell += `\n  <span style="color: #999;">${count++}. ${param.substr(1).replace(/_/g, ' ')}: ${paramsOV[param]}</span>`;
+		  if (cell) msg += `\nView input parameters:${cell}`;
+		 }
+	      if (true) // Table info
+		 {
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Table:</span>\n';
+		  msg += `Columns: ${mainTableWidth}\nRows: ${mainTableHeight}`;
+		  if (drag.x1 !== undefined)
+		     {
+		      count = new Set();
+		      for (let y = Math.min(drag.y1, drag.y2); y <= Math.max(drag.y1, drag.y2); y++)
+		      for (let x = Math.min(drag.x1, drag.x2); x <= Math.max(drag.x1, drag.x2); x++)
+			  if ((cell = mainTable[y][x]) && cell.oId >= STARTOBJECTID && cell.realobject) count.add(cell.oId);
+		      msg += `\nSelected area:\n  <span style="color: #999;">Objects count: ${count.size}</span>`;
+		      msg += `\n  <span style="color: #999;">Width, cells: ${Math.abs(drag.x2 - drag.x1) + 1}</span>`;
+		      msg += `\n  <span style="color: #999;">Height, cells: ${Math.abs(drag.y2 - drag.y1) + 1}</span>`;
+		     }
+		 }
 	      warning(msg, 'Description', false);
 	      break;
 	 case 'Help':
@@ -2068,8 +2168,9 @@ function styleUI()
 const help = { title: 'Help', dialog: {
 
 "System description": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`Tabels application is a system to display, store and manage its data by lots of ways. Application data is a set of custom
-data tables, each table consists of identical objects, which, in turn, are set of service and user defined elements.
+`Tabels application is a new generation system to display, store and manage its data by lots of ways. Application data
+is a set of custom data tables, each table consists of identical objects, which, in turn, are set of service and user
+defined elements.
 
 Data tables of itself is called Object Database (OD) and can be changed or created by appropriate sidebar context menu.
 OD contains Object Views (OV). Views define what objects (via 'object selection') and elements (via 'element layout')

@@ -1,13 +1,13 @@
 --------------2021--------------------------------------------------------------
-examples: ping, group user list, tip-tap-toe, jira-helpdesk
-handler help section
-builtin handlers help section
+examples:
+    ping,
+    group user list (Display in aparent OV Users for input group (select .. where ed1>>value != :input_group and ed1>>'groups' regexp -w :input_group)),
+    tip-tap-toe,
+    jira-helpdesk
+builtin handlers help section (dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php)
 main.js
 const.php
 
-- change context menu description item
-- Dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php
-  while OV refresh don't clear new object or new message in chat is cleared if someone post a mesage
 - Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const.
   Help content during all code lookup
@@ -23,7 +23,6 @@ const.php
   in cell: text, image, stream, table?
   Export OV data to xls, pdf or txt file
   Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
-  Per user and group (!) separate OV permission to view-in-sidebar and add-edit-delete with low priority
   Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
   Paste file or image to object element (or drag and drop to the corresponded cell)
@@ -51,12 +50,12 @@ const.php
     hide tree element rebuilds the tree (context menu hide)
     Tree wire name (arrow name) to mark fiber cooper radio..
   Crontab element execution once immediately
-  Task manager: restrict call of task manager for some users
+  Task manager: restrict call of task manager for some users in user props
+    Per user and group (!) separate OV permission to view-in-sidebar and add-edit-delete with low priority in user props
   system user readonly customization, it is default customization to allow all other users use it in case of error
-  Handler no output is a standart behaviour, don't log it
-  Display in aparent OV Users for input group (select .. where ed1>>value != :input_group and ed1>>'groups' regexp -w :input_group)
     and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
+  At the end of app stable version make new customization
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
@@ -79,11 +78,13 @@ const.php
 - Front:
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
   Adaptivka after browser window size has changed dialog box has gone away
-  multi cell selecting - copy (excel table), delete (removes all selected objects).
+  multi cell selecting - copy (excel table), delete (removes all selected objects). Plus scroll if selected area doesnot match the main field
     User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
     single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-    system command to copy data to the buffer
+    handler command to copy data to the buffer
     One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
+    delete selected objects
+    change context menu description format and description of selected objects
   OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
   Scroll lock behaviour like in Excel
   application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
@@ -146,8 +147,9 @@ const.php
   Ask Hramcova analitiku po helpdesku
   See functions on Slava's management system
 
-- First stage: oper+slavina, setki, tech uchet, HD, adrbook
-- Second stage: zabbix, CRM, corp chat, wiki
+- Stages
+    First stage: oper+slavina, setki, tech uchet, HD, adrbook
+    Second stage: zabbix, CRM, corp chat, wiki
 
 - Questionable features
   Fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
