@@ -1,18 +1,15 @@
 --------------2021--------------------------------------------------------------
-examples:
-    ping,
-    group user list (Display in aparent OV Users for input group (select .. where ed1>>value != :input_group and ed1>>'groups' regexp -w :input_group)),
-    tip-tap-toe,
-    jira-helpdesk
-builtin handlers help section (dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php)
-main.js
-const.php
-
-- Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
 - Look up all code, format all code (by vs code) and comment all code. some vars from let to const.
   Help content during all code lookup
   test dialog boxes on low resolution, check on macbook via git
   socket incorrect data while task managers works long period of time, execute task manager for the whole night, then see result
+  examples: ping, group user list (Display in aparent OV Users for input group (select .. where ed1>>value != :input_group and ed1>>'groups' regexp -w :input_group)),
+  builtin handlers help section (dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php)
+  main.js
+  const.php
+- Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
+  and think how to make this big OD faster display process
+- virtual cells
 --------------------------------------------------------------------------------
 
 - Application:
@@ -160,7 +157,7 @@ const.php
   Open OV in new tab in a read-only mode just by coping inner html of main div
   Max object version stored in DB, possible options: no property at all, cut older version to fit the max versions, do not allow new versions at max versions exceeded
     (Max object versions in range 0-65535. Emtpy or undefined string - zero value)
-
+  tip-tap-toe example in Help context menu
 ------------------------------------------------------------------------------------------
 
 
@@ -621,20 +618,6 @@ php /usr/local/src/tabels/handlers/text.php SEARCH
 php /usr/local/src/tabels/handlers/text.php SELECT 'хуй|пезда|жопа|срака'
 
 
-4Slava:
-All users: WHERE lastversion=1 AND version!=0 LIMIT 100
-Postprocessing rule: JSON_EXTRACT(eid1, '$.value')='pid'
-MRTG view: WHERE lastversion=1 AND version!=0 LIMIT 9
-Element layout: *
-competitive advantages:
-    nice, friendly and minimalistic interface and full (!) cutomiztion
-    Web access
-    SUBD based
-    Scheduler
-    Firewall
-    Base platform for corp portal
-    Objects Map
-    scalability for corp needs with unnecessary programming knowing (unlike CRM 1C example) - any system like chat billing crm hd techuchet may be implemented
 
 
 
@@ -653,3 +636,40 @@ WHERE lastversion=1 AND version!=0 and JSON_EXTRACT(eid1, '$.value')=':Input_use
 {"eid":"3", "x":"4", "y":"n+1"}
 {"eid":"3", "oid":"3", "x":"0", "y":"q+10",  "style":"color:red;", "event":"4"}
 {"style":"background-color: green;"}
+
+
+4Slava:
+
+razryv mezhdu predstavleniem i BD (event db table names are specified)
+for market enter your app should be much taller
+primer paragi and hos friend
+
+All users: WHERE lastversion=1 AND version!=0 LIMIT 100
+Postprocessing rule: JSON_EXTRACT(eid1, '$.value')='pid'
+MRTG view: WHERE lastversion=1 AND version!=0 LIMIT 9
+Element layout: *
+competitive advantages:
+    nice, friendly and minimalistic interface and full (!) cutomiztion
+    Web access
+    SUBD based
+    Scheduler
+    Firewall
+    Base platform for corp portal
+    Objects Map
+    scalability for corp needs with unnecessary programming knowing (unlike CRM 1C example) - any system like chat billing crm hd techuchet may be implemented
+
+Tell about stages:
+    First stage: oper+slavina, setki, tech uchet, HD, adrbook
+    Second stage: zabbix, CRM, corp chat, wiki
+
+System are moduled - apparent controller and apparent handler part
+
+da poroi it is complicated to make object selection but nothing is thinked about - it is the native and direct way to access and manage db data
+
+Diagnostika ports
+mac vendor
+arp search
+wiki search
+regexp search
+file attach - images and other files with node info
+selection downlink - client list and preduprezhdenie

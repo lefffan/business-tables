@@ -46,7 +46,7 @@ let uiProfile = {
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
 		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background": "" },
 		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
-		  "main field table selected cell": { "target": ".selectedcell", "background-color": "#ddd;" },
+		  "main field table selected cell": { "target": ".selectedcell", "background-color": "#B8C9BD;" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=" + EDITABLE + "])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
@@ -418,7 +418,9 @@ function SetInitialCursorPosition(cursor)
     }
   else
     {
-     cursor.oId = mainTable[cursor.y = Math.min(oldcursor.y, mainTableHeight - 1)][cursor.x = Math.min(oldcursor.x, mainTableWidth - 1)].oId;
+     cursor.y = Math.min(cursor.y, mainTableHeight - 1);
+     cursor.x = Math.min(cursor.x, mainTableWidth - 1)
+     cursor.oId = mainTable[cursor.y][cursor.x].oId;
      cursor.eId = mainTable[cursor.y][cursor.x].eId;
     }
  CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
@@ -682,6 +684,7 @@ function BoxEventHandler(event)
  // Mouse up event for a dialog box interface element except buttons? No actions left, so return
  if (event.type != 'mousedown') return;
 
+ // Pass dialog box table cell event to the controller
  if (event.target.classList.contains('boxtablecellpush'))
     {
      clearTimeout(buttonTimerId);
@@ -792,9 +795,9 @@ function ContextEventHandler(event)
 
  // Context event on wrap icon cell? Use next DOM element
  let inner, target = event.target;
- if (target.classList.contains('wrap')) target = target.nextSibling;
-  else if (cursor.td && event.which === 0) target = cursor.td; // If cursor and context key?
-  else if (target.tagName == 'SPAN' && target.parentNode.tagName == 'TD') target = target.parentNode;
+ if (target.classList.contains('wrap')) target = target.nextSibling;	// wrap icon right button mouse click? Use next sibling (OD/OV) as a target
+  else if (cursor.td && event.which === 0) target = cursor.td;		// If cursor and context key?
+  else if (target.tagName == 'SPAN' && target.parentNode.tagName == 'TD') target = target.parentNode; // If span element in td cell event? Use parent node (td cell) as a target
 
  if (target.classList.contains('sidebar-od')) inner = ACTIVEITEM + 'New Database</div>' + ACTIVEITEM + 'Database Configuration</div>'; // Context event on OD
   else if (target.classList.contains('sidebar-ov') || target === sidebarDiv) inner = ACTIVEITEM + 'New Database</div>' + GREYITEM + 'Database Configuration</div>'; // Context event on OV
@@ -847,7 +850,7 @@ function ContextEventHandler(event)
      user.length > CONTEXTITEMUSERNAMEMAXCHAR ? inner += ACTIVEITEM + 'Logout '+ user.substr(0, CONTEXTITEMUSERNAMEMAXCHAR - 2) + '..</div>' : inner += ACTIVEITEM + 'Logout '+ user + '</div>';
      contextmenuDiv.innerHTML = inner;
 
-     // Context menu div left/top calculating
+     // Context menu div left/top position calculating
      if (event.which === 0) // Context key? 0 - no mouse button pushed, 1 - left button, 2 - middle button, 3 - right (context) button
         {
 	 target = cursor.td;
@@ -863,8 +866,8 @@ function ContextEventHandler(event)
 	     !contextFitMainDiv(left, top - contextmenuDiv.offsetHeight) &&
 	     !contextFitMainDiv(left + target.offsetWidth, top))
 	    {
-	     contextmenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextmenuDiv.offsetWidth) + "px";
-	     contextmenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextmenuDiv.offsetHeight) + "px";
+	     contextmenuDiv.style.left = (mainDiv.offsetLeft + mainDiv.offsetWidth - contextmenuDiv.offsetWidth) + 'px';
+	     contextmenuDiv.style.top = (mainDiv.offsetTop + mainDiv.offsetHeight - contextmenuDiv.offsetHeight) + 'px';
 	    }
 	}
       else
@@ -890,6 +893,13 @@ function MouseEventHandler(event)
  if (event.which != 1) return;
 
  if (event.type === 'mouseup') drag.element = null;
+
+ // Prevent default behaviour to exclude default drag operation
+ if (event.target === document.body)
+    {
+     event.preventDefault();
+     return;
+    }
 
  // Dialog box is up? Process its mouse left button click
  if (box)
@@ -935,23 +945,21 @@ function MouseEventHandler(event)
     }
  HideContextmenu();
 
- // OD item (or its wrap icon before) mouse click? Wrap/unwrap OV list
+ // Sidebar item, wrap icon or unread counter mouse click? Calculate item element (OD or OV)
  let next = event.target;
  if (next.classList.contains('wrap')) next = next.nextSibling;
   else if (next.classList.contains('changescount')) next = next.parentNode;
 
- // OD item (or its wrap icon before) mouse click? Refresh sidebar and wrap/unwrap database view list
+ // OD item mouse click? Refresh sidebar and wrap/unwrap database view list
  if (next.classList.contains('sidebar-od'))
     {
-     /*if (Object.keys(sidebar[next.dataset.odid]['view']).length < 1) return;
-     sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];*/
      if (Object.keys(sidebar[next.dataset.odid]['view']).length > 0) sidebar[next.dataset.odid]['wrap'] = !sidebar[next.dataset.odid]['wrap'];
      cmd = 'SIDEBAR';
      CallController();
      return;
     }
 
- // OV item (or its wrap icon before) mouse click? Open OV in main field
+ // OV item mouse click? Open OV in main field
  if (next.classList.contains('sidebar-ov'))
     {
      if (ODid != next.dataset.odid || OVid != next.dataset.ovid)
@@ -974,23 +982,21 @@ function MouseEventHandler(event)
  if (OVtype === 'Table')
  if ((event.target.tagName == 'TD' && (next = event.target)) || (event.target.tagName == 'SPAN' && (next = event.target.parentNode) && next.tagName == 'TD'))
     {
-     ResetUnreadMessages();
-     if (drag.x1 !== undefined)
+     ResetUnreadMessages();	// Reset the counter
+     if (drag.x1 !== undefined) // Unselect area if selected
 	{
 	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
 	 delete drag.x1;
 	}
-     CellBorderToggleSelect(cursor.td, next);
+     CellBorderToggleSelect(cursor.td, next); // Highlight cursor
      if (mainTable[cursor.y]?.[cursor.x] && cursor.td.contentEditable != EDITABLE && !isNaN(cursor.eId) && cursor.oId === NEWOBJECTID)
 	{
-	 MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	 MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data); // Set new object input editable
+	 return;
 	}
-      else
-	{
-	 drag.element = next;
-	 drag.x1 = drag.x2 = cursor.x;
-	 drag.y1 = drag.y2 = cursor.y;
-	}
+     drag.element = next; // Set new drag area and its start coordinates below
+     drag.x1 = drag.x2 = cursor.x;
+     drag.y1 = drag.y2 = cursor.y;
      return;
     }
 }
@@ -1130,7 +1136,11 @@ function KeyboardEventHandler(event)
 	      if (box || contextmenu || !cursor.td || cursor.td.contentEditable === EDITABLE) break;
 	      if (event.ctrlKey)
 		 {
-		  if (event.keyCode == 65 && OVtype === 'Table') SelectTableArea(drag.x1 = 0, drag.y1 = 0, drag.x2 = mainTableWidth - 1, drag.y2 = mainTableHeight - 1);
+		  if (event.keyCode == 65 && OVtype === 'Table')
+		     {
+		      SelectTableArea(drag.x1 = 0, drag.y1 = 0, drag.x2 = mainTableWidth - 1, drag.y2 = mainTableHeight - 1);
+		      event.preventDefault();
+		     }
 		  if (event.keyCode == 67) CopyBuffer(event.shiftKey);
 		 }
 
@@ -1221,12 +1231,12 @@ function FromController(json)
 	 case '':
 	      break;
 	 default:
-	      input = { alert: "Unknown server message '" + input.cmd + "'!" };
+	      input = { alert: `Unknown server message '${input.cmd}'!` };
 	}
 	
  if (input.sidebar)		drawSidebar(input.sidebar);
  if (input.log)			lg(input.log); 
- if (input.error != undefined)	displayMainError(input.error);
+ if (input.error !== undefined)	displayMainError(input.error);
  if (input.alert)		warning(input.alert);
  if (input.count)		IncreaseUnreadMessages(input.count.odid, input.count.ovid);
 }
@@ -1246,16 +1256,24 @@ function ResetUnreadMessages()
  drawSidebar(sidebar);
 }
 
-function DrawPie(ctx, centr, beginAngle, endAngle, color)
+function CanvasDrawPie(ctx, centr, beginAngle, endAngle, color)
 {
+ ctx.fillStyle = color;
  if (beginAngle == endAngle) return;
  ctx.beginPath();
- ctx.fillStyle = color;
  ctx.moveTo(centr, centr);
  ctx.arc(centr, centr, centr * 0.8, beginAngle, endAngle);
  ctx.lineTo(centr, centr);
  ctx.stroke();
  ctx.fill();
+}
+
+function CanvasDrawPieDescription(ctx, x, y, text, percent, color)
+{
+ ctx.fillRect(x, y - 13, 50, 23);
+ if (color !== undefined) ctx.fillStyle = color;
+ ctx.fillText(text, x + 60, y);
+ ctx.fillText(String(percent).substr(0, 4) + '%', x + 5, y);
 }
 
 function CallController(data)
@@ -1282,18 +1300,20 @@ function CallController(data)
 	 case 'Chart':
 	      if (drag.x1 === undefined) break;
 	      let sum = 0, key, value, chart = {};
-	      const horizontal = drag.x1 === drag.x2 ? false : true;				// X-axis is horiszontal?
-	      if (drag.x1 === drag.x2) drag.x2++; else if (drag.y1 === drag.y2) drag.y2++;	// Extend selected area
+	      let x1 = Math.min(drag.x1, drag.x2), x2 = Math.max(drag.x1, drag.x2);
+	      let y1 = Math.min(drag.y1, drag.y2), y2 = Math.max(drag.y1, drag.y2);
+	      const horizontal = x1 === x2 ? false : true;	// X-axis is horiszontal?
+	      if (x1 === x2) x2++; else if (y1 === y2) y2++;	// Extend selected area
 
-	      for (let y = Math.min(drag.y1, drag.y2); y <= Math.max(drag.y1, drag.y2); y++)
-	      for (let x = Math.min(drag.x1, drag.x2); x <= Math.max(drag.x1, drag.x2); x++)
+	      for (let y = y1; y <= y2; y++)
+	      for (let x = x1; x <= x2; x++)
 		  {
-		   if ((horizontal && y === Math.min(drag.y1, drag.y2)) || (!horizontal && x === Math.min(drag.x1, drag.x2)))
+		   if ((horizontal && y === y1) || (!horizontal && x === x1))
 		      {
 		       if (mainTable[y]?.[x]) key = mainTable[y][x].data; else key = '';
 		       continue;
 		      }
-		   if (horizontal) if (mainTable[Math.min(drag.y1, drag.y2)]?.[x]) key = mainTable[Math.min(drag.y1, drag.y2)][x].data; else key = '';
+		   if (horizontal) if (mainTable[y1]?.[x]) key = mainTable[y1][x].data; else key = '';
 		   if (mainTable[y]?.[x]) value = Math.trunc(Number(mainTable[y][x].data)); else value = 0;
 		   if (typeof key !== 'string') key = '';
 		   if (typeof value !== 'number' || isNaN(value)) value = 0;
@@ -1312,13 +1332,15 @@ function CallController(data)
 	      canvas.width = Math.trunc(mainDiv.offsetWidth * 0.9);
 	      canvas.height = Math.trunc(mainDiv.offsetHeight * 0.9);
 	      const ctx = canvas.getContext('2d');
+	      ctx.font = '15px arial';
+	      ctx.textBaseline = 'middle';
 	      /*ctx.mozImageSmoothingEnabled = false;
 	      ctx.webkitImageSmoothingEnabled = false;
 	      ctx.msImageSmoothingEnabled = false;
 	      ctx.imageSmoothingEnabled = false;*/
 
-	      let endAngle = beginAngle = Math.PI * 1.5, pies = [];
 	      const centr = Math.min(canvas.width, canvas.height) * 0.45;
+	      let x = centr * 2, y = centr * 0.25, endAngle = beginAngle = Math.PI * 1.5, pies = [];
 	      for (key in chart) pies.push({name: key, angle: (chart[key]/sum) * Math.PI * 2});
 	      pies.sort(function(a, b) { return b.angle - a.angle; });
 	      value = 0;
@@ -1334,8 +1356,17 @@ function CallController(data)
 		      }
 		   beginAngle = endAngle;
 		   endAngle += pie.angle;
-		   DrawPie(ctx, centr, beginAngle, endAngle, pie['color'])
+		   CanvasDrawPie(ctx, centr, beginAngle, endAngle, pie['color'])
+		   CanvasDrawPieDescription(ctx, x, y, pie['name'], (endAngle - beginAngle) * 50 / Math.PI, '#202020');
+		   y += 45;
 		  }
+	      if (value === true)	// Process 'Others' pie if exist
+		 {
+		  beginAngle = endAngle;
+		  endAngle += sum;
+		  CanvasDrawPie(ctx, centr, beginAngle, endAngle, '#F0F0F0');
+		  CanvasDrawPieDescription(ctx, x, y, 'Others', (endAngle - beginAngle) * 50 / Math.PI, '#202020');
+		 }
 	      break;
 	 case 'Description':
 	      let cell, msg = '', count = 1;
@@ -1394,8 +1425,7 @@ function CallController(data)
 		     }
 	      break;
 	 case 'Delete Object':
-	      if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x] && mainTable[cursor.y][cursor.x].realobject)
-		 object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
+	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
 	      break;
 	 case 'CONFIRM':
 	       cursor.td.innerHTML = toHTMLCharsConvert(htmlCharsConvert(cursor.td.innerHTML));
@@ -1424,7 +1454,7 @@ function CallController(data)
 		 }
 	      object = { cmd: 'LOGOUT' };
 	}
-	
+
  if (object)
     {
      object.OD = OD;
@@ -2794,28 +2824,32 @@ Example 6 - helpdesk, jira
 `}}},
 
 "Keyboard/Mouse": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`  - CTRL with left button click on any object element opens new browser tab with the element text as url*
-  - CTRL with arrow left/right key set table cursor to the left/right end of the table*
-  - CTRL with Home/End key set table cursor to the upper/lower end of the table
-  - CTRL+C or CTRL+INS copy element text data to clipboard*
-  - CTRL+Shift+C or CTRL+Shift+INS copy current object to clipboard*
-  - CTRL+V pastes text data to the current via 'KEYPRESS' event (see handler section help) or
-    clones clipboard object*
-  - CTRL+Shift+F search on user input regular expression among current view object elements
-  - CTRL+Z/Y usual undo actions are not implemented, cos it is hard to undo element
-    handlers action due to its complicated and unique behaviour. To see previous element values
-    use object older versions selection feature
-  - Left/right/up/down arrow keys move cursor to appropriate direction
-  - 'Shift+Enter' and 'Enter' move cursor up and down
-  - Arrow keys with Scroll-Lock will move the page instead of cursor*
-  - ESC in element contenteditable mode cancels all changes
-  - Mouse right button on sidebar, main field or main table area calls appropriate context menu
-  - Any element 'mouseover' event for some time (default 1 sec) displays appropriate hint message if exist
-  - Excel like mouse pointer table cells resizing are not implemented due to multiuser complicated cells
-    width/height values change. Use element layout (see appropriate help section) feature to set
-    initial width/height values. By default, widths and heights of the table and its cells are adjusted
+`  - 'Home' moves cursor to the top of a table
+  - 'End' moves cursor to the bottom
+  - 'PageUp' moves cursor one page down
+  - 'PageDown' moves cursor one page up
+  - '<', '>', '^' (Shift+Enter)*, '∨' (Enter) arrow keys move cursor to appropriate direction.
+  - '<', '>', '^', '∨' + 'ScrollLock' scrolls the page instead of cursor moving*
+  - 'Enter' + [Shift|Ctrl|Alt] applies content editable changes. New-object input apply creates new object.
+  - 'ESC' cancels all changes and exit content editable mode. At any dialog box - exit with no changes.
+  - 'INS', 'DEL', 'F2', 'F12', letters, digits , space or left button mouse double click: cursor element handler call.
+  - 'CTRL' + :
+	      cursor left button click opens new browser tab with the cursor element text as url*
+	      '<', '>' set cursor to the left/right end of the table*
+	      'Home', 'End' set cursor to the upper/lower end of the table
+	      'c', 'INS' copies element formatted text to the clipboard
+	      'Shift+c', 'Shift+INS' copies element clear text to the clipboard
+	      'Shift+F' - regular expression search on the page
+	      'z', 'y' - usual do/undo actions are not implemented, cos it is hard to undo element handlers action due
+			 to its unique and complicated behaviour. To see previous element value use object older
+			 versions selection feature.
+  - 'Mouse right button click' calls appropriate (sidebar, main field or table area) context menu.
+  - 'Mouse over' event on any element for some time (default 1 sec) displays appropriate hint message if exist.
+  - 'Drag-and-drop' operations like mouse pointer 'excel' table cells resizing are not implemented due to multiuser
+    complicated cells width/height values change. Use element layout (see appropriate help section) features to set
+    initial width and height of a table cell. By default, widths and heights of the table and its cells are adjusted
     to fit the content.
-  
+
 * will be available in a future releases`
 }}},
 },

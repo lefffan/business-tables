@@ -214,17 +214,12 @@ function GetElementProperty($db, $output, &$client, $recursion)
  $result = '';
  if (isset($regular))
     {
-     foreach ($data as $value) foreach ($value as $val) if (preg_match($element, $val))
-	     {
-	      $result .= $val."\n";
-	      if (strlen($result) > ELEMENTDATAVALUEMAXCHAR) return substr($result, 0, ELEMENTDATAVALUEMAXCHAR);
-	     }
+     foreach ($data as $value) foreach ($value as $val) if (preg_match($element, $val)) $result .= $val."\n";
     }
   else
     {
      foreach ($data as $value) $result .= $value[0]."\n";
     }
- if (strlen($result) > ELEMENTDATAVALUEMAXCHAR) return substr($result, 0, ELEMENTDATAVALUEMAXCHAR);
  return substr($result, 0, -1);
 }
 
@@ -262,6 +257,7 @@ function GetCMD($db, &$client, $cmdline = false)
 	   }
        $newcmdline .= $add;
       }
+ lg($newcmdline);
  return $newcmdline;
 }
 
