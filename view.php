@@ -373,7 +373,7 @@ try {
 					      'View' => ['New view' => $newView],
 					      'Rule' => ['New rule' => $newRule]],
 				 'buttons' => CREATECANCEL,
-				 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]]];
+				 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padhead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]]];
 		      $output['data']['buttons']['CREATE']['call'] = 'New Database';
 		      break;
 		     }

@@ -1029,7 +1029,8 @@ function KeyboardEventHandler(event)
 	 case 13: //Enter
 	      if (box)
 	         {
-		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password')) BoxApply(SeekObjJSONProp(box.buttons, 'enterkey', null));
+		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
+		     BoxApply(SeekObjJSONProp(box.buttons, 'enterkey', null));
 		  break;
 		 }
 	      if (contextmenu) 
@@ -1585,22 +1586,16 @@ function contextFitMainDiv(x, y)
 function moveCursor(x, y, abs)
 {
  if (box || !cursor.td || cursor.td.contentEditable === EDITABLE || contextmenu || (abs && cursor.x == x && cursor.y == y)) return;
- 
- let a, b, newTD;
- if (abs)
+
+ let a = x, b = y;
+ if (!abs)
     {
-     a = x;
-     b = y;
+     a += cursor.x;
+     b += cursor.y;
     }
-  else 
-    {
-     a = cursor.x + x;
-     b = cursor.y + y;
-    }
-    
  if (a < 0 || a >= mainTableWidth || b < 0 || b >= mainTableHeight) return;
- 
- newTD = mainTablediv.rows[b].cells[a];
+
+ const newTD = mainTablediv.rows[b].cells[a];
  if (abs || isVisible(newTD) || (!isVisible(cursor.td) && tdVisibleSquare(newTD) > tdVisibleSquare(cursor.td)) || (y == 0 && xAxisVisible(newTD)) || (x == 0 && yAxisVisible(newTD)))
     {
      if (!abs) event.preventDefault();
@@ -1610,8 +1605,8 @@ function moveCursor(x, y, abs)
 
 function tdVisibleSquare(elem)
 {
- let width = Math.min(elem.offsetLeft - mainDiv.scrollLeft + elem.offsetWidth, mainDiv.offsetWidth) - Math.max(elem.offsetLeft - mainDiv.scrollLeft, 0);
- let height = Math.min(elem.offsetTop - mainDiv.scrollTop + elem.offsetHeight, mainDiv.offsetHeight) - Math.max(elem.offsetTop - mainDiv.scrollTop, 0); 
+ const width = Math.min(elem.offsetLeft - mainDiv.scrollLeft + elem.offsetWidth, mainDiv.offsetWidth) - Math.max(elem.offsetLeft - mainDiv.scrollLeft, 0);
+ const height = Math.min(elem.offsetTop - mainDiv.scrollTop + elem.offsetHeight, mainDiv.offsetHeight) - Math.max(elem.offsetTop - mainDiv.scrollTop, 0);
  return width * height;
 }
 
@@ -1635,8 +1630,7 @@ function yAxisVisible(e)
 
 function rangeTest(a, b)
 {
- let l = b.length;
- for (let i = 0; i < l; i += 2)
+ for (let i = 0; i < b.length; i += 2)
      if (a >= b[i] && a <= b[i+1]) return true;
  return false;
 }
@@ -1652,7 +1646,6 @@ function ShowBox(scrollLeft, scrollTop)
 
  HideContextmenu();
  if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner; // Add title
-     
  inner += '<div class="footer">'; // Add 'footer' div and buttons to (if exist)
  for (let button in box.buttons)
      {
@@ -1730,22 +1723,20 @@ function getInnerDialog()
  // No match - assing first profile for default
  if (typeof data === 'string') box.flags.profile = data;
  // Profiles count more than one? Creating profile select DOM element.
- if (count > 1 || box.flags.padprofilehead?.[box.flags.pad] != undefined)
+ if (count > 1 || box.flags.padhead?.[box.flags.pad] != undefined)
     {
      // Add profile head
-     if (box.flags.padprofilehead != undefined && box.flags.padprofilehead[box.flags.pad] != undefined) inner += '<pre class="element-headers">' + box.flags.padprofilehead[box.flags.pad] + '</pre>';
+     if (box.flags.padhead != undefined && box.flags.padhead[box.flags.pad] != undefined) inner += '<pre class="element-headers">' + box.flags.padhead[box.flags.pad] + '</pre>';
      // In case of default first profile set zero value to use as a select attribute
      if (typeof data === 'string') data = 0;
      // Add header, select block and divider
      inner += '<div class="select" type="select-profile"><div value="' + data + '">' + box.flags.profile + '</div></div><div class="divider"></div>';
     }
-    
+
  //------------------Parsing interface element in box.dialog.<current pad>.<current profile>------------------
  for (let name in box.dialog[box.flags.pad][box.flags.profile])
      {
       element = box.dialog[box.flags.pad][box.flags.profile][name];
-      // Display element hint icon
-      //if (element.help != undefined && typeof element.help == "string") data = ' <span name="' + name + '" class="help-icon"> ? </span>'; else data = '';
       // Display element head
       if (element.head === undefined || typeof element.head !== "string")
 	 {
@@ -1863,33 +1854,37 @@ function SetFirstDialogElementFocus()
 function saveDialogProfile()
 {
  const init = {};
- boxDiv.querySelectorAll('input, .select, textarea').forEach(function(element)
-			   {
-			    switch (element.attributes.type.value)
-				   {
-				    case 'select-multiple':
-					 const el = box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value];
-					 el.data = '';
-					 element.querySelectorAll('div').forEach(function(option)
-								{
-								 if (option.classList.contains('selected')) el.data += '+' + option.innerHTML + '|';
-								  else el.data += option.innerHTML + '|';
-								});
-					 if (el.data.length > 0) el.data = el.data.slice(0, -1);
-					 break;
-				    case 'checkbox':
-				    case 'radio':
-					 if (init[element.attributes.name.value] === undefined) init[element.attributes.name.value] = box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] = '';
-					 if (element.checked) box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] += '+' + element.nextSibling.innerHTML + '|';
-					  else box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] += element.nextSibling.innerHTML + '|';
-					 break;
-				    case 'password':
-				    case 'text':
-				    case 'textarea':
-					 box.dialog[box.flags.pad][box.flags.profile][element.attributes.name.value]["data"] = element.value;
-					 break;
-				   }
-			   });
+ let el, value;
+
+ boxDiv.querySelectorAll('input, .select, textarea, .boxtable').forEach(function(element)
+	{
+	 if (element.attributes === undefined || element.attributes.name === undefined) return;
+	 value = element.attributes.name.value;
+	 el = box.dialog[box.flags.pad][box.flags.profile][value];
+	 switch (element.attributes.type.value)
+		{
+		 case 'select-multiple':
+		      el.data = '';
+		      element.querySelectorAll('div').forEach(function(option)
+			{
+			 if (option.classList.contains('selected')) el.data += '+';
+			 el.data += option.innerHTML + '|';
+			});
+		      if (el.data.length > 0) el.data = el.data.slice(0, -1);
+		      break;
+		 case 'checkbox':
+		 case 'radio':
+		      if (init[value] === undefined) init[value] = el.data = '';
+		      if (element.checked) el.data += '+';
+		      el.data += element.nextSibling.innerHTML + '|';
+		      break;
+		 case 'password':
+		 case 'text':
+		 case 'textarea':
+		      el.data = element.value;
+		      break;
+		}
+	});
 }
 
 function setOptionSelected(data, value) // Function selects option (by setting '+' char before the option) by pointed value and return result data with options divided by '|'
@@ -1920,10 +1915,9 @@ function setOptionSelected(data, value) // Function selects option (by setting '
 	 count ++;
 	}
  if (value === undefined || value !== true) result = '+' + result;		// No selected option at all? Use first option for default
- //return result.slice(0, -1);							// Return result string without last divided char '|'
  return result;									// Return result string with last divided char '|'
 }
-		       
+
 function HideBox()
 {
  clearTimeout(buttonTimerId);
@@ -1952,92 +1946,14 @@ function getAbsoluteY(element, flag = '')
  let disp = 0;								// Select element top position
  if (flag == 'end') disp = element.offsetHeight;			// Select element bottom position
  if (flag == 'middle') disp = Math.trunc(element.offsetHeight/2);	// Select element middle position
- 
  return element.offsetTop - element.scrollTop + mainDiv.offsetTop - mainDiv.scrollTop + mainTablediv.offsetTop - mainTablediv.scrollTop + disp;
-}
-
-function collapseMainTable(undefinedCellCollapse) // Function removes collapse flag tagged rows and columns from main object table
-{
- let row, col, disp, collapse;
- 
- // Fisrt step - main table rows collpase status check 
- row = disp = 0;
- while (row < mainTableHeight) // Parse main table rows one by one
-       {
-        // Set row default collapse status to false
-        collapse = false;
-	
-	// Current row exist? Check all its columns (except undefined and titles) to be collapsible
-        if (mainTable[row])
-	   {
-	    for (col = 0; col < mainTableWidth; col++) if (mainTable[row][col] && mainTable[row][col].oId != TITLEOBJECTID && mainTable[row][col].oId != NEWOBJECTID)
-		if (mainTable[row][col].collapse != undefined && mainTable[row][col].data === '') collapse = true;
-		 else { collapse = false; break; }
-	   }
-	 else if (undefinedCellCollapse) collapse = true; // Set collapse status to true if undefined row and collapse property for undefined cell (undefinedCellCollapse) is true
-	   
-	// Collapse main table row (remove it by splice), increase displacement and decrease main table height
-	if (collapse === true)
-	   {
-	    mainTable.splice(row, 1);
-	    disp++;
-	    mainTableHeight--;
-	   }
-	 else // Otherwise (in case of no collpase) correct current row 'y' coordinate on displacement value and go to next row
-	   {
-	    if (disp > 0 && mainTable[row] != undefined)
-	       for (col = 0; col < mainTableWidth; col++)
-		   if (mainTable[row][col] != undefined && mainTable[row][col].realobject)
-		      objectTable[mainTable[row][col].oId][mainTable[row][col].eId].y -= disp;
-	    row++;
-	   }
-       }
- 
- // Second step - main table columns collpase status check
- col = disp = 0;
- while (col < mainTableWidth) // Parse main table columns one by one
-       {
-        // Set row default collapse status to false
-	collapse = false;
-	
-	// If collapse property for undefined cell (undefinedCellCollapse) is true, then check the whole column on undefined cells
-	if (undefinedCellCollapse)
-	   {
-	    collapse = true;
-	    for (row = 0; row < mainTableHeight; row++)
-		if (mainTable[row] != undefined && mainTable[row][col] != undefined) { collapse = false; break; }
-	   }
-	
-	// Check the whole column (except undefined and titles) cell to be all collapsible
-	if (collapse === false) for (row = 0; row < mainTableHeight; row++)
-	    if (mainTable[row] && mainTable[row][col] && mainTable[row][col].oId != TITLEOBJECTID && mainTable[row][col].oId != NEWOBJECTID)
-	       if (mainTable[row][col].collapse != undefined && mainTable[row][col].data === '') collapse = true;
-		else { collapse = false; break; }
-	 
-	// Collapse main table column (remove it by splice), increase displacement and decrease main table width
-	if (collapse === true)
-	   {
-	    for (row = 0; row < mainTableHeight; row++) if (mainTable[row] != undefined) mainTable[row].splice(col, 1);
-	    disp++;
-	    mainTableWidth--;
-	   }
-	 else // Otherwise (in case of no collpase) correct current column 'x' coordinate on displacement value and go to next column
-	   {
-	    if (disp > 0) for (row = 0; row < mainTableHeight; row++)
-	       if (mainTable[row] != undefined && mainTable[row][col] != undefined && mainTable[row][col].realobject)
-		  objectTable[mainTable[row][col].oId][mainTable[row][col].eId].x -= disp;
-	    col++;
-	   }
-       }
 }
 
 function HideContextmenu()
 {
- if (contextmenu)
-    {
-     contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'hide';
-     contextmenu = null;
-    }
+ if (!contextmenu) return;
+ contextmenuDiv.className = 'contextmenu ' + uiProfile["context menu"]["effect"] + 'hide';
+ contextmenu = null;
 }
 
 function SetContextmenuItem(newItem)
@@ -2067,7 +1983,7 @@ function SetContextmenuItem(newItem)
      while (newItem != contextmenu.item && newItem.classList.contains('greyContextMenuItem'));
      if (newItem.classList.contains('greyContextMenuItem')) newItem = contextmenu.item = null;
     }
- 
+
  if (contextmenu.item) contextmenu.item.classList.remove('activeContextMenuItem'); 
  if (newItem) newItem.classList.add('activeContextMenuItem');
  contextmenu.item = newItem;
@@ -2083,12 +1999,10 @@ function ShowHint(content, x, y)
 
 function HideHint()
 {
- if (hint)
-    {
-     clearTimeout(tooltipTimerId);                                              
-     hintDiv.className = 'hint ' + uiProfile["hint"]["effect"] + 'hide';
-     hint = null;
-    }
+ if (!hint) return;
+ clearTimeout(tooltipTimerId);
+ hintDiv.className = 'hint ' + uiProfile["hint"]["effect"] + 'hide';
+ hint = null;
 }
 
 function ContentEditableCursorSet(element)
@@ -2122,7 +2036,7 @@ function CopyBuffer(plaintext)
     }
  document.body.appendChild(textarea);
  textarea.select();
- 
+
  try { document.execCommand('copy'); }
  catch { document.body.removeChild(textarea); return; }
 
@@ -2172,16 +2086,16 @@ function uiProfileSet(customization)
      }
 
  // Define css classes attribute string for all table cell types
- isObjectEmpty(uiProfile["main field table title cell"], 'target')	? titlecellclass = '' : titlecellclass = ' class="titlecell"';
- isObjectEmpty(uiProfile["main field table newobject cell"], 'target')	? newobjectcellclass = '' : newobjectcellclass = ' class="newobjectcell"';
- isObjectEmpty(uiProfile["main field table data cell"], 'target')	? datacellclass = '' : datacellclass = ' class="datacell"';
- isObjectEmpty(uiProfile["main field table undefined cell"], 'target')	? undefinedcellclass = '' : undefinedcellclass = ' class="undefinedcell"';
+ titlecellclass = isObjectEmpty(uiProfile["main field table title cell"], 'target') ? '' : ' class="titlecell"';
+ newobjectcellclass = isObjectEmpty(uiProfile["main field table newobject cell"], 'target') ? '' : ' class="newobjectcell"';
+ datacellclass = isObjectEmpty(uiProfile["main field table data cell"], 'target') ? '' : ' class="datacell"';
+ undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
 }
 
 function styleUI()
 {
  let element, key, inner = '';
- 
+
  for (element in uiProfile)
   if (uiProfile[element]["target"] != undefined)
      {
@@ -2670,7 +2584,10 @@ Available handler commands are:
  - 'DIALOG'. Format: '{"cmd": "DIALOG", "data": {<JSON dialog>}}'. The command displays client side dialog box based on 
    <JSON dialog>* format, which allows to generate 'powerful' dialog boxes with any combination of text input, text areas,
    multiple/single select, radio-buttons, check-boxes, interface buttons.. No 'data' property - the command is ignored.
-   Handler command is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
+   Handler command is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events. Dialog box in general consists of
+   title area, pad content and footer. Each pad has one or more profiles and each profile has its uniq content with specified
+   interface elements (check-boxed, radio-buttons, text areas, inputs, selections and etc..). Footer is a button area to
+   apply or cancel content changed data, see JSON dialog format below.*
  - 'CALL'. Format: '{"cmd": "CALL", "ODid": "<database id>", "OVid": "<view id>", "params": {<JSON params>}}'. The command
    calls specified by OD/OV identificators database view as if the user clicks specified view on the sidebar. It is useful
    for some views to be called from a handler as a responce on user events (mouse or keyboard, for a example) and according
@@ -2701,34 +2618,89 @@ Two user events 'INIT' (passed to the handler for all elements of the new object
 processed by the controller (create new object and remove specified object(s) respectively), which then calls client side
 to refresh the current view.
 
-*JSON dialog structure is a nested JSONs which draw dialog box with its interface elements and specific behaviour:
-- "title" property is a dialog box text title, empty or undefined title - no box title area drawn.
-- "dialog" property is a dialog content of itself with pads, profiles for every pad and input interface elements for every profile.
-  Pads, profiles and element names are arbitrary. See OD structure dialog with pads and its profiles as an example.
-  Every profile is an input elements list. Each element must have one of the folowing types:
-  - select. Dropdown list with one possible option to select
-  - multiple. Dropdown list with more than one possible options to select
-  - radio|checkbox. HTML input tag with radio or checkbox type. Selects one or multiple options respectively.
-  - textarea. Multiple lines text input.
-  - text. Single line text input.
-  - password. Single line hidden text input.
-  "head" value is a text to be drawn in the upper element area.
-  "data" value is an initial text for text-input element types and options separated by '|' with selected option marked with '+' (example: "option1|+option2|option3|") for 'select' element types.
-  "help" value is a text to be drawn on element head 'question' button.
-  Any value "line" property draws shadowed line at the bottom element area.
-  Any value "readonly" property make input element to be read only.
-- "buttons" property is a JSON with property name is a button text. One property - one content bottom area button.
-  Property text value is a html style attribute applied for specified button element.
-  No first space char in that text destroys dialog with no action made (just like cancel button behaviour).
-  Staring one space char also destroys dialog, but the controller is called on specified button click event with 'CONFIRMDIALOG' as event name.
-  Two spaces at the begining of the possible style string are like 'one space char', but dialog box is not destroyed and remains on the client side.
-  Example: "buttons": {"OK": " background-color: green;", "CANCEL": "background-color: red;", "APPLY": "  "}.
-  Possibility to cancel the box is provided by ESC key for any dialog box.
-- "flags" property is a JSON with props to style dialog box.
-  Property "style" value is a dialog box content html style attribute inserted to the box content wrapper.
-  Property "pad" and "profile" values select active pad and profiles to be displayed after dialog call.
-  In case of single pad or/and profile its area can be shown or hidden via appropriate flags.
-`
+*JSON dialog structure is a nested JSONs which content 'draws' dialog box with its interface elements and specific behaviour:
+
+{ "title": "dialog box title",
+  "dialog": { "pad1": { "profile1": { "element1": { "type":	"select|multiple|checkbox|radio|textarea|text|password|table",
+						    "head":	"<element title>",
+						    "data":	"<element data>",
+						    "help":	"<hint>",
+						    "line":	"",
+						    "readonly": ""
+						  }
+				      "element2": {..}
+				    },
+			"profile2": {..}
+		      },
+	      "pad2": {..}
+	    },
+  "buttons": { "button1": {"call": "", "value": "", "timer": "", "interactive": "", "error": "", "warning": "", "enterkey": "" },
+	       "button2": {..}
+	     },
+  "flags": { "style": "dialog box content html style attribute",
+	     "pad": "active (current selected) dialog box pad if exist",
+	     "profile": "active (current selected) dialog box profile if exist",
+	     "display_single_pad": "",
+	     "display_single_profile": "".
+	     "padhead": { "pad1": "header1", "pad2": "header2", ..}
+	   }
+}
+
+- "title" is a dialog box text title, empty or undefined title - no box title area drawn.
+
+- "dialog" property is a dialog content of itself with pads, profiles for every pad and some interface elements for each
+  profile. Pads, profiles and elements are arbitrary. See OD structure dialog with pads and its profiles as an example.
+  Each element must have at least 'type' property to be identified, so elements with unknown type are ignored:
+    type: select. Dropdown list with one possible option to select
+	  multiple. Dropdown list with more than one possible options to select
+	  radio|checkbox. HTML input tag with radio or checkbox type. Selects one or multiple options respectively.
+	  textarea. Multiple lines text input.
+	  text. Single line text input.
+	  password. Single line hidden text input.
+	  table. Classic table with some text data, see "data" property.
+    head: title/header text that is displayed as an interface element header.
+    help: hint text that is displayed on a question mark button click at the end of a header text.
+    data: initial data for interface element at dialog box initialization or changed data after dialog apply to return
+	  to the handler. For text-input element types "data" is an arbitrary text, for 'select' types - options separated
+	  by '|' with selected option marked by '+', for example: "option1|+option2|option3|". For 'table' element type
+	  'data' property is a JSON with properties as table rows. Each row property is a JSON with properties as table
+	  cells. Each cell is a JSON with three props: value (cell text), style (css style for the current html <td> tag)
+	  and call (this property set calls initiated handler with changed dialog data and flags.event set to JSON cell
+	  property name). See tic-tac-toe in a 'Examples' help section.
+    line: this property set draws dividing shadowed line at the bootom of interface element area
+    readonly: this property set makes element to be read only.
+
+- "buttons" is a JSON that describes box content apply/cancel actions. One property - one button. Each property name
+  is a button text/numerical id that is set within dialog data (in flags.event property, see flags description below)
+  to be passed back to the controller and then to the handler to identify what button was pushed. Each property value
+  is a button behaviour JSON with next properties (all are optional):
+    value: button text in dialog interface.
+    call: this property set makes the controller to call the handler with changed dialog data on a button click event.
+	  So the handler can process changed dialog data. Controller command 'CONFIRMDIALOG' is sent to the initiated
+	  handler. Buttons with non-existent 'call'/'timer' properties just remove dialog with no actions,
+	  cancel button for a example.
+    timer: automatic box content apply after timer (in sec) has been exceeded. Controller command 'CONFIRMDIALOG' is
+	   sent to the initiated handler.
+    enterkey: any one line input (interface elements with 'text' or 'password' type) enter key press emulates the
+	      button (with that property set) click, so if 'enterkey' button has 'call' property the appropriate
+	      handler is called on interface element enter press. Otherwise (no 'call' property) no handler is called
+	      and dialog is removed. Only one button can have 'enterkey' prop set.
+    interactive: this property set keeps dialog box active after button click event. For buttons with 'call' property only.
+		 No 'call' buttons click event removes dialog anyway.
+    error: message to be displayed as an error text in a 'View' area. For buttons with no 'call' property only.
+    warning: message in warning dialog box. For buttons with no 'call' property only.
+
+- "flags" is a JSON with some properties to style dialog box:
+    style: dialog box content html style attribute for the content wrapper div.
+    pad: active (current selected) dialog box pad name if exist.
+    profile: active (current selected) dialog box profile name if exist".
+    display_single_pad: this property set displays one existing pad. Multiple pads are displayed automatically.
+    display_single_profile: this property set displays one existing profile. Multiple profiles are displayed
+			    automatically.
+    padhead: JSON to set header text (title) for specified pad (by property name), displayed at the top of the
+		    content area. Used to describe pad and/or its profiles.
+    event: identificator of a button or table cell (see button/cell 'call' property) that initiated handler callback
+	   to process changed dialog data. Property is set automatically.`
 }}},
 
 "Examples": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
@@ -2813,24 +2785,16 @@ php text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version
 element4: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 4 - echo '{"cmd":"SET", "style":"background-color:red;"}'
-`},
-element5: { line: '', style: 'font-family: monospace, sans-serif;', head: 
-`
-Example 5 - tip tap toe
-`},
-element6: { line: '', style: 'font-family: monospace, sans-serif;', head: 
-`
-Example 6 - helpdesk, jira
 `}}},
 
-"Keyboard/Mouse": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"Keyboard/Mouse": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `  - 'Home' moves cursor to the top of a table
   - 'End' moves cursor to the bottom
   - 'PageUp' moves cursor one page down
   - 'PageDown' moves cursor one page up
-  - '<', '>', '^' (Shift+Enter)*, '∨' (Enter) arrow keys move cursor to appropriate direction.
-  - '<', '>', '^', '∨' + 'ScrollLock' scrolls the page instead of cursor moving*
-  - 'Enter' + [Shift|Ctrl|Alt] applies content editable changes. New-object input apply creates new object.
+  - '<', '>', '^' (Shift+Enter), 'v' (Enter) arrow keys move cursor to appropriate direction.
+  - '<', '>', '^', 'v' + 'ScrollLock' scrolls the page instead of cursor moving*
+  - 'Enter' + [Shift|Ctrl|Alt] applies content editable changes. New-object input content apply creates new object.
   - 'ESC' cancels all changes and exit content editable mode. At any dialog box - exit with no changes.
   - 'INS', 'DEL', 'F2', 'F12', letters, digits , space or left button mouse double click: cursor element handler call.
   - 'CTRL' + :
@@ -2847,8 +2811,12 @@ Example 6 - helpdesk, jira
   - 'Mouse over' event on any element for some time (default 1 sec) displays appropriate hint message if exist.
   - 'Drag-and-drop' operations like mouse pointer 'excel' table cells resizing are not implemented due to multiuser
     complicated cells width/height values change. Use element layout (see appropriate help section) features to set
-    initial width and height of a table cell. By default, widths and heights of the table and its cells are adjusted
-    to fit the content.
+    initial width and height of a table cell. By default, table and its cells width and height are adjusted to fit
+    the content. Another drag table operation - excel like area highlighting. Selected area then can be processed
+    via appropriate context menu. One of context menu item for selected area is 'Chart'. Two or more columns width
+    area draws a piechart with an area top row as a pie names and its per-column summarized values as a percent
+    of a total amount. For pie names from the left column - selected area should be one column width. For the pie
+    persentage per-row values of the next (non-selected) column is used.
 
 * will be available in a future releases`
 }}},

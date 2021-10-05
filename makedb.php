@@ -25,7 +25,7 @@ try {
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
      $newProperties['element2']['data'] = 'Application users database';
-     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
+     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padhead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $userOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
@@ -163,7 +163,7 @@ try {
      //------------------------------------------Create default OD 'Logs'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Logs';
-     $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padprofilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
+     $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'padhead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $logOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $logOD['dialog']['Element']['New element']['element1']['id'] = '2';
      $logOD['dialog']['View']['New view']['element1']['id'] = '2';
