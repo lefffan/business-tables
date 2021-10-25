@@ -30,7 +30,7 @@ switch ($event)
 	     $dialog = ['title' => 'User customization',
 			'dialog' => $data,
 			'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
-			'flags'  => ['style' => 'width: 600px; height: 600px;', 'padhead' => ['pad' => "\n\nSelect customization"]]];
+			'flags'  => ['style' => 'width: 600px; height: 600px;', 'profilehead' => ['pad' => "\n\nSelect customization"]]];
 
 	     echo json_encode(['cmd' => 'DIALOG', 'data' => $dialog]);
 	     break;

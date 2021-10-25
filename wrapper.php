@@ -257,7 +257,6 @@ function GetCMD($db, &$client, $cmdline = false)
 	   }
        $newcmdline .= $add;
       }
- lg($newcmdline);
  return $newcmdline;
 }
 

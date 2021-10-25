@@ -46,7 +46,7 @@ let uiProfile = {
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
 		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background": "" },
 		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
-		  "main field table selected cell": { "target": ".selectedcell", "background-color": "#B8C9BD;" },
+		  "main field table selected cell": { "target": ".selectedcell", "background-color": "#C8D8D0;" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=" + EDITABLE + "])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
@@ -1662,6 +1662,7 @@ function ShowBox(scrollLeft, scrollTop)
 	  buttonTimerId = setTimeout(BoxApply, box.buttons[button]['timer'], button);
 	 }
      }
+ if (!box.cmd) box.cmd = 'CONFIRMDIALOG';
  boxDiv.innerHTML = inner + '</div>'; // Finish 'footer' div
 
  boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%"; // Calculate left box position
@@ -1669,7 +1670,7 @@ function ShowBox(scrollLeft, scrollTop)
  boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'show'; // Show box div
  if (uiProfile["dialog box"]["filter"]) sidebarDiv.style.filter = mainDiv.style.filter = uiProfile["dialog box"]["filter"]; // Apply filters if exist
  uiProfile["dialog box"]["effect"] === 'none' ? SetFirstDialogElementFocus() : boxDiv.addEventListener('transitionend', SetFirstDialogElementFocus); // Set focus on first text-input element
- 
+
  box.contentDiv = boxDiv.querySelector('.boxcontentwrapper');
  if (scrollLeft) box.contentDiv.scrollLeft = scrollLeft;
  if (scrollTop) box.contentDiv.scrollTop = scrollTop;
@@ -1679,12 +1680,12 @@ function getInnerDialog()
 {
  if (!box || !box.dialog || typeof box.dialog != 'object') return;
  let element, data, count = 0, readonly, checked, inner = '';
- 
+
  //------------------Creating current pad and profile if not exist------------------
  if (!box.flags) box.flags = {};
  if (!box.flags.pad) box.flags.pad = "";
  if (!box.flags.profile) box.flags.profile = "";
-    
+
  //------------------Checking current pad. First step - seeking current pad match------------------
  for (element in box.dialog) if (typeof box.dialog[element] === "object")
      {
@@ -1697,7 +1698,7 @@ function getInnerDialog()
  // No match - assing first pad for default
  if (typeof data === 'string') box.flags.pad = data;
  // Pads count more than one? Creating pad block DOM element.
- if (count > 1 || box.flags.display_single_pad != undefined)
+ if (count > 1 || box.flags.showpad != undefined)
     {
      // Creating pad wrapper
      inner = '<div class="padbar" style="display: flex; flex-direction: row; justify-content: flex-start;">';
@@ -1720,13 +1721,13 @@ function getInnerDialog()
      }
  // Empty dialog[<current_pad>] with zero profiles number? Return current pad empty content.
  if (count === 0) return inner;
- // No match - assing first profile for default
+ // No match - assign first profile for default
  if (typeof data === 'string') box.flags.profile = data;
  // Profiles count more than one? Creating profile select DOM element.
- if (count > 1 || box.flags.padhead?.[box.flags.pad] != undefined)
+ if (count > 1 || box.flags.profilehead?.[box.flags.pad] != undefined)
     {
      // Add profile head
-     if (box.flags.padhead != undefined && box.flags.padhead[box.flags.pad] != undefined) inner += '<pre class="element-headers">' + box.flags.padhead[box.flags.pad] + '</pre>';
+     if (box.flags.profilehead != undefined && box.flags.profilehead[box.flags.pad] != undefined) inner += '<pre class="element-headers">' + box.flags.profilehead[box.flags.pad] + '</pre>';
      // In case of default first profile set zero value to use as a select attribute
      if (typeof data === 'string') data = 0;
      // Add header, select block and divider
@@ -1751,87 +1752,76 @@ function getInnerDialog()
 	  inner += '</pre>';
 	 }
       // Filling interface element data, leave empty string in case of undefined
-      if (element.data != undefined && typeof element.data === "string") data = element.data; else data = '';
+      data = (typeof element.data === 'string' || typeof element.data === 'object') ? element.data : '';
+
       switch (element.type)
 	     {
 	      case 'table':
-		   if (data != '')
-		      {
-		       try   { data = JSON.parse(data); }
-		       catch { break; }
-		       let row, cell;
-		       inner += `<table class="boxtable"><tbody>`;
-		       for (row in data)
-		    	   {
-			    inner += '<tr>';
-			    for (cell in data[row])
-				{
-				 inner += '<td class="boxtablecell';
-				 data[row][cell].call != undefined ? inner += ' boxtablecellpush" data-button="' + cell + '"' : inner += '"';
-				 if (data[row][cell].style)  inner += ` style="${escapeHTMLTags(data[row][cell].style)}"`;
-				 inner += '>' + escapeHTMLTags(data[row][cell].value) + '</td>';
-				}
-			    inner += '</tr>';
-			   }
-		       inner += '</tbody></table>';
-		      }
-	    	   break;
+		   if (typeof data !== 'object') break;
+		   let row, cell;
+		   inner += `<table class="boxtable"><tbody>`;
+		   for (row in data)
+		       {
+			inner += '<tr>';
+			for (cell in data[row])
+			    {
+			     inner += '<td class="boxtablecell';
+			     data[row][cell].call != undefined ? inner += ' boxtablecellpush" data-button="' + cell + '"' : inner += '"';
+			     if (data[row][cell].style)  inner += ` style="${escapeHTMLTags(data[row][cell].style)}"`;
+			     inner += '>' + escapeHTMLTags(data[row][cell].value) + '</td>';
+			    }
+			inner += '</tr>';
+		       }
+		   inner += '</tbody></table>';
+		   break;
 	      case 'select-multiple':
-		   if (data != '')
-		      {
-		       inner += `<div class="select" name="${name}" type="select-multiple">`;
-		       for (data of data.split('|'))
-		    	   if (data != '')
-			      {
-			       pos = data.search(/[^\+]/);
-			       if (pos > 0) inner += '<div class="selected">' + data.substr(pos) + '</div>';
-			        else inner += '<div>' + data + '</div>';
-			      }
-		       inner += '</div>';
-		      }
-	    	   break;
+		   if (typeof data !== 'string' || !data) break;
+		   inner += `<div class="select" name="${name}" type="select-multiple">`;
+		   for (data of data.split('|')) if (data)
+		       {
+			pos = data.search(/[^\+]/);
+			inner += pos > 0 ? `<div class="selected">${data.substr(pos)}</div>` : `<div>${data}</div>`;
+		       }
+		   inner += '</div>';
+		   break;
 	      case 'select-one':
-		   if (data != '')
-		      {
-		       count = 0;
-		       data = element.data = setOptionSelected(data);
-		       for (data of data.split('|'))	// Handle all option divided by '|'
-		    	   {
-			    if (data[0] == '+')		// The option is selected (first char is '+')? Add it to the dialog interface
-			       {
-			        inner += `<div class="select" name="${name}" type="select-one"><div value="${count}">${data.substr(1)}</div></div>`;
-			        break;
-			       }
-			    count ++;
+		   if (typeof data !== 'string' || !data) break;
+		   count = 0;
+		   data = element.data = setOptionSelected(data);
+		   for (data of data.split('|'))	// Handle all option divided by '|'
+		       {
+			if (data[0] == '+')		// The option is selected (first char is '+')? Add it to the dialog interface
+			   {
+			    inner += `<div class="select" name="${name}" type="select-one"><div value="${count}">${data.substr(1)}</div></div>`;
+			    break;
 			   }
-		      }
+			count ++;
+		       }
 	    	   break;
 	      case 'checkbox':
 	      case 'radio':
-		   if (data != '')
-		      {
-		       element.readonly != undefined ? readonly = ' disabled' : readonly = '';
-		       for (data of data.split('|')) if (data != '')
-			  {
-			   (count = data.search(/[^\+]/)) > 0 ? checked = ' checked' : checked = '';
-			   inner += `<input type="${element.type}" class="${element.type}" name="${name}"${checked}${readonly}><label for="${name}">${data.substr(count)}</label>`;
-			  }
-		      }
+		   if (typeof data !== 'string' || !data) break;
+		   element.readonly != undefined ? readonly = ' disabled' : readonly = '';
+		   for (data of data.split('|')) if (data != '')
+		       {
+			checked = (count = data.search(/[^\+]/)) > 0 ? ' checked' : '';
+			inner += `<input type="${element.type}" class="${element.type}" name="${name}"${checked}${readonly}><label for="${name}">${data.substr(count)}</label>`;
+		       }
 		   break;
 	      case 'password':
 	      case 'text':
 		   if (element.label) inner += `<label for="${name}" class="element-headers">${element.label}</label>`;
-	    	   element.readonly != undefined ? readonly = ' readonly' : readonly = '';
+		   readonly = element.readonly !== undefined ? ' readonly' : '';
 		   inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '"' + readonly + '>';
 		   break;
 	      case 'textarea':
-		   element.readonly != undefined ? readonly = ' readonly' : readonly = '';
+		   readonly = element.readonly !== undefined ? ' readonly' : '';
 		   inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '"' + readonly + '>' + data + '</textarea>';
 		   break;
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';
      }
-     
+
  if (inner != '')
     {
      data = '';
@@ -2126,7 +2116,7 @@ which is set automatically while object is changed or created. Each custom user-
 object element (with eid1, eid2.. as a column names in database structure) is created by the user and may have some
 handlers (any script or binary) to create and manage element data, see 'handler' help section. User-defined element data
 is a JSON, that may consist of any defined properties, but some of them have special assingment:
-- 'value' is displayed in a table cell as a main element text
+- 'value' is displayed in a table cell as a main element text (max 10K chars)
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
@@ -2182,19 +2172,21 @@ history is transparent and available and all data is native. This is a global ap
 documented and clear.
 
 Go on. Authentication and authorization are password based. Usernames and their passwords are stores in 'Users' OD.
-Only one user instance can be logged in, so logged in instance automatically logs out another instance via other host/browser.
+Initial username/password: root/root. Only one user instance can be logged in, so logged in instance automatically logs out
+another instance via other host/browser. Session lifetime is 10 hours (36000 sec).
 To add new user click context menu 'Add Object' on any 'Users' view (on default view 'All users' for example), then double 
 click just-added 'user' element to call user properties (such as password, OD add permission and group membership) dialog box.
-User 'name' cannot be changed after creation. Also user cannot change his OD add permissions and group membership
-to avoid all priveleges granting by himself to himself. Note that users and groups must be all uniq, so user and group with
-one name 'root' is not allowed. Groups cannot be directly created, any group name in a user group membership list is
-considered as an existing group. So all user/group permission lists in a Database configuration (see appropriate help section)
-are treated as user name list, but in case of non-existent username - the name is treated as a name of a group.`
+User 'name' cannot be changed after creation, user password password must be min 8 chars length and contain at least one digit,
+capital and lowercase latin letter. Also user cannot change his OD add permissions and group membership to avoid all priveleges
+granting by himself to himself. Note that users and groups must be all uniq, so user and group with one name 'root' is not
+allowed. Groups cannot be directly created, so any group name in a user group membership list is considered as an existing group.
+So all user/group permission lists in a Database configuration (see appropriate help section) are treated as user name list, but
+in case of non-existent username - the name is treated as a name of a group.`
 }}},
 
 "Database Configuration": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`To create Object Database (OD) just enter its name in the dialog box called via 'New Database' sidebar context menu.
-Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
+`To create Object Database (OD) just enter its name (max 64 chars) in the dialog box called via 'New Database' sidebar context
+menu. Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
 Let's have a look at database configuration dialog box and its features.
 
 First is 'Database' tab. This configuration section sets up general database features (name, description, limits) and its permission.
@@ -2219,8 +2211,8 @@ at object element data change), keyboard/mouse element push/click ('DBLCLICK', '
 handler feedback ('CONFIRM', 'CONFIRMDIALOG'). See 'Handlers' help section for details.
 
 Third configuration section - 'View'. The same way for add/delete operations is used - empty name removes the view, 'New view'
-option with any name specified creates it. View name first char '_' hides unnecessary views from user sidebar, so the view can
-be called from element handlers only (see 'Handler' help section for details).
+option with any name specified creates it. View name is 64 chars max, first char '_' hides unnecessary views from user sidebar,
+so the view can be called from element handlers only (see 'Handler' help section for details).
 The object view (OV) of itself is a mechanism to output selective object data on specified template. Objects for the view are
 obtained from the selection process (see 'Object Selection' for details), their elements - from 'Element layout' (see
 appropriate help section for details).
@@ -2542,7 +2534,7 @@ brackets quoted arguments are parsed to be replaced by the next values:
     For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
     For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
     For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
- - <JSON argument> is replaced by retrieved element data and should be in next format:
+ - <JSON> is replaced by retrieved element data and should be in next format:
     {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
     First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted 
     datavase/view names ("OD"/"OV") is used. Both identificator and name omitted - current database or view is used.
@@ -2557,12 +2549,12 @@ brackets quoted arguments are parsed to be replaced by the next values:
     replacements - property names with first char ':'. So these properties act as another JSON argument, so its values are
     retrieved and replaced in "element" regular expressions and "selection". It is a kind of a recursion, max recursive calls
     number is 3. See 'Examples' help section. In case of exact element id and multiple objects selection - final result is 
-    element JSON property of all selected objects ((each of new line).
+    element JSON property of all (max 256) selected objects (each of new line).
     Therefore, 'JSON argument' selects database view objects (based on "selection" and "limit"), takes element and its property
     (based on "element" and "prop") or searches necessary element via first match "element" regular expression and then
-    replaces <JSON argument> with the retrieved value. All properties are optional, so any JSON (event empty <{}>) is treated
+    replaces <JSON argument> with the retrieved value. All properties are optional, so any JSON (even empty <{}>) is treated
     as a correct argument to be replaced. Empty (or with unknown props) JSON is replaced by the current database view object
-    element value. 
+    element value.
 Not listed above argument cases remain untouched, but passed without angle brackets to avoid stdin/stdout redirections, so any
 single angle brackets are truncated in a result command line.
 
@@ -2640,9 +2632,8 @@ to refresh the current view.
   "flags": { "style": "dialog box content html style attribute",
 	     "pad": "active (current selected) dialog box pad if exist",
 	     "profile": "active (current selected) dialog box profile if exist",
-	     "display_single_pad": "",
-	     "display_single_profile": "".
-	     "padhead": { "pad1": "header1", "pad2": "header2", ..}
+	     "showpad": "",
+	     "profilehead": { "pad-name1": "header1", "pad-name2": "header2", ..}
 	   }
 }
 
@@ -2679,8 +2670,9 @@ to refresh the current view.
 	  So the handler can process changed dialog data. Controller command 'CONFIRMDIALOG' is sent to the initiated
 	  handler. Buttons with non-existent 'call'/'timer' properties just remove dialog with no actions,
 	  cancel button for a example.
-    timer: automatic box content apply after timer (in sec) has been exceeded. Controller command 'CONFIRMDIALOG' is
-	   sent to the initiated handler.
+    timer: box content apply timer in msec, min value is 500 msec, max - 36000000 msec (10 hours).
+	   Controller command 'CONFIRMDIALOG' is sent to the initiated handler automatically after the timer has been
+	   exceeded. Useful for automatic refresh (handler call) of the dialog box content.
     enterkey: any one line input (interface elements with 'text' or 'password' type) enter key press emulates the
 	      button (with that property set) click, so if 'enterkey' button has 'call' property the appropriate
 	      handler is called on interface element enter press. Otherwise (no 'call' property) no handler is called
@@ -2694,11 +2686,12 @@ to refresh the current view.
     style: dialog box content html style attribute for the content wrapper div.
     pad: active (current selected) dialog box pad name if exist.
     profile: active (current selected) dialog box profile name if exist".
-    display_single_pad: this property set displays one existing pad. Multiple pads are displayed automatically.
-    display_single_profile: this property set displays one existing profile. Multiple profiles are displayed
-			    automatically.
-    padhead: JSON to set header text (title) for specified pad (by property name), displayed at the top of the
-		    content area. Used to describe pad and/or its profiles.
+    showpad: pad area selection interface with one single pad exist is hidden for default, to display it - just set
+	     "showpad" property. Also profile selection interface element is hidden for default, to display profile
+	     selection set appropriate 'profilehead' property below. Selection interfaces for multiple pads/profiles
+	     are displayed automatically.
+    profilehead: JSON to set header text (title) for specified pad (by property name), displayed at the top of the
+		 content area. Used to describe pad and/or its profiles.
     event: identificator of a button or table cell (see button/cell 'call' property) that initiated handler callback
 	   to process changed dialog data. Property is set automatically.`
 }}},
@@ -2757,7 +2750,7 @@ operation - new message post in our case.
 That's all. As a result we have a nice chat with no much efforts for customization!`},
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
-Example 2 - host alive diagnostic. 
+Example 2 - host alive diagnostic.
 Create database with two elements - one for host names or ip addresses, second for ping result of appropriate hosts in 1st
 element. To input element id 1 text data (host, ip) add some handlers for 'DBLCLICK' event (edit content on double click):
 php text.php EDIT
@@ -2774,17 +2767,120 @@ for specified element id (2) every ten minutes. Ping utiltiy sends one icmp requ
 set as an element value, so ping loss redsults will be displayed in a table every 10 minutes. 
 To check hosts on demand - set handler 'ping -c 1 <{"element":"1"}>' for 'CHANGE' event for element id2. The handler will be
 called just right after element id 1 data (host/ip) is changed.
-
-Describe host names fetch from other OD (like setki.xls)
 `},
 element3: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
-Example 3 - Group users list.
-php text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
+Example 3 - Group users list. Each user group-membership is stored in system 'Users' database (ODid=1, OVid=1) in property
+'groups' of 1st element 'User' (eid1). The property consists of group names (one per line), so we have to search specified
+group name among all users and output the result.
+Use qouted JSON argument in a handler command line (see 'Handlers' help section for details) for any element to retrieve users
+of the group specified, for a example, in the current element value (":group": {}) or explicitly (":group": "wheel"):
+
+php text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups'))
+regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
+
+Property "selection" is a SQL 'WHERE' operator to search 1st element ("element":"1") 'value' property for default that represent
+a user name. First condition (regexp '^:group\\n') matches first line group names, second condition (regexp '\\n:group\\n')) -
+group names from the second line with the symbol LINE FEED (\\n) before. Request result is limited to 100 records.
 `},
 element4: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
-Example 4 - echo '{"cmd":"SET", "style":"background-color:red;"}'
+Example 4 - style element cell. Set next handler for event (for a example 'F12') to paint cell by red color (for *nix OS only):
+echo '{"cmd":"SET", "style":"background-color:red;"}'
+`},
+element5: { line: '', style: 'font-family: monospace, sans-serif;', head: 
+`
+Example 5 - dialog box simple calculator. First create database and any view with default properties.
+Then create one element with the handler (without args) for DBLCLICK event: 'php calc.php', and for CONFIRMDIALOG event:
+'php calc.php <event> <data>' - 1st arg is event name ('CONFIRMDIALOG'), 2nd is dialog data structure called back on
+calculator table click.
+
+Here is calc.php code:
+
+1 <?php
+2
+3 $calc = ['1' => ['11' => ['value'=>'7', 'call'=>''], '12' => ['value'=>'8', 'call'=>''], '13' => ['value'=>'9', 'call'=>''],
+4	   	   '14' => ['value'=>'/', 'call'=>''], '15' => ['value'=>'C', 'call'=>'']
+5		  ],
+6	   '2' => ['21' => ['value'=>'4', 'call'=>''], '22' => ['value'=>'5', 'call'=>''], '23' => ['value'=>'6', 'call'=>''],
+7		   '24' => ['value'=>'*', 'call'=>''], '25' => ['value'=>'<', 'call'=>'']
+8		  ],
+9	   '3' => ['31' => ['value'=>'1', 'call'=>''], '32' => ['value'=>'2', 'call'=>''], '33' => ['value'=>'3', 'call'=>''],
+10		   '34' => ['value'=>'-', 'call'=>''], '35' => ['value'=>'']
+11		  ],
+12	   '4' => ['41' => ['value'=>''], '42' => ['value'=>'0', 'call'=>''], '43' => ['value'=>'.', 'call'=>''],
+13		   '44' => ['value'=>'+', 'call'=>''], '45' => ['value'=>'=', 'call'=>'']
+14		  ],
+15	  ];
+16 $dialog = ['title' => 'Calculator',
+17	      'dialog' => ['pad' => ['profile' => ['element' => ['head' => ' ', 'type' => 'table', 'data' => $calc]]]],
+18	      'buttons' => [ 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;']],
+19	      'flags'  => ['style' => 'width: 250px; height: 200px; margin: 20px;']
+20	     ];
+21
+22 if (!isset($_SERVER['argv'][1]) || $_SERVER['argv'][1] !== 'CONFIRMDIALOG')
+23    {
+24     echo json_encode(['cmd' => 'DIALOG', 'data' => $dialog]);
+25     exit;
+26    }
+27 if (!isset($_SERVER['argv'][2])) exit;
+28 if (gettype($dialog = json_decode($_SERVER['argv'][2], true)) != 'array') exit;
+29 if (!isset($dialog['flags']['event'])) exit;
+30
+31 $key = $dialog['flags']['event'];
+32 $value = $calc[$key[0]][$key]['value'];
+33 switch ($value)
+34 {
+35  case '<':
+36	 $dialog['dialog']['pad']['profile']['element']['head'] = substr($dialog['dialog']['pad']['profile']['element']['head'], 0, -1);
+37	 break;
+38  case 'C':
+39	 $dialog['dialog']['pad']['profile']['element']['head'] = '';
+40	 break;
+41  case '=':
+42	 $result = $dialog['dialog']['pad']['profile']['element']['head'];
+43	 $dialog['dialog']['pad']['profile']['element']['head'] = strval(eval('return '.$result.';'));
+44	 break;
+45  default:
+46	 $dialog['dialog']['pad']['profile']['element']['head'] .= $value;
+47 }
+48
+49 if ($dialog['dialog']['pad']['profile']['element']['head'] === '') $dialog['dialog']['pad']['profile']['element']['head'] = ' ';
+50 echo json_encode(['cmd' => 'DIALOG', 'data' => $dialog]);
+
+
+Lines 3-15. Create calculator table via 5x4 array in $calc var:
+	     --- --- --- --- ---
+	    | 7 | 8 | 9 | / | C |
+	     --- --- --- --- ---
+	    | 4 | 5 | 6 | * | < |
+	     --- --- --- --- ---
+	    | 1 | 2 | 3 | - |   |
+	     --- --- --- --- ---
+	    |   | 0 | , | + | = |
+	     --- --- --- --- ---
+	    Each array key is an table event that will be passed in a dialog data flags.
+	    Array elements without 'call' key are empty and do not initiate handler call.
+
+Lines 16-20. Initial dialog strcuture array to pass to the controller via 'DIALOG' command (line 50).
+	     See 'Handlers' help section for dialog fromat.
+
+Lines 22-26. No script args exist or arg is not 'CONFIRMDIALOG'? Pass initial dialog.
+
+Lines 27-29. First arg is 'CONFIRMDIALOG', so decode the arg to the dialog array and check correctness.
+
+Line 31. Store table user click (table array key) in $key var.
+
+Line 32. Store clicked value in $value var.
+
+Lines 33-47. Parse table array key value.  For backspace ('<') cut last expression char. For clear button ('C') empty the
+	     expression. For calculation (=) evaluate expession strored in a table header. For other chars ('1', '2'..) -
+	     concatenation with current expression is made.
+
+Line 49. Empty headers ('') are not displayed before interface element, so set one space char for empty expression to be
+	 displayed before calculator table.
+
+Line 50. Pass dialog to the controller.
 `}}},
 
 "Keyboard/Mouse": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:

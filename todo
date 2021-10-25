@@ -3,11 +3,10 @@
   Help content during all code lookup
   test dialog boxes on low resolution, check on macbook via git
   socket incorrect data while task managers works long period of time, execute task manager for the whole night, then see result
-  examples: ping, group user list (Display in aparent OV Users for input group (select .. where ed1>>value != :input_group and ed1>>'groups' regexp -w :input_group)),
+
   builtin handlers help section (dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php)
   main.js
-  const.php
-  virtual cells
+- virtual cells
 - Handler commands UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES
     (in case of 'image' prop set - image is displayed on the table insted of text value prop;
     don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
