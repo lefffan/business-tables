@@ -5,16 +5,21 @@ function lg($arg)
  file_put_contents('/usr/local/src/tabels/error.log', var_export($arg, true), FILE_APPEND);
 }
 
-const SAVECANCEL	= ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']];
 const USERSTRINGMAXCHAR	= '64';
 const USERPASSMINLENGTH	= '8';
+const DIALOG = [
+		'title' => 'User properties', 
+		'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''],
+			      'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
+		'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']
+	       ];
 
 if (!isset($_SERVER['argv'][1])) exit;
-
 switch ($_SERVER['argv'][1])
        {
 	case 'INIT':
-	     if (isset($_SERVER['argv'][2])) echo json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), '_style' => 'color: green;', 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '']);
+	     if (isset($_SERVER['argv'][2]))
+		echo json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '']);
 	     break;
 	case 'F2':
 	case 'DBLCLICK':
@@ -25,19 +30,10 @@ switch ($_SERVER['argv'][1])
 	     $initiator = $_SERVER['argv'][5];
 
 	     if ($user == 'system') echo json_encode(['cmd' => 'ALERT', 'data' => "You can't change system account properties!"]);
-	      else if ($user == '') echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => ''] ]]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
-	      else if ($initiator != $user) echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
-	      else echo json_encode(['cmd' => 'DIALOG', 'data' => ['title' => 'User properties', 'dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => '']]]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
+	      else if ($user == '') echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]]]]);
+	      else if ($initiator != $user) echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]]]]);
+	      else echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => '']]]]]]);
 	     break;
-
-	case 'F12':
-	     echo json_encode(['cmd' => 'DIALOG',
-			       'data' => ['title' => 'Group user list',
-			       'dialog' => ['pad' => ['profile' => ['element' => ['type' => 'text', 'head' => 'Enter group name to find its user members:', 'data' => '', 'line' => ''],]]],
-								    'buttons' => ['OK' => ['value' => 'FIND', 'call' => '', 'enterkey' => ''], 'CANCEL' => ['value' => 'EXIT', 'style' => 'background-color: red;']],
-								    'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']]]);
-	     break;
-
 	case 'CONFIRMDIALOG':
 	     // Check dialog data to be correct
 	     if (!isset($_SERVER['argv'][2]) || gettype($data = json_decode($_SERVER['argv'][2], true)) != 'array') break;
@@ -71,10 +67,6 @@ switch ($_SERVER['argv'][1])
 		 if ($pass) $output['password'] = password_hash($pass, PASSWORD_DEFAULT);
 		 echo json_encode($output);
 		 break;
-		}
-
-	     if ($data['title'] === 'Group user list' && isset($profile['element']['data']) && $profile['element']['data'])
-	        {
 		}
 	     break;
        }

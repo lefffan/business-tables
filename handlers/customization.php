@@ -14,9 +14,7 @@ function CheckEffect(&$effect)
 }
 
 if (!isset($_SERVER['argv'][1])) exit;
-$event = $_SERVER['argv'][1];
-
-switch ($event)
+switch ($_SERVER['argv'][1])
        {
 	case 'INIT':
 	     echo json_encode(['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]);
@@ -36,7 +34,7 @@ switch ($event)
 	     break;
 	case 'CONFIRMDIALOG':
 	     if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true))) break;
-	     
+
 	     CheckEffect($data['dialog']['pad']['context menu']['element12']['data']);
 	     CheckEffect($data['dialog']['pad']['hint']['element9']['data']);
 	     CheckEffect($data['dialog']['pad']['dialog box']['element7']['data']);

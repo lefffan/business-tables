@@ -1373,7 +1373,7 @@ function CallController(data)
 	      let cell, msg = '', count = 1;
 	      if (cursor.td && mainTable[cursor.y]?.[cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId) // Cursor cell info
 		 {
-		  msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Cursor cell:</span>\n';
+		  msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Cursor cell</span>\n';
 		  if (cell.oId === NEWOBJECTID && Number(cell.eId) > 0) msg += `Input new object data for element id: ${cell.eId}`;
 		   else if (cell.oId === TITLEOBJECTID) msg += `Title for element id: ${cell.eId}`;
 		   else msg += `Object id: ${cell.oId}\nElement id: ${cell.eId}`;
@@ -1381,13 +1381,13 @@ function CallController(data)
 		 }
 	      if (cell && cell.oId >= STARTOBJECTID) // Object element info
 		 {
-		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element:</span>\n';
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n';
 	          if (cell.version) cell.version === '0' ? msg += 'Object version: object has been deleted' : msg += `Object version: ${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`;
-		  if (cell.description) msg += `Element description property:\n${cell.description}`;
+		  if (cell.description) msg += `\nElement description:\n<span style="color: #999;">${cell.description}</span>`;
 		 }
 	      if (true) // Database info
 		 {
-		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Database:</span>\n';
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Database</span>\n';
 		  msg += `Object Database: ${OD}\nObject View${OV[0] === '_' ? ' (hidden from sidebar)' : ''}: ${OV} (${objectsOnThePage} objects)`;
 	          cell = '';
 		  for (let param in paramsOV) cell += `\n  <span style="color: #999;">${count++}. ${param.substr(1).replace(/_/g, ' ')}: ${paramsOV[param]}</span>`;
@@ -1395,7 +1395,7 @@ function CallController(data)
 		 }
 	      if (true) // Table info
 		 {
-		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Table:</span>\n';
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Table</span>\n';
 		  msg += `Columns: ${mainTableWidth}\nRows: ${mainTableHeight}`;
 		  if (drag.x1 !== undefined)
 		     {
@@ -2110,25 +2110,24 @@ Data tables of itself is called Object Database (OD) and can be changed or creat
 OD contains Object Views (OV). Views define what objects (via 'object selection') and elements (via 'element layout')
 should be displayed and how. See appropriate help sections.
 
-As it was mentioned above - each object is a set of service and user-defined elements.
-Five bult-in service elements (id, owner, datetime, version, lastversion) represent service data,
-which is set automatically while object is changed or created. Each custom user-defined
-object element (with eid1, eid2.. as a column names in database structure) is created by the user and may have some
-handlers (any script or binary) to create and manage element data, see 'handler' help section. User-defined element data
-is a JSON, that may consist of any defined properties, but some of them have special assingment:
+As it was mentioned above - each object is a set of service and user-defined elements. Five built-in service elements
+(id, owner, datetime, version, lastversion) represent service data, which is set automatically while object is changed
+or created. Each custom user-defined element is numbered (with eid1, eid2.. as a column names in database structure)
+and may have some handlers (any script or binary) to create/manage element data, see 'Handler' help section. User-defined
+element data is a JSON, that may consist of any defined properties. Some properties are reserved for the special assingment:
 - 'value' is displayed in a table cell as a main element text (max 10K chars)
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
-- 'link' is element connection list one by line, each connection is a link name and remote object and its element
-  selections,  all three divided by '|'.
+- 'link' is element connection list one by line, each connection is a link name, remote object selection and its element
+  selection, all three divided by '|'.
 - 'alert' property is reserved by the controller to send alert messages to the client side
 - 'cmd' property is reserved by the controller to identify handler command
 Other element properties are custom and used to store additional element data, see example below.
 
 Lets have a look to the simple OD example with only two elements - Name and Phone number.
-OD name will be 'Users', OV name - 'Address book', OV template - 'table', OV object selection - 
-all objects, OV element layout - default. See OD configuration help section.
+OD name will be 'Clients', OV name - 'Address book', OV template - 'table', OV object selection - empty (all objects),
+OV element layout - empty (default). See OD configuration help section.
 Additionally, first object element (Name) stores user password in a 'pass' JSON property.
 
 OV display will look like:
@@ -2140,7 +2139,7 @@ OV display will look like:
 | John | +1 555 22222 |
 +------+--------------+
 
-And internal object database structure will be:
+Internal object database structure will be:
 +----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
 | id | owner | datetime            | version | lastversion | eid1                                   | eid2                      |
 +----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
@@ -2149,7 +2148,7 @@ And internal object database structure will be:
 | 4  | root  | 1970-07-26 17:49:33 | 1       | 1           | '{"value": "John", "pass": "$6$GH.."}' | '{"value": "+1 555 222"}' |
 +----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
 
-After the 1st object (Mary) phone number change and the 2nd (John) remove the structure will be:
+After the 1st object (Mary) phone number change and the 2nd (John) delete - the structure will be:
 +----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
 | id | owner | datetime            | version | lastversion | eid1                                   | eid2                      |
 +----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
@@ -2162,26 +2161,26 @@ After the 1st object (Mary) phone number change and the 2nd (John) remove the st
 | 4  | root  | 1970-07-26 17:49:54 | 0       | 1           | ''                                     | ''                        |
 +----+-------+---------------------+---------+-------------+----------------------------------------+---------------------------+
 
-John user record after phone number change by user 'root' has version 2 value and lastversion flag set, while object version 1
-has unset lastversion flag. Note that previous object version values for non-changed user-defined elements are set to NULL,
-so John phone number next change creates object version 3 with previous object version 2 element 'eid1' value set to NULL.
-Other words - just to save some disk space non actual object versions consist of changed elements only.
+Client Mary record after phone number change by user 'root' has version 2 value and lastversion flag set, while object previous
+version 1 has unset lastversion flag. Note that previous object version values for non-changed user-defined elements are set to
+NULL, so Mary phone number next change creates object version 3 with previous object version 2 element 'eid1' set to NULL.
+Other words - just to save some disk space object versions history consists of changed elements only.
 As object versions are object data instnces - deleted objects are not removed from database, but marked by zero version only.
 All previous versions object data is available in that case, but cannot be changed at all. Considering all of this, all object
 history is transparent and available and all data is native. This is a global application conception - all functionality is
 documented and clear.
 
-Go on. Authentication and authorization are password based. Usernames and their passwords are stores in 'Users' OD.
+Go on. Application authentication is password based. Usernames and their passwords are stores in 'Users' OD.
 Initial username/password: root/root. Only one user instance can be logged in, so logged in instance automatically logs out
 another instance via other host/browser. Session lifetime is 10 hours (36000 sec).
 To add new user click context menu 'Add Object' on any 'Users' view (on default view 'All users' for example), then double 
-click just-added 'user' element to call user properties (such as password, OD add permission and group membership) dialog box.
+click just-added 'user' element to call user properties (such as password, OD add permission, group membership..) dialog box.
 User 'name' cannot be changed after creation, user password password must be min 8 chars length and contain at least one digit,
-capital and lowercase latin letter. Also user cannot change his OD add permissions and group membership to avoid all priveleges
+capital and lowercase latin letter. Also user cannot change his properties (except the password)  to avoid all priveleges
 granting by himself to himself. Note that users and groups must be all uniq, so user and group with one name 'root' is not
 allowed. Groups cannot be directly created, so any group name in a user group membership list is considered as an existing group.
-So all user/group permission lists in a Database configuration (see appropriate help section) are treated as user name list, but
-in case of non-existent username - the name is treated as a name of a group.`
+So all user/group permission lists in a Database configuration (see appropriate help section) are treated as an user name list,
+but in case of non-existent username - the name is treated as a name of a group.`
 }}},
 
 "Database Configuration": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
@@ -2189,21 +2188,21 @@ in case of non-existent username - the name is treated as a name of a group.`
 menu. Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
 Let's have a look at database configuration dialog box and its features.
 
-First is 'Database' tab. This configuration section sets up general database features (name, description, limits) and its permission.
-Database name can be changed after creation or removed (via empty name and description values set).
-Database permissions represent itself four user/group (one by line) list input text areas, one list for each configuration
-section which changes are restricted by that user/group list. Lists can be of two types,
-'allowed' type allowes changes for specified users and groups in the list and disallowed for others, thereby 'disallowed'
-type disallows changes for specified users and groups and allows for others. Be aware of empty 'allowed' lists - this setting
-'freezes' the tab, so any changes will not be allowed for any user. Also note that 'Database' section tab empty 'allowed'
-list blocks any permission changes for other database configuration sections ('Element', 'View' and 'Rule') for any user forever.
+First is 'Database' tab. This configuration section sets up general database features (name, description, limits) and its
+permissions. Database name can be changed after creation or removed (via empty name and description values set).
+Database permissions represent itself four user/group (one by line) list input text areas, one list for each configuraion
+section (tab). Lists can be of two types - 'allowed' type allowes changes for specified users and groups in the list and
+disallowed for others, thereby 'disallowed' type disallows changes for specified users and groups and allows for others.
+Be aware of empty 'allowed' lists - this setting 'freezes' the tab, so any changes will not be allowed for any user.
+Also note that 'Database' section tab empty 'allowed' list blocks any permission changes for other database configuration
+sections ('Element', 'View' and 'Rule') for any user forever.
 
 Second configuration section is 'Element'. Each object consists of builtin service elements and custom user elements.
 To add any custom element select 'New element' profile and fill at least one field - name, description or any event handler.
-So all of them in an element profile should be set empty in order to remove element. Element name is used 
-as a default element header text and specified description text is displayed as a hint on object view element header
-navigation. See 'Element layout' help section for details. Other element options are 'Element type'
-and event 'Handlers'. Unique element type sets element JSON property 'value' unuqueness among all objects in OD.
+So all of them in an element profile should be set empty in order to remove element. Element name is used  as a default
+element header text and specified description text is displayed as a hint on object view element header navigation.
+See 'Element layout' help section for details. Other element options are 'Element type' and event 'Handlers'. Unique element
+type sets element JSON property 'value' unuqueness among all objects in OD.
 For a example, first element (username) of builtin OD 'Users' defined as an uniq type, so duplicated names are excluded.
 Next - event handlers. Handler is a command line script or binary called on specified event occur. Handlers are optional
 and defined for necessary events only. Events are occured on object processes ('INIT' event at object creation, 'CHANGE'
@@ -2211,8 +2210,8 @@ at object element data change), keyboard/mouse element push/click ('DBLCLICK', '
 handler feedback ('CONFIRM', 'CONFIRMDIALOG'). See 'Handlers' help section for details.
 
 Third configuration section - 'View'. The same way for add/delete operations is used - empty name removes the view, 'New view'
-option with any name specified creates it. View name is 64 chars max, first char '_' hides unnecessary views from user sidebar,
-so the view can be called from element handlers only (see 'Handler' help section for details).
+option with any name specified - creates it. View name is 64 chars max, first char '_' hides unnecessary views from user
+sidebar, so the view can be called from element handlers only (see 'Handler' help section for details).
 The object view (OV) of itself is a mechanism to output selective object data on specified template. Objects for the view are
 obtained from the selection process (see 'Object Selection' for details), their elements - from 'Element layout' (see
 appropriate help section for details).
@@ -2221,17 +2220,17 @@ element for all objects of the view. Scheduler field is an instructions list (on
 'run this command at this time on this date for this element id'.
 Blank lines and leading spaces and tabs are ignored. Instruction is an entry list separated by spaces with next format:
 <minute 0-59> <hour 0-23> <day of month 1-31> <month 1-12> <day of week 0-7> <element id number> <command line>
-First five entries are datetime parameters, sixth - element id number from 1 and the rest of the line is treated as a 
+First five entries are datetime parameters, sixth - element id number from 1, and the rest of the line is treated as a 
 command line to execute. Datetime parameters may be set to asterisk (*), which always stands for 'first-last'. Ranges of numbers
 are allowed. Ranges are two numbers separated with a hyphen. The specified range is inclusive. For example, 8-11 for an 'hours'
 entry specifies execution at hours 8, 9, 10 and 11. Lists are allowed. A list is a set of numbers (or ranges) separated by
 commas. Examples: '1,2,5,9', '0-4,8-12'. Step values can be used in conjunction with ranges. Following a range with '/<number>'
 specifies skips of the number's value through the range. For example, '0-3/2' can be used in the hours field to specify 0,2
 hours execution. Zero or 7 day of week values are Sunday.
-So the service tries to check all view schedules of all databases each minute. In case of datetime parameters match - the
+So the cron service tries to check all view schedules of all databases each minute. In case of datetime parameters match - the
 specified command line (handler) for specified element id is exexcuted for every object of the view. Next instruction or view
 schedule is not checked until the previous job finished. Next example clears (by setting empty value) element2 value every
-day at 3:00:
+day at 3:00 (see 'Handlers' help section for args of text.php regular handler):
 0 3 * * * 2 php text.php SET
 And at the end - two text areas at the bottom are view permissions for read/write operations. 'Disallowed list' restricts
 specified users/groups and allows others, while 'Allowed list' allows specified and restricts others.
@@ -2241,18 +2240,18 @@ analyzer and tested on all rule profiles in alphabetical order until the match i
 match is found, the action corresponding to the matching rule profile is performed. Default action is accept.
 Accept action applies changes, while reject action cancels all changes made by the operation. Rule test is a simple SQL query
 selection, so non empty result of that selection - match is found, empty result - no match. Query format:
-SELECT .. FROM 'OD' WHERE id=<object id> AND version=<version number> AND <(pre|post)-processing rule>
-Version number defines object instance version before (for pre-processing rule) and after (for post-processing rule) operation.
-Also both rules may contain a parameter :user, that is replaced with the actual username (initiated the operation) in the query
-string. Note that pre-processing rule for 'add object' operation is ignored - no object before operation, so nothing to check.
-Empty or error rules are match case, but error rule displays error message instead of a rule message.
+SELECT .. FROM 'OD' WHERE id=<object id> AND <(pre|post)-processing rule>
+So object instance before operation is tested on pre-processing and instance after operation is tested on post-processing rule
+after operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated the
+operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no object before operation,
+so nothing to check. Empty or error rules are match case, but error rule displays error message instead of a rule message.
 Simple example: pre-processing rule "JSON_EXTRACT(eid1, '$.value')='root'" with the action 'reject' and rule apply operation
-'delete object' prevents root user removal. Example query will look like:
+'delete object' in OD 'Users' prevents root user removal. Example query will look like:
 SELECT .. FROM data_1 WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'
 The query above is successfull, so perfomed action ('reject') disallowes user removal.
 Next example with both rules empty and reject action for all operations freezes the database, so all changes are rejected.
 Another example: first profile with action accept preprocessing rule "owner=':user'" and second profile reject
-action with both empty rules - allowes to change self-created objects only.`
+action with both empty rules - allows to change self-created objects only.`
 }}},
 
 "Object Selection": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
@@ -2261,10 +2260,10 @@ object structure stored in database to select required objects effectively. Each
 - id. Object identificator.
 - lastversion. Boolean value 0 or 1 indicates whether it is last object version or not. See 'version' field.
 - version. Indicates object version number started from '1', that is assinged to just created new objects.
-  After object any change, controller creates a new database record with the changed object copy, increments its version 
-  and set lastversion flag to 1. This mechanism allows to store every object version, so user can trace object data changing 
+  After object any change, controller creates a new database record with the changed object copy, increments its version
+  and set lastversion flag to 1. This mechanism allows to store every object version, so user can trace object data changing
   and find out when, how and who object was changed by. Deleted objects are marked by zero version and lastversion flag set.
-- owner. The user this object version was created by.
+- owner. The user this object version (object instance) was created by.
 - datetime. Date and time this object version was created at.
 - eid<element id>. JSON type element data. 
 
@@ -2275,16 +2274,18 @@ Default object selection (empty string) selects all relevant (lastversion=1) and
 selection string 'WHERE lastversion=1 AND version!=0' is applied and result query is:
 'SELECT .. FROM data_<OD id> WHERE lastversion=1 AND version!=0'
 
-This format together with object structure provides effective selection of object sets via powerful SQL capabilities!
-To make object selection process more flexible user can use some parameters in object selection string. These parameters
-should start from char ':' and finish with space, single or double qoutes, backslash or another ':'. Parsed parameter
-name is set as a question (with chars '_' replaced with spaces) in client side dialog box at the object view call open.
-Parameter name :user is reserved and replaced with the username the specified view is called by.
+This format together with object structure provides native and effective selection of object sets via powerful SQL
+capabilities! To make object selection process more flexible user can use some parameters in object selection string. These
+parameters should start from char ':' and finish with space, single or double qoutes, backslash or another ':'. Parsed
+parameter name is set as a question (with chars '_' replaced with spaces) in client side dialog box at the object view call
+open. Parameter name :user is reserved and replaced with the username the specified view is called by.
 
 Object selection string example for 'Logs' object database:
-'WHERE lastversion=1 AND version!=0 AND JSON_EXTRACT(eid1, '$.value')=':Select_log_string_to_search'.
-The selection example displays dialog with input question 'Select log string to search' and takes input data to pass it
-to the controller to build the result query that selects all objects (log messages) with .
+WHERE lastversion=1 AND version!=0 AND JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) regexp ':Select_log_string_to_search'
+The selection example displays dialog with input question 'Select log string to search'.
+Parameter ':Select_log_string_to_search' is replaced by input string to build result query, so the controller
+selects objects (log messages) which match specified input string regular expression. Note that JSON_EXTRACT function
+extracts quoted value, so to unquote the result JSON_UNQUOTE function is used.
 
 Another object selection option is a link name. The option of itself represents one or multiple names divided
 by '|' or '/'. With that option specified the selection process takes only first selected/found object (others are
@@ -2296,38 +2297,40 @@ See 'Element layout' help section for the tree template.`
 }}},
 
 "Element layout": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`Element layout is a JSON strings list. JSON format depends on specified OV template. Let's first consider table template.
-It is is a main way to display and manage OD data and allows to format data many different ways - from classic tables
-to public chats, see examples below. Each JSON for a table template element layout defines elements and their behaviour -
-such as table cell position, style attribute, OV start event and etc.. JSON possible properties are:
+`Element layout is applied to the view (see 'View' of Database Configuration' help section). Element layout defines
+what elements should be displayed and how for the selected template. Element layout is a JSON strings list.
+JSON format depends on the selected template. Let's first consider 'Table' template - it is a main way to display and manage
+OD data that allows to format data many different ways - from classic tables to public chats, see examples below and
+'Examples' help section. Each JSON for a table template element layout defines element and its behaviour - such as
+table cell position, style attribute, event and etc.. JSON possible properties are:
 
 - 'oid'. Object id number in range from 0. Attributes (x, y, style, ..) are applied to the specified object id together
-  with element id. New object (input text data to add new objects) id is 1. Header (title) object id is 2. Database object
-  identificators starts from 3. Absent 'oid' property is treated as property with zero value. Zero 'oid' attributes are
-  applied to all objects in the selection, while specific 'oid' numbers to the specified object only.
+  with element id. New object (virtual object to input text data to add new objects) id is 1. Header (title) object id is 2.
+  Actual database object identificators starts from 3. Absent 'oid' property is treated as property with zero value. Zero 'oid'
+  attributes are applied to all objects in the selection, while specific 'oid' numbers to the specified object only.
 - 'eid'. Built-in service elements (id, version, owner, datetime, lastversion) or user defined element id number started
   from 1. Attributes (x, y, style, ..) are applied to the specified element id together with object id. Absent 'eid' property
-  is treated as property with zero value. Zero 'eid' attributes are applied to all elememnts of defined object - for zero
+  is treated as property with zero value. Zero 'eid' attributes are applied to all elememnts of the object id 'oid' - for zero
   'oid' allowed properties are 'style' (css style attribute for <td> cell with no object element placed in) and table (css
-  attributes for <table> html element), for specific 'oid' - only css style for <td> cell with specific object element.
+  attributes for <table> html element), for specific 'oid' (from 1) - only css style for <td> cell.
   See table below for 'oid'/'eid' combinations allowed properties.
 - 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions
   that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects). For a
-  example, "y": "n+1" will place first object in the selection to the second row (y=1), second object - to the  third
-  row (y=2). Note that column/row numeration starts from 0. See layout examples below. 
+  example, "y": "n+1" will place first object in the selection (n=0) to the second row (y=1), second object (n=1) - to the
+  third row (y=2). Note that column/row numeration starts from 0. See layout examples below. 
 - 'event'. Mouse double click (DBLCLICK) or key press (F2, F12, INS, DEL, KEYPRESS) event emulation after OV has been opened.
   Symbol key push event 'KEYPRESS' should be specified with the additional string to be passed to the handler as an input arg.
-  For example, "event": "KEYPRESSa" will emulate key 'a' pushed at the object view open. See 'Handler' help section for
-  details. Incorrect event value - no emulation, but cursor is set to the position specified by 'x','y' properties.
+  For example, "event": "KEYPRESSa" will emulate key 'a' pushed at the view open. See 'Handler' help section for
+  details. Incorrect event value - no emulation, but cursor is set to the position specified by 'x','y' properties anyway.
   Only first event entry is emalated, all others are ignored.
-- 'hidecol', 'hiderow'. These properties collapse (hide) table columns or rows with appropriate element 'hidecol'/'hiderow'
-  values. For example, "hiderow": "" will hide all empty table rows.
-- 'style'. HTML css style attribute (see appropriate css documentaion) for <td> tag the specified object element is placed in.
+- 'hidecol'/'hiderow'. These properties collapse (hide) table columns/rows with appropriate element 'hidecol'/'hiderow'
+  value. For example, "hiderow": "" will hide all table rows containing empty ("") value.
+- 'style'. HTML css style attribute (see appropriate css documentation) for <td> tag the specified object element is placed in.
   Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.
   Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).
-- 'table'. JSON HTML css attributes for tag <table> with attribute names as properties, for zero 'oid' and 'eid' only.
+- 'table'. JSON HTML css attributes for tag <table> with attribute names as properties (for zero 'oid' and 'eid' only).
 - 'value'. Table cell element main text. For new/title objects only.
-- 'hint'. Table cell element hint, displayed as a hint on a table cell cursor navigation. For new/title objects only.
+- 'hint'. Table cell element hint displayed as a hint on a table cell cursor navigation. For new/title objects only.
 
   'oid'/'eid' combinations properties table:
   +---------+--------------------------------+----------------------------------------------+
@@ -2357,18 +2360,19 @@ Let's parse 'All logs' OV element layout of 'Logs' database:
 {"eid":"1", "oid":"2", "x":"2", "y":"0"}
 {"eid":"1", "x":"2", "y":"n+1"}
 
-First JSON defines 'id' element for title object (oid=2), it will be on the top left corner of the table (x=0, y=o).
-Second JSON defines 'id' element for database objects (oid=0) in the selection, all objects are placed to the first
-table column (y=0) and to the rows in order starting from second row (y=n+1) - first object (n=0) goes to the second
-row (y=1), second object (n=1) goes to the third row (y=2) and so on.
+First two JSONs describe 'id' service element:
+ - title object (oid=2) for 'id' element will be on the top left corner of the table (x=0, y=o).
+ - each object of the selection (oid=0) is placed to the first table column (x=0) and to the row 'n+1' (y=n+1),
+   where 'n' is object serial number in the selection: first object in the selection (n=0) goes to the second
+   row (y=0+1=1), second object in the selection goes to the 3rd row (y=1+1=2) and so on.
 Similarly for two next elements datetime and log message element #1 (eid=1), except that column ('x' coordinate)
 position for datetime is x=1 (second column) and for log message is x=2 (third column).
 
 Element layout could be set to one of predefined templates, which are converted to JSONs anyway. Possible values are:
 '' - Empty layout value selects all user-defined elements and displays them as a classic table with the title first.
-'*' - One asterisk behaves like empty value, but 'new' object is added to the table just right after 'title' object.
-'**' - Two asterisks behaves like empty value, but built-in service elements ('id', 'version', 'owner'..) are added.
-'***' - Three asterisks behaves like one asterisk, but built-in service elements ('id', 'version', 'owner'..) are added.`
+'*' - One asterisk behaves like empty value, but new object input is added to the table just right after 'title' object.
+'**' - Two asterisks behaves like empty value plus service elements ('id', 'version', 'owner', 'datetime'..) are added.
+'***' - Three asterisks behaves like one asterisk plus service elements ('id', 'version', 'owner'..) are added.`
 },
 
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head:
@@ -2450,13 +2454,13 @@ object6, element9: 'l1|10|id=7' (..)
 
 In addition to the tree template settings - view 'element layout' field defines tree node content and tree scheme direction.
 The object node content is a simple list of element titles and its values. Layout is a JSON list field generally, so first
-correct JSON is used for the template only. The JSON should contain element identificators (id,version,date,owner..1,2..)
+correct JSON is used for the template only. The JSON should contain element identificators (id, datetime, owner.. 1, 2..)
 as a JSON property names (property values are ignored) plus 'direction' tree property 'up' or 'down' (for default).
 Empty layout field - all user defined elements plus 'id' with 'down' direction are used.
 Correct empty JSON '{}' as an 'element layout' displays no content, while all error JSONs - only 'id' element.`
 }}},
 
-"Handlers": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"Handlers": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `
 Element handler is any executable script or binary called by the contoller when specified event occurs. Events occur on
 user interaction with actual objects (mouse double click or keypress), new objects add, object data change and other object
@@ -2502,26 +2506,27 @@ As it was mentioned above user events are generated after database object manipu
     CONFIRM (editable content after edit finish returns back to the controller and then to the handler to be processed)
     CONFIRMDIALOG (dialog box data after apply returns back to the controller and then to the handler to be processed)
  - new object:
-    INIT (user adds/create new object via context menu or new object input)
+    INIT (user adds/creates new object via context menu or new object input)
  - delete object:
     DELETEOBJECT (user removes the object via context menu, the only event which is not passed to the handler - controller
-		  just removes the object from DB (via zero marked version) with no any handler call)
+		  just removes the object from DB (creates new object empty instance with zero version and lastversion flag
+		  set) with no any handler call)
 
 Also there are some events generated by the controller only, they are:
-    CHANGE (after one element data is changed via SET/RESET handler commands the event 'CHANGE' occurs for other elements
-	    of the object. It is necessary for these other elements to react on any element change, so one handler changes
-	    its element data, other elements of the object receives 'CHANGE' event)
-    SCHEDULE (event is generated by system scheduler, handler command line executed for that event is retrieved from
+    CHANGE (after one element data is changed (via SET/RESET handler commands, see below) the event 'CHANGE' occurs for other
+	    elements of the object, so these other elements can react on any element change - one element handler changes
+	    its element data, others receives 'CHANGE' event)
+    SCHEDULE (event is generated by system scheduler, handler command line to execute for that event is retrieved from
 	      appropriate field in a 'View' section of Database configuration)
 
 					    HANDLER CALL.
 User events above are received from the client side by the controller and passed to the handler for the initiated element
-(or all elements) via executing specified handler command line (set in database configuration). Note, that 'INIT' client event
-(new object creation) is passed to all elements of the object, while others events - to initiated element only. 
-Handler command line is executed as it is specified in a database configuration ('Elemnt' tab) with one moment - angle
-brackets quoted arguments are parsed to be replaced by the next values:
+(or all elements) via executing specified handler command line configured in a 'Element' section of Database configuration.
+Note, that 'INIT' client event (new object creation) is passed to all elements of the object, while others events - to
+initiated element only. Handler command line is executed as it is specified, but with one moment - angle brackets quoted
+arguments are parsed to be replaced by the next values:
  - <user> is replaced by user name the specified event was initiated by. 'SCHEDULER' event is initiated by built-in 'system' user.
- - <oid> is replaced by object id the event was initiated on.
+ - <oid> is replaced by the object id the event was initiated on.
  - <event> is replaced by event name (DBLCLICK, KEYPRESS, CHANGE..) the handler is called on.
  - <title> is replaced by element title (element name in Database configuration) the event was initiated on.
  - <datetime> is replaced by date and time in format 'Y-m-d H:i:s'.
@@ -2530,13 +2535,14 @@ brackets quoted arguments are parsed to be replaced by the next values:
     {"string": "<key char>", "altkey": "",  "ctrlkey": "", "metakey": "shiftkey", "": ""}
     Property "string" is one key char, other properties do exist only in case of appropriate key pushed. Meta key for Mac OS
     is 'Cmd' key, for Window OS - 'Window' key.
+    For INS, DEL, F2, F12 data arg is the same except the "string" property is undefined.
     For INIT event data argument text content in 'new object' element table cells if exist, otherwise <data> is empty string ''.
     For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
     For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
     For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
- - <JSON> is replaced by retrieved element data and should be in next format:
+ - <JSON> is a special argument that is replaced by retrieved element data and should be in next format:
     {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
-    First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted 
+    First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
     datavase/view names ("OD"/"OV") is used. Both identificator and name omitted - current database or view is used.
     Specified view must have 'Table' template.
     Next two properties "selection" and "limit" are SQL query parts to select necessary objects which element data need to be
@@ -2545,16 +2551,24 @@ brackets quoted arguments are parsed to be replaced by the next values:
     Last two properties "element" and "prop" select element of the selected object. Omitted "element" current element (the
     event was initiated on) is used. Omitted "prop" - property "value" of element JSON data is used. Property "element"
     is exact element id (user element id number or service element name - id,owner,datetime..) or regular expression ("/../")
-    to search first match among all elements specified in database view 'Element layout'. <JSON argument> may consist of some
-    replacements - property names with first char ':'. So these properties act as another JSON argument, so its values are
-    retrieved and replaced in "element" regular expressions and "selection". It is a kind of a recursion, max recursive calls
-    number is 3. See 'Examples' help section. In case of exact element id and multiple objects selection - final result is 
-    element JSON property of all (max 256) selected objects (each of new line).
-    Therefore, 'JSON argument' selects database view objects (based on "selection" and "limit"), takes element and its property
-    (based on "element" and "prop") or searches necessary element via first match "element" regular expression and then
-    replaces <JSON argument> with the retrieved value. All properties are optional, so any JSON (even empty <{}>) is treated
-    as a correct argument to be replaced. Empty (or with unknown props) JSON is replaced by the current database view object
+    to search first match among all elements specified in database view 'Element layout'. 
+    <JSON> may consist of some additional (nested) JSONS (with property names starting from ':'), which values are retrived
+    the same way. These retrieved values then are used as a replacements in current JSON "element" regular expressions and
+    "selection" properties:
+    <{ .. "element": "/:arg/", ":arg": {..} }>
+    Max nesting levels number is 3, see 'Examples' help section for extra info.
+    In case of multiple objects as a selection result - <JSON> argument will be replaced by specified (or searched by regular
+    expression) element property of all (max 256) selected objects (each of new line).
+
+
+    Therefore, <JSON> argument selects database view objects (based on "selection" and "limit"), takes element and optionally
+    its property (based on "element" and "prop") or searches necessary element via first match "element" regular expression and then
+    replaces <JSON argument> with the retrieved value. 
+
+All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated
+    as a correct one. Empty (or with unknown properties) JSON is replaced by the current database view object
     element value.
+
 Not listed above argument cases remain untouched, but passed without angle brackets to avoid stdin/stdout redirections, so any
 single angle brackets are truncated in a result command line.
 
@@ -2694,6 +2708,35 @@ to refresh the current view.
 		 content area. Used to describe pad and/or its profiles.
     event: identificator of a button or table cell (see button/cell 'call' property) that initiated handler callback
 	   to process changed dialog data. Property is set automatically.`
+},
+element2: { line: '', style: 'font-family: monospace, sans-serif;', head: `
+Application has some regular php handlers to manage user database, customization and element data.
+Fisrt - user.php in 'User' database for the element #1. The script creates users, changes their passwords and other
+properties via dialog box on F2 or DBLCLICK element #1 event.
+Second - customization.php in 'User' database for the element #6. The script customizes user interface via css
+properties for css selectors shown as dialog box profiles.
+Last - text.php - a kind of excel cell behaviour: F2 or double click makes cell content editable, DEL clears cell
+text, CTRL|ALT|SHIFT + Enter combination (see customization 'Application' profile) applies content changes, ESC
+exits editable mode with no changes. Handler supports next commands set as a first argument:
+- SET or SETTEXT sets all input args as an element main text (element 'value' property). For a example, handler
+  command line 'php text.php SET Alex is 20 years old' will set next cell content/text: 'Alex is 20 years old'.
+- EDIT makes the handler to call client side to edit element main text (element 'value' property). Format:
+  php text.php EDIT arg
+  Cell content (element main text) is set to arg and becomes editable, omitted arg - current cell content becomes
+  editable. To set changed content as an element value with no chanhes set next handler for CONFIRM event:
+  php text.php SET <data>
+  All other arguments after 'arg' are ignored, so qoute arg text to be treated as a single one.
+- SETPROP allows to edit any element properties via dialog box, command line format:
+  php text.php SETPROP prop1 <{"prop":"prop1"}> prop2 <{"prop":"prop2"}>..
+  where 2nd arg prop1 is a first property name to edit, 3rd arg is JSON to retrieve prop1 property value and so on.
+  To save dialog data - set next handler for CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>
+  Good practice for most elements is interface to edit some service props ('link', 'hint', 'description' or 'style')
+  via dialog on INS event (for a example), so command line for the event will be:
+  php text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>
+- SELECT allows to select element value among predefined values passed to handler via next command line:
+  php text.php SELECT 'dog|wolf|cat'
+  Handler will call dialog box with select interface element with values separated via '|'.
+  To save dialog data - set next handler for CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>`
 }}},
 
 "Examples": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
@@ -2766,8 +2809,8 @@ for specified element id (2) every ten minutes. Ping utiltiy sends one icmp requ
 (JSON <{"element":"1"}>) and output 'loss' result to stdout. Non JSON handler output result is automatically converted to be
 set as an element value, so ping loss redsults will be displayed in a table every 10 minutes. 
 To check hosts on demand - set handler 'ping -c 1 <{"element":"1"}>' for 'CHANGE' event for element id2. The handler will be
-called just right after element id 1 data (host/ip) is changed.
-`},
+called just right after element id 1 data (host/ip) is changed.`
+},
 element3: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 3 - Group users list. Each user group-membership is stored in system 'Users' database (ODid=1, OVid=1) in property
@@ -2781,13 +2824,13 @@ regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:
 
 Property "selection" is a SQL 'WHERE' operator to search 1st element ("element":"1") 'value' property for default that represent
 a user name. First condition (regexp '^:group\\n') matches first line group names, second condition (regexp '\\n:group\\n')) -
-group names from the second line with the symbol LINE FEED (\\n) before. Request result is limited to 100 records.
-`},
+group names from the second line with the symbol LINE FEED (\\n) before. Request result is limited to 100 records.`
+},
 element4: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 4 - style element cell. Set next handler for event (for a example 'F12') to paint cell by red color (for *nix OS only):
-echo '{"cmd":"SET", "style":"background-color:red;"}'
-`},
+echo '{"cmd":"SET", "style":"background-color:red;"}'`
+},
 element5: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 5 - dialog box simple calculator. First create database and any view with default properties.
@@ -2880,15 +2923,15 @@ Lines 33-47. Parse table array key value.  For backspace ('<') cut last expressi
 Line 49. Empty headers ('') are not displayed before interface element, so set one space char for empty expression to be
 	 displayed before calculator table.
 
-Line 50. Pass dialog to the controller.
-`}}},
+Line 50. Pass dialog to the controller.`
+}}},
 
 "Keyboard/Mouse": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
 `  - 'Home' moves cursor to the top of a table
   - 'End' moves cursor to the bottom
   - 'PageUp' moves cursor one page down
   - 'PageDown' moves cursor one page up
-  - '<', '>', '^' (Shift+Enter), 'v' (Enter) arrow keys move cursor to appropriate direction.
+  - '<', '>', '^' (or Shift+Enter), 'v' (or Enter) arrow keys move cursor to appropriate direction.
   - '<', '>', '^', 'v' + 'ScrollLock' scrolls the page instead of cursor moving*
   - 'Enter' + [Shift|Ctrl|Alt] applies content editable changes. New-object input content apply creates new object.
   - 'ESC' cancels all changes and exit content editable mode. At any dialog box - exit with no changes.
@@ -2899,7 +2942,7 @@ Line 50. Pass dialog to the controller.
 	      'Home', 'End' set cursor to the upper/lower end of the table
 	      'c', 'INS' copies element formatted text to the clipboard
 	      'Shift+c', 'Shift+INS' copies element clear text to the clipboard
-	      'Shift+F' - regular expression search on the page
+	      'Shift+F' - regular expression search on the page*
 	      'z', 'y' - usual do/undo actions are not implemented, cos it is hard to undo element handlers action due
 			 to its unique and complicated behaviour. To see previous element value use object older
 			 versions selection feature.

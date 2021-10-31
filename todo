@@ -1,17 +1,11 @@
 --------------2021--------------------------------------------------------------
-- Look up all code, format all code (by vs code) and comment all code. some vars from let to const.
-  Help content during all code lookup
-  test dialog boxes on low resolution, check on macbook via git
-  socket incorrect data while task managers works long period of time, execute task manager for the whole night, then see result
-
-  builtin handlers help section (dodelat text.php for chat to highlight user and datetime, also style/hint/description/image edit for text.php)
-  main.js
+- main.js help object
 - virtual cells
 - Handler commands UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES
     (in case of 'image' prop set - image is displayed on the table insted of text value prop;
     don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-- Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed)
-  and think how to make this big OD faster display process
+- Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed) and think how to make this big OD faster display process
+- <view> in handler command line
 --------------------------------------------------------------------------------
 
 - Application:
@@ -74,6 +68,7 @@
   Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE, so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
 
 - Front:
+  dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
   Adaptivka after browser window size has changed dialog box has gone away
   multi cell selecting - copy (excel table), delete (removes all selected objects). Plus scroll if selected area doesnot match the main field

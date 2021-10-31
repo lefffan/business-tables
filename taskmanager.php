@@ -34,7 +34,7 @@ $sort = 'PID*'; // Default
 $cmd = 'DIALOG';
 if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) // Incoming dialog data does exist (non first task manager call)?
    {
-    foreach (json_decode($client['data']['dialog']['pad']['profile']['element2']['data'], true)['line0'] as $value) // Get table header ('line0' row) to parse column to sort on
+    foreach ($client['data']['dialog']['pad']['profile']['element2']['data']['line0'] as $value) // Get table header ('line0' row) to parse column to sort on
 	    if (!(strpos($value['value'], '*') === false)) { $sort = $value['value']; break; } // Sort on column with char '*' present
     $cmd = 'UPDATEDIALOG';
    }
@@ -43,7 +43,7 @@ if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) // I
 if (isset($pid) && array_search($pid, ['PID', 'Handler', 'Exe time', 'Initiator', 'Ip', 'Event', 'Database', 'View', 'OId', 'EId']) !== false)
 if (str_replace('*', '', $sort) === $pid) $sort[0] === '*' ? $sort = substr($sort.'*', 1) : $sort = substr('*'.$sort, 0, -1);
  else $sort = $pid.'*';
- 
+
 // Mark sort column value by '*' char
 $table['line0'][str_replace('*', '', $sort)]['value'] = $sort;
 $sort[0] === '*' ? $desc = true : $desc = false;
