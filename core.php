@@ -404,70 +404,99 @@ function CheckRule($db, &$client, $rule, $version)
  return false; // Else return false (no match)
 }
 
-function setElementSelectionIds(&$client)
+function SetLayoutProperties(&$client)
 {
- // +---------+--------------------------------+----------------------------------------------+
- // |   \ eid |                                | All elements: 	  		      	      |
- // |    \    | 0 (default for all elements)   | id,version,owner,datetime,lastversion,1,2,.. |
- // | oid \   |                                | 					      |
- // +---------+--------------------------------+----------------------------------------------+
- // | 0       | style (for undefined cell)     | x, y, style    	 		      |
- // |selection| table (attr for html table)    | event, hiderow, hidecol	 	      |
- // +---------+--------------------------------+----------------------------------------------+
- // | 1       |	style	     		       | x, y, style				      |
- // | new     | 			       | event, hiderow, hidecol, value, hint 	      |
- // +---------+--------------------------------+----------------------------------------------+
- // | 2       |	style			       | x, y, style				      |
- // | title   | 			       | event, hiderow, hidecol, value*, hint*	      |
- // +---------+--------------------------------+----------------------------------------------+
- // | 3..     |	style        		       | x, y, style 			 	      |
- // | user    | 			       | event, hiderow, hidecol		      |
- // +---------+--------------------------------+----------------------------------------------+
- // *Props are set automatically OD props if not exist
+ // +-----------+----------------------+------------------+------------------+
+ // |   \       |                      |                  |                  |
+ // |    \ oid  |                      |                  |                  |
+ // |     \     | 1|2|3..|*|expression |      empty       |      unset       |
+ // |  eid \    |                      | (eid is ignored) | (eid is ignored) |
+ // |       \   |                      |                  |                  |
+ // +-----------+----------------------+------------------+------------------+
+ // |id         |  x, y,               |                  | table attributes |
+ // |owner      |  value,              |     style        | + direction      |
+ // |datetime   |  style               | (for undefined   | or x, y, value   |
+ // |version    |  description, hint   |  object)         | if set           |
+ // |lastversion|  event,              |                  | (for virtual     |
+ // |1,2..*     |  hidecol, hiderow    |                  |  element)        |
+ // +-----------+----------------------+------------------+------------------+
 
- $props = [];
- foreach (preg_split("/\n/", $client['elementselection']) as $value)
-      if ($arr = json_decode($value, true, 3))
+ $client['layout'] = ['view' => [], 'virtual' => [], 'expression' => [], 'elements' => []];
+ $layout = &$client['layout'];
+
+ foreach (preg_split("/\n/", $client['elementselection']) as $json)
+      if (($arr = json_decode($json, true, 3)) && gettype($arr) === 'array')
 	 {
-	  cutKeys($arr, ['eid', 'oid', 'x', 'y', 'style', 'hiderow', 'hidecol', 'event', 'table', 'value', 'hint']); // Retrieve correct values only
-	  if (!isset($arr['eid'])) $arr['eid'] = '0'; // Set 'eid' key default value to zero
-	  if (!isset($arr['oid'])) $arr['oid'] = '0'; // Set 'oid' key default value to zero
-
-	  if (gettype($eid = $arr['eid']) != 'string' || gettype($oid = $arr['oid']) != 'string' || !ctype_digit($oid)) continue; // JSON eid/oid properties are not strings? Continue
-	  if (($oidnum = intval($oid)) !== 0 && $oidnum !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum < STARTOBJECTID) continue; // Object id is out of range? Continue
-	  if (array_search($eid, SERVICEELEMENTS) === false && $eid != '0' && (!ctype_digit($eid) || !isset($client['allelements'][$eid]))) continue; // JSON eid/oid properties are not numerical and not one of 'id', 'version', 'owner', 'datetime' or 'lastversion'? Continue
-
-	  if (!isset($props[$eid])) $props[$eid] = []; // Result array $props has 'eid' element undefined? Create it
-	
-	  if ($eid === '0') // First check zero element id for style and table props only. Table prop for zero object only
+	  // Check object id (oid) for unset value and unset at least one of three virtul props to assume JSON as a table attributes
+	  if (!isset($arr['oid']) && !isset($arr['x'], $arr['y'], $arr['value']))
 	     {
-	      if (isset($arr['style']) && gettype($arr['style']) === 'string') $props[$eid][$oid] = ['style' => $arr['style']];
-	      if ($oid === '0' && isset($arr['table']) && gettype($arr['table']) === 'array')
-		 isset($props[$eid][$oid]) ? $props[$eid][$oid]['table'] = $arr['table'] : $props[$eid][$oid] = ['table' => $arr['table']];
+	      if (!isset($layout['table'])) $layout['table'] = [];
+	      $layout['table'] = $arr + $layout['table'];
 	      continue;
 	     }
 
-	  // Parse x,y properties and define new and title object element text and value
-	  if (isset($arr['x'], $arr['y']) && gettype($arr['x']) === 'string' && gettype($arr['y']) === 'string') // Then check x,y correctness and set corresponded x,y,style,hidecol and hiderow
+	  // Retrieve correct values only
+	  foreach ($arr as $key => $value)
+		  if (gettype($value) !== 'string' || array_search($key, ['eid', 'oid', 'x', 'y', 'style', 'value', 'hint', 'description', 'event', 'hiderow', 'hidecol']) === false)
+		     {
+		      unset($arr[$key]);
+		     }
+		   else
+		     {
+		      if ($key === 'oid' || $key === 'x' || $key === 'y') $arr[$key] = trim($value);
+		     }
+	  if (!count($arr)) continue;
+
+	  // Check unset oid for virtual element (with x, y and value properties set)
+	  if (!isset($arr['oid']))
 	     {
-	      $props[$eid][$oid] = ['x' => $arr['x'], 'y' => $arr['y']];
-	      if ($oidnum == NEWOBJECTID)
-	         {
-		  if (isset($arr['value']) && gettype($arr['value']) === 'string') $props[$eid][$oid]['value'] = $arr['value']; else $props[$eid][$oid]['value'] = '';
-		  if (isset($arr['hint']) && gettype($arr['hint']) === 'string') $props[$eid][$oid]['hint'] = $arr['hint']; else $props[$eid][$oid]['hint'] = '';
-		 }
-	      if ($oidnum == TITLEOBJECTID)
-	         {
-		  if (isset($arr['value']) && gettype($arr['value']) === 'string') $props[$eid][$oid]['value'] = $arr['value']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['value'] = $client['allelements'][$eid]['element1']['data'] : $props[$eid][$oid]['value'] = $eid;
-		  if (isset($arr['hint']) && gettype($arr['hint']) === 'string') $props[$eid][$oid]['hint'] = $arr['hint']; else array_search($eid, SERVICEELEMENTS) === false ? $props[$eid][$oid]['hint'] = $client['allelements'][$eid]['element2']['data'] : $props[$eid][$oid]['hint'] = '';
-		 }
+	      $layout['virtual'][] = $arr;
+	      continue;
 	     }
-	  // Parse all other props
-	  foreach (['event', 'style', 'hidecol', 'hiderow'] as $v)
-		  if (isset($arr[$v]) && gettype($arr[$v]) === 'string') 
-		     isset($props[$eid][$oid]) ? $props[$eid][$oid][$v] = $arr[$v] : $props[$eid][$oid] = [$v => $arr[$v]];
+
+	  // Check oid for empty value, treated as underfined (style for cell with no any object element placed in)
+	  if (($oid = $arr['oid']) === '')
+	     {
+	      if (!isset($layout['undefined']) && isset($arr['style'])) $layout['undefined'] = $arr['style'];
+	      continue;
+	     }
+
+	  // Parse element id (eid)
+	  $eids = [];
+	  foreach (preg_split("/,/", $arr['eid']) as $value)
+		  {
+		   $eid = trim($value);
+		   if ($eid === '*' || array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid])) $eids[] = $eid;
+		  }
+	  if (!count($eids)) continue;
+
+	  // Check oid to be a number or asterisk
+	  if (ctype_digit($oid) || $oid === '*')
+	     {
+	      if (($oidnum = intval($oid)) > 0)
+		 {
+		  if ($oidnum !== TITLEOBJECTID || $oidnum !== NEWOBJECTID || $oidnum < STARTOBJECTID) continue;
+		  if ($oidnum === NEWOBJECTID) { if (!isset($arr['value'])) $arr['value'] = ''; if (!isset($arr['hint'])) $arr['hint'] = ''; }
+		 }
+	      foreach ($eids as $eid)
+		      {
+		       if ($oidnum === TITLEOBJECTID)
+			  {
+			   if (!isset($arr['value'])) $arr['value'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element1']['data'] : $eid;
+			   if (!isset($arr['hint'])) $arr['hint'] = $array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
+			  }
+		       if (!isset($layout['view'][$oid])) $layout['view'][$oid] = [];
+		       if (!isset($layout['view'][$oid][$eid])) $layout['view'][$oid][$eid] = [];
+		       $layout['view'][$oid][$eid] = $arr + $layout['view'][$oid][$eid];
+		       $layout['elements'][$eid] = '';
+		      }
+	      continue;
+	     }
+
+	  // Treat $oid as an expression at the end of the cycle, but check first
+	  if (preg_match("/[^nq\+\-\*\/0123456789eo\%\>\<\=\(\) ]/", $oid)) continue;
+	  $layout['expression'][] = $arr;
 	 }
- return $props;
 }
 
 function getUserId($db, $user)
@@ -704,7 +733,7 @@ function GenerateRandomString($length = USERPASSMINLENGTH)
  $len = strlen($permittedchars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
  $randomstring = '';
  for ($i = 0; $i < $length; $i++) $randomstring .= $permittedchars[mt_rand(0, $len - 1)];
- 
+
  return $randomstring;
 }
 
@@ -722,7 +751,7 @@ function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
 
  // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
  while  (++$i <= $len)
-     // Parameter delimiter char  "'", '"', ':', ' ' detected
+     // Parameter delimiter char (single/double quote, colon or space) detected
      if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ' || $objectSelection[$i] === '\\')
 	{
 	 if (isset($newparam))
@@ -868,7 +897,7 @@ function Check($db, $flags, &$client, &$output)
 		 {
 		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
 		  if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
-		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "0", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
+		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "*", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
 		  $x++;
 		 }
 	}
@@ -922,7 +951,8 @@ function Check($db, $flags, &$client, &$output)
     {
      if (!isset($client['eId'])) $client['eId'] = 0;
      // Check eid element selection existence
-     if (!isset(setElementSelectionIds($client)[strval($client['eId'])]) && ($output['alert'] = "Please refresh Object View, specified element id doesn't exist!")) return;
+     SetLayoutProperties($client);
+     if (!isset($client['layout']['elements'][strval($client['eId'])]) && ($output['alert'] = "Please refresh Object View, specified element id doesn't exist!")) return;
     }
 
  if ($flags & CHECK_ACCESS)

@@ -1,13 +1,18 @@
 --------------2021--------------------------------------------------------------
-- main.js help object
-- virtual cells
+layout:
+    core.php - fill virtual values
+    core.php - default layouts: *,id,version..1..5 (the leading space - new object input is displayed)
+    table direction 90 180 or 270 degree
+    expression oids in main.js till the 1st match
+    optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
+    x,y expressions with o,e,q,n vars
+    main.js help
+    Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed) and think how to make this big OD faster display process
+
 - Handler commands UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES
     (in case of 'image' prop set - image is displayed on the table insted of text value prop;
     don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-- Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed) and think how to make this big OD faster display process
-- <view> in handler command line
 --------------------------------------------------------------------------------
-
 - Application:
   Change favicon -> tabels
   Version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
@@ -32,10 +37,7 @@
   Object selection is a SQL queries list:
     for table view - all queries unioned (or exluded?) to one selection
     for tree view - scheme link betweens two objects (1st from 1st selection, 2nd - from second).
-  Element layout (don't forget service elements hints for them) like !#+(0-9, id, owner, version..) and round cell x,y coordinates to whole number with an '%' in the expression string
-    chetnie row(y coordinate)/object(oid) mark dark background: props[0][*/2]['style'] = dark background
-    Element layout when elements are selected not by exact numbers, but by regular expr that defines that numbers or titles
-    Tree element layout:
+  Tree element layout:
 	hint (based on eid)
 	style (for example to see what nodes are down by seeing them via red background)
 	callOV/link-in-a-new-tab by mouse double click
@@ -48,6 +50,7 @@
     and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
   At the end of app stable version make new customization
+  <OD>, <OV>, <ODid>, <OVid> in handler command line
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
@@ -93,10 +96,13 @@
 		content scrolling with pads stay on the top (now pad area is scrolled with the content)
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
-  when button is pushed no dialog refreshed, when pushed button is pushed and mouse cursir is out of button - make button released
+  when button is pushed no dialog refreshed
+    when pushed button is pushed and mouse cursir is out of button - make button released
+    at dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
   Make handler intput lines longer, and Handler for 'INIT' event replace by 'INIT' event
-  Dialog boxes moving via mouse cursor!!
-  Outline, shadow per view in eid=0,oid=0 table style property (for example in chats just not to outline input area)
+  Scrolling area selection
+    element.scrollTop = element.scrollHeight
+    var objDiv = document.getElementById("your_div"); objDiv.scrollTop = objDiv.scrollHeight;
 
 - Controller:
   prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
@@ -112,7 +118,6 @@
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
   OV/OD name/id, datetime as input arg for the handler
   Non local server (cloud) implemented handlers
-  No handler output - no error log message, let it be handler standart behaviour to do nothing, when no action (such as SET/RESET or etc..) needed
 
 - Some systems emulation:
   Corp chat
@@ -155,7 +160,7 @@
   Open OV in new tab in a read-only mode just by coping inner html of main div
   Max object version stored in DB, possible options: no property at all, cut older version to fit the max versions, do not allow new versions at max versions exceeded
     (Max object versions in range 0-65535. Emtpy or undefined string - zero value)
-  tip-tap-toe and helpdesk/jira/CRM example in Help context menu
+  helpdesk/jira/CRM example in Help context menu
 ------------------------------------------------------------------------------------------
 
 
@@ -320,7 +325,13 @@ https://letsencrypt.org/ru/getting-started/
 Renew certificate:
 certbot renew --dry-run
 upd 29/08/2021: just run certbot, then sysmetctl restart nginx
-
+------------------------
+sql regexp https://dev.mysql.com/doc/refman/8.0/en/regexp.html
+-----------------------
+razbiralso s socket fragmentation gluk, full doc:
+https://datatracker.ietf.org/doc/html/rfc6455
+https://tools.ietf.org/id/draft-ietf-hybi-thewebsocketprotocol-09.html
+--------------------------
 
 user.php
 {"event":"INIT"}

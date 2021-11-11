@@ -185,16 +185,22 @@ function GetElementProperty($db, $output, &$client, $recursion)
  if ($element[0] === '/' && $element[strlen($element) - 1] === '/')
     {
      $regular = $select = '';
-     $props = setElementSelectionIds($output);
-     foreach ($props as $eid => $value)
-	     if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
-	      elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
+     SetLayoutProperties($output);
+     foreach ($output['layout']['elements'] as $eid => $value)
+	     {
+	      if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
+	       elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
+	     }
      if (!$select) return '';
      $select = substr($select, 1);
      $element = GetObjectSelection($element, $output, $client['auth']);
     }
   elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
-  elseif (ctype_digit($element) && ($props = setElementSelectionIds($output)) && isset($props[$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))";
+  elseif (ctype_digit($element)
+	 {
+	  SetLayoutProperties($output);
+	  if (isset($output['layout']['elements'][$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))";
+	 }
   elseif (!LogMessage($db, $client, $errormessage."specified element doesn't exist in a view 'element layout' or incorrect!")) return '';
 
  // Result query

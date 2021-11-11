@@ -282,13 +282,14 @@ function GetCoordinates(props, e, o, n)
  return pos;
 }
 
-function drawMain(data, props)
+function drawMain(data, layout)
 {
+ // Reset unread messages counter and clear selected area
  ResetUnreadMessages();
  delete drag.x1;
 
  // Current view refresh? Remember cursor position and editable status.
- let oldcursor;
+ let oldcursor = {};
  if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid)
     {
      oldcursor = { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) };
@@ -297,10 +298,6 @@ function drawMain(data, props)
 	 oldcursor.newobject = [];
 	 for (let eid in objectTable[NEWOBJECTID]) oldcursor.newobject[eid] = mainTable[objectTable[NEWOBJECTID][eid].y][objectTable[NEWOBJECTID][eid].x].data;
 	}
-    }
-  else
-    {
-     oldcursor = {};
     }
 
  // Init some important vars such as tables, focus element and etc..
@@ -313,6 +310,32 @@ function drawMain(data, props)
  // Get x,y coordinates (and other properties) from props elements array 
  let obj, e, warningtext, pos, cell, hiderow = [], hidecol = [];
  if (!(objectsOnThePage = data.length)) data = [{}];
+
+ // +-----------+----------------------+------------------+------------------+
+ // |   \       |                      |                  |                  |
+ // |    \ oid  |                      |                  |                  |
+ // |     \     | 1|2|3..|*|expression |      empty       |      unset       |
+ // |  eid \    |                      | (eid is ignored) | (eid is ignored) |
+ // |       \   |                      |                  |                  |
+ // +-----------+----------------------+------------------+------------------+
+ // |id         |  x, y,               |                  | table attributes |
+ // |owner      |  value,              |     style        | + direction      |
+ // |datetime   |  style               | (for undefined   | or x, y, value   |
+ // |version    |  description, hint   |  object)         | if set           |
+ // |lastversion|  event,              |                  | (for virtual     |
+ // |1,2..*     |  hidecol, hiderow    |                  |  element)        |
+ // +-----------+----------------------+------------------+------------------+
+
+ let n, q, o, e; // Expression vars
+ let obj;
+ for (n in data)
+     {
+      obj = data[n];
+      MergeProperties(layout['view'][obj.id])
+     }
+
+
+ //------------------------------------------
  for (let n in data) 	if (obj = data[n])
  for (e in props)	if (e !== '0')
      {
@@ -2556,58 +2579,54 @@ arguments are parsed to be replaced by the next values:
     the same way. These retrieved values then are used as a replacements in current JSON "element" regular expressions and
     "selection" properties:
     <{ .. "element": "/:arg/", ":arg": {..} }>
-    Max nesting levels number is 3, see 'Examples' help section for extra info.
-    In case of multiple objects as a selection result - <JSON> argument will be replaced by specified (or searched by regular
-    expression) element property of all (max 256) selected objects (each of new line).
+    Max 'nesting' levels number is 3, see 'Examples' help section for extra examples.
+    In case of multiple objects as a selection result - <JSON> argument will be replaced by property of specified element
+    or found (via regular expression) elements of all selected objects (max 256, each in a new line).
+    Therefore, <JSON> argument selects objects of the view (based on "selection" and "limit"), takes element (or elements)
+    and optionally its property (based on "element" and "prop") and then replaces <JSON argument> with the retrieved value.
 
-
-    Therefore, <JSON> argument selects database view objects (based on "selection" and "limit"), takes element and optionally
-    its property (based on "element" and "prop") or searches necessary element via first match "element" regular expression and then
-    replaces <JSON argument> with the retrieved value. 
-
-All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated
-    as a correct one. Empty (or with unknown properties) JSON is replaced by the current database view object
-    element value.
-
+All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated as a correct one. Empty (or with
+unknown properties) JSON is replaced by the current object element value.
 Not listed above argument cases remain untouched, but passed without angle brackets to avoid stdin/stdout redirections, so any
 single angle brackets are truncated in a result command line.
 
 					    HANDLER COMMAND.
-To make database changes or client side actions user handlers should return (output to stdout) some commands in JSON
-format: {"cmd": "<command>", "<prop1>": "<value1>",.., "<propN>": "<valueN>"}
+To make database changes or some client side actions - user handlers should return (output to stdout) some commands in JSON
+format:
+{"cmd": "<command>", "<prop1>": "<value1>",.., "<propN>": "<valueN>"}
 Empty output or unknown commands (see available command list below) are ignored and make no actions. Output in non-JSON
-format is automatically converted to the next command to be set as an element value (see 'SET' command description below):
-{"cmd": "SET", "value": "<handler output>"}
+format is automatically converted to the 'SET' command to be set as an element value (see 'SET' command description below):
+{"cmd": "SET", "value": "<non-JSON handler output>"}
 
 Available handler commands are:
  - 'EDIT'. Format: '{"cmd": "EDIT", "data": "<some text>"}'. The command makes the client side table cell content be editable.
    Property 'data' is optional and set as an editable content. No 'data' property - current table cell content (element value)
-   is used as an editable content. For example, 'mouse double click' calls the handler, which response is 'EDIT' command.
-   Just like in Excel :) Handler command is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
+   is used as an editable content. For example, 'mouse double click' calls the handler, which response is 'EDIT' command - 
+   just like in Excel :) Handler command 'EDIT' is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
  - 'ALERT'. Format: '{"cmd": "ALERT", "data": "<some text>"}'. The command displays client side warning dialog box with
-   <some text> as a warning/info text and 'OK' button. No 'data' property - the command is ignored. Handler command is ignored
-   for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
- - 'DIALOG'. Format: '{"cmd": "DIALOG", "data": {<JSON dialog>}}'. The command displays client side dialog box based on 
-   <JSON dialog>* format, which allows to generate 'powerful' dialog boxes with any combination of text input, text areas,
-   multiple/single select, radio-buttons, check-boxes, interface buttons.. No 'data' property - the command is ignored.
-   Handler command is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events. Dialog box in general consists of
-   title area, pad content and footer. Each pad has one or more profiles and each profile has its uniq content with specified
-   interface elements (check-boxed, radio-buttons, text areas, inputs, selections and etc..). Footer is a button area to
-   apply or cancel content changed data, see JSON dialog format below.*
+   <some text> as a warning/info text and 'OK' button. No 'data' property - the command is ignored. Handler command 'ALERT' is
+   ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
+ - 'DIALOG'. Format: '{"cmd": "DIALOG", "data": {<JSON dialog>}}'. The command displays client side dialog box based on
+   <JSON dialog> format*, which allows to generate 'powerful' dialog boxes with any combination of text input, text areas,
+   multiple/single selects, radio-buttons, check-boxes, interface buttons.. No 'data' property - the command is ignored.
+   Handler command 'DIALOG' is ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events. Dialog box in general
+   consists of title area, pad content and footer. Each pad has one or more profiles and each profile has its uniq content
+   with specified interface elements (check-boxed, radio-buttons, text areas, inputs and etc..). Footer is a button area to
+   apply or cancel content changed data, see JSON dialog format below*
  - 'CALL'. Format: '{"cmd": "CALL", "ODid": "<database id>", "OVid": "<view id>", "params": {<JSON params>}}'. The command
    calls specified by OD/OV identificators database view as if the user clicks specified view on the sidebar. It is useful
-   for some views to be called from a handler as a responce on user events (mouse or keyboard, for a example) and according
-   to specific handler behaviour. <JSON params> is a JSON formatted object selection parameters, see 'Object Selection' help
-   section for details. For a example, some object element mouse double click displays the view, which searches objects
-   matched the clicked element value, that is passed in a "params" property. Handler command is ignored for 'CHANGE', 'INIT'
-   and 'SCHEDULE' user/controller events.
+   for some views to be called from a handler as a responce on some user events (mouse or keyboard, for a example) and
+   according to the specific handler behaviour. <JSON params> is a JSON formatted object selection parameters,
+   see 'Object Selection' help section for details. For a example, some object element mouse double click displays the view,
+   which displays objects matched the clicked element value, that is passed in a "params" property. Handler command 'CALL' is
+   ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
  - 'SET'/'RESET'. Object element data set. 'SET' command updates all specified element JSON properties only. 'RESET' command
    does the same, but additionally removes all other (not specified) properties, so in case of RESET command element JSON
-   data is just replaced by handler output JSON.
+   data is just replaced by the handler output JSON.
 
 Some handlers may take long time for a execution, so to avoid any script/binary freezing or everlasting runtime - user
 can manage handler processes via 'Task Manager' (context menu). Its table columns are PID (process identificator), Handler
-(handler command line), Exe time (handler running time in sec), Initiator (user name initiated event for handler call),
+(handler command line), Exe time (handler running time in sec), Initiator (user name initiated event for the handler call),
 Ip (client ip address), Event (user event name), Database/view (database/view names), OId/Eid (object and element
 identificators) and Kill (column with buttons 'X' to kill appropriate handler process). Task manager info is refreshed
 automatically every second. Any column header mouse click (except 'Kill') sorts handler process list in ascending or
@@ -2615,16 +2634,15 @@ descending order.
 
 					    CONTROLLER COMMAND.
 Handler commands 'EDIT', 'ALERT', 'DIALOG' and 'CALL' are passed from the handler by the controller directly to the client
-with no changes. These commands are client side specific and execute client (browser) actions such as edit content, alert
+without modification. These commands are client side specific and execute client (browser) actions such as edit content, alert
 message, dialog box and specified view open/call.
-Another handler commands 'SET' and 'RESET' makes the controller to do some database operations (new object version create,
-write initiated element data from handler command, process 'CHANGE' event for other elemens of the object, check result object
-version on database rules) and then to pass object changed data to the client.
+Another handler commands 'SET' and 'RESET' makes the controller to do some database operations (new object instance (version)
+create or new object create), process 'CHANGE' event and then check result object version on database rules.
 Two user events 'INIT' (passed to the handler for all elements of the new object) and 'DELETEOBJECT' (no handler call) are
 processed by the controller (create new object and remove specified object(s) respectively), which then calls client side
 to refresh the current view.
 
-*JSON dialog structure is a nested JSONs which content 'draws' dialog box with its interface elements and specific behaviour:
+*JSON dialog structure is a nested JSONs which describe dialog box and its interface elements:
 
 { "title": "dialog box title",
   "dialog": { "pad1": { "profile1": { "element1": { "type":	"select|multiple|checkbox|radio|textarea|text|password|table",
@@ -2654,8 +2672,9 @@ to refresh the current view.
 - "title" is a dialog box text title, empty or undefined title - no box title area drawn.
 
 - "dialog" property is a dialog content of itself with pads, profiles for every pad and some interface elements for each
-  profile. Pads, profiles and elements are arbitrary. See OD structure dialog with pads and its profiles as an example.
-  Each element must have at least 'type' property to be identified, so elements with unknown type are ignored:
+  profile. Pads, profiles and elements are arbitrary. See 'Database configuration' dialog with pads and its profiles as
+  an example. Each element must have at least 'type' property to be identified, so elements with unknown type are ignored.
+  Element format:
     type: select. Dropdown list with one possible option to select
 	  multiple. Dropdown list with more than one possible options to select
 	  radio|checkbox. HTML input tag with radio or checkbox type. Selects one or multiple options respectively.
@@ -2665,93 +2684,101 @@ to refresh the current view.
 	  table. Classic table with some text data, see "data" property.
     head: title/header text that is displayed as an interface element header.
     help: hint text that is displayed on a question mark button click at the end of a header text.
-    data: initial data for interface element at dialog box initialization or changed data after dialog apply to return
-	  to the handler. For text-input element types "data" is an arbitrary text, for 'select' types - options separated
-	  by '|' with selected option marked by '+', for example: "option1|+option2|option3|". For 'table' element type
-	  'data' property is a JSON with properties as table rows. Each row property is a JSON with properties as table
-	  cells. Each cell is a JSON with three props: value (cell text), style (css style for the current html <td> tag)
-	  and call (this property set calls initiated handler with changed dialog data and flags.event set to JSON cell
-	  property name). See tic-tac-toe in a 'Examples' help section.
-    line: this property set draws dividing shadowed line at the bootom of interface element area
+    data: initial data for interface element at dialog box initialization or changed dialog data after apply to return
+	  to the handler.
+	  For text-input element types "data" is an arbitrary text,
+	  for 'select' types - options separated by '|' with selected option marked by '+' ("option1|+option2|option3|"),
+	  for 'table' element type 'data' property is a JSON with properties as table rows. Each row property is a JSON
+	       with properties as table cells. Each cell, in turn,  is a JSON with three properties:
+		    value (cell text),
+		    style (css style for the current html <td> tag) and
+		    call (this property set calls initiated handler with changed dialog data and flags.event set to JSON
+			 cell property name). See 'simple calculator' php code in a 'Examples' help section.
+    line: this property set draws dividing shadowed line at the bootom of interface element area.
     readonly: this property set makes element to be read only.
 
-- "buttons" is a JSON that describes box content apply/cancel actions. One property - one button. Each property name
-  is a button text/numerical id that is set within dialog data (in flags.event property, see flags description below)
-  to be passed back to the controller and then to the handler to identify what button was pushed. Each property value
-  is a button behaviour JSON with next properties (all are optional):
+- "buttons" is a JSON that describes box content apply/cancel actions via button list: one property - one button.
+  Button property name is button id that is passed in a flags.event property (see flags description below) from client
+  side to the handler to identify pushed button.
+  Button property value is a JSON that describes button behaviour with next properties (all are optional):
     value: button text in dialog interface.
     call: this property set makes the controller to call the handler with changed dialog data on a button click event.
-	  So the handler can process changed dialog data. Controller command 'CONFIRMDIALOG' is sent to the initiated
+	  So the handler can process changed dialog data - controller command 'CONFIRMDIALOG' is sent to the initiated
 	  handler. Buttons with non-existent 'call'/'timer' properties just remove dialog with no actions,
 	  cancel button for a example.
     timer: box content apply timer in msec, min value is 500 msec, max - 36000000 msec (10 hours).
 	   Controller command 'CONFIRMDIALOG' is sent to the initiated handler automatically after the timer has been
-	   exceeded. Useful for automatic refresh (handler call) of the dialog box content.
-    enterkey: any one line input (interface elements with 'text' or 'password' type) enter key press emulates the
-	      button (with that property set) click, so if 'enterkey' button has 'call' property the appropriate
-	      handler is called on interface element enter press. Otherwise (no 'call' property) no handler is called
-	      and dialog is removed. Only one button can have 'enterkey' prop set.
+	   exceeded. Useful for automatic refresh (ie handler call) of the dialog box content.
+    enterkey: this property set makes any one-line input interface element ('text' or 'password' type) emulate
+	      button click on enter key push. In other words: enter key push on any one-line input element "clicks" the
+	      button with 'enterkey' property set. Only one button can have 'enterkey' property set.
     interactive: this property set keeps dialog box active after button click event. For buttons with 'call' property only.
 		 No 'call' buttons click event removes dialog anyway.
-    error: message to be displayed as an error text in a 'View' area. For buttons with no 'call' property only.
+    error: message to be displayed as an error text in a 'View' main field area. For buttons with no 'call' property only.
     warning: message in warning dialog box. For buttons with no 'call' property only.
 
-- "flags" is a JSON with some properties to style dialog box:
+- "flags" is a JSON with some properties to style dialog box (all are optional):
     style: dialog box content html style attribute for the content wrapper div.
-    pad: active (current selected) dialog box pad name if exist.
-    profile: active (current selected) dialog box profile name if exist".
-    showpad: pad area selection interface with one single pad exist is hidden for default, to display it - just set
-	     "showpad" property. Also profile selection interface element is hidden for default, to display profile
-	     selection set appropriate 'profilehead' property below. Selection interfaces for multiple pads/profiles
-	     are displayed automatically.
-    profilehead: JSON to set header text (title) for specified pad (by property name), displayed at the top of the
-		 content area. Used to describe pad and/or its profiles.
-    event: identificator of a button or table cell (see button/cell 'call' property) that initiated handler callback
-	   to process changed dialog data. Property is set automatically.`
+    pad: active (current selected) dialog box pad name that is set at the dialog box open.
+    profile: active (current selected) dialog box profile name that is set at the dialog box open.
+    showpad: pad navigation bar (for one single pad exist) is hidden for default, to display it - just set this
+	     "showpad" property.
+    profilehead: JSON with pad names as a property names which values are set as a header text (title) for specified pad
+		 profile selection. Header text is displayed at the top of the pad content area above profile selection.
+		 Used to describe pad and/or its profiles and allows to display profile selection interface element with
+		 one single option (profile). In case of two or more profiles - it is displayed anyway.
+    event: dialog apply event (clicked button or table cell identificator) to pass back to the handler to process changed
+	   dialog content data. Property is set automatically.`
 },
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head: `
 Application has some regular php handlers to manage user database, customization and element data.
-Fisrt - user.php in 'User' database for the element #1. The script creates users, changes their passwords and other
-properties via dialog box on F2 or DBLCLICK element #1 event.
+Fisrt - user.php in 'User' database for the element #1. The script creates users, changes their passwords, groupt membership
+and other user properties via dialog box on F2 or DBLCLICK element #1 event. Group membership is a list of the groups (one per
+line) the user is a member of. LINE FEED char is inserted at the end of the list automatically (if necessary) for the last
+line (last group name in the list) to be correct.
+
 Second - customization.php in 'User' database for the element #6. The script customizes user interface via css
 properties for css selectors shown as dialog box profiles.
-Last - text.php - a kind of excel cell behaviour: F2 or double click makes cell content editable, DEL clears cell
-text, CTRL|ALT|SHIFT + Enter combination (see customization 'Application' profile) applies content changes, ESC
-exits editable mode with no changes. Handler supports next commands set as a first argument:
-- SET or SETTEXT sets all input args as an element main text (element 'value' property). For a example, handler
-  command line 'php text.php SET Alex is 20 years old' will set next cell content/text: 'Alex is 20 years old'.
-- EDIT makes the handler to call client side to edit element main text (element 'value' property). Format:
+
+Another one - text.php - a kind of excel cell behaviour: F2 or double click makes cell content editable, DEL clears cell
+text, CTRL|ALT|SHIFT + Enter combination (see customization 'Application' profile) applies content changes, ESC exits
+editable mode with no changes. Handler supports next commands (as a first argument):
+- SET or SETTEXT sets all input args concatenated to one string as an element main text (element 'value' property).
+  For a example, handler command line 'php text.php SET Alex is 20 years old' will set next cell content/text with no
+  spaces: 'Alexis20yearsold'. Handler 'php text.php SET "Alex is 20 years old"' will set 'Alex is 20 years old'.
+- EDIT makes controller to call client side to edit element main text (element 'value' property). Format:
   php text.php EDIT arg
   Cell content (element main text) is set to arg and becomes editable, omitted arg - current cell content becomes
-  editable. To set changed content as an element value with no chanhes set next handler for CONFIRM event:
-  php text.php SET <data>
+  editable. To apply changed content after edit - set next handler for the CONFIRM event: php text.php SET <data>
   All other arguments after 'arg' are ignored, so qoute arg text to be treated as a single one.
-- SETPROP allows to edit any element properties via dialog box, command line format:
+- SETPROP allows to edit any element property via dialog box, command line format:
   php text.php SETPROP prop1 <{"prop":"prop1"}> prop2 <{"prop":"prop2"}>..
-  where 2nd arg prop1 is a first property name to edit, 3rd arg is JSON to retrieve prop1 property value and so on.
-  To save dialog data - set next handler for CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>
+  where 2nd arg prop1 is a first property name to edit, 3rd arg is JSON to retrieve prop1 property value, similarly for
+  the prop2 (4th and 5th args) and others.
+  To save dialog data with the new property values - set next handler for the CONFIRMDIALOG event:
+  php text.php CONFIRMDIALOG <data>
   Good practice for most elements is interface to edit some service props ('link', 'hint', 'description' or 'style')
-  via dialog on INS event (for a example), so command line for the event will be:
+  via dialog on INS event (for a example), so command line for that INS event ('insert' key push) will be:
   php text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>
-- SELECT allows to select element value among predefined values passed to handler via next command line:
-  php text.php SELECT 'dog|wolf|cat'
-  Handler will call dialog box with select interface element with values separated via '|'.
-  To save dialog data - set next handler for CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>`
+- SELECT allows to select one element value among predefined values separated via '|' in one arg passed to handler :
+  php text.php SELECT 'value1|value2|value3..'
+  Handler will call dialog box with select interface element with specified options value1, value, value3..
+  To save dialog data - set next handler for the CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>`
 }}},
 
 "Examples": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `Example 1 - simple corporate chat.
 First step - create database and 'Table' templated view.
-Second - all database actual objects (user messages) should be selected (default behaviour), so 'Object selection' should be empty.
+Second - all database actual objects (user messages) should be selected (default behaviour), so leave 'Object selection' empty.
 Third - 'Element layout' should display messages in descending order with old messages on the top and new object (new message input)
 on the bottom, plus some cell spacing and cell highlighting. Input three JSONs in element layout field:
 {"table": {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}}
-{"eid":"1", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
+{"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
 {"eid":"1", "oid":"1", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
 
-First JSON is for zero object (oid) and element (eid) ids. Absent (zero) oid and eid describes html table attributes and undefined
-cell css style. Our case property "table" is an attribute list for <table> tag: width value set is a necessary condition to set
-table cells width in pixels (in <td> tag). Border-collapse separate set allows cell spacing of 15 pixels between chat messages.
+First JSON is for zero object/element (oid/eid) identificators. They describe html table attributes and undefined cell css style.
+Property "table" is an attribute list for <table> tag: width value set is a necessary condition to set table cells width in pixels
+(in <td> tag). Border-collapse separate set allows cell spacing of 15 pixels between chat messages.
 Second JSON describes all chat messages (all objects in object selection [oid=0] for element id 1 [eid=1]). All these cells are
 styled via 'style' property with left text align, rounded border (5px) and light grey background color (#DDD). Object element
 horizontal position is 'x=0' (first column) and vertical is 'n' - sequence number in a selection - first object (first message)
@@ -2759,8 +2786,9 @@ is placed in a fist row (n=0), second object in a second row (n=1) and so on. Va
 so 'input' object (third JSON for a new message input [oid=1]) goes to row number 'q'. For example - ten chat messages layout
 is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input.
 
-Next step - to be able to create chat messages object element should be created in a 'Element' tab of database configuration.
-Just for 'INIT' event (add new object) only. Enter next handler command line for that event:
+Next step - chat database consists of one user-defined element (for chat messages), so create it in a 'Element' tab of
+'Database configuration' dialog - just enter next handler command line (to fit the page some input args are moved to a new line)
+for INIT event to process new chat messages:
 php text.php SETTEXT
 <span><</span>span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">
 <user>@
@@ -2776,26 +2804,27 @@ to one string. As it was mentioned in a 'Handler' help section - every angle bra
 strings such as <user> (our case), <datetime>, <data>  and others. String <user> is replaced by the username the handler is called
 from, in our chat context - the user the message is posted by. Next arg is user first (last) name as it is in OD 'Users' (ODid=1)
 and OV 'All users' (OVid=1). This arg is retrieved via JSON that searches user object ("selection" property) and takes its second 
-element ("element" property). Retrieved construction (user@firstname) is styled by <span> tag: deep blue color (RGB(44,72,131)
-and bold font. After user@firstname - space (' ') and light grey color styled datetime (<datetime>) on the same line.
+element ("element" property) - first/last name. Retrieved construction (user@firstname) is styled by <span> tag: deep blue color
+(RGB(44,72,131) and bold font. After user@firstname - single space (' ') and light grey color styled datetime (<datetime>).
 Then - user chat message text of itself (<data>) on the next line (<br>).
 
-Last step - to block empty messages and/or already posted messages removal create two rules. First create rule profile for
-'Delete object' operation with 'reject' action and  both empty pre- and post- processing rules (empty rule is a match case),
-so any delete operation will be blocked. To allow user to delete his own messages just add preprocessing rule: owner!=':user'.
+Last step - some chat restrictions for message removal and empty messages.
+Create rule profile for 'Delete object' operation with 'reject' action and both empty pre- and post- processing rules set
+empty (note that empty rule is a match case), so any message delete operation will be blocked due to 'reject' action.
+To allow user to delete only his own messages just add preprocessing rule: owner!=':user'.
 Second rule profile is a little bit more complicated - 'Add operation' with 'reject' action and next postprocessing rule:
 JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) NOT REGEXP '\\\\n.'
-'Empty' message in our chat consists of 'user@name datetime\\n' string anyway. Non empty message matches '\\n.' regular
-expression, so no match (NOT REGEXP) of non empty message equals 'match empty'.
-Since the chat message (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))) matches empty - the rule profile blocks (rejects) the
-operation - new message post in our case.
+Empty message in our chat is 'user@name datetime\\\\n' (due to <br>), minimal non empty message - 'user@name datetime\\\\n.',
+where '.' matches any char. To identify empty messages - match all except '\\\\n.', in other words, message text shouldn't match
+regular expression (NOT REGEXP) string '\\\\n.'. Since the chat message (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))) matches
+empty message - the rule profile blocks (rejects) the operation (new message post in our case).
 
 That's all. As a result we have a nice chat with no much efforts for customization!`},
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 2 - host alive diagnostic.
 Create database with two elements - one for host names or ip addresses, second for ping result of appropriate hosts in 1st
-element. To input element id 1 text data (host, ip) add some handlers for 'DBLCLICK' event (edit content on double click):
+element. To input element id 1 text data (host/ip) add some handlers for 'DBLCLICK' event (edit content on double click):
 php text.php EDIT
 for 'CONFIRM' event (confirm content after edit fininshed):
 php text.php SET <data>
@@ -2807,7 +2836,7 @@ just set its name and one scheduler line: */10 * * * * 2 ping -c 1 <{"element":"
 First field (*/10) and next four asterisks makes scheduler execute specified handler (ping .. grep loss)
 for specified element id (2) every ten minutes. Ping utiltiy sends one icmp request packet (-c 1) to retrieved hostname/ip
 (JSON <{"element":"1"}>) and output 'loss' result to stdout. Non JSON handler output result is automatically converted to be
-set as an element value, so ping loss redsults will be displayed in a table every 10 minutes. 
+set as an element value, so ping loss results will be displayed in a table every 10 minutes. 
 To check hosts on demand - set handler 'ping -c 1 <{"element":"1"}>' for 'CHANGE' event for element id2. The handler will be
 called just right after element id 1 data (host/ip) is changed.`
 },
@@ -2816,22 +2845,23 @@ element3: { line: '', style: 'font-family: monospace, sans-serif;', head:
 Example 3 - Group users list. Each user group-membership is stored in system 'Users' database (ODid=1, OVid=1) in property
 'groups' of 1st element 'User' (eid1). The property consists of group names (one per line), so we have to search specified
 group name among all users and output the result.
-Use qouted JSON argument in a handler command line (see 'Handlers' help section for details) for any element to retrieve users
+
+Use qouted JSON argument in a handler command line (see 'Handlers' help section for details) for element to retrieve users
 of the group specified, for a example, in the current element value (":group": {}) or explicitly (":group": "wheel"):
-
 php text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups'))
-regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
+regexp '^:group\\\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\\\n:group\\\\n')", "limit": "100","element":"1",":group": {}}>
 
-Property "selection" is a SQL 'WHERE' operator to search 1st element ("element":"1") 'value' property for default that represent
-a user name. First condition (regexp '^:group\\n') matches first line group names, second condition (regexp '\\n:group\\n')) -
-group names from the second line with the symbol LINE FEED (\\n) before. Request result is limited to 100 records.`
+Property "selection" is a SQL 'WHERE' operator expression to select 1st element ("element":"1") 'value' property (username).
+First condition (regexp '^:group\\\\n') matches first line group names, second condition (regexp '\\\\n:group\\\\n')) -
+all other group names from the second line with the symbol LINE FEED (\\n) before. Double slash escapes single slash for the correct
+line feed char. Request result is limited to 100 records.`
 },
 element4: { line: '', style: 'font-family: monospace, sans-serif;', head: 
 `
 Example 4 - style element cell. Set next handler for event (for a example 'F12') to paint cell by red color (for *nix OS only):
 echo '{"cmd":"SET", "style":"background-color:red;"}'`
 },
-element5: { line: '', style: 'font-family: monospace, sans-serif;', head: 
+element5: { line: '', style: 'font-family: monospace, sans-serif;', head:
 `
 Example 5 - dialog box simple calculator. First create database and any view with default properties.
 Then create one element with the handler (without args) for DBLCLICK event: 'php calc.php', and for CONFIRMDIALOG event:
@@ -2912,7 +2942,7 @@ Lines 22-26. No script args exist or arg is not 'CONFIRMDIALOG'? Pass initial di
 
 Lines 27-29. First arg is 'CONFIRMDIALOG', so decode the arg to the dialog array and check correctness.
 
-Line 31. Store table user click (table array key) in $key var.
+Line 31. Store table user click (table array $calc key) in $key var.
 
 Line 32. Store clicked value in $value var.
 
@@ -2932,9 +2962,10 @@ Line 50. Pass dialog to the controller.`
   - 'PageUp' moves cursor one page down
   - 'PageDown' moves cursor one page up
   - '<', '>', '^' (or Shift+Enter), 'v' (or Enter) arrow keys move cursor to appropriate direction.
-  - '<', '>', '^', 'v' + 'ScrollLock' scrolls the page instead of cursor moving*
-  - 'Enter' + [Shift|Ctrl|Alt] applies content editable changes. New-object input content apply creates new object.
-  - 'ESC' cancels all changes and exit content editable mode. At any dialog box - exit with no changes.
+     Arrow keys with 'ScrollLock' on - scroll the page instead of cursor moving*
+  - 'Enter' + [Shift|Ctrl|Alt] applies content editable changes (depends on handler behaviour).
+     New-object input content apply creates new object.
+  - 'ESC' cancels all changes and exits content editable mode or dialog box with no changes.
   - 'INS', 'DEL', 'F2', 'F12', letters, digits , space or left button mouse double click: cursor element handler call.
   - 'CTRL' + :
 	      cursor left button click opens new browser tab with the cursor element text as url*
@@ -2944,18 +2975,18 @@ Line 50. Pass dialog to the controller.`
 	      'Shift+c', 'Shift+INS' copies element clear text to the clipboard
 	      'Shift+F' - regular expression search on the page*
 	      'z', 'y' - usual do/undo actions are not implemented, cos it is hard to undo element handlers action due
-			 to its unique and complicated behaviour. To see previous element value use object older
-			 versions selection feature.
-  - 'Mouse right button click' calls appropriate (sidebar, main field or table area) context menu.
+			 to its unique and complicated behaviour. To see previous object versions (instances) use
+			 'object selection' mechanism.
+  - 'Mouse right button' click calls appropriate (sidebar, main field or table area) context menu.
   - 'Mouse over' event on any element for some time (default 1 sec) displays appropriate hint message if exist.
   - 'Drag-and-drop' operations like mouse pointer 'excel' table cells resizing are not implemented due to multiuser
-    complicated cells width/height values change. Use element layout (see appropriate help section) features to set
-    initial width and height of a table cell. By default, table and its cells width and height are adjusted to fit
-    the content. Another drag table operation - excel like area highlighting. Selected area then can be processed
-    via appropriate context menu. One of context menu item for selected area is 'Chart'. Two or more columns width
-    area draws a piechart with an area top row as a pie names and its per-column summarized values as a percent
-    of a total amount. For pie names from the left column - selected area should be one column width. For the pie
-    persentage per-row values of the next (non-selected) column is used.
+    complicated cells width/height interactive change. Use element layout (see appropriate help section) features
+    to set initial width and height of a table cell. By default, table and its cells width and height are adjusted
+    to fit the content.
+    Another drag operation - table area selection. Selected area then can be processed to draw the chart via
+    appropriate context menu. Two or more columns width area draws a piechart with an area top row as a pie names and
+    its per-column summarized values as a percent of a total amount. To use selected area column for the pie names -
+    area should be one column width, for the pie persentage - per row values of the next (non-selected) column are used.
 
 * will be available in a future releases`
 }}},

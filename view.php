@@ -349,14 +349,18 @@ try {
 
 		      // Get element selection query string, in case of empty result return no element message as an error
 		      $elementQueryString = '';
-		      $props = setElementSelectionIds($client);
-		      foreach ($props as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
-		      if ($elementQueryString === '' && ($output['error'] = "Database '$client[OD]' Object View '$client[OV]' has no elements defined!")) break;
+		      SetLayoutProperties($client);
+		      foreach ($client['layout']['elements'] as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
+		      if ($elementQueryString === '' && !count($client['layout']['virtual']))
+			 {
+			  $output['error'] = "Database '$client[OD]' Object View '$client[OV]' layout has no elements defined!";
+			  break;
+			 }
 
 		      // Return OV refresh command to the client with object selection sql query result as a main field data
 		      $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
 		      $query->execute();
-		      $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'props' => $props, 'params' => $client['params']] + $output;
+		      $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'layout' => $client['layout'], 'params' => $client['params']] + $output;
 		      break;
 		     }
 		  $output = ['cmd' => '', 'error' => "Template '$client[viewtype]' is not supported!"];
