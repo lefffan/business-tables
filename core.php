@@ -406,14 +406,44 @@ function CheckRule($db, &$client, $rule, $version)
 
 function SetLayoutProperties(&$client)
 {
+ // +-----------+-------------------------+------------------+----------------------------+
+ // |   \       |                         |                  |                            |
+ // |    \ oid  | 1|2|4..|*|              |                  |                            |
+ // |     \     | expression (o, e, n, q) |      empty       |           unset            |
+ // |  eid \    |                         | (eid is ignored) |      (eid is ignored)      |
+ // |       \   |                         |                  |                            |
+ // +-----------+-------------------------+------------------+----------------------------+
+ // |           |                         |                  |                            |
+ // |id         |  x (o, e, n, q),        |                  | table attributes           |
+ // |owner      |  y (o, e, n, q),        |                  | and direction              |
+ // |datetime   |  [value,                | [style, hiderow] | or                         |
+ // |version    |  style,                 | (for undefined   | virtual elements:          |
+ // |lastversion|  hint,                  | cell with no any | x (n),                     |
+ // |1,2..      |  description,           | object element   | y (n),                     |
+ // |*          |  event,                 | placed in)       | value,                     |
+ // |           |  hidecol, hiderow]      |                  | [style, hint, description] |
+ // |           |                         |                  |                            |
+ // +-----------+-------------------------+------------------+----------------------------+
+
  $client['layout'] = ['elements' => [], 'virtual' => [], 'undefined' => [], 'table' => []];
  $layout = &$client['layout'];
+ $order = [];
+ $e = 0;
 
  foreach (preg_split("/\n/", $client['elementselection']) as $json)
       if (($arr = json_decode($json, true, 3)) && gettype($arr) === 'array')
 	 {
-	  // Check object id (oid) for unset value and unset at least one of three virtul props to assume JSON as a table attributes
-	  if (!isset($arr['oid']) && !isset($arr['x'], $arr['y'], $arr['value']))
+	  // Check object id (oid) for unset value and unset at least one of three virtual props to assume JSON as a table attributes
+	  if (!isset($arr['oid']))
+	  if (isset($arr['x'], $arr['y'], $arr['value']))
+	     {
+	      foreach ($arr as $key => $value)
+		   if (gettype($value) !== 'string' || array_search($key, ['x', 'y', 'style', 'value', 'hint', 'description', 'event']) === false)
+		      unset($arr[$key]);
+	      $layout['virtual'][] = $arr;
+	      continue;
+	     }
+	   else
 	     {
 	      unset($arr['eid']);
 	      $layout['table'] = $arr + $layout['table'];
@@ -452,44 +482,56 @@ function SetLayoutProperties(&$client)
 	  // Parse element list in eid property if set (with '*' for all elements), otherwise continue
 	  if (!isset($arr['eid'])) continue;
 	  $eids = [];
-	  foreach (preg_split("/,/", $arr['eid']) as $value)
-		  if ($eid = trim($value))
-		  if (array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid])) $eids[] = $eid;
-		   else if ($eid === '*') foreach ($client['allelements'] as $id => $valeu) $eids[] = $id;
+	  foreach (preg_split("/,/", $arr['eid']) as $value) if ($eid = trim($value))
+		  if (array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid]))
+		     {
+		      $eids[$eid] = true;
+		      if (!isset($order[$eid])) { $order[$eid] = $e; $e++; }
+		     }
+		   else if ($eid === '*') foreach ($client['allelements'] as $id => $valeu)
+		     {
+		      $eids[$id] = true;
+		      if (!isset($order[$id])) { $order[$id] = $e; $e++; }
+		     }
 	  if (!count($eids)) continue;
 
 	  // If oid is a number - check the range and negative value, otherwise treat it as an expression and check for restricted vars
-	  if (ctype_digit($oid))
+	  $oidnum = NULL;
+	  if (ctype_digit($oid) || ($oid[0] === '-' && ctype_digit(substr($oid, 1))))
 	     {
-	      $oidnum = intval($oid);
-	      if ($oidnum !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum < STARTOBJECTID) continue;
-	      if ($oidnum === NEWOBJECTID) { if (!isset($arr['value'])) $arr['value'] = ''; if (!isset($arr['hint'])) $arr['hint'] = ''; }
+	      if (($oidnum = intval($oid)) !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum < STARTOBJECTID) continue;
 	     }
 	   else
 	     {
-	      if ($oid[0] === '-' && ctype_digit(substr($oid, 1))) continue;
 	      if ($oid !== '*' && preg_match("/[^oenq\+\-\;\&\|\!\*\/0123456789\.\%\>\<\=\(\) ]/", $oid)) continue;
-	      $oidnum = NULL;
 	     }
 
 	  // Object id (oid) is a number or asterisk, all other values - expression. Process all elements in $eids for the specified oid
-	  foreach ($eids as $eid)
+	  unset($arr['eid']);
+	  foreach ($eids as $eid => $value)
 		  {
-		   unset($arr['eid']);
-		   if (isset($oidnum) && $oidnum === TITLEOBJECTID)
+		   $src = $arr;
+		   if (!isset($layout['elements'][$eid])) $layout['elements'][$eid] = ['*' => [], 'expression' => [], 'order' => $order[$eid]];
+		   if ($oidnum === TITLEOBJECTID)
 		      {
-		       if (!isset($arr['value'])) $arr['value'] = ($pos = array_search($eid, SERVICEELEMENTS)) === false ? $client['allelements'][$eid]['element1']['data'] : SERVICEELEMENTTITLES[$pos];
-		       if (!isset($arr['hint'])) $arr['hint'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
+		       if (!isset($src['value'])) $src['value'] = ($pos = array_search($eid, SERVICEELEMENTS)) === false ? $client['allelements'][$eid]['element1']['data'] : SERVICEELEMENTTITLES[$pos];
+		       if (!isset($src['hint'])) $src['hint'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
+		       if (!isset($src['description'])) $src['description'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
 		      }
-		   if (!isset($layout['elements'][$eid])) $layout['elements'][$eid] = ['*' => [], 'expression' => []];
+		   if ($oidnum === NEWOBJECTID)
+		      {
+		       if (!isset($src['value'])) $src['value'] = '';
+		       if (!isset($src['hint'])) $src['hint'] = '';
+		       if (!isset($src['description'])) $src['description'] = '';
+		      }
 		   if ($oid === '*' || isset($oidnum))
 		      {
-		       unset($arr['oid']);
+		       unset($src['oid']);
 		       if (!isset($layout['elements'][$eid][$oid])) $layout['elements'][$eid][$oid] = [];
-		       $layout['elements'][$eid][$oid] = $arr + $layout['elements'][$eid][$oid];
+		       $layout['elements'][$eid][$oid] = $src + $layout['elements'][$eid][$oid];
 		       continue;
 		      }
-		   $layout['elements'][$eid]['expression'][] = $arr;
+		   $layout['elements'][$eid]['expression'][] = $src;
 		  }
 	 }
 }
@@ -899,17 +941,20 @@ function Check($db, $flags, &$client, &$output)
 
      if ($client['viewtype'] === 'Table')
 	{
-	 $startline = $client['elementselection'][0] === ' ' ? 'n+2' : 'n+1';
-	 foreach (preg_split("/\n/", trim($client['elementselection'])) as $line)
+	 $layout = '';
+	 foreach (preg_split("/\n/", $client['elementselection']) as $json)
 		 {
-		  if (gettype(json_decode($line, true)) === 'array') break;
-		  $layout = trim($line);
+		  if (gettype(json_decode($json, true)) === 'array')
+		     {
+		      $layout .= $json."\n";
+		      continue;
+		     }
+		  $startline = $json === ' ' ? 'n+2' : 'n+1';
 		  $elements = [];
 		  $x = 0;
-		  foreach (preg_split("/,/", $layout) as $eid)
+		  foreach (preg_split("/,/", $json) as $eid)
 			  if (($element = trim($eid)) === '*') foreach ($client['allelements'] as $id => $value) $elements[$id] = true;
 			   else if (array_search($element, SERVICEELEMENTS) !== false || isset($client['allelements'][$element])) $elements[$element] = true;
-		  $layout = '';
 		  foreach ($elements as $id => $value)
 			  {
 			   $layout .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
@@ -917,10 +962,8 @@ function Check($db, $flags, &$client, &$output)
 			   $layout .= '{"eid": "'.$id.'", "oid": "*", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
 			   $x++;
 			  }
-		  $client['elementselection'] = $layout;
-		  break;
 		 }
-
+	 $client['elementselection'] = $layout;
 	}
 
      // List is empty for a 'Tree' view? Set up default list for all elements appearance: {'title1': '', 'value1': '', 'title2': ''..} 

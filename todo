@@ -1,9 +1,9 @@
 --------------2021--------------------------------------------------------------
 layout:
-    text expression oids in main.js till the 1st match
     core.php - fill virtual values, in main.js chart event with esc back to the view
     main.js help for a new layout and virtual cells
 
+    Create new initial DB (change handlers, title and new object ids)
     Test all examples in help on a new initial DB
 
     Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed) and think how to make this big OD faster display process

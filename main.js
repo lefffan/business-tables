@@ -1,7 +1,7 @@
 /*------------------------------CONSTANTS------------------------------------*/
 const TABLE_MAX_CELLS = 200000;
-const NEWOBJECTID = 1;  
-const TITLEOBJECTID = 2;
+const TITLEOBJECTID = 1;
+const NEWOBJECTID = 2;
 const STARTOBJECTID = 3;
 const DEFAULTOBJECTSPERPAGE = 50;
 const range = document.createRange();   
@@ -22,7 +22,8 @@ let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';
 let box = selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
 let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
-let mainTable, mainTableWidth, mainTableHeight, objectTable, objectsOnThePage, paramsOV;
+let mainTable, mainTableWidth, mainTableHeight, objectTable, paramsOV;
+let objectsOnThePage, VirtualElements;
 let user = cmd = OD = OV = ODid = OVid = OVtype = '';
 let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
 let sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
@@ -229,17 +230,15 @@ function drawSidebar(data)
 
 function GetLayoutProperties(eid, o, e, n, q)
 {
- if (!o) return;
-
  const arr = { style: '' }, style = {};
  let i, expression;
 
- for (i = 0; i < eid['expression'].length; i ++)
-     {
-      try { expression = eval(eid['expression'][i]['oid']); }
-      catch { expression = false; }
-      if (expression) break;
-     }
+ if (o) for (i = 0; i < eid['expression'].length; i ++)
+    {
+     try { expression = eval(eid['expression'][i]['oid']); }
+     catch { expression = false; }
+     if (expression) break;
+    }
  if (expression) expression = eid['expression'][i];
 
  for (let j of [expression, eid['*'], eid[o]]) if (j)
@@ -269,12 +268,24 @@ function GetLayoutProperties(eid, o, e, n, q)
 
 function SetCell(arr, obj, eid, hiderow, hidecol)
 {
- const oidnum = +obj.id;
-
  // Create main table row if doesn't exist
  if (mainTable[arr.y] === undefined) mainTable[arr.y] = [];
 
- // Set cell
+ // Virtual cell
+ if (!eid)
+    {
+     mainTable[arr.y][arr.x] = { data: arr.value, attr: datacellclass + arr.style };
+     const cell = mainTable[arr.y][arr.x];
+     if (arr.hint) cell.hint = toHTMLCharsConvert(arr.hint);
+     if (arr.description) cell.description = toHTMLCharsConvert(arr.description);
+     // Calculate main table width and height
+     mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
+     mainTableHeight = Math.max(mainTableHeight, arr.y + 1);
+     return;
+    }
+
+ // Data cell
+ const oidnum = +obj.id;
  mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid };
  const cell = mainTable[arr.y][arr.x];
 
@@ -299,7 +310,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
      cell.version = obj.version;
      cell.realobject = (obj.lastversion === '1' && obj.version != '0') ? true : false;
      if (arr.hiderow !== undefined && cell.data === arr.hiderow) hiderow[arr.y] = true;
-     if (arr.hidecol !== undefined && cell.data === arr.hidecol) hidecol[arr.x] = true;
+     if (hidecol && arr.hidecol !== undefined && cell.data === arr.hidecol) hidecol[arr.x] = true;
     }
  else if (oidnum === NEWOBJECTID) cell.attr = newobjectcellclass + arr.style;
  else if (oidnum === TITLEOBJECTID) cell.attr = titlecellclass + arr.style;
@@ -316,7 +327,8 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
      cursor.cmd = arr.event;
     }
 
- return cell;
+ // Convert hint ho html chars
+ if (cell.hint) cell.hint = toHTMLCharsConvert(cell.hint);
 }
 
 function drawMain(data, layout)
@@ -347,50 +359,58 @@ function drawMain(data, layout)
  // Fill main table array based on next layout:
  // +-----------+----------------------+------------------+------------------+
  // |   \       |                      |                  |                  |
- // |    \ oid  |                      |                  |                  |
- // |     \     | 1|2|3..|*|expression |      empty       |      unset       |
- // |  eid \    |           (o,e,n,q)  | (eid is ignored) | (eid is ignored) |
+ // |    \ oid  | 1|2|4..|*|           |                  |                  |
+ // |     \     | expression           |      empty       |      unset       |
+ // |  eid \    | (o, e, n, q)         | (eid is ignored) | (eid is ignored) |
  // |       \   |                      |                  |                  |
  // +-----------+----------------------+------------------+------------------+
- // |id         |  x (o,e,n,q),        |                  | table attributes |
- // |owner      |  y (o,e,n,q),        | style            | and direction    |
- // |datetime   |  value,              | hiderow          | or               |
- // |version    |  style,              | (for             | x, y, value      |
- // |lastversion|  description, hint,  | undefined        | if set           |
- // |1,2..      |  event,              | object)          | (for virtual     |
- // |*          |  hidecol, hiderow    |                  | element)         |
+ // |id         |  x (o, e, n, q),     |                  |                  |
+ // |owner      |  y (o, e, n, q),     | style            | table attributes |
+ // |datetime   |  value,              | hiderow          | and direction    |
+ // |version    |  style,              | (for             | or               |
+ // |lastversion|  description, hint,  | undefined        | virtual elements |
+ // |1,2..      |  event,              | object)          | (x, y, value)    |
+ // |*          |  hidecol, hiderow    |                  |                  |
  // +-----------+----------------------+------------------+------------------+
  const eids = layout['elements'], hiderow = [], hidecol = [];
- let arr, e, obj, error;
- if (!(objectsOnThePage = data.length)) data = [{ id: '0' }];
- for (let n = 0; n < data.length; n++)
+ let arr, obj, error, n;
+ if (!(objectsOnThePage = data.length)) data = [{}];
+ VirtualElements = 0;
+
+ for (let eid in eids)
+ for (n = 0, obj = data[0]; n < data.length; obj = data[++n])
      {
-      obj = data[n];
-      e = 0;
-      for (let eid in eids)
-          {
-	   // New-input object (once for the 1st object of the selection when n=0)
-	   if (eids[eid][NEWOBJECTID])
-	      {
-	       arr = GetLayoutProperties(eids[eid], NEWOBJECTID, e, n, objectsOnThePage);
-	       if (typeof arr === 'string') error = arr;
-	       if (typeof arr === 'object') SetCell(arr, {id: NEWOBJECTID}, eid, hiderow, hidecol);
-	       delete eids[eid][NEWOBJECTID];
-	      }
-	   if (eids[eid][TITLEOBJECTID])
-	      {
-	       arr = GetLayoutProperties(eids[eid], TITLEOBJECTID, e, n, objectsOnThePage);
-	       if (typeof arr === 'string') error = arr;
-	       if (typeof arr === 'object') SetCell(arr, {id: TITLEOBJECTID}, eid, hiderow, hidecol);
-	       // In case of constant x,y coordinates (no 'o|e|n|q' variables in x,y) remove title object to make it used only once
-	       if (!n && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].x)) && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].y))) delete eids[eid][TITLEOBJECTID];
-	      }
-	   // Database object
-	   arr = GetLayoutProperties(eids[eid], +obj.id, e, n, objectsOnThePage);
-	   if (typeof arr === 'string') error = arr;
-	   if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol);
-	   e++;
-	  }
+      const e = eids[eid]['order'];
+      // New-input object (once for the 1st object of the selection when n=0)
+      if (eids[eid][NEWOBJECTID])
+	 {
+	  arr = GetLayoutProperties(eids[eid], NEWOBJECTID, e, n, objectsOnThePage);
+	  if (typeof arr === 'string') error = arr;
+	  if (typeof arr === 'object') SetCell(arr, {id: NEWOBJECTID}, eid, hiderow, hidecol);
+	  delete eids[eid][NEWOBJECTID];
+	 }
+      // Title object
+      if (eids[eid][TITLEOBJECTID])
+	 {
+	  arr = GetLayoutProperties(eids[eid], TITLEOBJECTID, e, n, objectsOnThePage);
+	  if (typeof arr === 'string') error = arr;
+	  if (typeof arr === 'object') SetCell(arr, {id: TITLEOBJECTID}, eid, hiderow, hidecol);
+	  // In case of constant x,y coordinates (no 'o|e|n|q' variables in x,y) remove title object to make it used only once
+	  if (!n && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].x)) && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].y))) delete eids[eid][TITLEOBJECTID];
+	 }
+      // Database object
+      if (!obj.id) break;
+      arr = GetLayoutProperties(eids[eid], +obj.id, e, n, objectsOnThePage);
+      if (typeof arr === 'string') error = arr;
+      if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol);
+     }
+
+ for (let i = 0; i < layout['virtual'].length; i++, n++)
+     {
+      arr = GetLayoutProperties({ '*': layout['virtual'][i] }, undefined, undefined, n);
+      if (typeof arr === 'string') error = arr;
+      if (typeof arr === 'object') SetCell(arr, {});
+      VirtualElements++;
      }
 
  // Handle some errors
@@ -1454,25 +1474,37 @@ function CallController(data)
 	      break;
 	 case 'Description':
 	      let cell, msg = '', count = 1;
-	      if (cursor.td && mainTable[cursor.y]?.[cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId) // Cursor cell info
+	      //if (cursor.td && mainTable[cursor.y]?.[cursor.x] && (cell = mainTable[cursor.y][cursor.x]) && cell.oId) // Cursor cell info
+	      if (cursor.td) // Cursor cell info
 		 {
+		  if (mainTable[cursor.y]?.[cursor.x]) cell = mainTable[cursor.y][cursor.x];
 		  msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Cursor cell</span>\n';
-		  if (cell.oId === NEWOBJECTID && Number(cell.eId) > 0) msg += `Input new object data for element id: ${cell.eId}`;
+		  if (!cell) msg += 'Object id: undefined\nElement id: undefined';
+		   else if (cell.oId === NEWOBJECTID && Number(cell.eId) > 0) msg += `Input new object data for element id: ${cell.eId}`;
 		   else if (cell.oId === TITLEOBJECTID) msg += `Title for element id: ${cell.eId}`;
-		   else msg += `Object id: ${cell.oId}\nElement id: ${cell.eId}`;
+		   else if (cell.oId > STARTOBJECTID) msg += `Object id: ${cell.oId}\nElement id: ${cell.eId}`;
+		   else msg += `Object id: undefined\nElement id: virtual`;
 		  msg += `\nPosition 'x': ${cursor.x}\nPosition 'y': ${cursor.y}`;
 		 }
-	      if (cell && cell.oId >= STARTOBJECTID) // Object element info
+	      if (cell) // Object element info
+		 {
+		  let info = '';
+	          if (cell.version) info = '\nObject version: ' + (cell.version === '0' ? 'object has been deleted' : `${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`);
+		  if (cell.description) info += `\nElement description:\n<span style="color: #999;">${cell.description}</span>`;
+		  if (info) msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>' + info;
+		 }
+	      /*if (cell && cell.oId >= STARTOBJECTID) // Object element info
 		 {
 		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n';
 	          if (cell.version) cell.version === '0' ? msg += 'Object version: object has been deleted' : msg += `Object version: ${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`;
 		  if (cell.description) msg += `\nElement description:\n<span style="color: #999;">${cell.description}</span>`;
-		 }
+		 }*/
 	      if (true) // Database info
 		 {
 		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Database</span>\n';
 		  msg += `Object Database: ${OD}\nObject View${OV[0] === '_' ? ' (hidden from sidebar)' : ''}: ${OV} (${objectsOnThePage} objects)`;
-	          cell = '';
+		  msg += `\nVirtual elements: ${VirtualElements}`;
+		  cell = '';
 		  for (let param in paramsOV) cell += `\n  <span style="color: #999;">${count++}. ${param.substr(1).replace(/_/g, ' ')}: ${paramsOV[param]}</span>`;
 		  if (cell) msg += `\nView input parameters:${cell}`;
 		 }
@@ -2388,8 +2420,8 @@ OD data that allows to format data many different ways - from classic tables to 
 table cell position, style attribute, event and etc.. JSON possible properties are:
 
 - 'oid'. Object id number in range from 0. Attributes (x, y, style, ..) are applied to the specified object id together
-  with element id. New object (virtual object to input text data to add new objects) id is 1. Header (title) object id is 2.
-  Actual database object identificators starts from 3. Absent 'oid' property is treated as property with zero value. Zero 'oid'
+  with element id. Header (title) object id is ${TITLEOBJECTID}. New object (virtual object to input text data to add new objects) id is ${NEWOBJECTID}.
+  Actual database object identificators starts from ${STARTOBJECTID}. Absent 'oid' property is treated as property with zero value. Zero 'oid'
   attributes are applied to all objects in the selection, while specific 'oid' numbers to the specified object only.
 - 'eid'. Built-in service elements (id, version, owner, datetime, lastversion) or user defined element id number started
   from 1. Attributes (x, y, style, ..) are applied to the specified element id together with object id. Absent 'eid' property
@@ -2434,13 +2466,28 @@ table cell position, style attribute, event and etc.. JSON possible properties a
   |         |                                | event, hiderow, hidecol                      |
   +---------+--------------------------------+----------------------------------------------+
   *Properties are set automatically (value is element name, hint is element description) if not exist
+  // +-----------+----------------------+------------------+------------------+
+  // |   \       |                      |                  |                  |
+  // |    \ oid  | 1|2|4..|*|           |                  |                  |
+  // |     \     | expression           |      empty       |      unset       |
+  // |  eid \    | (o, e, n, q)         | (eid is ignored) | (eid is ignored) |
+  // |       \   |                      |                  |                  |
+  // +-----------+----------------------+------------------+------------------+
+  // |id         |  x (o, e, n, q),     |                  |                  |
+  // |owner      |  y (o, e, n, q),     | style            | table attributes |
+  // |datetime   |  value,              | hiderow          | and direction    |
+  // |version    |  style,              | (for             | or               |
+  // |lastversion|  description, hint,  | undefined        | virtual elements |
+  // |1,2..      |  event,              | object)          | (x, y, value)    |
+  // |*          |  hidecol, hiderow    |                  |                  |
+  // +-----------+----------------------+------------------+------------------+
 
 Let's parse 'All logs' OV element layout of 'Logs' database:
-{"eid":"id", "oid":"2", "x":"0", "y":"0"}
+{"eid":"id", "oid":"${TITLEOBJECTID}", "x":"0", "y":"0"}
 {"eid":"id", "x":"0", "y":"n+1"}
-{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}
+{"eid":"datetime", "oid":"${TITLEOBJECTID}", "x":"1", "y":"0"}
 {"eid":"datetime", "x":"1", "y":"n+1"}
-{"eid":"1", "oid":"2", "x":"2", "y":"0"}
+{"eid":"1", "oid":"${TITLEOBJECTID}", "x":"2", "y":"0"}
 {"eid":"1", "x":"2", "y":"n+1"}
 
 First two JSONs describe 'id' service element:
@@ -2834,7 +2881,7 @@ Third - 'Element layout' should display messages in descending order with old me
 on the bottom, plus some cell spacing and cell highlighting. Input three JSONs in element layout field:
 {"table": {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}}
 {"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
-{"eid":"1", "oid":"1", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
+{"eid":"1", "oid":"${NEWOBJECTID}", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
 
 First JSON is for zero object/element (oid/eid) identificators. They describe html table attributes and undefined cell css style.
 Property "table" is an attribute list for <table> tag: width value set is a necessary condition to set table cells width in pixels
