@@ -30,7 +30,7 @@ let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
 		  // Sidebar
-    		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
+		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
 		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
 		  "sidebar item active": { "target": ".itemactive", "background-color": "#4578BF;", "color": "#FFFFFF;", "font": "1.1em Lato, Helvetica;" },
@@ -227,59 +227,96 @@ function drawSidebar(data)
  sidebar = data;
 }
 
-function MergeStyles(...styles)
+function GetLayoutProperties(eid, o, e, n, q)
 {
- let result, object = {};
+ if (!o) return;
 
- styles.forEach((style) => {
-			    if (style && typeof style === 'string')
-			       for (let rule of style.split(';'))
-				   if ((result = (rule = rule.trim()).indexOf(':')) > 0 && rule.length > result + 1)
-				      object[rule.substr(0, result)] = rule.substr(result + 1); // Some chars before and after ':'?
-			   });
+ const arr = { style: '' }, style = {};
+ let i, expression;
 
- result = '';
- for (let rule in object) result += `${rule}: ${object[rule]}; `;
- return result;
+ for (i = 0; i < eid['expression'].length; i ++)
+     {
+      try { expression = eval(eid['expression'][i]['oid']); }
+      catch { expression = false; }
+      if (expression) break;
+     }
+ if (expression) expression = eid['expression'][i];
+
+ for (let j of [expression, eid['*'], eid[o]]) if (j)
+ for (let p in j)
+  if (p === 'style')
+     {
+      if (!j[p]) continue;
+      for (let rule of j[p].split(';'))
+       if ((i = (rule = rule.trim()).indexOf(':')) > 0 && rule.length > i + 1)
+	  style[rule.substr(0, i)] = rule.substr(i + 1); // Some chars before and after ':'?
+     }
+   else
+     {
+      arr[p] = j[p];
+     }
+
+ if (arr.x === undefined || arr.y === undefined) return;
+ try { arr.x = Math.trunc(eval(arr.x)); arr.y = Math.trunc(eval(arr.y)); }
+ catch { arr.x = undefined; }
+ if (isNaN(arr.x) || isNaN(arr.y)) return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element element layout help section`;
+ if ((Math.max(mainTableWidth, arr.x + 1) * Math.max(mainTableHeight, arr.y + 1)) > TABLE_MAX_CELLS || arr.x < 0 || arr.y < 0) return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ${TABLE_MAX_CELLS} cells`;
+
+ for (let rule in style) arr['style'] += `${rule}: ${style[rule]}; `;
+ arr['style'] = arr['style'] ? ` style="${arr.style}"` : '';
+ return arr;
 }
 
-function GetCoordinates(props, e, o, n)
+function SetCell(arr, obj, eid, hiderow, hidecol)
 {
- let oid;			// object id for current object (var o) or default object id='0'
- let pos = {};			// return result, oid is object id for current object (var o) or default object id='0'
- let q = objectsOnThePage;	// OV objects quantity. Variables n,q participate in x,y expression eval
+ const oidnum = +obj.id;
 
- // Take current object x,y (table coordiantes) props as more specific, then the default object (id=0) and return if failed. So for other props.
- if (!((props[e][(oid = o)]?.x && props[e][oid].y) || (o >= STARTOBJECTID && props[e][(oid = '0')]?.x && props[e][oid].y))) return null;
- try { pos.x = Math.trunc(eval(props[e][oid].x)); pos.y = Math.trunc(eval(props[e][oid].y)); } catch { pos = {}; }
- if (isNaN(pos.x) || isNaN(pos.y))
-    return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element element layout help section`;
- if ((Math.max(mainTableWidth, pos.x + 1) * Math.max(mainTableHeight, pos.y + 1)) > TABLE_MAX_CELLS || pos.x < 0 || pos.y < 0)
-    return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ` + TABLE_MAX_CELLS + " cells";
+ // Create main table row if doesn't exist
+ if (mainTable[arr.y] === undefined) mainTable[arr.y] = [];
 
- // Get hidecol, hiderow and style props
- if (props[e][(oid = o)]?.hidecol != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.hidecol != undefined)) pos.hidecol = props[e][oid].hidecol;
- if (props[e][(oid = o)]?.hiderow != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.hiderow != undefined)) pos.hiderow = props[e][oid].hiderow;
- props[0] ? pos.style = MergeStyles(props[0][o]) : pos.style = '';
- if (props[e][(oid = o)]?.style != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.style != undefined)) pos.style = MergeStyles(pos.style, props[e][oid].style);
+ // Set cell
+ mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid };
+ const cell = mainTable[arr.y][arr.x];
 
- // Get event prop
- if (cmd === 'CALL' && !cursor.oId) // If OV display call (not add/remove operations that also refresh OV) and event yet is undefined
- if (props[e][(oid = o)]?.event != undefined || (o >= STARTOBJECTID && props[e][(oid = '0')]?.event != undefined))
+ // Value, hint and description are different for service and user elements
+ if (SERVICEELEMENTS.indexOf(eid) === -1)
     {
-     cursor.oId = Number(o); // Event does exist, so get its object/elemnt ids
-     cursor.eId = Number(e);
-     if (props[e][oid]['event'].substr(0, 8) === 'KEYPRESS' && (cursor.cmd = 'KEYPRESS')) cursor.data = props[e][oid]['event'].substr(8);
-      else if (['DBLCLICK', 'INS', 'DEL', 'F2', 'F12'].indexOf(props[e][oid]['event']) !== -1) cursor.cmd = props[e][oid]['event'];
+     cell.data = arr.value === undefined ? obj['eid' + eid + 'value'] : arr.value;
+     cell.hint = arr.hint === undefined ? obj['eid' + eid + 'hint'] : arr.hint;
+     cell.description = arr.description === undefined ? obj['eid' + eid + 'description'] : arr.description;
+    }
+  else
+    {
+     cell.data = arr.value === undefined ? obj[eid] : arr.value;
+     if (arr.hint) cell.hint = arr.hint;
+     if (arr.description) cell.description = arr.description;
     }
 
- // Calculate main table width and height
- mainTableWidth = Math.max(mainTableWidth, pos.x + 1);
- mainTableHeight = Math.max(mainTableHeight, pos.y + 1);
+ // Add version and realobject flag to database (not virtual, title or new-input) objects
+ if (oidnum >= STARTOBJECTID)
+    {
+     cell.attr = datacellclass + arr.style;
+     cell.version = obj.version;
+     cell.realobject = (obj.lastversion === '1' && obj.version != '0') ? true : false;
+     if (arr.hiderow !== undefined && cell.data === arr.hiderow) hiderow[arr.y] = true;
+     if (arr.hidecol !== undefined && cell.data === arr.hidecol) hidecol[arr.x] = true;
+    }
+ else if (oidnum === NEWOBJECTID) cell.attr = newobjectcellclass + arr.style;
+ else if (oidnum === TITLEOBJECTID) cell.attr = titlecellclass + arr.style;
 
- // Create main table row if exist and return
- if (mainTable[pos.y] === undefined) mainTable[pos.y] = [];
- return pos;
+ // Calculate main table width and height
+ mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
+ mainTableHeight = Math.max(mainTableHeight, arr.y + 1);
+
+ // Get start event at OV open (except add/remove operations). Using first found, others events are ignored.
+ if (arr.event !== undefined && cmd === 'CALL')
+    {
+     cursor.oId = oidnum; // Event does exist, so get its name and its object/elemnt ids
+     cursor.eId = eid;
+     cursor.cmd = arr.event;
+    }
+
+ return cell;
 }
 
 function drawMain(data, layout)
@@ -307,93 +344,111 @@ function drawMain(data, layout)
  mainTableWidth = mainTableHeight = 0;
  OVtype = 'Table';
 
- // Get x,y coordinates (and other properties) from props elements array 
- let obj, e, warningtext, pos, cell, hiderow = [], hidecol = [];
- if (!(objectsOnThePage = data.length)) data = [{}];
-
+ // Fill main table array based on next layout:
  // +-----------+----------------------+------------------+------------------+
  // |   \       |                      |                  |                  |
  // |    \ oid  |                      |                  |                  |
  // |     \     | 1|2|3..|*|expression |      empty       |      unset       |
- // |  eid \    |                      | (eid is ignored) | (eid is ignored) |
+ // |  eid \    |           (o,e,n,q)  | (eid is ignored) | (eid is ignored) |
  // |       \   |                      |                  |                  |
  // +-----------+----------------------+------------------+------------------+
- // |id         |  x, y,               |                  | table attributes |
- // |owner      |  value,              |     style        | + direction      |
- // |datetime   |  style               | (for undefined   | or x, y, value   |
- // |version    |  description, hint   |  object)         | if set           |
- // |lastversion|  event,              |                  | (for virtual     |
- // |1,2..*     |  hidecol, hiderow    |                  |  element)        |
+ // |id         |  x (o,e,n,q),        |                  | table attributes |
+ // |owner      |  y (o,e,n,q),        | style            | and direction    |
+ // |datetime   |  value,              | hiderow          | or               |
+ // |version    |  style,              | (for             | x, y, value      |
+ // |lastversion|  description, hint,  | undefined        | if set           |
+ // |1,2..      |  event,              | object)          | (for virtual     |
+ // |*          |  hidecol, hiderow    |                  | element)         |
  // +-----------+----------------------+------------------+------------------+
-
- let n, q, o, e; // Expression vars
- let obj;
- for (n in data)
+ const eids = layout['elements'], hiderow = [], hidecol = [];
+ let arr, e, obj, error;
+ if (!(objectsOnThePage = data.length)) data = [{ id: '0' }];
+ for (let n = 0; n < data.length; n++)
      {
       obj = data[n];
-      MergeProperties(layout['view'][obj.id])
-     }
-
-
- //------------------------------------------
- for (let n in data) 	if (obj = data[n])
- for (e in props)	if (e !== '0')
-     {
-      if (n === '0' && (pos = GetCoordinates(props, e, NEWOBJECTID, +n)) && (typeof pos !== 'string' || !(warningtext = pos))) // Place 'add-new-object' object only once (when n==0) for each element
-	 {
-	  mainTable[pos.y][pos.x] = { oId: NEWOBJECTID, eId: e, data: props[e][NEWOBJECTID]['value'], hint: props[e][NEWOBJECTID]['hint'], style: newobjectcellclass + (pos.style ? ` style="${pos.style}"` : '') };
-	 }
-      if (props[e][TITLEOBJECTID] && (pos = GetCoordinates(props, e, TITLEOBJECTID, +n)) && (typeof pos !== 'string' || !(warningtext = pos)))
-	 {
-	  mainTable[pos.y][pos.x] = { oId: TITLEOBJECTID, eId: e, data: props[e][TITLEOBJECTID]['value'], hint: props[e][TITLEOBJECTID]['hint'], style: titlecellclass + (pos.style ? ` style="${pos.style}"` : '') };
-	  if (n === '0' && !(/n|q/.test(props[e][TITLEOBJECTID].x)) && !(/n|q/.test(props[e][TITLEOBJECTID].y))) delete props[e][TITLEOBJECTID]; // In case of constant x,y coordinates (no 'n','q' variables) remove specified element title object prop to make it used only once
-	 }
-      if ('id' in obj && (pos = GetCoordinates(props, e, obj.id, +n)) && (typeof pos !== 'string' || !(warningtext = pos)))
-	 {
-	  mainTable[pos.y][pos.x] = { oId: +obj.id, eId: e, version: obj.version, realobject: ((obj.lastversion === '1' && obj.version != '0') ? true : false) };
-	  cell = mainTable[pos.y][pos.x];
-	  if (SERVICEELEMENTS.indexOf(e) !== -1)
-	     {
-	      cell.data = obj[e];
-	      cell.style = datacellclass + (pos.style ? ` style="${pos.style}"` : '');
-	      continue;
-	     }
-	  cell.data		= obj['eid' + e + 'value'];
-	  if (cell.data === pos.hiderow) hiderow[pos.y] = true;
-	  if (cell.data === pos.hidecol) hidecol[pos.x] = true;
-	  cell.hint		= obj['eid' + e + 'hint'];
-	  cell.description	= obj['eid' + e + 'description'];
-	  cell.style		= datacellclass + ((pos.style = MergeStyles(pos.style, obj['eid' + e + 'style'])) ? ` style="${pos.style}"` : '');
-	 }
+      e = 0;
+      for (let eid in eids)
+          {
+	   // New-input object (once for the 1st object of the selection when n=0)
+	   if (eids[eid][NEWOBJECTID])
+	      {
+	       arr = GetLayoutProperties(eids[eid], NEWOBJECTID, e, n, objectsOnThePage);
+	       if (typeof arr === 'string') error = arr;
+	       if (typeof arr === 'object') SetCell(arr, {id: NEWOBJECTID}, eid, hiderow, hidecol);
+	       delete eids[eid][NEWOBJECTID];
+	      }
+	   if (eids[eid][TITLEOBJECTID])
+	      {
+	       arr = GetLayoutProperties(eids[eid], TITLEOBJECTID, e, n, objectsOnThePage);
+	       if (typeof arr === 'string') error = arr;
+	       if (typeof arr === 'object') SetCell(arr, {id: TITLEOBJECTID}, eid, hiderow, hidecol);
+	       // In case of constant x,y coordinates (no 'o|e|n|q' variables in x,y) remove title object to make it used only once
+	       if (!n && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].x)) && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].y))) delete eids[eid][TITLEOBJECTID];
+	      }
+	   // Database object
+	   arr = GetLayoutProperties(eids[eid], +obj.id, e, n, objectsOnThePage);
+	   if (typeof arr === 'string') error = arr;
+	   if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol);
+	   e++;
+	  }
      }
 
  // Handle some errors
- if (!mainTableHeight)
+ if (!mainTableWidth)
     {
-     if (!warningtext) warningtext = `Specified view '${OV}' has no objects matched current selection!<br>Please add some objects`;
-     displayMainError(warningtext, false);
+     if (!error) error = `Specified view '${OV}' has no objects matched current layout!<br>Please change element layout to display some objects and its elements`;
+     displayMainError(error, false);
      return;
     }
- if (warningtext) warning(warningtext);
+ if (error) warning(error);
 
  // Create html table of mainTable array, props[0][0] = { style: , table: }
- const undefinedCell = '<td' + undefinedcellclass + (props[0]?.[0]?.['style'] ? `style="${props[0][0]['style']}"` : '') + '></td>';
+ layout['undefined']['style'] = layout['undefined']['style'] ? ` style="${layout['undefined']}"` : '';
+ const undefinedCell = '<td' + undefinedcellclass + layout['undefined']['style'] + '></td>';
+
+ // Rotate table on a layout['table']['direction'] property set
+ let x, y;
+ if (layout['table']['direction'] === '180')
+    {
+     const table = [];
+     for (y = 0; y < mainTableHeight; y++)
+	 if (mainTable[y]) table[mainTableHeight - 1 - y] = mainTable[y];
+     mainTable = table;
+    }
+ else if (layout['table']['direction'] === '90' || layout['table']['direction'] === '270')
+    {
+     const table = [];
+     let newx, newy;
+     for (y = 0; y < mainTableHeight; y++) if (mainTable[y])
+     for (x = 0; x < mainTableWidth; x++) if (mainTable[y][x])
+	 {
+	  newy = layout['table']['direction'] === '270' ? mainTableWidth - 1 - x : x;
+	  newx = layout['table']['direction'] === '90' ? mainTableHeight - 1 - y : y;
+	  if (!table[newy]) table[newy] = [];
+	  table[newy][newx] = mainTable[y][x];
+	 }
+     newy = mainTableWidth;
+     mainTableWidth = mainTableHeight;
+     mainTableHeight = newy;
+     mainTable = table;
+    }
 
  // Add table attributes
  let rowHTML = '<table';
- if (props[0]?.[0]?.['table']) for (let attr in props[0][0]['table']) rowHTML += ` ${attr}="${props[0][0]['table'][attr]}"`;
+ for (let attr in layout['table']) if (attr !== 'direction') rowHTML += ` ${attr}="${layout['table'][attr]}"`;
  rowHTML += '><tbody>';
 
  // Create 'undefined' html tr element row
- let x, y, disp = 0, undefinedRow = '<tr>';
+ let disp = 0, undefinedRow = '<tr>';
  for (x = 0; x < mainTableWidth - hidecol.length; x++) undefinedRow += undefinedCell;
  undefinedRow += '</tr>';
- //
- mainTableRemoveEventListeners(); // Remove previous view event listeners
+
+ // Remove previous view event listeners, set inner html content for the table view and add event listeners
+ mainTableRemoveEventListeners();
  for (y = 0; y < mainTableHeight; y++)
      {
-      if (hiderow[y + disp]) { mainTable.splice(y, 1); mainTableHeight--; y--; disp++; continue; }
-      if (!mainTable[y] && (rowHTML += undefinedRow)) continue;
+      if (hiderow[y + disp] || (!mainTable[y] && layout['table']['hiderow'] !== undefined)) { mainTable.splice(y, 1); mainTableHeight--; y--; disp++; continue; }
+      if (!mainTable[y]) { rowHTML += undefinedRow; continue; }
       rowHTML += '<tr>';
       for (x = 0; x < mainTableWidth; x++)
 	  {
@@ -401,34 +456,39 @@ function drawMain(data, layout)
 	   if (cell = mainTable[y][x])
 	      {
 	       if (cell.oId === NEWOBJECTID && oldcursor.newobject?.[cell.eId]) cell.data = oldcursor.newobject[cell.eId];
-	       rowHTML += `<td${cell.style}>${toHTMLCharsConvert(cell.data)}</td>`;
+	       rowHTML += `<td${cell.attr}>${toHTMLCharsConvert(cell.data)}</td>`;
 	       // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
-	       if ((cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID))
+	       if (cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)
 		  objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
+	       continue;
 	      }
-	    else
-	      {
-	       rowHTML += undefinedCell;
-	      }
+	   rowHTML += undefinedCell;
 	  }
       rowHTML += '</tr>';
      }
+ if (!mainTableWidth)
+    {
+     displayMainError('All table rows and columns are hidden!<br>Please change element layout to display some objects and its elements', false);
+     return;
+    }
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
  mainTableAddEventListeners(); // Add current view event listeners
  clearTimeout(loadTimerId);
 
- // Start event?
- if (cursor.oId)
+ if (cursor.oId) // Start event?
     {
+     const event = cursor.cmd;
+     cursor.cmd =  ['DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12'].indexOf(event.substr(0, 8)) !== -1 ? event.substr(0, 8) : '';
+     cursor.data = cursor.cmd === 'KEYPRESS' ? event.substr(8) : '';
      if (cursor.cmd && cursor.oId >= STARTOBJECTID && (cmd = cursor.cmd)) CallController(cursor.data);
      SetInitialCursorPosition(cursor);
     }
- // Otherwise restore cursor (if exist) position on refreshed view
- else if (oldcursor.oId)
+ else if (oldcursor.oId) // Otherwise restore cursor (if exist) position on refreshed view
     {
      SetInitialCursorPosition(oldcursor);
     }
+
  cmd = '';
 }
 
@@ -1247,7 +1307,7 @@ function FromController(json)
 	      break;
 	 case 'Table':
 	      paramsOV = input.params;
-	      drawMain(input.data, input.props);
+	      drawMain(input.data, input.layout);
 	      break;
 	 case 'Tree':
 	      DrawTree(input.tree, input.direction);

@@ -196,7 +196,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
      $element = GetObjectSelection($element, $output, $client['auth']);
     }
   elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
-  elseif (ctype_digit($element)
+  elseif (ctype_digit($element))
 	 {
 	  SetLayoutProperties($output);
 	  if (isset($output['layout']['elements'][$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))";
@@ -263,7 +263,7 @@ function GetCMD($db, &$client, $cmdline = false)
 	   }
        $newcmdline .= $add;
       }
-lg ($newcmdline);
+
  return $newcmdline;
 }
 

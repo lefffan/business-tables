@@ -406,22 +406,7 @@ function CheckRule($db, &$client, $rule, $version)
 
 function SetLayoutProperties(&$client)
 {
- // +-----------+----------------------+------------------+------------------+
- // |   \       |                      |                  |                  |
- // |    \ oid  |                      |                  |                  |
- // |     \     | 1|2|3..|*|expression |      empty       |      unset       |
- // |  eid \    |                      | (eid is ignored) | (eid is ignored) |
- // |       \   |                      |                  |                  |
- // +-----------+----------------------+------------------+------------------+
- // |id         |  x, y,               |                  | table attributes |
- // |owner      |  value,              |     style        | + direction      |
- // |datetime   |  style               | (for undefined   | or x, y, value   |
- // |version    |  description, hint   |  object)         | if set           |
- // |lastversion|  event,              |                  | (for virtual     |
- // |1,2..*     |  hidecol, hiderow    |                  |  element)        |
- // +-----------+----------------------+------------------+------------------+
-
- $client['layout'] = ['view' => [], 'virtual' => [], 'expression' => [], 'elements' => []];
+ $client['layout'] = ['elements' => [], 'virtual' => [], 'undefined' => [], 'table' => []];
  $layout = &$client['layout'];
 
  foreach (preg_split("/\n/", $client['elementselection']) as $json)
@@ -430,7 +415,7 @@ function SetLayoutProperties(&$client)
 	  // Check object id (oid) for unset value and unset at least one of three virtul props to assume JSON as a table attributes
 	  if (!isset($arr['oid']) && !isset($arr['x'], $arr['y'], $arr['value']))
 	     {
-	      if (!isset($layout['table'])) $layout['table'] = [];
+	      unset($arr['eid']);
 	      $layout['table'] = $arr + $layout['table'];
 	      continue;
 	     }
@@ -443,59 +428,69 @@ function SetLayoutProperties(&$client)
 		     }
 		   else
 		     {
-		      if ($key === 'oid' || $key === 'x' || $key === 'y') $arr[$key] = trim($value);
+		      if ($key === 'eid' || $key === 'oid' || $key === 'x' || $key === 'y' || $key === 'style') $arr[$key] = trim($value);
 		     }
 	  if (!count($arr)) continue;
 
 	  // Check unset oid for virtual element (with x, y and value properties set)
 	  if (!isset($arr['oid']))
 	     {
+	      unset($arr['eid']);
 	      $layout['virtual'][] = $arr;
 	      continue;
 	     }
 
-	  // Check oid for empty value, treated as underfined (style for cell with no any object element placed in)
+	  // Check oid for empty value treated as underfined (style for cell with no any object element placed in)
 	  if (($oid = $arr['oid']) === '')
 	     {
-	      if (!isset($layout['undefined']) && isset($arr['style'])) $layout['undefined'] = $arr['style'];
+	      if (isset($arr['style'])) $layout['undefined']['style'] = $arr['style'];
+	      if (isset($arr['hidecol'])) $layout['undefined']['hidecol'] = $arr['hidecol'];
+	      if (isset($arr['hiderow'])) $layout['undefined']['hiderow'] = $arr['hiderow'];
 	      continue;
 	     }
 
-	  // Parse element id (eid)
+	  // Parse element list in eid property if set (with '*' for all elements), otherwise continue
+	  if (!isset($arr['eid'])) continue;
 	  $eids = [];
 	  foreach (preg_split("/,/", $arr['eid']) as $value)
-		  {
-		   $eid = trim($value);
-		   if ($eid === '*' || array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid])) $eids[] = $eid;
-		  }
+		  if ($eid = trim($value))
+		  if (array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid])) $eids[] = $eid;
+		   else if ($eid === '*') foreach ($client['allelements'] as $id => $valeu) $eids[] = $id;
 	  if (!count($eids)) continue;
 
-	  // Check oid to be a number or asterisk
-	  if (ctype_digit($oid) || $oid === '*')
+	  // If oid is a number - check the range and negative value, otherwise treat it as an expression and check for restricted vars
+	  if (ctype_digit($oid))
 	     {
-	      if (($oidnum = intval($oid)) > 0)
-		 {
-		  if ($oidnum !== TITLEOBJECTID || $oidnum !== NEWOBJECTID || $oidnum < STARTOBJECTID) continue;
-		  if ($oidnum === NEWOBJECTID) { if (!isset($arr['value'])) $arr['value'] = ''; if (!isset($arr['hint'])) $arr['hint'] = ''; }
-		 }
-	      foreach ($eids as $eid)
-		      {
-		       if ($oidnum === TITLEOBJECTID)
-			  {
-			   if (!isset($arr['value'])) $arr['value'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element1']['data'] : $eid;
-			   if (!isset($arr['hint'])) $arr['hint'] = $array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
-			  }
-		       if (!isset($layout['view'][$oid])) $layout['view'][$oid] = [];
-		       if (!isset($layout['view'][$oid][$eid])) $layout['view'][$oid][$eid] = [];
-		       $layout['view'][$oid][$eid] = $arr + $layout['view'][$oid][$eid];
-		       $layout['elements'][$eid] = '';
-		      }
-	      continue;
+	      $oidnum = intval($oid);
+	      if ($oidnum !== TITLEOBJECTID && $oidnum !== NEWOBJECTID && $oidnum < STARTOBJECTID) continue;
+	      if ($oidnum === NEWOBJECTID) { if (!isset($arr['value'])) $arr['value'] = ''; if (!isset($arr['hint'])) $arr['hint'] = ''; }
+	     }
+	   else
+	     {
+	      if ($oid[0] === '-' && ctype_digit(substr($oid, 1))) continue;
+	      if ($oid !== '*' && preg_match("/[^oenq\+\-\;\&\|\!\*\/0123456789\.\%\>\<\=\(\) ]/", $oid)) continue;
+	      $oidnum = NULL;
 	     }
 
-	  // Treat $oid as an expression at the end of the cycle, but check first
-	  if (preg_match("/[^nq\+\-\*\/0123456789eo\%\>\<\=\(\) ]/", $oid)) continue;
-	  $layout['expression'][] = $arr;
+	  // Object id (oid) is a number or asterisk, all other values - expression. Process all elements in $eids for the specified oid
+	  foreach ($eids as $eid)
+		  {
+		   unset($arr['eid']);
+		   if (isset($oidnum) && $oidnum === TITLEOBJECTID)
+		      {
+		       if (!isset($arr['value'])) $arr['value'] = ($pos = array_search($eid, SERVICEELEMENTS)) === false ? $client['allelements'][$eid]['element1']['data'] : SERVICEELEMENTTITLES[$pos];
+		       if (!isset($arr['hint'])) $arr['hint'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
+		      }
+		   if (!isset($layout['elements'][$eid])) $layout['elements'][$eid] = ['*' => [], 'expression' => []];
+		   if ($oid === '*' || isset($oidnum))
+		      {
+		       unset($arr['oid']);
+		       if (!isset($layout['elements'][$eid][$oid])) $layout['elements'][$eid][$oid] = [];
+		       $layout['elements'][$eid][$oid] = $arr + $layout['elements'][$eid][$oid];
+		       continue;
+		      }
+		   $layout['elements'][$eid]['expression'][] = $arr;
+		  }
 	 }
 }
 
@@ -877,14 +872,14 @@ function Check($db, $flags, &$client, &$output)
 	      $client['viewtype'] = substr($value['element3']['data'], ($pos = strpos($value['element3']['data'], '+')) + 1, strpos($value['element3']['data'], '|', $pos) - $pos -1);
 	      $client['objectselection'] = trim($value['element4']['data']);
 	      $client['linknames'] = $value['element5']['data'];
-	      $client['elementselection'] = trim($value['element6']['data']);
+	      $client['elementselection'] = $value['element6']['data'];
 	      break;
 	     }
      if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype']) && ($output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!")) return;
 
      // List is empty or includes '*' chars for a 'Table' view?
      // Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-     if ($client['viewtype'] === 'Table')
+     if ($client['viewtype'] === 'Table ')
      if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
         {
 	 $x = 0;
@@ -900,6 +895,32 @@ function Check($db, $flags, &$client, &$output)
 		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "*", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
 		  $x++;
 		 }
+	}
+
+     if ($client['viewtype'] === 'Table')
+	{
+	 $startline = $client['elementselection'][0] === ' ' ? 'n+2' : 'n+1';
+	 foreach (preg_split("/\n/", trim($client['elementselection'])) as $line)
+		 {
+		  if (gettype(json_decode($line, true)) === 'array') break;
+		  $layout = trim($line);
+		  $elements = [];
+		  $x = 0;
+		  foreach (preg_split("/,/", $layout) as $eid)
+			  if (($element = trim($eid)) === '*') foreach ($client['allelements'] as $id => $value) $elements[$id] = true;
+			   else if (array_search($element, SERVICEELEMENTS) !== false || isset($client['allelements'][$element])) $elements[$element] = true;
+		  $layout = '';
+		  foreach ($elements as $id => $value)
+			  {
+			   $layout .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
+			   if ($startline === 'n+2') $layout.= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
+			   $layout .= '{"eid": "'.$id.'", "oid": "*", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
+			   $x++;
+			  }
+		  $client['elementselection'] = $layout;
+		  break;
+		 }
+
 	}
 
      // List is empty for a 'Tree' view? Set up default list for all elements appearance: {'title1': '', 'value1': '', 'title2': ''..} 
