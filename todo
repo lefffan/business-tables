@@ -1,36 +1,39 @@
---------------2021--------------------------------------------------------------
-layout:
-    core.php - fill virtual values, in main.js chart event with esc back to the view
-    main.js help for a new layout and virtual cells
+Layout & Files:
+    core.php - fill virtual values (full sql request in 'value' property)
+    main.js - chart event with esc back to the view
+    main.js - help for a new layout and virtual cells
 
     Create new initial DB (change handlers, title and new object ids)
     Test all examples in help on a new initial DB
 
-    Dodelat megacom MRTG emulation (test big OD display if Loading... error message is displayed) and think how to make this big OD faster display process
-	reverce cycles 'n in data' with 'eid in edis' and test perfomance
-	optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
+    Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
+    think how to make this big OD faster display process
+    reverce cycles 'n in data' with 'eid in edis' and test perfomance
+    optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 
-- Handler commands UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES
-    (in case of 'image' prop set - image is displayed on the table insted of text value prop;
+    Handler commands UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES
+    in case of 'image' prop set - image is displayed on the table insted of text value prop;
     don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
---------------------------------------------------------------------------------
-- Application:
+
+Application:
   Change favicon -> tabels
-  Version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
+  Application version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Restrict OD sidebar display for some users
   Clone object, similar to add object, but copies current menu contexted object
   in cell: text, image, stream, table?
   Export OV data to xls, pdf or txt file
-  Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
   Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
-  autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list. So what about edit after edit command, for a example wrong text to confirm and edit command called once again?
+  autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list.
+  what about edit after edit command, for a example wrong text to confirm and edit command called once again?
   Paste file or image to object element (or drag and drop to the corresponded cell)
-  should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
-  Object view PIECHART, GRAPH, LOCATION.
+    should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
+  Object view MAP.
+  Context menu Graph
   telnet, snmp and diagnostic functions
   display current DB size and object count in EDITOD
     make db size limit and object count limit work
-  System call 'OPENINANEWTAB', - System call NEWOBJECT (to create object by user handlers)
+  System call 'OPENINANEWTAB'
+  System call 'NEWOBJECT' (to create object by user handlers)
   Object selection with non-empty link type:
 	for all view types (by now it is released for tree view type only)
 	for scheduler.php and system user permissions to display/write the view
@@ -42,23 +45,24 @@ layout:
 	hint (based on eid)
 	style (for example to see what nodes are down by seeing them via red background)
 	callOV/link-in-a-new-tab by mouse double click
-    hide tree element rebuilds the tree (context menu hide)
-    Tree wire name (arrow name) to mark fiber cooper radio..
+  hide tree element rebuilds the tree (context menu hide)
+  Tree wire name (arrow name) to mark fiber cooper radio..
   Crontab element execution once immediately
   Task manager: restrict call of task manager for some users in user props
     Per user and group (!) separate OV permission to view-in-sidebar and add-edit-delete with low priority in user props
-  system user readonly customization, it is default customization to allow all other users use it in case of error
-    and solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
-  How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
+  system user readonly customization, it is default customization to allow all other users use it in case of a error
+    solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
+  How could object selection calc objects with only one free port?
+    Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
   At the end of app stable version make new customization
-  <OD>, <OV>, <ODid>, <OVid> in handler command line
+  <OD>, <OV>, <ODid>, <OVid> parse in a handler command line
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
     for php ORM Doctrine can be used
     index columns: alter table data_1 add index (`lastversion`);
     unbuffered queries and partial OV output mysql_unbuffered_query()
-  Problems of deploying - can i use mysql on commerisal base? 
+  Problems of deploying - can i use maria db on commerisal base? 
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   secure php.ini and can socket number be more than 1024?
   What time and bytes limit should be set to php script execution
@@ -69,7 +73,9 @@ layout:
   divide core.php to make separate php file to be included in wrapper.php to make wrapper execution more faster
   Exclude UNION queries all SQL requests that are user defined and generated from user input (object selection, SET command queries?, uplink node object selection, pre-post processing rules). Crackeres and fools protection.
   See how zabbix is installed to have a point of view of serious application
-  Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE, so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
+  Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE,
+    so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view
+    to be refreshed, its too slowly
 
 - Front:
   dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page
@@ -153,6 +159,7 @@ layout:
     Second stage: zabbix, CRM, corp chat, wiki
 
 - Questionable features
+  Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
   Fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
   Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
     should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration

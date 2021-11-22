@@ -113,7 +113,7 @@ $dialog  = ['title'  => 'Task Manager',
 	    'dialog' => ['pad' => ['profile' =>
 			['element1' => ['head'=>' '],
 			 'element2' => ['type' => 'table', 'head' => '', 'data' => $table]]]],
-	    'buttons'=> ['REFRESH' => ['value' => '', 'call' => 'Task Manager', 'interactive' => '', 'timer' => '1000'], 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;', 'timer_' => '1500']],
+	    'buttons'=> ['REFRESH' => ['value' => '', 'call' => 'Task Manager', 'interactive' => '', 'timer' => '1000'], 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;']],
 	    'flags'  => ['style' => 'width: 1000px; height: 500px;', 'esc' => '']];
 
 if (count($table) < 2) $dialog['dialog']['pad']['profile']['element3'] = ['head' => '                                                                                   No active tasks found..'];

@@ -27,6 +27,7 @@ let objectsOnThePage, VirtualElements;
 let user = cmd = OD = OV = ODid = OVid = OVtype = '';
 let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
 let sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
+let browse;
 let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
@@ -109,9 +110,9 @@ let uiProfile = {
 		  };
 /*---------------------------------------------------------------------------*/
 
-const style = document.createElement('style');			// Create style DOM element
-styleUI();							// Style default user inteface profile
-document.head.appendChild(style);				// Append document style tag
+const style = document.createElement('style');	// Create style DOM element
+styleUI();					// Style default user inteface profile
+document.head.appendChild(style);		// Append document style tag
 
 window.onload = function()
 {
@@ -135,7 +136,7 @@ window.onload = function()
  contextmenuDiv.addEventListener('mouseover', event => { if (event.target.classList.contains('contextmenuItems') && !event.target.classList.contains('greyContextMenuItem')) SetContextmenuItem(event.target); });
  contextmenuDiv.addEventListener('mouseout', () => { SetContextmenuItem(null); });
 
- // Define interface divs 
+ // Define interface divs
  hintDiv = document.querySelector('.hint');
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
@@ -740,11 +741,35 @@ function SeekObjJSONProp(object, name, value)
      }
 }
 
+function UploadDialog()
+{
+ let i, list = '';
+ for (i = 0; i < browse.files.length; i++) list += `${i+1}. ` + browse.files[i].name + '\n';
+
+ box = { title: 'Upload files', dialog: {pad: {profile: {element: {head: `<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to attach to the object element (${i} selected):\n\n</span>` + list}}}}, buttons: {BROWSE: {value: "BROWSE", call: "BROWSE"}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
+ if (list) box.buttons.UPLOAD = { value: "UPLOAD", call: "UPLOAD" };
+ box.buttons.CANCEL = { value: "CANCEL", style: "background-color: red;" }
+ ShowBox();
+}
+
 function BoxApply(buttonprop)
 {
  if (!box || typeof buttonprop != 'string' || typeof box.buttons[buttonprop] != 'object') return;
  const button = box.buttons[buttonprop];
  clearTimeout(buttonTimerId);
+
+ if (button['call'] === 'BROWSE')
+    {
+     browse.click();
+     return;
+    }
+
+ if (button['call'] === 'UPLOAD')
+    {
+     const data = new FormData();
+     for (const file of browse.files) data.append('files', file, file.name);
+     return;
+    }
 
  if (button['call'])
     {
@@ -1399,6 +1424,14 @@ function CallController(data)
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'Copy':
+	      browse = document.createElement('input');
+	      browse.style.display = 'none';
+	      browse.setAttribute('type', 'file');
+	      browse.setAttribute('multiple', '');
+	      browse.onchange = UploadDialog;
+	      document.body.appendChild(browse);
+	      UploadDialog();
+	      break;
 	      CopyBuffer();
 	      break;
 	 case 'Chart':
