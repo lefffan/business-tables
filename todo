@@ -11,12 +11,15 @@ Layout & Files:
     reverce cycles 'n in data' with 'eid in edis' and test perfomance
     optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 
-    Handler commands UPLOADFILE, DOWNLOADFILE, DELETEFILE, GALLERYJPGFILES
+    Handler commands UPLOAD, DOWNLOAD, UNLOAD, GALLERY
     in case of 'image' prop set - image is displayed on the table insted of text value prop;
     don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
 
 Application:
   Change favicon -> tabels
+  Fetch progress for uploading files https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/upload
+    and remove file after object delete and OD delete
+  Periodicly remove records from `$$$` table because of file mnmgt dialog can be cancelled
   Application version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Restrict OD sidebar display for some users
   Clone object, similar to add object, but copies current menu contexted object
@@ -340,6 +343,30 @@ razbiralso s socket fragmentation gluk, full doc:
 https://datatracker.ietf.org/doc/html/rfc6455
 https://tools.ietf.org/id/draft-ietf-hybi-thewebsocketprotocol-09.html
 --------------------------
+upload files:
+; Whether to allow HTTP file uploads.
+file_uploads = On
+ 
+; Temporary directory for HTTP uploaded files.
+; Will use system default if not set.
+;upload_tmp_dir = 
+ 
+; Maximum allowed size for uploaded files.
+upload_max_filesize = 16M
+ 
+; Maximum number of files that can be uploaded via a single request
+max_file_uploads = 20
+ 
+; Maximum size of POST data that PHP will accept.
+post_max_size = 20M
+ 
+max_input_time = 60
+memory_limit = 128M
+max_execution_time = 30
+--------------------------------------------------------------------------------
+
+
+
 
 user.php
 {"event":"INIT"}
@@ -700,3 +727,6 @@ chat layout:
 {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}
 {"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
 {"eid":"1", "oid":"1", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
+
+
+

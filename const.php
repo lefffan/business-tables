@@ -12,6 +12,7 @@ const IP				= '195.208.152.8';
 const PORT				= 7889;
 const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";
 const KILLWRAPPERPROCESSESCMD		= "kill -9";
+const UPLOADDIR				= '/usr/local/lib/tabels/';
 
 /****************************Other constants**********************************************/
 const MAXOBJECTS			= 100000;
@@ -40,6 +41,7 @@ const DEFAULTUSER			= 'root';
 const DEFAULTPASSWORD			= 'root';
 const SESSIONLIFETIME			= 36000;
 const CALLTIMEOUT			= 15;
+const CALLFILEMNGTTIMEOUT		= 300;
 const DEFAULTOBJECTSELECTION		= 'WHERE lastversion=1 AND version!=0';
 const SERVICEELEMENTS			= ['id', 'version', 'owner', 'datetime', 'lastversion'];
 const SERVICEELEMENTTITLES		= ['Id', 'Version', 'Owner', '   Date and time   ', 'Actual version'];

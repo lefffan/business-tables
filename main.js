@@ -167,15 +167,24 @@ function loog(...data)
  data.forEach((value) => console.dir(value));
 }
 
-function Hujax(url, callback, requestBody)
+async function Hujax(url, callback, body, headers = { 'Content-Type': 'application/json; charset=UTF-8'})
 {
- fetch(url, { method:	'POST',
-	      headers: 	{ 'Content-Type': 'application/json; charset=UTF-8'},
-	      body: 	JSON.stringify(requestBody) }).then(function(response)
-			{
-			 response.ok ? response.json().then(callback) : displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
-			}).catch (function(error) { lg('Ajax request error: ', error);
-	    });
+ try {
+      let response = await fetch(url, { method: 'POST', headers: headers, body: body });
+      response.ok ? response.json().then(callback) : displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
+     }
+ catch (error)
+     {
+      lg('Ajax request error: ', error);
+     }
+}
+
+function Hujax1(url, callback, body, headers = { 'Content-Type': 'application/json; charset=UTF-8'})
+{
+ fetch(url, { method: 'POST', headers: headers, body: body }).then(function(response)
+	{
+	 response.ok ? response.json().then(callback) : displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
+	}).catch (function(error) { lg('Ajax request error: ', error); });
  return true;
 }
 
@@ -741,35 +750,11 @@ function SeekObjJSONProp(object, name, value)
      }
 }
 
-function UploadDialog()
-{
- let i, list = '';
- for (i = 0; i < browse.files.length; i++) list += `${i+1}. ` + browse.files[i].name + '\n';
-
- box = { title: 'Upload files', dialog: {pad: {profile: {element: {head: `<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to attach to the object element (${i} selected):\n\n</span>` + list}}}}, buttons: {BROWSE: {value: "BROWSE", call: "BROWSE"}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
- if (list) box.buttons.UPLOAD = { value: "UPLOAD", call: "UPLOAD" };
- box.buttons.CANCEL = { value: "CANCEL", style: "background-color: red;" }
- ShowBox();
-}
-
 function BoxApply(buttonprop)
 {
  if (!box || typeof buttonprop != 'string' || typeof box.buttons[buttonprop] != 'object') return;
  const button = box.buttons[buttonprop];
  clearTimeout(buttonTimerId);
-
- if (button['call'] === 'BROWSE')
-    {
-     browse.click();
-     return;
-    }
-
- if (button['call'] === 'UPLOAD')
-    {
-     const data = new FormData();
-     for (const file of browse.files) data.append('files', file, file.name);
-     return;
-    }
 
  if (button['call'])
     {
@@ -1300,9 +1285,10 @@ function MakeCursorContentEditable(data)
 
 function FromController(json)
 {
+ let input;
  try { input = JSON.parse(json.data); }
  catch { input = json; }
- 
+
  if (input.customization)	{ uiProfileSet(input.customization); styleUI(); }
  if (input.auth != undefined)	{ user = input.auth; }
  if (input.cmd === undefined)	{ warning('Undefined server message!'); return; }
@@ -1310,13 +1296,24 @@ function FromController(json)
  switch (input.cmd)
 	{
 	 case 'DIALOG':
-	 case 'UPDATEDIALOG':
-	      if ((cursor.td && cursor.td.contentEditable === EDITABLE) || (input.cmd === 'UPDATEDIALOG' && !box)) break;
+	      if (cursor.td?.contentEditable === EDITABLE || (input.data.flags?.update !== undefined && !box)) break;
 	      let scrollLeft, scrollTop;
 	      if (box?.contentDiv?.scrollLeft) scrollLeft = box.contentDiv.scrollLeft;
 	      if (box?.contentDiv?.scrollTop) scrollTop = box.contentDiv.scrollTop;
 	      box = input.data;
 	      ShowBox(scrollLeft, scrollTop);
+	      break;
+	 case 'UPLOADDIALOG':
+	      if (cursor.td?.contentEditable === EDITABLE) break;
+	      if (browse) browse.remove();
+	      browse = document.createElement('input');
+	      browse.style.display = 'none';
+	      browse.setAttribute('type', 'file');
+	      browse.setAttribute('multiple', '');
+	      browse.onchange = UploadDialog;
+	      document.body.appendChild(browse);
+	      UploadDialog();
+	      box.flags.data = JSON.stringify(input.data);
 	      break;
 	 case 'EDIT':
 	      if (box || (cursor.td && cursor.td.contentEditable === EDITABLE) || !objectTable[input.oId][input.eId]) break;
@@ -1348,7 +1345,7 @@ function FromController(json)
 	 case 'SIDEBAR':
 	 case 'New Database':
 	 case 'Database Configuration':
-	      Hujax("view.php", FromController, input.data);
+	      Hujax("view.php", FromController, JSON.stringify(input.data));
 	      break;
 	 case 'Table':
 	      paramsOV = input.params;
@@ -1368,6 +1365,17 @@ function FromController(json)
  if (input.error !== undefined)	displayMainError(input.error);
  if (input.alert)		warning(input.alert);
  if (input.count)		IncreaseUnreadMessages(input.count.odid, input.count.ovid);
+}
+
+function UploadDialog()
+{
+ let i, list = '';
+ for (i = 0; i < browse.files.length; i++) list += `${i+1}. ` + browse.files[i].name + '\n';
+
+ box = { title: 'Upload files', dialog: {pad: {profile: {element: {head: `<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to attach to the object element (${i} selected):\n\n</span>` + list}}}}, buttons: {BROWSE: {value: "BROWSE", call: "BROWSE", interactive: ''}}, flags: {data: box?.flags?.data ? box.flags.data : '', esc: "", style: "min-width: 400px; min-height: 200px; max-width: 1200px; max-height: 700px;"} };
+ if (list) box.buttons.UPLOAD = { value: "UPLOAD", call: "UPLOAD" };
+ box.buttons.CANCEL = { value: "CANCEL", style: "background-color: red;" }
+ ShowBox();
 }
 
 function IncreaseUnreadMessages(odid, ovid)
@@ -1411,6 +1419,16 @@ function CallController(data)
 
  switch (cmd)
 	{
+	 case 'BROWSE':
+	      browse.click();
+	      return;
+	 case 'UPLOAD':
+	      const formdata = new FormData();
+	      formdata.append('id', box.flags.data);
+	      formdata.append('cmd', 'UPLOAD');
+	      for (const file of browse.files) formdata.append('files[]', file, file.name);
+	      Hujax("file.php", FromController, formdata, {});
+	      return;
 	 case 'New Database':
 	 case 'Task Manager':
 	      object = { "cmd": cmd };
@@ -1424,14 +1442,6 @@ function CallController(data)
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'Copy':
-	      browse = document.createElement('input');
-	      browse.style.display = 'none';
-	      browse.setAttribute('type', 'file');
-	      browse.setAttribute('multiple', '');
-	      browse.onchange = UploadDialog;
-	      document.body.appendChild(browse);
-	      UploadDialog();
-	      break;
 	      CopyBuffer();
 	      break;
 	 case 'Chart':
@@ -2805,7 +2815,8 @@ to refresh the current view.
 	     "pad": "active (current selected) dialog box pad if exist",
 	     "profile": "active (current selected) dialog box profile if exist",
 	     "showpad": "",
-	     "profilehead": { "pad-name1": "header1", "pad-name2": "header2", ..}
+	     "profilehead": { "pad-name1": "header1", "pad-name2": "header2", ..},
+	     "update": ""
 	   }
 }
 
@@ -2868,7 +2879,11 @@ to refresh the current view.
 		 Used to describe pad and/or its profiles and allows to display profile selection interface element with
 		 one single option (profile). In case of two or more profiles - it is displayed anyway.
     event: dialog apply event (clicked button or table cell identificator) to pass back to the handler to process changed
-	   dialog content data. Property is set automatically.`
+	   dialog content data. Property is set automatically.
+    update: dialog box update flag. Set it to indicate client side to only update existing dialog and don't create if it
+	    doesn't exist. Useful for autorefresh dialogs (see 'timer' button property) to exit properly - after dialog
+	    box exit (for a example via ESC button) client side ignores dialog box creation that was requested (via timer
+	    button) before exit.`
 },
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head: `
 Application has some regular php handlers to manage user database, customization and element data.

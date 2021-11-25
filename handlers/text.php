@@ -9,6 +9,9 @@ function lg($arg)
 
 if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
    {
+    case 'UPLOADDIALOG':
+	 echo json_encode(['cmd' => $_SERVER['argv'][1]]);
+	 break;
     case 'EDIT':
 	 $out = ['cmd' => 'EDIT'];
 	 if (isset($_SERVER['argv'][2]))

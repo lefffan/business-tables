@@ -1074,7 +1074,7 @@ function CopyKeys(&$arr, $keys)
  return $result;
 }
 
-function QueueViewCall($db, $socket, $id, &$message)
+function QueueCall($db, $socket, $id, &$message)
 {
  // Put request to the queue sql table that will be checked by view.php after client ajax request
  $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:message)");

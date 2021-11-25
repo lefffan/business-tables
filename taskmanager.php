@@ -35,8 +35,11 @@ $cmd = 'DIALOG';
 if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) // Incoming dialog data does exist (non first task manager call)?
    {
     foreach ($client['data']['dialog']['pad']['profile']['element2']['data']['line0'] as $value) // Get table header ('line0' row) to parse column to sort on
-	    if (!(strpos($value['value'], '*') === false)) { $sort = $value['value']; break; } // Sort on column with char '*' present
-    $cmd = 'UPDATEDIALOG';
+	    if (!(strpos($value['value'], '*') === false))
+	       {
+		$sort = $value['value']; // Sort on column with char '*' present
+		break;
+	       }
    }
 
 // Process sort column event if exist
@@ -116,7 +119,10 @@ $dialog  = ['title'  => 'Task Manager',
 	    'buttons'=> ['REFRESH' => ['value' => '', 'call' => 'Task Manager', 'interactive' => '', 'timer' => '1000'], 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;']],
 	    'flags'  => ['style' => 'width: 1000px; height: 500px;', 'esc' => '']];
 
+// No active tasks
 if (count($table) < 2) $dialog['dialog']['pad']['profile']['element3'] = ['head' => '                                                                                   No active tasks found..'];
+// Incoming dialog data does exist (non first task manager call)?
+if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) $dialog['flags']['update'] = '';
 
 try {
      $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");

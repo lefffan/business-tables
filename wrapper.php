@@ -2,8 +2,9 @@
 
 require_once 'core.php';
 
-CONST ARGVCLIENTINDEX = 9;
-CONST GROUPEVENTS = ['CHANGE', 'INIT', 'SCHEDULE'];
+const ARGVCLIENTINDEX = 9;
+const GROUPEVENTS = ['CHANGE', 'INIT', 'SCHEDULE'];
+const HANDLEREVENTS = ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', 'UPLOADDIALOG', 'DOWNLOADDIALOG', 'UNLOADDIALOG', 'GALLERY', ''];
 
 function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 {
@@ -27,7 +28,7 @@ function ParseHandlerResult($db, &$output, &$client)
  $logmsg = "Element id$client[eId] handler for object id$client[oId] ";
 
  // Incorrect handler response JSON
- if ((!isset($output['cmd']) || array_search($output['cmd'], ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', '']) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
+ if ((!isset($output['cmd']) || array_search($output['cmd'], HANDLEREVENTS) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
 
  // Parse handler output array
  switch ($output['cmd'])
@@ -83,6 +84,13 @@ function ParseHandlerResult($db, &$output, &$client)
 	      // Adjust value, hint, description, style, alert properties
 	      ConvertToString($output, ['value', 'hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
 	      if ($client['cmd'] === 'CHANGE') unset($output['alert']); // Alert is not supported for object 'CHANGE' event
+	      break;
+	 case 'UPLOADDIALOG':
+	 case 'DOWNLOADDIALOG':
+	 case 'UNLOADDIALOG':
+	 case 'GALLERY':
+	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return '$output[cmd]' command on '$client[cmd]' event!")) return;
+	      cutKeys($output, ['cmd']);
 	      break;
 	 case '':
 	      break;
@@ -305,6 +313,10 @@ switch ($output[$currenteid]['cmd'])
         case 'EDIT':
         case 'CALL':
         case '':
+        case 'UPLOADDIALOG':
+        case 'DOWNLOADDIALOG':
+        case 'UNLOADDIALOG':
+        case 'GALLERY':
 	     $output = $output[$client['eId']];
 	     break;
         case 'SET':

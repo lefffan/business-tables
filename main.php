@@ -145,7 +145,7 @@ while (true)
 		  case 'Database Configuration':
 		       $output['cmd'] = $client['cmd'];
 		       $message = json_encode($client);
-		       QueueViewCall($db, NULL, $output['data'] = GenerateRandomString(), $message);
+		       QueueCall($db, NULL, $output['data'] = GenerateRandomString(), $message);
 		       break;
 		  case 'INIT':
 		       Check($db, CHECK_OID, $client, $output);
@@ -176,7 +176,7 @@ while (true)
 		  foreach ($clientsarray as $key => $value) if (isset($value['auth'])) cutKeys($clientsarray[$key], ['ip', 'port', 'User-Agent']);
 		  include 'connect.php';
 		 }
-    	      $output['log'] = $output['alert'] = "Controller error: $msg!";
+	      $output['log'] = $output['alert'] = "Controller error: $msg!";
 	     }
 	 
 	 // Write output result to the client socket
@@ -203,13 +203,13 @@ while (true)
 		  }
 	       $count = ['cmd' => '', 'count' => ['odid' => $handler['ODid'], 'ovid' => $handler['OVid']]];
 	       $countmessage = encode(json_encode($count));
+
 	       switch ($handler['cmd'])
 	              {
 		       // For dialog, edit or empty (warning box message) commands search appropriate socket (the handler was called from) to write the command.
 		       case '':
 		       case 'EDIT':
 		       case 'DIALOG':
-		       case 'UPDATEDIALOG':
 			    if (isset($socketarray[$hid]) && $clientsarray[$hid]['ODid'] === $handler['ODid'] && $clientsarray[$hid]['OVid'] === $handler['OVid'] && ($handler['ODid'] === '' || $clientsarray[$hid]['params'] === $handler['params']))
 			       fwrite($socketarray[$hid], encode(json_encode($handler)));
 			    break;
@@ -243,7 +243,7 @@ while (true)
 				     $handler['cmd'] = 'CALL';
 				     $handler['data'] = GenerateRandomString();
 				     $cid === $hid ? $message = json_encode($handler + $alert) : $message = json_encode($handler + $count);
-				     QueueViewCall($db, $socket, $handler['data'], $message);
+				     QueueCall($db, $socket, $handler['data'], $message);
 				    }
 				  else
 				    {
@@ -251,12 +251,16 @@ while (true)
 				    }
 			    break;
 		       case 'CALL':
-			    if (Check($db, CHECK_OD_OV, $handler, $output)) //MakeViewCall($db, $socketarray[$hid], $clientsarray[$hid], $handler);
+		       case 'UPLOADDIALOG':
+		       case 'DOWNLOADDIALOG':
+		       case 'UNLOADDIALOG':
+		       case 'GALLERY':
+			    if (Check($db, CHECK_OD_OV, $handler, $output))
 			       {
 				CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);
 				$handler['data'] = GenerateRandomString();
-				$message = json_encode($handler); // Var $handler['cmd'] already equals 'CALL'
-				QueueViewCall($db, $socketarray[$hid], $handler['data'], $message);
+				$message = json_encode($handler); // Var $handler['cmd'] already has appropriate command ('CALL', 'UPLOAD'..)
+				QueueCall($db, $socketarray[$hid], $handler['data'], $message);
 			       }
 			    break;
 		      }
