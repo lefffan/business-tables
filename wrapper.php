@@ -318,6 +318,13 @@ switch ($output[$currenteid]['cmd'])
         case 'UNLOADDIALOG':
         case 'GALLERY':
 	     $output = $output[$client['eId']];
+	     if ($output['cmd'] === 'DOWNLOADDIALOG' || $output['cmd'] === 'UNLOADDIALOG' || $output['cmd'] === 'GALLERY')
+		{
+		 $list = [];
+		 $dir = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]";
+		 if (is_dir($dir)) foreach (scandir($dir) as $name) if ($name !== '.' && $name !== '..') $list[] = $name;
+		 count($list) ? $output['list'] = $list : $output = ['cmd' => '', 'alert' => 'No files attached to the object element. Upload some files first!'];
+		}
 	     break;
         case 'SET':
         case 'RESET':
@@ -359,6 +366,7 @@ switch ($output[$currenteid]['cmd'])
 			       $newmask .= "eid$eid=NULL,";
 			      }
 			  }
+		  $client['eId'] = $currenteid;
 		  // Check changed object on existing rules
 		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version), 'Change object');
 		  if ($ruleresult['action'] === 'Accept')

@@ -11,7 +11,7 @@ const ACTIVEITEM = '<div class="contextmenuItems">';
 const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>';
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
 const SOCKETADDR = 'wss://tabels.app:7889';
-const EFFECTHELP = "effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Undefined or empty value - 'none' effect is used."
+const EFFECTHELP = "effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Undefined or empty value - 'none' effect is used (no effect)."
 const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
 const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const HTMLSPECIALCHARS = ['&amp;', '&lt;', '&gt;', '<br>', '&nbsp;'];
@@ -78,7 +78,7 @@ let uiProfile = {
 		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;", "text-align": "center" },
 		  "dialog box pushable table cell hover": { "target": ".boxtablecellpush:hover", "cursor": "pointer;" }, 
 		  //
-		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "10em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
+		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "30em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
 		  "dialog box select option hover": { "target": ".select:not([type*='o']) > div:hover", "background-color": "rgb(209,209,209);", "color": "" },
 		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
@@ -167,25 +167,31 @@ function loog(...data)
  data.forEach((value) => console.dir(value));
 }
 
-async function Hujax(url, callback, body, headers = { 'Content-Type': 'application/json; charset=UTF-8'})
+async function Hujax(url, callback, options)
 {
  try {
-      let response = await fetch(url, { method: 'POST', headers: headers, body: body });
-      response.ok ? response.json().then(callback) : displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
+      const response = await fetch(url, options);
+      if (!response.ok)
+	 {
+	  displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
+	  return;
+	 }
+      const contenttype = response.headers.get('Content-Type');
+      if (contenttype.indexOf('text/html') === 0)
+	 {
+	  response.json().then(callback);
+	  return;
+	 }
+      if (contenttype.indexOf('application/octet-stream') === 0)
+	 {
+	  response.blob().then(blob => callback.call(this, {cmd: 'SAVEFILE', data: blob, name: response.headers.get('Content-Disposition')}));
+	  return;
+	 }
      }
  catch (error)
      {
       lg('Ajax request error: ', error);
      }
-}
-
-function Hujax1(url, callback, body, headers = { 'Content-Type': 'application/json; charset=UTF-8'})
-{
- fetch(url, { method: 'POST', headers: headers, body: body }).then(function(response)
-	{
-	 response.ok ? response.json().then(callback) : displayMainError(`Request failed with response ${response.status}: ${response.statusText}`);
-	}).catch (function(error) { lg('Ajax request error: ', error); });
- return true;
 }
 
 function drawSidebar(data)
@@ -1295,8 +1301,14 @@ function FromController(json)
 
  switch (input.cmd)
 	{
+	 case 'SAVEFILE':
+	      let element = document.createElement('a');
+	      element.href = URL.createObjectURL(input.data);
+	      element.download = JSON.parse(input.name.substring(input.name.indexOf('"') + 1, input.name.length - 1)).name;
+	      element.click();
+	      break;
 	 case 'DIALOG':
-	      if (cursor.td?.contentEditable === EDITABLE || (input.data.flags?.update !== undefined && !box)) break;
+	      if (cursor.td?.contentEditable === EDITABLE || (input.data.flags?.updateonly !== undefined && !box)) break;
 	      let scrollLeft, scrollTop;
 	      if (box?.contentDiv?.scrollLeft) scrollLeft = box.contentDiv.scrollLeft;
 	      if (box?.contentDiv?.scrollTop) scrollTop = box.contentDiv.scrollTop;
@@ -1314,6 +1326,14 @@ function FromController(json)
 	      document.body.appendChild(browse);
 	      UploadDialog();
 	      box.flags.data = JSON.stringify(input.data);
+	      break;
+	 case 'DOWNLOADDIALOG':
+	 case 'UNLOADDIALOG':
+	      let list = '';
+	      for (const i in input.list) if (typeof input.list[i] === 'string') list += input.list[i] + '|';
+	      DownloadDialog(list, input.cmd);
+	      box.flags.data = JSON.stringify(input.data);
+	      box.flags.list = input.list;
 	      break;
 	 case 'EDIT':
 	      if (box || (cursor.td && cursor.td.contentEditable === EDITABLE) || !objectTable[input.oId][input.eId]) break;
@@ -1345,7 +1365,7 @@ function FromController(json)
 	 case 'SIDEBAR':
 	 case 'New Database':
 	 case 'Database Configuration':
-	      Hujax("view.php", FromController, JSON.stringify(input.data));
+	      Hujax("view.php", FromController, { method: 'POST', body: JSON.stringify(input.data), headers: { 'Content-Type': 'application/json; charset=UTF-8'} });
 	      break;
 	 case 'Table':
 	      paramsOV = input.params;
@@ -1372,9 +1392,25 @@ function UploadDialog()
  let i, list = '';
  for (i = 0; i < browse.files.length; i++) list += `${i+1}. ` + browse.files[i].name + '\n';
 
- box = { title: 'Upload files', dialog: {pad: {profile: {element: {head: `<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to attach to the object element (${i} selected):\n\n</span>` + list}}}}, buttons: {BROWSE: {value: "BROWSE", call: "BROWSE", interactive: ''}}, flags: {data: box?.flags?.data ? box.flags.data : '', esc: "", style: "min-width: 400px; min-height: 200px; max-width: 1200px; max-height: 700px;"} };
+ box = { title: 'Upload files',
+	 dialog: { pad: {profile: {element: {head: `<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to attach to the object element (${i} selected):\n\n</span>` + list}}} },
+	 buttons: { BROWSE: {value: "BROWSE", call: "BROWSE", interactive: ''} },
+	 flags: { data: box?.flags?.data ? box.flags.data : '', esc: "", style: "min-width: 400px; min-height: 200px; max-width: 1200px; max-height: 700px;"} };
+
  if (list) box.buttons.UPLOAD = { value: "UPLOAD", call: "UPLOAD" };
- box.buttons.CANCEL = { value: "CANCEL", style: "background-color: red;" }
+ box.buttons.CANCEL = { value: "CANCEL", style: "background-color: red;" };
+ ShowBox();
+}
+
+function DownloadDialog(list, cmd)
+{
+ box = { title: 'Download files',
+	 dialog: { pad: {profile: {element: {head: `\nSelect files to download${cmd === 'UNLOADDIALOG' ? '/delete' : ''}:\n`, type: 'select-multiple', data: list, hel: 'Only one action via current dialog session can be perfomed' }}} },
+	 buttons: { DOWNLOAD: {value: "DOWNLOAD", call: "DOWNLOAD" }},
+	 flags: { data: box?.flags?.data ? box.flags.data : '', esc: "", style: "min-width: 400px; min-height: 200px; max-width: 1200px; max-height: 700px;"} };
+
+ if (cmd === 'UNLOADDIALOG') box.buttons.DELETE = {value: "DELETE", call: "DELETE" };
+ box.buttons.CANCEL = { value: "CANCEL", style: "background-color: red;" };
  ShowBox();
 }
 
@@ -1415,7 +1451,7 @@ function CanvasDrawPieDescription(ctx, x, y, text, percent, color)
 
 function CallController(data)
 {
- let object;
+ let object, i;
 
  switch (cmd)
 	{
@@ -1423,11 +1459,36 @@ function CallController(data)
 	      browse.click();
 	      return;
 	 case 'UPLOAD':
-	      const formdata = new FormData();
-	      formdata.append('id', box.flags.data);
-	      formdata.append('cmd', 'UPLOAD');
-	      for (const file of browse.files) formdata.append('files[]', file, file.name);
-	      Hujax("file.php", FromController, formdata, {});
+	      object = new FormData();
+	      object.append('id', box.flags.data);
+	      object.append('cmd', 'UPLOAD');
+	      for (const file of browse.files) object.append('files[]', file, file.name);
+	      Hujax('file.php', FromController, { method: 'POST', body: object });
+	      return;
+	 case 'DOWNLOAD':
+	      object = new FormData();
+	      object.append('id', box.flags.data);
+	      object.append('cmd', cmd);
+	      i = -1;
+	      for (let file of box.dialog.pad.profile.element.data.split('|'))
+		  {
+		   i++;
+		   if (file.charAt(0) !== '+') continue;
+		   object.append('fileindex', i);
+		   Hujax('file.php', FromController, { method: 'POST', body: object });
+		  }
+	      return;
+	 case 'DELETE':
+	      object = new FormData();
+	      object.append('id', box.flags.data);
+	      object.append('cmd', cmd);
+	      i = -1;
+	      for (let file of box.dialog.pad.profile.element.data.split('|'))
+		  {
+		   i++;
+		   if (file.charAt(0) === '+') object.append(i, '');
+		  }
+	      Hujax('file.php', FromController, { method: 'POST', body: object });
 	      return;
 	 case 'New Database':
 	 case 'Task Manager':
@@ -1536,12 +1597,6 @@ function CallController(data)
 		  if (cell.description) info += `\nElement description:\n<span style="color: #999;">${cell.description}</span>`;
 		  if (info) msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>' + info;
 		 }
-	      /*if (cell && cell.oId >= STARTOBJECTID) // Object element info
-		 {
-		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n';
-	          if (cell.version) cell.version === '0' ? msg += 'Object version: object has been deleted' : msg += `Object version: ${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}`;
-		  if (cell.description) msg += `\nElement description:\n<span style="color: #999;">${cell.description}</span>`;
-		 }*/
 	      if (true) // Database info
 		 {
 		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Database</span>\n';
@@ -1555,7 +1610,7 @@ function CallController(data)
 		 {
 		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Table</span>\n';
 		  msg += `Columns: ${mainTableWidth}\nRows: ${mainTableHeight}`;
-		  if (drag.x1 !== undefined)
+		  if (drag.x1 !== undefined && (drag.x1 != drag.x2 || drag.y1 != drag.y2))
 		     {
 		      count = new Set();
 		      for (let y = Math.min(drag.y1, drag.y2); y <= Math.max(drag.y1, drag.y2); y++)
@@ -2708,11 +2763,11 @@ arguments are parsed to be replaced by the next values:
     {"string": "<key char>", "altkey": "",  "ctrlkey": "", "metakey": "shiftkey", "": ""}
     Property "string" is one key char, other properties do exist only in case of appropriate key pushed. Meta key for Mac OS
     is 'Cmd' key, for Window OS - 'Window' key.
-    For INS, DEL, F2, F12 data arg is the same except the "string" property is undefined.
+    For DBLCLICK, INS, DEL, F2, F12 data arg is the same except the "string" property is undefined.
     For INIT event data argument text content in 'new object' element table cells if exist, otherwise <data> is empty string ''.
     For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
     For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
-    For DBLCLICK, CHANGE and SCHEDULE events <data> argument is undefined.
+    For CHANGE and SCHEDULE events <data> argument is undefined.
  - <JSON> is a special argument that is replaced by retrieved element data and should be in next format:
     {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
     First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
@@ -2816,7 +2871,7 @@ to refresh the current view.
 	     "profile": "active (current selected) dialog box profile if exist",
 	     "showpad": "",
 	     "profilehead": { "pad-name1": "header1", "pad-name2": "header2", ..},
-	     "update": ""
+	     "updateonly": ""
 	   }
 }
 
@@ -2880,10 +2935,10 @@ to refresh the current view.
 		 one single option (profile). In case of two or more profiles - it is displayed anyway.
     event: dialog apply event (clicked button or table cell identificator) to pass back to the handler to process changed
 	   dialog content data. Property is set automatically.
-    update: dialog box update flag. Set it to indicate client side to only update existing dialog and don't create if it
-	    doesn't exist. Useful for autorefresh dialogs (see 'timer' button property) to exit properly - after dialog
-	    box exit (for a example via ESC button) client side ignores dialog box creation that was requested (via timer
-	    button) before exit.`
+    updateonly: dialog box update flag. Set it to indicate client side to only update existing dialog and don't create if
+		it doesn't exist. Useful for autorefresh dialogs (see 'timer' button property) to exit properly - after
+		dialog box exit (for a example via ESC button) client side ignores dialog box creation that was requested
+		(via timer button) before exit.`
 },
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head: `
 Application has some regular php handlers to manage user database, customization and element data.

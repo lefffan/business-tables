@@ -9,9 +9,19 @@ function lg($arg)
 
 if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
    {
-    case 'UPLOADDIALOG':
-	 echo json_encode(['cmd' => $_SERVER['argv'][1]]);
-	 break;
+    case 'DBLCLICK':
+	 if (!isset($_SERVER['argv'][2]) || gettype($data = json_decode($_SERVER['argv'][2], true)) !== 'array' || (!$data['altkey'] && !$data['shiftkey'] && !$data['ctrlkey']))
+	    {
+	     echo json_encode(['cmd' => 'EDIT']);
+	     break;
+	    }
+	  else
+	    {
+	     if ($data['shiftkey']) echo json_encode(['cmd' => 'UPLOADDIALOG']);
+	      else if ($data['ctrlkey']) echo json_encode(['cmd' => 'DOWNLOADDIALOG']);
+	      else if ($data['altkey']) echo json_encode(['cmd' => 'UNLOADDIALOG']);
+	     break;
+	    }
     case 'EDIT':
 	 $out = ['cmd' => 'EDIT'];
 	 if (isset($_SERVER['argv'][2]))

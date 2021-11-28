@@ -1,4 +1,6 @@
 Layout & Files:
+    Handler commands UPLOAD, DOWNLOAD, UNLOAD, GALLERY (exlude files begining with + and delete tokens with timedout timings)
+
     core.php - fill virtual values (full sql request in 'value' property)
     main.js - chart event with esc back to the view
     main.js - help for a new layout and virtual cells
@@ -11,10 +13,6 @@ Layout & Files:
     reverce cycles 'n in data' with 'eid in edis' and test perfomance
     optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 
-    Handler commands UPLOAD, DOWNLOAD, UNLOAD, GALLERY
-    in case of 'image' prop set - image is displayed on the table insted of text value prop;
-    don't forget image files handle for text.php). Images saved in OD/oId/eId/ dir
-
 Application:
   Change favicon -> tabels
   Fetch progress for uploading files https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/upload
@@ -23,7 +21,7 @@ Application:
   Application version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Restrict OD sidebar display for some users
   Clone object, similar to add object, but copies current menu contexted object
-  in cell: text, image, stream, table?
+  in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
   Export OV data to xls, pdf or txt file
   Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list.
@@ -84,6 +82,7 @@ Application:
   dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
   Adaptivka after browser window size has changed dialog box has gone away
+  pad.profile.element style prop - not only for header and for interface element of itself!
   multi cell selecting - copy (excel table), delete (removes all selected objects). Plus scroll if selected area doesnot match the main field
     User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
     single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
@@ -110,7 +109,7 @@ Application:
     when pushed button is pushed and mouse cursir is out of button - make button released
     at dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
   Make handler intput lines longer, and Handler for 'INIT' event replace by 'INIT' event
-  Scrolling area selection
+  Scrolling table area selection
     element.scrollTop = element.scrollHeight
     var objDiv = document.getElementById("your_div"); objDiv.scrollTop = objDiv.scrollHeight;
 
@@ -120,11 +119,13 @@ Application:
   If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
+  Add events with ctrl, shift and alt keys combinations pushed to DBLCLICK, INS DEL F2 F12 KEYPRESS (may be even for a apparent key with ctrl|alt|shift press)
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
     (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
     So should CONFIRM event be renamed to CONFIRMEDIT? (i think no!)
     May be set hint to these error cells and all cells with hint are marked with the footnote (snoska).
-    Also implement footnotes for all four cell angles (hint, description, link, attached files)
+    Also implement footnotes for all four cell angles (hint, description, link, attached files, unconfirmed) - should hint display in a description context menu item call?
+    Should description and help (context menu items) text be selectable to copy/paste?
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
   OV/OD name/id, datetime as input arg for the handler
   Non local server (cloud) implemented handlers
@@ -722,6 +723,10 @@ selection downlink - client list and preduprezhdenie
 Last OE9 DB:
 user per group search:
 php /usr/local/src/tabels/handlers/text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
+
+setki:
+* * * * * 4 ping -c 1 <{"element":"1"}> | grep loss
+on F12: php /usr/local/src/tabels/handlers/text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
 
 chat layout: 
 {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}

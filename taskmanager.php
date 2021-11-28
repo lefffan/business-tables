@@ -122,7 +122,7 @@ $dialog  = ['title'  => 'Task Manager',
 // No active tasks
 if (count($table) < 2) $dialog['dialog']['pad']['profile']['element3'] = ['head' => '                                                                                   No active tasks found..'];
 // Incoming dialog data does exist (non first task manager call)?
-if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) $dialog['flags']['update'] = '';
+if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) $dialog['flags']['updateonly'] = '';
 
 try {
      $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
