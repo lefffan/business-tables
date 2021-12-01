@@ -20,14 +20,14 @@ const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
 /*------------------------------VARIABLES------------------------------------*/
 let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';
-let box = selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
+let selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
 let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
 let mainTable, mainTableWidth, mainTableHeight, objectTable, paramsOV;
 let objectsOnThePage, VirtualElements;
 let user = cmd = OD = OV = ODid = OVid = OVtype = '';
 let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
-let sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
-let browse;
+let box = null, sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
+let browse, imgwrapper, img;
 let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
@@ -140,6 +140,11 @@ window.onload = function()
  hintDiv = document.querySelector('.hint');
  boxDiv = document.querySelector('.box');
  expandedDiv = document.querySelector('.expanded');
+
+ // Create image wrapper (for user galleries) and canvas elements
+ imgwrapper = document.createElement('div');
+ imgwrapper.classList.add('imgwrapper');
+ img = document.createElement('img');
 
  cmd = 'CALL';
  CreateWebSocket();
@@ -1197,12 +1202,33 @@ function KeyboardEventHandler(event)
 	      moveCursor(0, 1, false);
 	      break;
 	 case 37: //Left
+	      if (OVtype === 'Gallery')
+		 {
+		  browse.index ? browse.index-- : browse.index = browse.list.length - 1;
+		  img.src = `${window.location.href}file.php?id=${browse.data}&img=${browse.index}`;
+		  img.alt = browse.list[browse.index];
+		  break;
+		 }
 	      moveCursor(-1, 0, false);
 	      break;
 	 case 39: //Right
+	      if (OVtype === 'Gallery')
+		 {
+		  browse.index === browse.list.length - 1 ? browse.index = 0 : browse.index++;
+		  img.src = `${window.location.href}file.php?id=${browse.data}&img=${browse.index}`;
+		  img.alt = browse.list[browse.index];
+		  break;
+		 }
 	      moveCursor(1, 0, false);
 	      break;
 	 case 27: //Esc
+	      if (OVtype === 'Gallery')
+		 {
+		  mainDiv.removeChild(imgwrapper);
+		  mainTablediv.style.display = 'block';
+		  OVtype = 'Table'
+		  break;
+		 }
 	      if (box)
 		 {
 		  if ((/show$/).test(expandedDiv.classList[2])) // Expanded div visible? Hide it, otherwise hide dialog box
@@ -1301,10 +1327,24 @@ function FromController(json)
 
  switch (input.cmd)
 	{
+	 case 'GALLERY':
+	      if (box || (cursor.td && cursor.td.contentEditable === EDITABLE) || OVtype !== 'Table') break;
+	      mainTablediv.style.display = 'none';
+	      browse = { list: input.list, data: input.data, index: 0 };
+	      //imgwrapper = document.createElement('div');
+	      //imgwrapper.classList.add('imgwrapper');
+	      //img = document.createElement('img');
+	      img.src = `${window.location.href}file.php?id=${browse.data}&img=${browse.index}`;
+	      img.alt = browse.list[browse.index];
+	      mainDiv.appendChild(imgwrapper);
+	      imgwrapper.appendChild(img);
+	      OVtype = 'Gallery';
+	      break;
 	 case 'SAVEFILE':
 	      let element = document.createElement('a');
 	      element.href = URL.createObjectURL(input.data);
-	      element.download = JSON.parse(input.name.substring(input.name.indexOf('"') + 1, input.name.length - 1)).name;
+	      try { element.download = JSON.parse(input.name.substring(input.name.indexOf('"') + 1, input.name.length - 1)).name; }
+	      catch { element.download = ''; }
 	      element.click();
 	      break;
 	 case 'DIALOG':
@@ -1325,14 +1365,14 @@ function FromController(json)
 	      browse.onchange = UploadDialog;
 	      document.body.appendChild(browse);
 	      UploadDialog();
-	      box.flags.data = JSON.stringify(input.data);
+	      box.flags.data = input.data;
 	      break;
 	 case 'DOWNLOADDIALOG':
 	 case 'UNLOADDIALOG':
 	      let list = '';
 	      for (const i in input.list) if (typeof input.list[i] === 'string') list += input.list[i] + '|';
 	      DownloadDialog(list, input.cmd);
-	      box.flags.data = JSON.stringify(input.data);
+	      box.flags.data = input.data;
 	      box.flags.list = input.list;
 	      break;
 	 case 'EDIT':

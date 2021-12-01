@@ -2,10 +2,20 @@
 
 require_once 'core.php';
 //lg($_POST);
-//lg($_GET);
+lg($_GET);
 
-$id = substr($_POST['id'], 1, -1);
-$cmd = $_POST['cmd'];
+if (isset($_GET['id']))
+   {
+    $id = $_GET['id'];
+    $cmd = 'GALLERY';
+    if (!isset($_GET['img'])) exit;
+    $img = $_GET['img'];
+   }
+ else
+   {
+    $id = $_POST['id'];
+    $cmd = $_POST['cmd'];
+   }
 
 try {
      $output = ['cmd' => ''];
@@ -49,10 +59,14 @@ switch ($cmd)
 	     header('Expires: 0');
 	     header('Cache-Control: must-revalidate');
 	     header('Pragma: public');
-	     header('Content-Length: '.filesize($file));
+	     header('Content-Length: '.filesize($file['name']));
 	     ob_clean();
 	     flush();
-	     readfile($file);
+	     readfile($file['name']);
+	     break;
+	case 'GALLERY':
+	     $file = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/".$client['list'][$img];
+	     if (is_file($file)) readfile($file);
 	     break;
 	case 'DELETE':
 	     $successfilecount = $filecount = 0;

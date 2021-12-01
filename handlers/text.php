@@ -22,6 +22,9 @@ if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
 	      else if ($data['altkey']) echo json_encode(['cmd' => 'UNLOADDIALOG']);
 	     break;
 	    }
+    case 'F12':
+	 echo json_encode(['cmd' => 'GALLERY']);
+	 break;
     case 'EDIT':
 	 $out = ['cmd' => 'EDIT'];
 	 if (isset($_SERVER['argv'][2]))
