@@ -1,5 +1,11 @@
 Layout & Files:
-    Handler commands UPLOAD, DOWNLOAD, UNLOAD, GALLERY (exlude files begining with + and delete tokens with timedout timings + URL.revokeObjectURL())
+    Handler commands UPLOAD, DOWNLOAD, UNLOAD, GALLERY
+	exlude files begining with
+	and delete tokens with timedout timings
+	URL.revokeObjectURL()
+	help
+	effects
+	snoska 1/2 filename
 
     core.php - fill virtual values (full sql request in 'value' property)
     main.js - chart event with esc back to the view
@@ -16,6 +22,7 @@ Layout & Files:
     footnote (snoska)
     github customization for root
     shift + arrows selects area
+    reset ov/od/names after logout
 
 Application:
   Change favicon -> tabels

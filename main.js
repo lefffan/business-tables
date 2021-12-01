@@ -1331,9 +1331,6 @@ function FromController(json)
 	      if (box || (cursor.td && cursor.td.contentEditable === EDITABLE) || OVtype !== 'Table') break;
 	      mainTablediv.style.display = 'none';
 	      browse = { list: input.list, data: input.data, index: 0 };
-	      //imgwrapper = document.createElement('div');
-	      //imgwrapper.classList.add('imgwrapper');
-	      //img = document.createElement('img');
 	      img.src = `${window.location.href}file.php?id=${browse.data}&img=${browse.index}`;
 	      img.alt = browse.list[browse.index];
 	      mainDiv.appendChild(imgwrapper);
