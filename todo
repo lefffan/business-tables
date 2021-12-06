@@ -1,11 +1,12 @@
 Layout & Files:
     Handler commands UPLOAD, DOWNLOAD, UNLOAD, GALLERY
-	exlude files begining with
+	exlude files begining with +
 	and delete tokens with timedout timings
-	URL.revokeObjectURL()
+	change file size limits
 	help
 	effects
 	snoska 1/2 filename
+	Enter + real size
 
     core.php - fill virtual values (full sql request in 'value' property)
     main.js - chart event with esc back to the view
@@ -19,10 +20,12 @@ Layout & Files:
     reverce cycles 'n in data' with 'eid in edis' and test perfomance
     optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 
-    footnote (snoska)
+    footnote (snoska) for cells with hint/description
     github customization for root
     shift + arrows selects area
     reset ov/od/names after logout
+    empty element layout = *
+    Ovtype -> OVtemplate
 
 Application:
   Change favicon -> tabels

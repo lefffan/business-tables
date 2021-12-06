@@ -2,7 +2,7 @@
 
 require_once 'core.php';
 //lg($_POST);
-lg($_GET);
+//lg($_GET);
 
 if (isset($_GET['id']))
    {
@@ -18,12 +18,17 @@ if (isset($_GET['id']))
    }
 
 try {
-     $output = ['cmd' => ''];
-     $query = $db->prepare("SELECT now()-time,client FROM `$$$` WHERE id='$id'");
+     $query = $db->prepare('DELETE FROM `$$$` WHERE now()-time>'.strval(CALLFILEMNGTTIMEOUT));
      $query->execute();
-     $client = $query->fetchAll(PDO::FETCH_NUM)[0];
-     //$query = $db->prepare("DELETE FROM `$$$` WHERE id='$id'");
-     //$query->execute();
+     $output = ['cmd' => ''];
+     $query = $db->prepare("SELECT client FROM `$$$` WHERE id='$id'");
+     $query->execute();
+     $client = $query->fetchAll(PDO::FETCH_NUM);
+     if (!isset($client[0][0]))
+	{
+	 echo json_encode(['cmd' => '', 'alert' => "File management dialog timeout, please try again!"]);
+	 exit;
+	}
     }
 catch (PDOException $e)
     {
@@ -31,13 +36,7 @@ catch (PDOException $e)
      echo json_encode(['cmd' => '', 'error' => 'PDO driver exception error!']);
      exit;
     }
-
-if (intval($client[0]) > CALLFILEMNGTTIMEOUT)
-   {
-    echo json_encode(['cmd' => '', 'error' => "File management dialog timeout with $client[0]sec, please try again!"]);
-    exit;
-   }
-$client = json_decode($client[1], true);
+$client = json_decode($client[0][0], true);
 
 switch ($cmd)
        {
@@ -52,17 +51,17 @@ switch ($cmd)
 	     echo json_encode($output); // Echo output result
 	     break;
 	case 'DOWNLOAD':
-	     $file = ['name' => basename(UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/".$client['list'][$_POST['fileindex']])];
+	     $file = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/".$client['list'][$_POST['fileindex']];
 	     header('Content-Description: File Transfer');
 	     header('Content-Type: application/octet-stream');
-	     header('Content-Disposition: attachment; filename="'.json_encode($file).'"');
+	     header('Content-Disposition: attachment; filename='.json_encode(['name' => basename($file)]));
 	     header('Expires: 0');
 	     header('Cache-Control: must-revalidate');
 	     header('Pragma: public');
-	     header('Content-Length: '.filesize($file['name']));
+	     header('Content-Length: '.filesize($file));
 	     ob_clean();
 	     flush();
-	     readfile($file['name']);
+	     readfile($file);
 	     break;
 	case 'GALLERY':
 	     $file = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/".$client['list'][$img];
