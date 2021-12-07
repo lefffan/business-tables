@@ -17,6 +17,9 @@ const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,3
 const HTMLSPECIALCHARS = ['&amp;', '&lt;', '&gt;', '<br>', '&nbsp;'];
 const HTMLUSUALCHARS = ['&', '<', '>', '\n', ' '];
 const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
+const MAXFILESIZE = 157286400;
+const MAXFILEUPLOADS = 20;
+
 
 let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';

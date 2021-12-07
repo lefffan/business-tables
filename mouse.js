@@ -381,7 +381,7 @@ function IsTableTemplateCell(element)
  if (list.contains('datacell') || list.contains('titlecell') || list.contains('newobjectcell') || list.contains('undefinedcell')) return target;
 }
 
-function boxEventHandler(event)
+function BoxEventHandler(event)
 {
  // Mouse up with any button already pushed? Release button element
  if (event.type === 'mouseup' && box.flags.buttonpush)

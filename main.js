@@ -721,6 +721,7 @@ function FromController(json)
 		        }
 	      break;
 	 case 'CALL':
+	      imgdesc.style.display = 'none';
 	 case 'SIDEBAR':
 	 case 'New Database':
 	 case 'Database Configuration':
@@ -748,20 +749,25 @@ function FromController(json)
 
 function UploadDialog()
 {
- let i, list = '', uploadbtn = false;
+ let i, name, size, sizetext, list = '', uploadbtn = false;
  for (i = 0; i < browse.files.length; i++)
-     if (browse.files[i].name.charAt(0) == '+')
-	{
-	 list += '<span style="color: red;">' + `${i+1}. ` + browse.files[i].name + '\n</span>';
-	}
-      else
-	{
-	 list += `${i+1}. ` + browse.files[i].name + '\n';
-	 uploadbtn = true;
-	}
+     {
+      name = browse.files[i].name;
+      size = browse.files[i].size;
+      sizetext = ` (${(size/1024/1024).toFixed(2)}MB)`;
+      if (name.charAt(0) == '+' || size > MAXFILESIZE)
+	 {
+	  list += '<span style="color: red;">' + `${i+1}. ` + name + `${sizetext}\n</span>`;
+	 }
+       else
+	 {
+	  list += `${i+1}. ` + name + `<span style="font: .8em/1 sans-serif; color: #aaa;">${sizetext}</span>\n`;
+	  uploadbtn = true;
+	 }
+     }
 
  box = { title: 'Upload files',
-	 dialog: { pad: {profile: {element: {head: `\nBrowse some files to upload to the object element\nNote: file names with the '+' as a 1st char cannot be uploaded!    \n<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to upload (${i} selected):\n\n</span>` + list}}} },
+	 dialog: { pad: {profile: {element: {head: `\nBrowse some files (count limit: ${MAXFILEUPLOADS}, file size limit: ${MAXFILESIZE/1024/1024}MB) to upload to the object element   \nNote: file names with the '+' as a 1st char cannot be uploaded!\n<span style="color: RGB(44,72,131); font-weight: bolder;">\nList of files to upload (${i} selected):\n\n</span>` + list}}} },
 	 buttons: { BROWSE: {value: "BROWSE", call: "BROWSE", interactive: ''} },
 	 flags: { data: box?.flags?.data ? box.flags.data : '', esc: "", style: "min-width: 400px; min-height: 200px; max-width: 1200px; max-height: 700px;"} };
 
@@ -830,8 +836,13 @@ function CallController(data)
 	      object = new FormData();
 	      object.append('id', box.flags.data);
 	      object.append('cmd', 'UPLOAD');
-	      for (const file of browse.files) 
-		  if (file.name.charAt(0) !== '+') object.append('files[]', file, file.name);
+	      i = 0;
+	      for (const file of browse.files)
+		  {
+		   if (file.name.charAt(0) !== '+') object.append('files[]', file, file.name);
+		   i++;
+		   if (i >= MAXFILEUPLOADS) break;
+		  }
 	      Hujax('file.php', FromController, { method: 'POST', body: object });
 	      return;
 	 case 'DOWNLOAD':
@@ -1034,6 +1045,8 @@ function CallController(data)
 		  warning("Undefined application message: '" + cmd + "'!");
 		  return;
 		 }
+	      user = OD = OV = ODid = OVid = OVtype = '';
+	      cursor = {};
 	      object = { cmd: 'LOGOUT' };
 	}
 

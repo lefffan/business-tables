@@ -2,6 +2,7 @@
 
 require_once 'core.php';
 //lg($_POST);
+//lg($_FILES);
 //lg($_GET);
 
 if (isset($_GET['id']))
@@ -46,6 +47,7 @@ switch ($cmd)
 	     $prefix = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/";
 	     if (!is_dir($prefix)) if (!mkdir($prefix, 0700, true)) break;
 	     foreach ($_FILES['files']['name'] as $i => $name)
+		     if (intval($_FILES['files']['size'][$i]) < MAXFILESIZE)
 		     if (move_uploaded_file($_FILES['files']['tmp_name'][$i], $prefix.$name)) $successfilecount++;
 	     $output += ['alert' => $successfilecount.' of '.$filecount.' file(-s) uploaded successfully!'];
 	     echo json_encode($output); // Echo output result

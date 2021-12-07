@@ -13,6 +13,8 @@ const PORT				= 7889;
 const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";
 const KILLWRAPPERPROCESSESCMD		= "kill -9";
 const UPLOADDIR				= '/usr/local/lib/tabels/';
+const MAXFILESIZE			= 157286400;
+const MAXFILEUPLOADS			= 20;
 
 /****************************Other constants**********************************************/
 const MAXOBJECTS			= 100000;
