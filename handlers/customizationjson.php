@@ -13,7 +13,7 @@ function defaultCustomizationDialogJSON()
 	  $dialog['pad'][$profile] = [];
 	  if (isset($value['target']))
 	     {
-	      $dialog['pad'][$profile]['element0'] = ['head' => "CSS selector: '".$value['target']."'. Customize css selector properties below:", 'target' => $value['target']];
+	      $dialog['pad'][$profile]['element0'] = ['head' => "CSS selector: '".$value['target']."'. Customize css selector properties below:\n", 'target' => $value['target']];
 	      $dialog['pad'][$profile]['element1'] = ['head' => ''];
 	     }
 	  foreach ($value as $key => $val) if ($key != 'target' && substr($key, 0, 1) != '_')

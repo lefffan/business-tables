@@ -232,15 +232,17 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
  mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
  mainTableHeight = Math.max(mainTableHeight, arr.y + 1);
 
- // Get start event at OV open (except add/remove operations). Using first found, others events are ignored.
+ // Get start event at OV open (except add/remove operations). Using last found.
  if (arr.event !== undefined && cmd === 'CALL')
     {
      cursor.oId = oidnum; // Event does exist, so get its name and its object/elemnt ids
      cursor.eId = eid;
-     cursor.cmd = arr.event;
+     cursor.x = arr.x;
+     cursor.y = arr.y;
+     cursor.cmd = arr.event.trimStart();
     }
 
- // Convert hint ho html chars
+ // Convert hint to html chars
  if (cell.hint) cell.hint = toHTMLCharsConvert(cell.hint);
 }
 
@@ -250,20 +252,21 @@ function drawMain(data, layout)
  ResetUnreadMessages();
  delete drag.x1;
 
- // Current view refresh? Remember cursor position and editable status.
- let oldcursor = {};
+ // Current view refresh? Leave cursor unchanged, otherwise reset it
  if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid)
     {
-     oldcursor = { x: cursor.x, y: cursor.y, oId: cursor.oId, eId: cursor.eId, contentEditable: cursor.td.contentEditable, data: htmlCharsConvert(cursor.td.innerHTML) };
-     if (objectTable[NEWOBJECTID])
-	{
-	 oldcursor.newobject = [];
-	 for (let eid in objectTable[NEWOBJECTID]) oldcursor.newobject[eid] = mainTable[objectTable[NEWOBJECTID][eid].y][objectTable[NEWOBJECTID][eid].x].data;
-	}
+     cursor.contentEditable = cursor.td.contentEditable;
+     cursor.data = htmlCharsConvert(cursor.td.innerHTML);
+     cursor.newobject = [];
+     if (objectTable[NEWOBJECTID]) for (let eid in objectTable[NEWOBJECTID])
+	cursor.newobject[eid] = mainTable[objectTable[NEWOBJECTID][eid].y][objectTable[NEWOBJECTID][eid].x].data;
+    }
+  else
+    {
+     cursor = { ODid: ODid, OVid: OVid };
     }
 
  // Init some important vars such as tables, focus element and etc..
- cursor = { ODid: ODid, OVid: OVid };
  mainTable = [];
  objectTable = {};
  mainTableWidth = mainTableHeight = 0;
@@ -387,7 +390,7 @@ function drawMain(data, layout)
 	   if (hidecol[x]) { mainTable[y].splice(x, 1); mainTableWidth--; x--; continue; }
 	   if (cell = mainTable[y][x])
 	      {
-	       if (cell.oId === NEWOBJECTID && oldcursor.newobject?.[cell.eId]) cell.data = oldcursor.newobject[cell.eId];
+	       if (cell.oId === NEWOBJECTID && cursor.newobject?.[cell.eId]) cell.data = cursor.newobject[cell.eId];
 	       rowHTML += `<td${cell.attr}>${toHTMLCharsConvert(cell.data)}</td>`;
 	       // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
 	       if (cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)
@@ -398,49 +401,61 @@ function drawMain(data, layout)
 	  }
       rowHTML += '</tr>';
      }
+
+ // Main table becomes empty due to hidden rows/columns?
  if (!mainTableWidth)
     {
      displayMainError('All table rows and columns are hidden!<br>Please change element layout to display some objects and its elements', false);
      return;
     }
+
+ // Set main view HTML
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
  clearTimeout(loadTimerId);
 
- if (cursor.oId) // Start event?
-    {
-     const event = cursor.cmd;
-     cursor.cmd =  ['DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12'].indexOf(event.substr(0, 8)) !== -1 ? event.substr(0, 8) : '';
-     cursor.data = cursor.cmd === 'KEYPRESS' ? event.substr(8) : '';
-     if (cursor.cmd && cursor.oId >= STARTOBJECTID && (cmd = cursor.cmd)) CallController(cursor.data);
-     SetInitialCursorPosition(cursor);
-    }
- else if (oldcursor.oId) // Otherwise restore cursor (if exist) position on refreshed view
-    {
-     SetInitialCursorPosition(oldcursor);
-    }
-
- cmd = '';
-}
-
-function SetInitialCursorPosition(cursor)
-{
- if (objectTable[cursor.oId]?.[cursor.eId])
+ // Cursor object/element id does exist? Calculate x and y position
+ if (cursor.oId && cursor.eId && objectTable[cursor.oId]?.[cursor.eId])
     {
      cursor.x = objectTable[cursor.oId][cursor.eId].x;
      cursor.y = objectTable[cursor.oId][cursor.eId].y;
     }
-  else
+
+ // Set cursor position on the table
+ if (cursor.x !== undefined && cursor.y !== undefined)
     {
      cursor.y = Math.min(cursor.y, mainTableHeight - 1);
      cursor.x = Math.min(cursor.x, mainTableWidth - 1)
-     cursor.oId = mainTable[cursor.y][cursor.x].oId;
-     cursor.eId = mainTable[cursor.y][cursor.x].eId;
+     CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
+     if (cursor.contentEditable === EDITABLE || cursor.oId === NEWOBJECTID) MakeCursorContentEditable(cursor.data);
+     mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
+     mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
     }
- CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
- if (cursor.contentEditable === EDITABLE || cursor.oId === NEWOBJECTID) MakeCursorContentEditable(cursor.data);
- mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
- mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
+
+ // Start event does exist? Process it
+ if (cursor.cmd !== undefined)
+    {
+     if (['DBLCLICK', 'INS', 'DEL', 'F2', 'F12'].indexOf(cursor.cmd.trim()) !== -1)
+	{
+	 if (cursor.oId >= STARTOBJECTID && !isNaN(cursor.eId) && (cmd = cursor.cmd.trim())) CallController();
+	}
+      else if (cursor.cmd.match(/^KEYPRESS/))
+	{
+	 if (cursor.oId >= STARTOBJECTID && !isNaN(cursor.eId) && (cmd = 'KEYPRESS')) CallController(cursor.cmd.substr(8));
+	}
+      else if (cursor.cmd.match(/^CHART\(\d*,\d*,\d*,\d*\)/) || (cursor.cmd.trim() === 'CHART' && (cursor.cmd = `CHART(0,0,${mainTableWidth - 1},${mainTableHeight - 1})`)))
+	{
+	 cursor.cmd = cursor.cmd.split('(')[1].split(')')[0].split(',');
+	}
+     cursor.data = '';
+    }
+
+ // Draw chart in case of apprropriate start event
+ if (Array.isArray(cursor.cmd)) DrawChart(+cursor.cmd[0], +cursor.cmd[1], +cursor.cmd[2], +cursor.cmd[3]);
+
+ // Release command value
+ cmd = '';
+ delete cursor.cmd;
 }
 
 function CalcTree(tree)
@@ -803,26 +818,6 @@ function ResetUnreadMessages()
  drawSidebar(sidebar);
 }
 
-function CanvasDrawPie(ctx, centr, beginAngle, endAngle, color)
-{
- ctx.fillStyle = color;
- if (beginAngle == endAngle) return;
- ctx.beginPath();
- ctx.moveTo(centr, centr);
- ctx.arc(centr, centr, centr * 0.8, beginAngle, endAngle);
- ctx.lineTo(centr, centr);
- ctx.stroke();
- ctx.fill();
-}
-
-function CanvasDrawPieDescription(ctx, x, y, text, percent, color)
-{
- ctx.fillRect(x, y - 13, 50, 23);
- if (color !== undefined) ctx.fillStyle = color;
- ctx.fillText(text, x + 60, y);
- ctx.fillText(String(percent).substr(0, 4) + '%', x + 5, y);
-}
-
 function CallController(data)
 {
  let object, i;
@@ -886,75 +881,7 @@ function CallController(data)
 	      CopyBuffer();
 	      break;
 	 case 'Chart':
-	      if (drag.x1 === undefined) break;
-	      let sum = 0, key, value, chart = {};
-	      let x1 = Math.min(drag.x1, drag.x2), x2 = Math.max(drag.x1, drag.x2);
-	      let y1 = Math.min(drag.y1, drag.y2), y2 = Math.max(drag.y1, drag.y2);
-	      const horizontal = x1 === x2 ? false : true;	// X-axis is horiszontal?
-	      if (x1 === x2) x2++; else if (y1 === y2) y2++;	// Extend selected area
-
-	      for (let y = y1; y <= y2; y++)
-	      for (let x = x1; x <= x2; x++)
-		  {
-		   if ((horizontal && y === y1) || (!horizontal && x === x1))
-		      {
-		       if (mainTable[y]?.[x]) key = mainTable[y][x].data; else key = '';
-		       continue;
-		      }
-		   if (horizontal) if (mainTable[y1]?.[x]) key = mainTable[y1][x].data; else key = '';
-		   if (mainTable[y]?.[x]) value = Math.trunc(Number(mainTable[y][x].data)); else value = 0;
-		   if (typeof key !== 'string') key = '';
-		   if (typeof value !== 'number' || isNaN(value)) value = 0;
-		   if (chart[key] === undefined) chart[key] = 0;
-		   chart[key] += value;
-		   sum += value;
-		  }
-	      if (!sum)
-		 {
-		  warning("No numerical data found!");
-		  break;
-		 }
-
-	      mainDiv.innerHTML = '<canvas id="chart"><h1>Please update your browser! Canvas is not supported</h1></canvas>';
-	      const canvas = document.getElementById('chart');
-	      canvas.width = Math.trunc(mainDiv.offsetWidth * 0.9);
-	      canvas.height = Math.trunc(mainDiv.offsetHeight * 0.9);
-	      const ctx = canvas.getContext('2d');
-	      ctx.font = '15px arial';
-	      ctx.textBaseline = 'middle';
-	      /*ctx.mozImageSmoothingEnabled = false;
-	      ctx.webkitImageSmoothingEnabled = false;
-	      ctx.msImageSmoothingEnabled = false;
-	      ctx.imageSmoothingEnabled = false;*/
-
-	      const centr = Math.min(canvas.width, canvas.height) * 0.45;
-	      let x = centr * 2, y = centr * 0.25, endAngle = beginAngle = Math.PI * 1.5, pies = [];
-	      for (key in chart) pies.push({name: key, angle: (chart[key]/sum) * Math.PI * 2});
-	      pies.sort(function(a, b) { return b.angle - a.angle; });
-	      value = 0;
-	      for (key in uiProfile['chart colors']) if (pies[value]) pies[value++]['color'] = uiProfile['chart colors'][key];
-	      sum = 0;
-	      for (let pie of pies)
-		  {
-		   if (pie['color'] === undefined)
-		      {
-		       sum += pie.angle;
-		       value = true;
-		       continue;
-		      }
-		   beginAngle = endAngle;
-		   endAngle += pie.angle;
-		   CanvasDrawPie(ctx, centr, beginAngle, endAngle, pie['color'])
-		   CanvasDrawPieDescription(ctx, x, y, pie['name'], (endAngle - beginAngle) * 50 / Math.PI, '#202020');
-		   y += 45;
-		  }
-	      if (value === true)	// Process 'Others' pie if exist
-		 {
-		  beginAngle = endAngle;
-		  endAngle += sum;
-		  CanvasDrawPie(ctx, centr, beginAngle, endAngle, '#F0F0F0');
-		  CanvasDrawPieDescription(ctx, x, y, 'Others', (endAngle - beginAngle) * 50 / Math.PI, '#202020');
-		 }
+	      DrawChart(drag.x1, drag.y1, drag.x2, drag.y2);
 	      break;
 	 case 'Description':
 	      let cell, msg = '', count = 1;

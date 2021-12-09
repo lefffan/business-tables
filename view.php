@@ -349,7 +349,7 @@ try {
 
 		      // Get element selection query string, in case of empty result return no element message as an error
 		      $elementQueryString = '';
-		      SetLayoutProperties($client);
+		      SetLayoutProperties($client, $db);
 		      foreach ($client['layout']['elements'] as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
 		      if ($elementQueryString === '' && !count($client['layout']['virtual']))
 			 {

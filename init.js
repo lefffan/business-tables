@@ -30,7 +30,7 @@ let objectsOnThePage, VirtualElements;
 let user = '', cmd = '', OD = '', OV = '', ODid = '', OVid = '', OVtype = '';
 let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
 let box = null, sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
-let browse, imgwrapper, img, gallery, imgdesc;
+let browse, imgwrapper, img, gallery, imgdesc, canvas;
 let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
@@ -110,6 +110,7 @@ let uiProfile = {
 		  "tree element description": { target: ".treelinkdescription", "display": "flex;", "flex": "1 10px;", "background-color": "transparent;", "border": "none;", "padding": "5px;", "font": "10px/11px arial;", "overflow": "hidden;", },
 		  // Misc
 		  "chart colors": { "Color #1": "#4CAF50", "Color #2": "#00BCD4", "Color #3": "#E91E63", "Color #4": "#FFC107", "Color #5": "#9E9E9E", "Color #6": "#FFFF00", "Color #7": "#E32DF2", "Color #8": "#BDDDFD", "Color #9": "#BCF11B", "Color #10": "#DBDBDB", "Color #11": "#343E54", "Color #12": "#1465B0" },
+		  "gallery image footnote": { "target": ".imgdesc", "background-color": "transparent;", "font": "11px sans-serif;", "color": "RGB(56,124,213);" },
 		  };
 
 const style = document.createElement('style');
@@ -561,7 +562,7 @@ arguments are parsed to be replaced by the next values:
  - <datetime> is replaced by date and time in format 'Y-m-d H:i:s'.
  - <data> is replaced by event data.
     For KEYPRESS event data is a JSON string with next format:
-    {"string": "<key char>", "altkey": "",  "ctrlkey": "", "metakey": "shiftkey", "": ""}
+    {"string": "<key char>", "altkey": "",  "ctrlkey": "", "metakey": "", "shiftkey": ""}
     Property "string" is one key char, other properties do exist only in case of appropriate key pushed. Meta key for Mac OS
     is 'Cmd' key, for Window OS - 'Window' key.
     For DBLCLICK, INS, DEL, F2, F12 data arg is the same except the "string" property is undefined.
@@ -626,10 +627,17 @@ Available handler commands are:
    see 'Object Selection' help section for details. For a example, some object element mouse double click displays the view,
    which displays objects matched the clicked element value, that is passed in a "params" property. Handler command 'CALL' is
    ignored for 'CHANGE', 'INIT' and 'SCHEDULE' user/controller events.
- - 'SET'/'RESET'. Object element data set. 'SET' command updates all specified element JSON properties only. 'RESET' command
-   does the same, but additionally removes all other (not specified) properties, so in case of RESET command element JSON
-   data is just replaced by the handler output JSON.
-
+ - 'SET'/'RESET'. Object element data set. Format: '{"cmd": "SET/RESET", "<prop1>": "<value1>", .., "<propN>": "<valueN>"}'.
+   'SET' command updates all specified element JSON properties only. 'RESET' command does the same, but additionally removes
+   all not specified properties. In fact, 'RESET' replaces element data with the handler output JSON.
+ - 'UPLOADDIALOG'. Format: '{"cmd": "UPLOADDIALOG"}'. The command makes the controller to call client side for the dialog box
+   to upload/attach files to the object element.
+ - 'DOWNLOADDIALOG'. Format: '{"cmd": "DOWNLOADDIALOG"}'. The command makes the controller to call client side for the dialog
+   box to download files from the object element to the client.
+ - 'UNLOADDIALOG'. Format: '{"cmd": "UNLOADDIALOG"}'. Similar to the 'DOWNLOADDIALOG', but with the option to delete attached
+   files.
+ - 'GALLERY'. Format: '{"cmd": "GALLERY"}'. The command makes the controller to call client side for the gallery mode to view
+   images (.jpg .png .gif .bmp) among element attached files.
 Some handlers may take long time for a execution, so to avoid any script/binary freezing or everlasting runtime - user
 can manage handler processes via 'Task Manager' (context menu). Its table columns are PID (process identificator), Handler
 (handler command line), Exe time (handler running time in sec), Initiator (user name initiated event for the handler call),
@@ -774,7 +782,15 @@ editable mode with no changes. Handler supports next commands (as a first argume
 - SELECT allows to select one element value among predefined values separated via '|' in one arg passed to handler :
   php text.php SELECT 'value1|value2|value3..'
   Handler will call dialog box with select interface element with specified options value1, value, value3..
-  To save dialog data - set next handler for the CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>`
+  To save dialog data - set next handler for the CONFIRMDIALOG event: php text.php CONFIRMDIALOG <data>
+- DBLCLICK together with double click event data. As you know - event data (for mouse and keyboard events) are CTRL|ALT|SHIFT keys 
+  status, so command line 'text.php <event> <data>' for double click event will do next:
+    1. Double click without CTRL, ALT, SHIFT or meta key - makes content editable (similar to 'EDIT' arg above)
+    2. Double click with SHIFT - calls dialog box to upload/attach files to the appropriate object element
+    3. Double click with CTRL - calls dialog box to download files from the appropriate object element
+    4. Double click with ALT - calls dialog box to download/delete files from the appropriate object element.
+- F12 calls client side gallery mode to view images attached to the object element.
+`
 }}},
 
 "Examples": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:

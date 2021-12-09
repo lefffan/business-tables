@@ -77,6 +77,17 @@ function keydownEventHandler(event)
      return;
     }
 
+ if (OVtype === 'Chart')
+    {
+     if (event.keyCode === 27) // Esc
+	{
+	 mainDiv.removeChild(canvas);
+	 mainTablediv.style.display = 'block';
+	 OVtype = 'Table'
+	}
+     return;
+    }
+
  if (OVtype === 'Table')
     {
      HideHint();
@@ -154,13 +165,16 @@ function keydownEventHandler(event)
 		  break;
 	     case 65: // 'a'
 		  if (cursor.td.contentEditable === EDITABLE) break;
-		  SelectTableArea(drag.x1 = 0, drag.y1 = 0, drag.x2 = mainTableWidth - 1, drag.y2 = mainTableHeight - 1);
-		  event.preventDefault();
+		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
+		     {
+		      SelectTableArea(drag.x1 = 0, drag.y1 = 0, drag.x2 = mainTableWidth - 1, drag.y2 = mainTableHeight - 1);
+		      event.preventDefault();
+		     }
 		  ProcessControllerEventKeys(event);
 		  break;
 	     case 67: // 'c'
 		  if (cursor.td.contentEditable === EDITABLE) break;
-		  CopyBuffer(event.shiftKey);
+		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey) CopyBuffer(event.shiftKey);
 		  ProcessControllerEventKeys(event);
 		  break;
 	     default: // Space, letters, digits
@@ -209,6 +223,12 @@ function ProcessControllerEventKeys(event)
 function moveCursor(x, y, abs)
 {
  if (cursor.td.contentEditable === EDITABLE || (abs && cursor.x == x && cursor.y == y)) return;
+
+ if (drag.x1 !== undefined) // Unselect area if selected
+    {
+     UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+     delete drag.x1;
+    }
 
  let a = x, b = y;
  if (!abs)

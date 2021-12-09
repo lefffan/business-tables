@@ -322,12 +322,13 @@ switch ($output[$currenteid]['cmd'])
 		{
 		 $list = [];
 		 $dir = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]";
-		 if (is_dir($dir))
-		    foreach (scandir($dir) as $name)
-			    if ($name !== '.' && $name !== '..')
-			    if ($output['cmd'] !== 'GALLERY' || pathinfo($name)['extension'] === 'jpg'
-				|| pathinfo($name)['extension'] === 'gif' || pathinfo($name)['extension'] === 'bmp'
-				|| pathinfo($name)['extension'] === 'png') $list[] = $name;
+		 if (is_dir($dir)) foreach (scandir($dir) as $name) if ($name !== '.' && $name !== '..')
+		    {
+		     $ext = pathinfo($name);
+		     if (!isset($ext['extension'])) continue;
+		     $ext = $ext['extension'];
+		     if ($output['cmd'] !== 'GALLERY' || array_search($ext, ['jpg', 'png', 'gif', 'bmp']) !== false) $list[] = $name;
+		    }
 		 count($list) ? $output['list'] = $list : $output = ['cmd' => '', 'alert' => $output['cmd'] === 'GALLERY' ? 'No images attached to the object element! Upload some image files first!' : 'No files attached to the object element. Upload some files first!'];
 		}
 	     break;

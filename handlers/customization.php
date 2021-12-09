@@ -17,7 +17,7 @@ if (!isset($_SERVER['argv'][1])) exit;
 switch ($_SERVER['argv'][1])
        {
 	case 'INIT':
-	     echo json_encode(['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()]);
+	     echo json_encode(['cmd' => 'RESET', 'value' => 'Customize', 'dialog' => defaultCustomizationDialogJSON()]);
 	     break;
 	case 'DBLCLICK':
 	     if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true)))

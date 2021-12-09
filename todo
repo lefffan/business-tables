@@ -1,9 +1,3 @@
-Tuesday
-    UPLOAD, DOWNLOAD, UNLOAD, GALLERY help
-    Warn user about max file size
-    imagewrapper and imagedesc in uiProfile
-    github customization for root
-
 Friday
     core.php - fill virtual values (full sql request in 'value' property)
     main.js - chart event with esc back to the view
@@ -11,7 +5,9 @@ Friday
 
 Sunday
     Create new initial DB (change handlers, title and new object ids)
+    system user readonly customization (take github user interface example), it is default customization to allow all other users use it in case of a error
     Test all examples in help on a new initial DB
+    use green color as in my macbook as a color of a selected option
 
 Wednesday
     Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
@@ -24,7 +20,9 @@ Sunday
     Open OV content in a new read-only tab
     Todos in keyboard/mouse help context menu (like ctrl+shift+f regular expression search)
     solve problem when user is a member of group that is a name of a user (i think these names should be ignored via checking group names on user names intersection) - just change getusergroups function! The function should check every group to be not a user name
-    footnote (snoska) for cells with hint, so remove description from the app, in description: hint, files attahced and link
+    footnote (snoska) for cells with [hint, unconfirmed, files, link]
+	so remove description from the app, in description: hint, files attahced and link
+    Clone object, similar to add object, but copies (only value prop of each element) via current menu contexted object
 
 Application:
   Oppoertunity to fecth image properties (like resolution) in GALLERY mode
@@ -33,7 +31,6 @@ Application:
   Fetch progress for uploading files https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/upload
   Application version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Restrict OD sidebar display for some users
-  Clone object, similar to add object, but copies current menu contexted object
   in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
   Export OV data to xls, pdf or txt file
   Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
@@ -46,7 +43,7 @@ Application:
   telnet, snmp and diagnostic functions
   display current DB size and object count in EDITOD
     make db size limit and object count limit work
-  System call 'OPENINANEWTAB'
+  System call 'NEWTABURL'
   System call 'NEWOBJECT' (to create object by user handlers)
   Object selection with non-empty link type:
 	for all view types (by now it is released for tree view type only)
@@ -59,16 +56,16 @@ Application:
 	hint (based on eid)
 	style (for example to see what nodes are down by seeing them via red background)
 	callOV/link-in-a-new-tab by mouse double click
-  hide tree element rebuilds the tree (context menu hide)
+  hide/show tree element rebuilds the tree (context menu hide/show)
   Tree wire name (arrow name) to mark fiber cooper radio..
   Crontab element execution once immediately
   Task manager: restrict call of task manager for some users in user props
     Per user and group (!) separate OV permission to view-in-sidebar and add-edit-delete with low priority in user props
-  system user readonly customization, it is default customization to allow all other users use it in case of a error
   How could object selection calc objects with only one free port?
     Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
   At the end of app stable version make new customization
-  <OD>, <OV>, <ODid>, <OVid> parse in a handler command line
+  <date> <OD>, <OV>, <ODid>, <OVid> parse in a handler command line
+  Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
@@ -91,57 +88,51 @@ Application:
     to be refreshed, its too slowly
 
 - Front:
-  shift + arrows selects area
+  Ctrl + arrows navigate cursor not by one cell, but by next/previous object (up, down) or next/previous element (left/right)
+  Think about how alt + arrows shoud move a cursor, and alt+shift+arrows and ctrl+shift+arrows
   effects at navigating images in GALLERY just like in drive.ru
-  dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page
+  dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
-  Adaptivka after browser window size has changed dialog box has gone away
-  pad.profile.element style prop - not only for header and for interface element of itself!
-  multi cell selecting - copy (excel table), delete (removes all selected objects). Plus scroll if selected area doesnot match the main field
+  multi cell selecting - copy (excel table), delete (removes all selected objects).
+    shift + arrows selects area
+    Scroll main table/field if selected area selected via mouse cursor is going out of the main field
     User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
     single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
     handler command to copy data to the buffer
     One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
     delete selected objects
     change context menu description format and description of selected objects
-  OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
   Scroll lock behaviour like in Excel
   application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
-   and reload main div or not;
-   autorefresh OV (for example for chats or for small views) or show digits in red scope as footnoe on sidebar OV div 
   Dialog boxes:
+    when pushed button is pushed and mouse cursir is out of button - make button released
+    at dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
     show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
     Features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side
 	      from the select div,
 	      highlite 'New rule|view|element' in the expanded div,
 	      radio tag (and may be not only this tag) loses its positin after textarea tag in case of no 'line': '',
 	      input text tag whole parent div width
-		content scrolling with pads stay on the top (now pad area is scrolled with the content)
+	      content scrolling with pads stay on the top (now pad area is scrolled with the content)
+	      pad.profile.element style prop - not only for header and for interface element of itself!
+	      OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
-  when button is pushed no dialog refreshed
-    when pushed button is pushed and mouse cursir is out of button - make button released
-    at dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
-  Make handler intput lines longer, and Handler for 'INIT' event replace by 'INIT' event
   Scrolling table area selection
     element.scrollTop = element.scrollHeight
     var objDiv = document.getElementById("your_div"); objDiv.scrollTop = objDiv.scrollHeight;
 
 - Controller:
   prevent multiple call controller on one element, for a example multiple key press while server didn't respond the previous event
-  Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
   If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
   Add events with ctrl, shift and alt keys combinations pushed to DBLCLICK, INS DEL F2 F12 KEYPRESS (may be even for a apparent key with ctrl|alt|shift press)
+  Handler for 'INIT' event replace by 'INIT' event
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
     (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
-    So should CONFIRM event be renamed to CONFIRMEDIT? (i think no!)
-    May be set hint to these error cells and all cells with hint are marked with the footnote (snoska).
-    Also implement footnotes for all four cell angles (hint, description, link, attached files, unconfirmed) - should hint display in a description context menu item call?
     Should description and help (context menu items) text be selectable to copy/paste?
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
-  OV/OD name/id, datetime as input arg for the handler
   Non local server (cloud) implemented handlers
 
 - Some systems emulation:
@@ -379,7 +370,16 @@ max_input_time = 60
 memory_limit = 128M
 max_execution_time = 30
 --------------------------------------------------------------------------------
+FILE MANAGMENT
+https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#example_using_object_urls_to_display_images
+https://developer.mozilla.org/ru/docs/Web/HTML/Element/img
+https://code.tutsplus.com/ru/tutorials/how-to-upload-a-file-in-php-with-example--cms-31763
+https://metanit.com/php/tutorial/5.4.php
 
+-------------------------------------------------
+Perebor svoistv obekta
+https://coderoad.ru/1573593/Каков-самый-быстрый-способ-перебора-свойств-объекта-в-Javascript
+https://gists.cwidanage.com/2019/11/how-to-iterate-over-javascript-arrays.html
 
 
 

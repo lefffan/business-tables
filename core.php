@@ -404,7 +404,7 @@ function CheckRule($db, &$client, $rule, $version)
  return false; // Else return false (no match)
 }
 
-function SetLayoutProperties(&$client)
+function SetLayoutProperties(&$client, $db = NULL)
 {
  // +-----------+-------------------------+------------------+----------------------------+
  // |   \       |                         |                  |                            |
@@ -435,12 +435,26 @@ function SetLayoutProperties(&$client)
 	 {
 	  // Check object id (oid) for unset value and unset at least one of three virtual props to assume JSON as a table attributes
 	  if (!isset($arr['oid']))
-	  if (isset($arr['x'], $arr['y'], $arr['value']))
+	  if (isset($db, $arr['x'], $arr['y'], $arr['value']))
 	     {
 	      foreach ($arr as $key => $value)
-		   if (gettype($value) !== 'string' || array_search($key, ['x', 'y', 'style', 'value', 'hint', 'description', 'event']) === false)
+		   if (gettype($value) !== 'string' || array_search($key, ['x', 'y', 'style', 'value', 'hint', 'event']) === false)
 		      unset($arr[$key]);
-	      $layout['virtual'][] = $arr;
+	      if (isset($arr['x'], $arr['y'], $arr['value']))
+		 {
+		  $value = trim($arr['value']);
+		  if (stripos($value, 'SELECT') === 0)
+		     {
+		      try {
+			   $query = $db->prepare($value);
+			   $query->execute();
+			   $value = $query->fetchAll(PDO::FETCH_NUM);
+			   if (isset($value[0][0])) $arr['value'] = $value[0][0];
+			  }
+		      catch (PDOException $e) {}
+		     }
+		  $layout['virtual'][] = $arr;
+		 }
 	      continue;
 	     }
 	   else
@@ -919,26 +933,6 @@ function Check($db, $flags, &$client, &$output)
 	     }
      if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype']) && ($output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!")) return;
 
-     // List is empty or includes '*' chars for a 'Table' view?
-     // Set up default list for all elements: {"eid": "every", "oid": "title|0|newobj", "x": "0..", "y": "0|n"}
-     if ($client['viewtype'] === 'Table ')
-     if ($client['elementselection'] === '' || $client['elementselection'] === '*' || $client['elementselection'] === '**' || $client['elementselection'] === '***')
-        {
-	 $x = 0;
-	 $startline = 'n+1';
-	 if ($client['elementselection'] === '*' || $client['elementselection'] === '***') $startline = 'n+2';
-	 $arr = $client['allelements'];
-	 if ($client['elementselection'] === '**' || $client['elementselection'] === '***') $arr = ['id' => '', 'version' => '', 'owner' => '', 'datetime' => ''] + $arr;
-	 $client['elementselection'] = '';
-         foreach ($arr as $id => $value)
-		 {
-		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(TITLEOBJECTID).'", "x": "'.strval($x).'", "y": "0"}'."\n";
-		  if ($startline === 'n+2') $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "'.strval(NEWOBJECTID).'", "x": "'.strval($x).'", "y": "1"}'."\n";
-		  $client['elementselection'] .= '{"eid": "'.$id.'", "oid": "*", "x": "'.strval($x).'", "y": "'.$startline.'"}'."\n";
-		  $x++;
-		 }
-	}
-
      if ($client['viewtype'] === 'Table')
 	{
 	 $layout = '';
@@ -949,7 +943,7 @@ function Check($db, $flags, &$client, &$output)
 		      $layout .= $json."\n";
 		      continue;
 		     }
-		  $startline = $json === ' ' ? 'n+2' : 'n+1';
+		  $startline = $json[0] === ' ' ? 'n+2' : 'n+1';
 		  $elements = [];
 		  $x = 0;
 		  foreach (preg_split("/,/", $json) as $eid)
