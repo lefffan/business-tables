@@ -222,11 +222,13 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
      cell.attr = datacellclass + arr.style;
      cell.version = obj.version;
      cell.realobject = (obj.lastversion === '1' && obj.version != '0') ? true : false;
-     if (arr.hiderow !== undefined && cell.data === arr.hiderow) hiderow[arr.y] = true;
-     if (hidecol && arr.hidecol !== undefined && cell.data === arr.hidecol) hidecol[arr.x] = true;
     }
  else if (oidnum === NEWOBJECTID) cell.attr = newobjectcellclass + arr.style;
  else if (oidnum === TITLEOBJECTID) cell.attr = titlecellclass + arr.style;
+
+ // Fix matched 'hiderow'/'hidecol' rows/columns to collapse
+ if (arr.hiderow !== undefined && cell.data === arr.hiderow) hiderow[arr.y] = true;
+ if (arr.hidecol !== undefined && cell.data === arr.hidecol) hidecol[arr.x] = true;
 
  // Calculate main table width and height
  mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
@@ -272,22 +274,6 @@ function drawMain(data, layout)
  mainTableWidth = mainTableHeight = 0;
  OVtype = 'Table';
 
- // Fill main table array based on next layout:
- // +-----------+----------------------+------------------+------------------+
- // |   \       |                      |                  |                  |
- // |    \ oid  | 1|2|4..|*|           |                  |                  |
- // |     \     | expression           |      empty       |      unset       |
- // |  eid \    | (o, e, n, q)         | (eid is ignored) | (eid is ignored) |
- // |       \   |                      |                  |                  |
- // +-----------+----------------------+------------------+------------------+
- // |id         |  x (o, e, n, q),     |                  |                  |
- // |owner      |  y (o, e, n, q),     | style            | table attributes |
- // |datetime   |  value,              | hiderow          | and direction    |
- // |version    |  style,              | (for             | or               |
- // |lastversion|  description, hint,  | undefined        | virtual elements |
- // |1,2..      |  event,              | object)          | (x, y, value)    |
- // |*          |  hidecol, hiderow    |                  |                  |
- // +-----------+----------------------+------------------+------------------+
  const eids = layout['elements'], hiderow = [], hidecol = [];
  let arr, obj, error, n;
  if (!(objectsOnThePage = data.length)) data = [{}];
@@ -382,7 +368,7 @@ function drawMain(data, layout)
  // Set inner html content for the table view and add event listeners
  for (y = 0; y < mainTableHeight; y++)
      {
-      if (hiderow[y + disp] || (!mainTable[y] && layout['table']['hiderow'] !== undefined)) { mainTable.splice(y, 1); mainTableHeight--; y--; disp++; continue; }
+      if (hiderow[y + disp] || (!mainTable[y] && layout['undefined']['hiderow'] !== undefined)) { mainTable.splice(y, 1); mainTableHeight--; y--; disp++; continue; }
       if (!mainTable[y]) { rowHTML += undefinedRow; continue; }
       rowHTML += '<tr>';
       for (x = 0; x < mainTableWidth; x++)

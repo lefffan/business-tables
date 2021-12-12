@@ -312,97 +312,115 @@ See 'Element layout' help section for the tree template.`
 }}},
 
 "Element layout": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`Element layout is applied to the view (see 'View' of Database Configuration' help section). Element layout defines
-what elements should be displayed and how for the selected template. Element layout is a JSON strings list.
-JSON format depends on the selected template. Let's first consider 'Table' template - it is a main way to display and manage
-OD data that allows to format data many different ways - from classic tables to public chats, see examples below and
-'Examples' help section. Each JSON for a table template element layout defines element and its behaviour - such as
-table cell position, style attribute, event and etc.. JSON possible properties are:
+`Element layout is applied to the view (see 'View' of Database Configuration' help section) and defines what elements
+should be displayed and how for the selected template. Element layout is a JSON strings list one by line. JSON format depends
+on the selected template.
+Let's first consider 'Table' template - it is the main way to output and manage OD data. Table emplate element layout
+allows to format data many different ways - from classic tables to public chats, see examples below and 'Examples' help
+section. Each layout JSON for a table template defines object element and its behaviour - such as table cell position, style
+attribute, event and etc, for a example - '{"oid": "..", "eid": "..", "x": "..", "y": ".."}'. JSON possible properties are:
 
-- 'oid'. Object id number in range from 0. Attributes (x, y, style, ..) are applied to the specified object id together
-  with element id. Header (title) object id is ${TITLEOBJECTID}. New object (virtual object to input text data to add new objects) id is ${NEWOBJECTID}.
-  Actual database object identificators starts from ${STARTOBJECTID}. Absent 'oid' property is treated as property with zero value. Zero 'oid'
-  attributes are applied to all objects in the selection, while specific 'oid' numbers to the specified object only.
-- 'eid'. Built-in service elements (id, version, owner, datetime, lastversion) or user defined element id number started
-  from 1. Attributes (x, y, style, ..) are applied to the specified element id together with object id. Absent 'eid' property
-  is treated as property with zero value. Zero 'eid' attributes are applied to all elememnts of the object id 'oid' - for zero
-  'oid' allowed properties are 'style' (css style attribute for <td> cell with no object element placed in) and table (css
-  attributes for <table> html element), for specific 'oid' (from 1) - only css style for <td> cell.
-  See table below for 'oid'/'eid' combinations allowed properties.
-- 'x','y'. Object element position is defined by table cell x,y coordinates. These properties are arithmetic expressions
-  that may include two variables: 'n' (object serial number in the selection) and 'q' (total number of objects). For a
-  example, "y": "n+1" will place first object in the selection (n=0) to the second row (y=1), second object (n=1) - to the
-  third row (y=2). Note that column/row numeration starts from 0. See layout examples below. 
-- 'event'. Mouse double click (DBLCLICK) or key press (F2, F12, INS, DEL, KEYPRESS) event emulation after OV has been opened.
+- 'oid'. Property 'oid' defines object id and can take next values:
+	exact object id number (starts from 1, where ${TITLEOBJECTID} - title object, ${TITLEOBJECTID} - new object, 3.. - database objects)
+	asterisk (*)
+	expression (with four possible vars: o, e, n, q)
+  HTML style (style), position (x, y) and other attributes are applied to the specified object element defined by oid/eid combination,
+  see oid/eid table below. All actual objects in database have their unique identificators (starts from ${STARTOBJECTID}). Every database has
+  two service objects: header (title) object with id ${TITLEOBJECTID} and new object (object to input text data to add new objects) with id ${NEWOBJECTID}.
+  In case of exact object id number in 'oid' - attributes (x, y, style..) are applied to that specified object id with the highest
+  priority as more specific. Attributes of JSON with asterisk (*) 'oid' are applied to all objects of the selection (see 'Object
+  Selection' help section) with lower priority. All other 'oid' values are treated as a javascript expressions. True expressions match
+  the object, false expressions - doesn't. JSONs properties with 'oid' as an expression are applied with the lowest priority.
+  Expression example: "o%2===1" matches objects with odd identificators, so JSON
+  '{"eid":"*", "style":"background-color: #000;", "oid":"o%2===1 && o>2"}' will paint all odd (o%2===1) and actual (o>2) objects with
+  the black background color. Expressions may contain next vars:
+	'o' is an object id number in the selection
+	'e' is element id number (undefined for service elements)
+	'n' is object number in the selection (for the first object n=0, for the second n=1 and so on)
+	'q' is a total object count.
+  Empty 'oid' property ("oid": "") defines 'style' and 'hiderow' attributes for undefined cell that has no object element placed
+  (via x, y coordinates) in. Property 'eid' is ignored.
+  Unset 'oid' property defines virtual element or html tag <table> attribute list. Property 'eid' is also ignored.
+  Virtual elements are not stored in object database and have its own value stored in JSON 'value' property that is treated as a
+  clear text except the cases started from 'SELECT ' string. In that case 'value' text is an SQL statement that is executed to retreive
+  the data to be used as a virtual element value. In case of a error 'value' property remains unchanged. Virtual elements are useful to
+  output some total/summary data ('SELECT SUM|COUNT|AVG.. FROM data_<OD id>..') to build related graphs and charts.
+  Well, JSON with unset 'oid' is treated as a virtual element, but with unset x, y or value all JSON properties are treated as HTML
+  table tag attributes, see some layouts in 'Examples' help section. Besides table attributes 'direction' word ca be used as a property
+  to set table rotation. Possible values: 90, 180 and 270. These are the angles the HTML table should be rotate at. Unknown 'direction'
+  value makes no effect.
+- 'eid'. Property 'eid' is an element id and can take next values:
+	exact element id number (starts from 1)
+	service element names (id, version, owner, datetime, lastversion)
+	asterisk (*)
+  Similar to 'oid' property 'eid' defines exact element (via its identificator or name) or all elements (*) of the specified object
+  x, y, style and other properties should be applied to.
+- 'x','y'. Object element position on HTML table is defined by table cell x,y coordinates. These properties are arithmetic expressions
+  that may include four variables (see 'oid' property description). For a example, "y": "n+1" will place first object in the selection
+  with n=0 to the second row (y=1), second object (n=1) - to the third row (y=2) and so on (note that column/row numeration starts
+  from 0). Properties are mandatory. See layout examples below.
+- 'event'. Mouse double click (DBLCLICK), key press (F2, F12, INS, DEL, KEYPRESS) or chart (CHART) events to emulate at OV open.
   Symbol key push event 'KEYPRESS' should be specified with the additional string to be passed to the handler as an input arg.
-  For example, "event": "KEYPRESSa" will emulate key 'a' pushed at the view open. See 'Handler' help section for
-  details. Incorrect event value - no emulation, but cursor is set to the position specified by 'x','y' properties anyway.
-  Only first event entry is emalated, all others are ignored.
-- 'hidecol'/'hiderow'. These properties collapse (hide) table columns/rows with appropriate element 'hidecol'/'hiderow'
-  value. For example, "hiderow": "" will hide all table rows containing empty ("") value.
-- 'style'. HTML css style attribute (see appropriate css documentation) for <td> tag the specified object element is placed in.
-  Zero 'eid' style for non zero 'oid' defines styles for all <td> cells specified object is placed.
-  Zero 'eid'/'oid' style defines style for undefined cell (no object element placed).
-- 'table'. JSON HTML css attributes for tag <table> with attribute names as properties (for zero 'oid' and 'eid' only).
-- 'value'. Table cell element main text. For new/title objects only.
-- 'hint'. Table cell element hint displayed as a hint on a table cell cursor navigation. For new/title objects only.
+  For example, "event": "KEYPRESSa" will emulate key 'a' pushed at the view open. See 'Handlers' help section for details.
+  Chart event emulates context menu 'Chart' call of the table seleceted cells. It is useful to display the chart just right after
+  the view open. Chart event may have four args - "event": "CHART(0,0,3,5)". Arguments (x1,y1,x2,y2) define table selected area from
+  top left to right lower corner. No args ("event": "CHART") - whole table as a selected area is used.
+  Incorrect event value - no emulation, but cursor is set to the position specified by 'x','y' coordinates anyway.
+  Only one event is generated at the view open, so last matched is used.
+- 'hidecol'/'hiderow'. These properties collapse (hide) table columns/rows containing at least one cell with 'hidecol'/'hiderow'
+  attribute value. Strict comparison is used. For example, JSON '{"eid": "1", "oid": "*", "hiderow": ""}' will hide all table rows
+  containing empty cell ("") of any object element id#1.
+  For undefined cell (see 'oid' empty case above) property 'hidecol' is not supported, while 'hiderow' with any value collapses
+  the row only in case of all undefined cells in a row.
+- 'style'. HTML css style attribute  for <td> tag the specified object element (or virtual element) is placed in. See appropriate
+  css documentation.
+- 'value'. Table cell element main text.
+- 'hint'. Table cell element hint displayed as a hint on a table cell mouse cursor navigation.
 
-  'oid'/'eid' combinations properties table:
-  +---------+--------------------------------+----------------------------------------------+
-  |   \\ eid |                                |                                              |
-  |    \\    | 0                              | id,version,owner,datetime,lastversion,1,2,.. |
-  | oid \\   |                                |                                              |
-  +---------+--------------------------------+----------------------------------------------+
-  | 0       | style (undefined cell style)   | x, y, style                                  |
-  |selection| table (html table attributes)  | event, hiderow, hidecol                      |
-  +---------+--------------------------------+----------------------------------------------+
-  | 1       | style                          | x, y, style                                  |
-  | new     |                                | event, hiderow, hidecol, value, hint         |
-  +---------+--------------------------------+----------------------------------------------+
-  | 2       | style                          | x, y, style                                  |
-  | title   |                                | event, hiderow, hidecol, value*, hint*       |
-  +---------+--------------------------------+----------------------------------------------+
-  | 3..     | style                          | x, y, style                                  |
-  |         |                                | event, hiderow, hidecol                      |
-  +---------+--------------------------------+----------------------------------------------+
-  *Properties are set automatically (value is element name, hint is element description) if not exist
-  // +-----------+----------------------+------------------+------------------+
-  // |   \       |                      |                  |                  |
-  // |    \ oid  | 1|2|4..|*|           |                  |                  |
-  // |     \     | expression           |      empty       |      unset       |
-  // |  eid \    | (o, e, n, q)         | (eid is ignored) | (eid is ignored) |
-  // |       \   |                      |                  |                  |
-  // +-----------+----------------------+------------------+------------------+
-  // |id         |  x (o, e, n, q),     |                  |                  |
-  // |owner      |  y (o, e, n, q),     | style            | table attributes |
-  // |datetime   |  value,              | hiderow          | and direction    |
-  // |version    |  style,              | (for             | or               |
-  // |lastversion|  description, hint,  | undefined        | virtual elements |
-  // |1,2..      |  event,              | object)          | (x, y, value)    |
-  // |*          |  hidecol, hiderow    |                  |                  |
-  // +-----------+----------------------+------------------+------------------+
+As it was mentioned above element layout is a JSON list. But for the convenience it is possible to use comma separated element list
+instead of JSON. Element list is extracted to the JSONs anyway and places elements one by one with the first row as a title and second
+row (in case of a line leading space) as a new object input. Also empty or all-spaces layout is treated as '*'.
+Example: layout 'id,datetime,1,2' formats the table with the 1st row as a title and database objects then, where 1st column is
+object id, 2nd column - object version creation timestamp, 3rd column - object elements id1 and 4th column - object elements id2.
+Another example: layout ' *' is a simple table with the title at the 1st row, new object input (leading space) at the 2nd row and all
+objects of the selection (starting from the 3rd row) with all (asterisk *) user-defined elements one by one starting from the first
+column.
 
-Let's parse 'All logs' OV element layout of 'Logs' database:
+  Properties 'oid'/'eid' combinations description:
+  +-----------+-------------------------+------------------+----------------------------+
+  |   \\       |                         |                  |                            |
+  |    \\ oid  | 1|2|3|4..|*|            |      empty       |          unset             |
+  |     \\     | expression (o, e, n, q) | (eid is ignored) |      (eid is ignored)      |
+  |  eid \\    |                         |                  |                            |
+  +-----------+-------------------------+------------------+----------------------------+
+  |           |                         |                  |                            |
+  |id         |  x (o, e, n, q),        |                  | table attributes           |
+  |owner      |  y (o, e, n, q),        | [style, hiderow] | and direction              |
+  |datetime   |  [value,                |                  | or                         |
+  |version    |  style,                 | (for undefined   | virtual elements:          |
+  |lastversion|  hint,                  | cell that has    | x (n),                     |
+  |1,2..      |  description,           | no any object    | y (n),                     |
+  |*          |  event,                 | element in)      | value,                     |
+  |           |  hidecol, hiderow]      |                  | [style, hint, description] |
+  |           |                         |                  |                            |
+  +-----------+-------------------------+------------------+----------------------------+
+
+Let's parse next element layout (OV 'All logs', OD 'Logs'): id,datetime,1.
+First element in the list is 'id', it is extracted to next two JSONs:
 {"eid":"id", "oid":"${TITLEOBJECTID}", "x":"0", "y":"0"}
-{"eid":"id", "x":"0", "y":"n+1"}
-{"eid":"datetime", "oid":"${TITLEOBJECTID}", "x":"1", "y":"0"}
-{"eid":"datetime", "x":"1", "y":"n+1"}
-{"eid":"1", "oid":"${TITLEOBJECTID}", "x":"2", "y":"0"}
-{"eid":"1", "x":"2", "y":"n+1"}
-
-First two JSONs describe 'id' service element:
- - title object (oid=2) for 'id' element will be on the top left corner of the table (x=0, y=o).
- - each object of the selection (oid=0) is placed to the first table column (x=0) and to the row 'n+1' (y=n+1),
+{"eid":"id", "oid":"*", "x":"0", "y":"n+1"}
+These JSONs describes 'id' service element layout:
+ - title object (oid=${TITLEOBJECTID}) for 'id' element will be on the top left corner of the table (x=0, y=0).
+ - each object of the selection (oid=*) is placed to the first table column (x=0) and to the row 'n+1' (y=n+1),
    where 'n' is object serial number in the selection: first object in the selection (n=0) goes to the second
    row (y=0+1=1), second object in the selection goes to the 3rd row (y=1+1=2) and so on.
-Similarly for two next elements datetime and log message element #1 (eid=1), except that column ('x' coordinate)
-position for datetime is x=1 (second column) and for log message is x=2 (third column).
 
-Element layout could be set to one of predefined templates, which are converted to JSONs anyway. Possible values are:
-'' - Empty layout value selects all user-defined elements and displays them as a classic table with the title first.
-'*' - One asterisk behaves like empty value, but new object input is added to the table just right after 'title' object.
-'**' - Two asterisks behaves like empty value plus service elements ('id', 'version', 'owner', 'datetime'..) are added.
-'***' - Three asterisks behaves like one asterisk plus service elements ('id', 'version', 'owner'..) are added.`
+Similarly for two next elements datetime and log message (eid=1). They are extracted to:
+{"eid":"datetime", "oid":"${TITLEOBJECTID}", "x":"1", "y":"0"}
+{"eid":"datetime", "oid":"*", "x":"1", "y":"n+1"}
+{"eid":"1", "oid":"${TITLEOBJECTID}", "x":"2", "y":"0"}
+{"eid":"1", "oid":"*", "x":"2", "y":"n+1"}
+Column ('x' coordinate) position for datetime is x=1 (second column) and for log message is x=2 (third column).`
 },
 
 element2: { line: '', style: 'font-family: monospace, sans-serif;', head:

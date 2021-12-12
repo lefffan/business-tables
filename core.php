@@ -406,25 +406,6 @@ function CheckRule($db, &$client, $rule, $version)
 
 function SetLayoutProperties(&$client, $db = NULL)
 {
- // +-----------+-------------------------+------------------+----------------------------+
- // |   \       |                         |                  |                            |
- // |    \ oid  | 1|2|4..|*|              |                  |                            |
- // |     \     | expression (o, e, n, q) |      empty       |           unset            |
- // |  eid \    |                         | (eid is ignored) |      (eid is ignored)      |
- // |       \   |                         |                  |                            |
- // +-----------+-------------------------+------------------+----------------------------+
- // |           |                         |                  |                            |
- // |id         |  x (o, e, n, q),        |                  | table attributes           |
- // |owner      |  y (o, e, n, q),        |                  | and direction              |
- // |datetime   |  [value,                | [style, hiderow] | or                         |
- // |version    |  style,                 | (for undefined   | virtual elements:          |
- // |lastversion|  hint,                  | cell with no any | x (n),                     |
- // |1,2..      |  description,           | object element   | y (n),                     |
- // |*          |  event,                 | placed in)       | value,                     |
- // |           |  hidecol, hiderow]      |                  | [style, hint, description] |
- // |           |                         |                  |                            |
- // +-----------+-------------------------+------------------+----------------------------+
-
  $client['layout'] = ['elements' => [], 'virtual' => [], 'undefined' => [], 'table' => []];
  $layout = &$client['layout'];
  $order = [];
@@ -435,15 +416,13 @@ function SetLayoutProperties(&$client, $db = NULL)
 	 {
 	  // Check object id (oid) for unset value and unset at least one of three virtual props to assume JSON as a table attributes
 	  if (!isset($arr['oid']))
-	  if (isset($db, $arr['x'], $arr['y'], $arr['value']))
+	  if (isset($arr['x'], $arr['y'], $arr['value']))
 	     {
 	      foreach ($arr as $key => $value)
-		   if (gettype($value) !== 'string' || array_search($key, ['x', 'y', 'style', 'value', 'hint', 'event']) === false)
-		      unset($arr[$key]);
-	      if (isset($arr['x'], $arr['y'], $arr['value']))
+		   if (gettype($value) !== 'string' || array_search($key, ['x', 'y', 'style', 'value', 'hint', 'event']) === false) unset($arr[$key]);
+	      if (isset($db, $arr['x'], $arr['y'], $arr['value']))
 		 {
-		  $value = trim($arr['value']);
-		  if (stripos($value, 'SELECT') === 0)
+		  if (stripos(trim($arr['value']), 'SELECT ') === 0)
 		     {
 		      try {
 			   $query = $db->prepare($value);
@@ -460,6 +439,7 @@ function SetLayoutProperties(&$client, $db = NULL)
 	   else
 	     {
 	      unset($arr['eid']);
+	      foreach ($arr as $key => $value) if (gettype($value) !== 'string') unset($arr[$key]);
 	      $layout['table'] = $arr + $layout['table'];
 	      continue;
 	     }
@@ -476,19 +456,10 @@ function SetLayoutProperties(&$client, $db = NULL)
 		     }
 	  if (!count($arr)) continue;
 
-	  // Check unset oid for virtual element (with x, y and value properties set)
-	  if (!isset($arr['oid']))
-	     {
-	      unset($arr['eid']);
-	      $layout['virtual'][] = $arr;
-	      continue;
-	     }
-
 	  // Check oid for empty value treated as underfined (style for cell with no any object element placed in)
 	  if (($oid = $arr['oid']) === '')
 	     {
 	      if (isset($arr['style'])) $layout['undefined']['style'] = $arr['style'];
-	      if (isset($arr['hidecol'])) $layout['undefined']['hidecol'] = $arr['hidecol'];
 	      if (isset($arr['hiderow'])) $layout['undefined']['hiderow'] = $arr['hiderow'];
 	      continue;
 	     }
@@ -935,6 +906,7 @@ function Check($db, $flags, &$client, &$output)
 
      if ($client['viewtype'] === 'Table')
 	{
+	 if (trim($client['elementselection']) === '') $client['elementselection'] = '*';
 	 $layout = '';
 	 foreach (preg_split("/\n/", $client['elementselection']) as $json)
 		 {
