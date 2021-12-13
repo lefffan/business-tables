@@ -23,8 +23,12 @@ Sunday
     footnote (snoska) for cells with [hint, unconfirmed, files, link]
 	so remove description from the app, in description: hint, files attahced and link
     Clone object, similar to add object, but copies (only value prop of each element) via current menu contexted object
-    Add events as a new operations to the rule section
+    Add events as a new operations to the rule section, add :group word in a rule selection
     Per user and group (!) separate OV permission to view-in-sidebar and add-edit-delete with low priority in user props
+    Object selection with non-empty link type:
+	for all view types (by now it is released for tree view type only)
+	for scheduler.php and system user permissions to display/write the view
+        handler JSON input arg as OD/OV search element value via object selection
 
 Application:
   Oppoertunity to fetch image properties (like resolution) in GALLERY mode
@@ -46,10 +50,6 @@ Application:
     make db size limit and object count limit work
   System call 'NEWTABURL'
   System call 'NEWOBJECT' (to create object by user handlers)
-  Object selection with non-empty link type:
-	for all view types (by now it is released for tree view type only)
-	for scheduler.php and system user permissions to display/write the view
-        handler JSON input arg as OD/OV search element valuse via object selection
   Object selection is a SQL queries list:
     for table view - all queries unioned (or exluded?) to one selection
     for tree view - scheme link betweens two objects (1st from 1st selection, 2nd - from second).

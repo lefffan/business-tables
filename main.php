@@ -99,7 +99,7 @@ while (true)
 	 // Message finish
 	 $input = json_decode($clientsarray[$cid]['payload'], true);
 	 $clientsarray[$cid]['payload'] = '';
-	 // Incorrent client message!
+	 // Incorrect client message!
 	 if (!isset($input['cmd'])) continue;
 	 // Init input args
 	 $client = &$clientsarray[$cid];
@@ -110,7 +110,7 @@ while (true)
 	 // Non login unauth client event or session timeout? Emulate logout event!
 	 if ($client['cmd'] != 'LOGIN' && (!isset($client['auth']) || $now - $client['authtime'] > SESSIONLIFETIME))
 	    $client['cmd'] = 'LOGOUT';
-	
+
 	 try {
 	      switch ($client['cmd'])
 	    	 {

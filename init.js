@@ -19,7 +19,7 @@ const HTMLUSUALCHARS = ['&', '<', '>', '\n', ' '];
 const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
 const MAXFILESIZE = 157286400;
 const MAXFILEUPLOADS = 20;
-
+const HELPHEADSTYLE = 'font-family: monospace, sans-serif; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;';
 
 let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';
@@ -79,7 +79,7 @@ let uiProfile = {
 		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
 		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background": "transparent;", "margin": "0px;", "width": "100%;", "box-sizing": "border-box;" },
 		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;", "text-align": "center" },
-		  "dialog box pushable table cell hover": { "target": ".boxtablecellpush:hover", "cursor": "pointer;" }, 
+		  "dialog box pushable table cell hover": { "target": ".boxtablecellpush:hover", "cursor": "pointer;" },
 		  //
 		  "dialog box select": { "target": ".select", "background-color": "rgb(243,243,243);", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 5px 10px;", "outline": "none;", "border": "1px solid #777;", "padding": "0px 0px 0px 0px;", "overflow": "auto;", "max-height": "30em;", "scrollbar-width": "thin;", "min-width": "10em;", "width": "auto;", "display": "inline-block;", "effect": "rise", "_effect": "Select fall-down option list  " + EFFECTHELP },
 		  "dialog box select option": { "target": ".select > div", "padding": "2px 20px 2px 5px;", "margin": "0px;" },
@@ -101,13 +101,13 @@ let uiProfile = {
 		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Tree
-		  "tree table": { target: ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
-		  "tree error element": { target: ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
-		  "tree element": { target: ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "object element value max chars": "60", "object element title max chars": "15", },
-		  "tree arrow stock": { target: ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "60px;", },
-		  "tree arrow down": { target: ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
-		  "tree arrow up": { target: ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
-		  "tree element description": { target: ".treelinkdescription", "display": "flex;", "flex": "1 10px;", "background-color": "transparent;", "border": "none;", "padding": "5px;", "font": "10px/11px arial;", "overflow": "hidden;", },
+		  "tree table": { "target": ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
+		  "tree error element": { "target": ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
+		  "tree element": { "target": ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "object element value max chars": "60", "object element title max chars": "15", },
+		  "tree arrow stock": { "target": ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "60px;", },
+		  "tree arrow down": { "target": ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
+		  "tree arrow up": { "target": ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
+		  "tree element description": { "target": ".treelinkdescription", "display": "flex;", "flex": "1 10px;", "background-color": "transparent;", "border": "none;", "padding": "5px;", "font": "10px/11px arial;", "overflow": "hidden;" },
 		  // Misc
 		  "chart colors": { "Color #1": "#4CAF50", "Color #2": "#00BCD4", "Color #3": "#E91E63", "Color #4": "#FFC107", "Color #5": "#9E9E9E", "Color #6": "#FFFF00", "Color #7": "#E32DF2", "Color #8": "#BDDDFD", "Color #9": "#BCF11B", "Color #10": "#DBDBDB", "Color #11": "#343E54", "Color #12": "#1465B0" },
 		  "gallery image footnote": { "target": ".imgdesc", "background-color": "transparent;", "font": "11px sans-serif;", "color": "RGB(56,124,213);" },
@@ -116,7 +116,7 @@ let uiProfile = {
 const style = document.createElement('style');
 const help = { title: 'Help', dialog: {
 
-"System description": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"System description": { profile: { element: { line: '', style: HELPHEADSTYLE, head:
 `Tabels application is a new generation system to display, store and manage its data by lots of ways. Application data
 is a set of custom data tables, each table consists of identical objects, which, in turn, are set of service and user
 defined elements.
@@ -198,7 +198,7 @@ So all user/group permission lists in a Database configuration (see appropriate 
 but in case of non-existent username - the name is treated as a name of a group.`
 }}},
 
-"Database Configuration": { profile: { element: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"Database Configuration": { profile: { element: { line: '', style: HELPHEADSTYLE, head:
 `To create Object Database (OD) just enter its name (max 64 chars) in the dialog box called via 'New Database' sidebar context
 menu. Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
 Let's have a look at database configuration dialog box and its features.
@@ -269,7 +269,7 @@ Another example: first profile with action accept preprocessing rule "owner=':us
 action with both empty rules - allows to change self-created objects only.`
 }}},
 
-"Object Selection": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+"Object Selection": { profile: { element: { line: '', style: HELPHEADSTYLE, head:
 `Object selection is a part of the sql query string that selects objects for the specified view. Let's have a look to the
 object structure stored in database to select required objects effectively. Each object consists of next SQL table columns:
 - id. Object identificator.
@@ -311,7 +311,7 @@ names divided by '/' - only for the first matched per object. Only one delimiter
 See 'Element layout' help section for the tree template.`
 }}},
 
-"Element layout": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"Element layout": { profile: { element1: { line: '', style: HELPHEADSTYLE, head:
 `Element layout is applied to the view (see 'View' of Database Configuration' help section) and defines what elements
 should be displayed and how for the selected template. Element layout is a JSON strings list one by line. JSON format depends
 on the selected template.
@@ -423,8 +423,7 @@ Similarly for two next elements datetime and log message (eid=1). They are extra
 Column ('x' coordinate) position for datetime is x=1 (second column) and for log message is x=2 (third column).`
 },
 
-element2: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`
+element2: { line: '', style: HELPHEADSTYLE, head: `
 Next - 'Tree' template, it builds the tree from head object ('object selection' first found) to other objects based
 on their element link properties. Each link property is one or multiple (one by line) connections. Each connection
 has its link name, remote 'element' and remote object (tree node) 'selection' the connection links to.
@@ -508,9 +507,8 @@ Empty layout field - all user defined elements plus 'id' with 'down' direction a
 Correct empty JSON '{}' as an 'element layout' displays no content, while all error JSONs - only 'id' element.`
 }}},
 
-"Handlers": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`
-Element handler is any executable script or binary called by the contoller when specified event occurs. Events occur on
+"Handlers": { profile: { element1: { line: '', style: HELPHEADSTYLE, head:
+`Element handler is any executable script or binary called by the contoller when specified event occurs. Events occur on
 user interaction with actual objects (mouse double click or keypress), new objects add, object data change and other object
 or database processes. Client-server interaction model represents next scheme: client (browser) generates event which is
 passed to the server (controller). Controller accepts the event and processes it either by itself (new database, object
@@ -604,7 +602,7 @@ arguments are parsed to be replaced by the next values:
     the same way. These retrieved values then are used as a replacements in current JSON "element" regular expressions and
     "selection" properties:
     <{ .. "element": "/:arg/", ":arg": {..} }>
-    Max 'nesting' levels number is 3, see 'Examples' help section for extra examples.
+    Max 'nesting' levels number is 3, see 'Examples' help section for extra info.
     In case of multiple objects as a selection result - <JSON> argument will be replaced by property of specified element
     or found (via regular expression) elements of all selected objects (max 256, each in a new line).
     Therefore, <JSON> argument selects objects of the view (based on "selection" and "limit"), takes element (or elements)
@@ -767,7 +765,7 @@ to refresh the current view.
 		dialog box exit (for a example via ESC button) client side ignores dialog box creation that was requested
 		(via timer button) before exit.`
 },
-element2: { line: '', style: 'font-family: monospace, sans-serif;', head: `
+element2: { line: '', style: HELPHEADSTYLE, head: `
 Application has some regular php handlers to manage user database, customization and element data.
 Fisrt - user.php in 'User' database for the element #1. The script creates users, changes their passwords, groupt membership
 and other user properties via dialog box on F2 or DBLCLICK element #1 event. Group membership is a list of the groups (one per
@@ -807,33 +805,35 @@ editable mode with no changes. Handler supports next commands (as a first argume
     2. Double click with SHIFT - calls dialog box to upload/attach files to the appropriate object element
     3. Double click with CTRL - calls dialog box to download files from the appropriate object element
     4. Double click with ALT - calls dialog box to download/delete files from the appropriate object element.
-- F12 calls client side gallery mode to view images attached to the object element.
+- GALLERY calls client side gallery mode to view images attached to the object element.
 `
 }}},
 
-"Examples": { profile: { element1: { line: '', style: 'font-family: monospace, sans-serif;', head:
+"Examples": { profile: { element1: { line: '', style: HELPHEADSTYLE, head:
 `Example 1 - simple corporate chat.
 First step - create database and 'Table' templated view.
 Second - all database actual objects (user messages) should be selected (default behaviour), so leave 'Object selection' empty.
 Third - 'Element layout' should display messages in descending order with old messages on the top and new object (new message input)
-on the bottom, plus some cell spacing and cell highlighting. Input three JSONs in element layout field:
-{"table": {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}}
+on the bottom, plus some cell spacing and cell highlighting. Input next JSONs in element layout field:
+{"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}
 {"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
 {"eid":"1", "oid":"${NEWOBJECTID}", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
+{"eid":"1", "oid":"${NEWOBJECTID}", "style":"background-color: rgb(191,255,191);"}
 
-First JSON is for zero object/element (oid/eid) identificators. They describe html table attributes and undefined cell css style.
-Property "table" is an attribute list for <table> tag: width value set is a necessary condition to set table cells width in pixels
-(in <td> tag). Border-collapse separate set allows cell spacing of 15 pixels between chat messages.
+First JSON describes HTML tag <table> attributes (unset 'oid' case, see 'Element layout' help section): width attribue is a
+necessary condition to allow table cells width (in pixels) setting. Border-collapse separate value set allows cell spacing
+of 15 pixels between chat messages.
 Second JSON describes all chat messages (all objects in object selection [oid=0] for element id 1 [eid=1]). All these cells are
 styled via 'style' property with left text align, rounded border (5px) and light grey background color (#DDD). Object element
 horizontal position is 'x=0' (first column) and vertical is 'n' - sequence number in a selection - first object (first message)
 is placed in a fist row (n=0), second object in a second row (n=1) and so on. Variable 'q' is an object selection count number,
 so 'input' object (third JSON for a new message input [oid=1]) goes to row number 'q'. For example - ten chat messages layout
-is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input.
+is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input. To highlight new message input
+field you may input last JSON to set light green background color.
 
 Next step - chat database consists of one user-defined element (for chat messages), so create it in a 'Element' tab of
-'Database configuration' dialog - just enter next handler command line (to fit the page some input args are moved to a new line)
-for INIT event to process new chat messages:
+'Database configuration' dialog - just enter next handler command line (to fit the page some input args are moved to a new line,
+so don't forget the args to be divided by space chars) for INIT event to process new chat messages:
 php text.php SETTEXT
 <span><</span>span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">
 <user>@
@@ -865,8 +865,7 @@ regular expression (NOT REGEXP) string '\\\\n.'. Since the chat message (JSON_UN
 empty message - the rule profile blocks (rejects) the operation (new message post in our case).
 
 That's all. As a result we have a nice chat with no much efforts for customization!`},
-element2: { line: '', style: 'font-family: monospace, sans-serif;', head: 
-`
+element2: { line: '', style: HELPHEADSTYLE, head: `
 Example 2 - host alive diagnostic.
 Create database with two elements - one for host names or ip addresses, second for ping result of appropriate hosts in 1st
 element. To input element id 1 text data (host/ip) add some handlers for 'DBLCLICK' event (edit content on double click):
@@ -885,8 +884,7 @@ set as an element value, so ping loss results will be displayed in a table every
 To check hosts on demand - set handler 'ping -c 1 <{"element":"1"}>' for 'CHANGE' event for element id2. The handler will be
 called just right after element id 1 data (host/ip) is changed.`
 },
-element3: { line: '', style: 'font-family: monospace, sans-serif;', head: 
-`
+element3: { line: '', style: HELPHEADSTYLE, head:`
 Example 3 - Group users list. Each user group-membership is stored in system 'Users' database (ODid=1, OVid=1) in property
 'groups' of 1st element 'User' (eid1). The property consists of group names (one per line), so we have to search specified
 group name among all users and output the result.
@@ -901,13 +899,11 @@ First condition (regexp '^:group\\\\n') matches first line group names, second c
 all other group names from the second line with the symbol LINE FEED (\\n) before. Double slash escapes single slash for the correct
 line feed char. Request result is limited to 100 records.`
 },
-element4: { line: '', style: 'font-family: monospace, sans-serif;', head: 
-`
+element4: { line: '', style: HELPHEADSTYLE, head: `
 Example 4 - style element cell. Set next handler for event (for a example 'F12') to paint cell by red color (for *nix OS only):
 echo '{"cmd":"SET", "style":"background-color:red;"}'`
 },
-element5: { line: '', style: 'font-family: monospace, sans-serif;', head:
-`
+element5: { line: '', style: HELPHEADSTYLE, head: `
 Example 5 - dialog box simple calculator. First create database and any view with default properties.
 Then create one element with the handler (without args) for DBLCLICK event: 'php calc.php', and for CONFIRMDIALOG event:
 'php calc.php <event> <data>' - 1st arg is event name ('CONFIRMDIALOG'), 2nd is dialog data structure called back on
@@ -1001,7 +997,7 @@ Line 49. Empty headers ('') are not displayed before interface element, so set o
 Line 50. Pass dialog to the controller.`
 }}},
 
-"Keyboard/Mouse": { profile: { element: { style: 'font-family: monospace, sans-serif;', head:
+"Keyboard/Mouse": { profile: { element: { style: HELPHEADSTYLE, head:
 `  - 'Home' moves cursor to the top of a table
   - 'End' moves cursor to the bottom
   - 'PageUp' moves cursor one page down

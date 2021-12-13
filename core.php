@@ -216,6 +216,7 @@ function getElementProp($db, $ODid, $oid, $eid, $prop, $version = NULL)
  $query->execute();
 
  $result = $query->fetchAll(PDO::FETCH_NUM);
+
  if (!isset($result[0][0])) return NULL;
  $result = $result[0][0];
  $result = str_replace("\\n", "\n", $result);
@@ -908,7 +909,7 @@ function Check($db, $flags, &$client, &$output)
 	{
 	 if (trim($client['elementselection']) === '') $client['elementselection'] = '*';
 	 $layout = '';
-	 foreach (preg_split("/\n/", $client['elementselection']) as $json)
+	 foreach (preg_split("/\n/", $client['elementselection']) as $json) if ($json)
 		 {
 		  if (gettype(json_decode($json, true)) === 'array')
 		     {

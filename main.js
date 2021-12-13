@@ -254,18 +254,22 @@ function drawMain(data, layout)
  ResetUnreadMessages();
  delete drag.x1;
 
- // Current view refresh? Leave cursor unchanged, otherwise reset it
- if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid)
+ // Add/delete operations? Leave cursor props unchanged, otherwise try to remember cursor position if exist for the current view call
+ if (cmd === 'CALL')
     {
-     cursor.contentEditable = cursor.td.contentEditable;
-     cursor.data = htmlCharsConvert(cursor.td.innerHTML);
-     cursor.newobject = [];
-     if (objectTable[NEWOBJECTID]) for (let eid in objectTable[NEWOBJECTID])
-	cursor.newobject[eid] = mainTable[objectTable[NEWOBJECTID][eid].y][objectTable[NEWOBJECTID][eid].x].data;
+     if (cursor.td && cursor.ODid === ODid && cursor.OVid === OVid) cursor = { ODid: ODid, OVid: OVid, x: cursor.x, y: cursor.y };
+      else cursor = { ODid: ODid, OVid: OVid };
     }
   else
     {
-     cursor = { ODid: ODid, OVid: OVid };
+     if (cursor.td?.contentEditable === EDITABLE && cursor.oId !== NEWOBJECTID) cursor.edit = { data: htmlCharsConvert(cursor.td.innerHTML), oId: cursor.oId,  eId: cursor.eId };
+     cursor.newobject = {};
+     for (let eid in objectTable[NEWOBJECTID])
+	 {
+	  const x = objectTable[NEWOBJECTID][eid].x;
+	  const y = objectTable[NEWOBJECTID][eid].y;
+	  cursor.newobject[eid] =  mainTablediv.rows[y].cells[x].innerHTML;
+	 }
     }
 
  // Init some important vars such as tables, focus element and etc..
@@ -413,7 +417,8 @@ function drawMain(data, layout)
      cursor.y = Math.min(cursor.y, mainTableHeight - 1);
      cursor.x = Math.min(cursor.x, mainTableWidth - 1)
      CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
-     if (cursor.contentEditable === EDITABLE || cursor.oId === NEWOBJECTID) MakeCursorContentEditable(cursor.data);
+     if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable();
+     if (cursor.edit !== undefined && cursor.edit.oId === cursor.oId && cursor.edit.eId === cursor.eId) MakeCursorContentEditable(cursor.edit.data);
      mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
      mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
     }
@@ -433,7 +438,6 @@ function drawMain(data, layout)
 	{
 	 cursor.cmd = cursor.cmd.split('(')[1].split(')')[0].split(',');
 	}
-     cursor.data = '';
     }
 
  // Draw chart in case of apprropriate start event
@@ -442,6 +446,7 @@ function drawMain(data, layout)
  // Release command value
  cmd = '';
  delete cursor.cmd;
+ delete cursor.edit;
 }
 
 function CalcTree(tree)
@@ -1512,12 +1517,6 @@ function uiProfileSet(customization)
       if (customization[selector]['element0'] != undefined && customization[selector]['element0']['target'] != undefined)
          uiProfile[selector]['target'] = customization[selector]['element0']['target'];
      }
-
- // Define css classes attribute string for all table cell types
- titlecellclass = isObjectEmpty(uiProfile["main field table title cell"], 'target') ? '' : ' class="titlecell"';
- newobjectcellclass = isObjectEmpty(uiProfile["main field table newobject cell"], 'target') ? '' : ' class="newobjectcell"';
- datacellclass = isObjectEmpty(uiProfile["main field table data cell"], 'target') ? '' : ' class="datacell"';
- undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
 }
 
 function styleUI()
@@ -1533,6 +1532,13 @@ function styleUI()
       inner += '}'; //https://dev.to/karataev/set-css-styles-with-javascript-3nl5, https://professorweb.ru/my/javascript/js_theory/level2/2_4.php
      }
  style.innerHTML = inner;
+
+ // Define css classes attribute string for all table cell types
+ titlecellclass = isObjectEmpty(uiProfile["main field table title cell"], 'target') ? '' : ' class="titlecell"';
+ newobjectcellclass = isObjectEmpty(uiProfile["main field table newobject cell"], 'target') ? '' : ' class="newobjectcell"';
+ datacellclass = isObjectEmpty(uiProfile["main field table data cell"], 'target') ? '' : ' class="datacell"';
+ undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
+
  // Output uiProfile array to te console to use it as a default customization configuration
- // lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
+ //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
 }

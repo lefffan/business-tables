@@ -32,7 +32,7 @@ try {
 
      $newView['element1']['id'] = '1';
      $newView['element1']['data'] = 'All users';
-     $newView['element6']['data'] = '*';
+     $newView['element6']['data'] = ' *';
      $userOD['dialog']['View']['All users'] = $newView;
 
      $newElement['element1']['id'] = '1';
@@ -55,7 +55,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>'
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -72,7 +72,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>'
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -89,7 +89,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>'
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -106,7 +106,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>'
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -158,7 +158,7 @@ try {
 		'3' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
 		'4' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
 		'5' => ['cmd' => 'RESET', 'value' => 'Administrator'] + DEFAULTELEMENTPROPS,
-		'6' => ['cmd' => 'RESET', 'value' => 'User customization', 'dialog' => defaultCustomizationDialogJSON()] + DEFAULTELEMENTPROPS];
+		'6' => ['cmd' => 'RESET', 'value' => 'Customize', 'dialog' => defaultCustomizationDialogJSON()] + DEFAULTELEMENTPROPS];
      AddObject($db, $client, $output);
 
      //------------------------------------------Create default OD 'Logs'------------------------------------------
@@ -171,7 +171,7 @@ try {
 
      $newView['element1']['id'] = '1';
      $newView['element1']['data'] = 'All logs';
-     $newView['element6']['data'] = '{"eid":"id", "oid":"2", "x":"0", "y":"0"}'."\n".'{"eid":"id", "x":"0", "y":"n+1"}'."\n".'{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}'."\n".'{"eid":"datetime", "x":"1", "y":"n+1"}'."\n".'{"eid":"1", "oid":"2", "x":"2", "y":"0"}'."\n".'{"eid":"1", "x":"2", "y":"n+1"}';
+     $newView['element6']['data'] = 'id,datetime,1';
      $newView['element10']['data'] = '+User/groups list allowed to change this view objects|Disallowed list (allowed for others)|';
      $newView['element11']['data'] = 'root';
      $logOD['dialog']['View']['All logs'] = $newView;

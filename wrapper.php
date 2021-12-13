@@ -325,8 +325,7 @@ switch ($output[$currenteid]['cmd'])
 		 if (is_dir($dir)) foreach (scandir($dir) as $name) if ($name !== '.' && $name !== '..')
 		    {
 		     $ext = pathinfo($name);
-		     if (!isset($ext['extension'])) continue;
-		     $ext = $ext['extension'];
+		     $ext = isset($ext['extension']) ? $ext['extension'] : '';
 		     if ($output['cmd'] !== 'GALLERY' || array_search($ext, ['jpg', 'png', 'gif', 'bmp']) !== false) $list[] = $name;
 		    }
 		 count($list) ? $output['list'] = $list : $output = ['cmd' => '', 'alert' => $output['cmd'] === 'GALLERY' ? 'No images attached to the object element! Upload some image files first!' : 'No files attached to the object element. Upload some files first!'];

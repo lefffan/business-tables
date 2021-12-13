@@ -94,6 +94,7 @@ function mouseupEventHandler(event)
 
 function mousedownEventHandler(event)
 {
+ let target = event.target;
  HideHint();
 
  // Return for non left-button event, 0 - no mouse button pushed, 1 - left button, 2 - middle button, 3 - right (context) button
@@ -105,7 +106,7 @@ function mousedownEventHandler(event)
  // Dialog box is on? Process its mouse left button down
  if (box)
     {
-     if (event.target.classList.contains('title'))
+     if (target.classList.contains('title'))
 	{
 	 drag.element = boxDiv;
 	 drag.dispx = event.clientX - boxDiv.offsetLeft;
@@ -121,14 +122,14 @@ function mousedownEventHandler(event)
  if (contextmenu)
     {
      // Mouse click on grey menu item or on context menu? Do nothing and return
-     if (event.target.classList.contains('greyContextMenuItem') || event.target.classList.contains('contextmenu'))
+     if (target.classList.contains('greyContextMenuItem') || target.classList.contains('contextmenu'))
 	{
 	 return;
 	}
      // Mouse click on context menu item? Call controller with appropriate context menu item as a command.
-     if (event.target.classList.contains('contextmenuItems'))
+     if (target.classList.contains('contextmenuItems'))
 	{
-	 cmd = event.target.innerHTML;
+	 cmd = target.innerHTML;
 	 CallController(contextmenu.data);
 	 HideContextmenu();
 	 return;
@@ -138,30 +139,13 @@ function mousedownEventHandler(event)
     }
 
  // Prevent default behaviour to exclude default drag operation
- if (event.target === document.body)
+ if (target === document.body)
     {
      event.preventDefault();
      return;
     }
 
- // Mouse clilck out of main field content editable table cell? Save cell inner for a new element, otherwise send it to the controller
- if (cursor.td?.contentEditable === EDITABLE && cursor.td != event.target)
-    {
-     if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
-	{
-         mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-         cursor.td.innerHTML = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
-	}
-      else
-	{
-         cmd = 'CONFIRM';
-         CallController(htmlCharsConvert(cursor.td.innerHTML));
-	}
-     cursor.td.contentEditable = NOTEDITABLE;
-    }
-
  // Target is an element the mousedown event occured on, so adjust it to select proper element
- let target = event.target;
  if (target.classList.contains('wrap')) target = target.nextSibling;
   else if (target.classList.contains('changescount')) target = target.parentNode;
 
@@ -192,6 +176,22 @@ function mousedownEventHandler(event)
      displayMainError('Loading...');
      CallController();
      return;
+    }
+
+ // Mouse clilck out of main field content editable table cell? Save cell inner for a new element, otherwise send it to the controller
+ if (cursor.td?.contentEditable === EDITABLE && cursor.td != event.target)
+    {
+     if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
+	{
+         mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
+         cursor.td.innerHTML = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
+	}
+      else
+	{
+         cmd = 'CONFIRM';
+         CallController(htmlCharsConvert(cursor.td.innerHTML));
+	}
+     cursor.td.contentEditable = NOTEDITABLE;
     }
 
  // Table template view mouse click event?
