@@ -283,6 +283,7 @@ function drawMain(data, layout)
  if (!(objectsOnThePage = data.length)) data = [{}];
  VirtualElements = 0;
 
+console.time('1');
  for (let eid in eids)
  for (n = 0, obj = data[0]; n < data.length; obj = data[++n])
      {
@@ -310,6 +311,7 @@ function drawMain(data, layout)
       if (typeof arr === 'string') error = arr;
       if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol);
      }
+console.timeEnd('1');
 
  for (let i = 0; i < layout['virtual'].length; i++, n++)
      {
@@ -369,6 +371,7 @@ function drawMain(data, layout)
  for (x = 0; x < mainTableWidth - hidecol.length; x++) undefinedRow += undefinedCell;
  undefinedRow += '</tr>';
 
+console.time('2');
  // Set inner html content for the table view and add event listeners
  for (y = 0; y < mainTableHeight; y++)
      {
@@ -391,6 +394,7 @@ function drawMain(data, layout)
 	  }
       rowHTML += '</tr>';
      }
+console.timeEnd('2');
 
  // Main table becomes empty due to hidden rows/columns?
  if (!mainTableWidth)
@@ -399,6 +403,7 @@ function drawMain(data, layout)
      return;
     }
 
+console.time('3');
  // Set main view HTML
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
@@ -447,6 +452,7 @@ function drawMain(data, layout)
  cmd = '';
  delete cursor.cmd;
  delete cursor.edit;
+console.timeEnd('3');
 }
 
 function CalcTree(tree)
@@ -738,7 +744,7 @@ function FromController(json)
 	      drawMain(input.data, input.layout);
 	      break;
 	 case 'Tree':
-	      DrawTree(input.tree, input.direction);
+	      DrawTree(input.data, input.direction);
 	      break;
 	 case '':
 	      break;
@@ -925,15 +931,10 @@ function CallController(data)
 	      ShowBox();
 	      break;
 	 case 'Add Object':
-	      if (objectTable === undefined) break;
-	      object = { "cmd": 'INIT', "data": {} };
-	      if (objectTable[String(NEWOBJECTID)] != undefined)
-	         for (let eid in objectTable[String(NEWOBJECTID)])
-		     {
-		      object['data'][eid] = mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'];
-		      mainTable[objectTable[String(NEWOBJECTID)][eid].y][objectTable[String(NEWOBJECTID)][eid].x]['data'] = '';
-		      mainTablediv.rows[objectTable[String(NEWOBJECTID)][eid].y].cells[objectTable[String(NEWOBJECTID)][eid].x].innerHTML = '';
-		     }
+	      if (objectTable !== undefined) FillNewObjectArray(object = { "cmd": 'INIT', "data": {} }, NEWOBJECTID);
+	      break;
+	 case 'Clone Object':
+	      if (objectTable !== undefined && mainTable[cursor.y]?.[cursor.x]?.realobject) FillNewObjectArray(object = { "cmd": 'INIT', "data": {} }, mainTable[cursor.y][cursor.x].oId);
 	      break;
 	 case 'Delete Object':
 	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
@@ -979,6 +980,25 @@ function CallController(data)
      catch {}
      if (socket.readyState === 3) CreateWebSocket();
     }
+}
+
+function FillNewObjectArray(object, oid)
+{
+ const clear = NEWOBJECTID === oid ? true : false;
+ if (objectTable[oid = String(oid)] === undefined)
+    {
+     object = null;
+     return;
+    }
+ oid = objectTable[oid];
+
+ for (let eid in oid)
+     {
+      const x = oid[eid].x;
+      const y = oid[eid].y;
+      object['data'][eid] = mainTable[y][x]['data'];
+      if (clear) mainTable[y][x]['data'] = mainTablediv.rows[y].cells[x].innerHTML = '';
+     }
 }
 
 function displayMainError(errormsg, reset = true)
@@ -1540,5 +1560,5 @@ function styleUI()
  undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
 
  // Output uiProfile array to te console to use it as a default customization configuration
- //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
+ // lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
 }

@@ -104,19 +104,27 @@ while (true)
 		     'ip' => IP];
 
 	  // Object selection consists of incomplete params? Continue, otherwise execute a query to fetch view all object ids
-	  if (gettype($objectselection = GetObjectSelection(trim($view['element4']['data']), $client['params'], $client['auth'])) === 'array') continue;
-	  $query = $db->prepare("SELECT DISTINCT id FROM `data_$od[0]` $objectselection");
-	  $query->execute();
+	  if (gettype($client['objectselection'] = GetObjectSelection(trim($view['element4']['data']), $client['params'], $client['auth'])) === 'array') continue;
 
 	  // Execute wrapper for every object in a selection and cron line element specified:
 	  // wrapper.php <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
 	  // and/or log it:
 	  // lg("Executing handler '$client[cmdline]' (OD id $client[ODid], object id $client[oId], element id $client[eId]) at $now[hours]:$now[minutes]");
-	  foreach ($query->fetchAll(PDO::FETCH_NUM) as $oid)
-		  {
-		   $client['oId'] = $oid[0];
-		   exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
-		  }
+	  if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data']))) === [])
+	     {
+	      $query = $db->prepare("SELECT id,version,lastversion FROM `data_$od[0]` $client[objectselection]");
+	      $query->execute();
+	      foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row)
+		      if ($row['version'] !== '0' && $row['lastversion'] === '1' && ($client['oId'] = $row['id'])) exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
+	     }
+	   else
+	     {
+	      $output = $tree = [];
+	      if (!Check($db, GET_ELEMENTS, $client, $output)) continue;
+	      CreateTree($db, $client, 0, $tree, '');
+	      foreach ($client['objects'] as $id => $nothing)
+		      if ($client['oId'] = $id) exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
+	     }
 	 }
 
  $finish = getdate();

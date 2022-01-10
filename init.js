@@ -1,5 +1,5 @@
 
-const TABLE_MAX_CELLS = 200000;
+const TABLE_MAX_CELLS = 300000;
 const TITLEOBJECTID = 1;
 const NEWOBJECTID = 2;
 const STARTOBJECTID = 3;
@@ -35,8 +35,8 @@ let uiProfile = {
 		  // Body
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
 		  // Sidebar
-		  "sidebar": { "target": ".sidebar", "background-color": "rgb(17,101,176);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
-		  "sidebar wrap icon": { "wrap": "&#9658;", "unwrap": "&#9660;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
+		  "sidebar": { "target": ".sidebar", "border": "none;", "background-color": "rgb(16,91,160);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
+		  "sidebar wrap icon": { "wrap": "+", "unwrap": "&#0150;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
 		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
 		  "sidebar item active": { "target": ".itemactive", "background-color": "#4578BF;", "color": "#FFFFFF;", "font": "1.1em Lato, Helvetica;" },
 		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
@@ -44,14 +44,14 @@ let uiProfile = {
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "", "font": "0.9em Lato, Helvetica;" },
 		  "sidebar view changes count": { "target": ".changescount", "vertical-align": "super;", "padding": "2px 3px 2px 3px;", "color": "rgb(232,187,174);", "font": "0.6em Lato, Helvetica;", "background-color": "rgb(251,11,22);", "border-radius": "35%"},
 		  // Main field
-		  "main field": { "target": ".main", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
+		  "main field": { "target": ".main", "border": "none;", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
 		  "main field table": { "target": "table", "margin": "0px;" },
-		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "#CCC;", "font": "", "text-align": "center" },
-		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "rgb(191,255,191);", "font": "", "text-align": "center" },
-		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background": "", "font": "12px/14px arial;", "text-align": "center" },
-		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background": "" },
+		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "#CCC;", "font": "", "text-align": "center" },
+		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "rgb(232,255,232);", "font": "", "text-align": "center" },
+		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "", "font": "12px/14px arial;", "text-align": "center" },
+		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background-color": "" },
 		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
-		  "main field table selected cell": { "target": ".selectedcell", "background-color": "#C8D8D0 !important;" },
+		  "main field table selected cell": { "target": ".selectedcell", "background-color": "rgb(189,200,203) !important;" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=" + EDITABLE + "])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
 		  // Scrollbar
@@ -73,11 +73,11 @@ let uiProfile = {
 		  "dialog box divider": { "target": ".divider", "background-color": "transparent;", "margin": "5px 10px 5px 10px;", "height": "0px;", "border-bottom": "1px solid #CCC;", "border-top-color": "transparent;", "border-left-color": "transparent;" , "border-right-color": "transparent;" },
 		  "dialog box button": { "target": ".button", "background-color": "#13BB72;", "border": "none;", "padding": "10px;", "margin": "10px;", "border-radius": "5px;", "font": "bold 12px Lato, Helvetica;", "color": "white;" },
 		  "dialog box button push": { "target": ".buttonpush", "transform": "translate(3%, 3%);" },
-		  "dialog box button and pad hover": { "target": ".button:hover, .pad:hover", "cursor": "pointer;", "background": "", "color": "", "border": "" },
+		  "dialog box button and pad hover": { "target": ".button:hover, .pad:hover", "cursor": "pointer;", "background-color": "", "color": "", "border": "" },
 		  "dialog box element headers": { "target": ".element-headers", "margin": "5px 5px 5px 5px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "text-shadow": "none;" },
-		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background": "#FF0;", "border-radius": "40%;" },
-		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
-		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background": "transparent;", "margin": "0px;", "width": "100%;", "box-sizing": "border-box;" },
+		  "dialog box help icon": { "target": ".help-icon", "padding": "1px;", "font": ".9em Lato, Helvetica;", "color": "#555;", "background-color": "#FF0;", "border-radius": "40%;" },
+		  "dialog box help icon hover": { "target": ".help-icon:hover", "padding": "1px;", "font": "bold 1em Lato, Helvetica;", "color": "black;", "background-color": "#E8E800;", "cursor": "pointer;", "border-radius": "40%;" },
+		  "dialog box table": { "target": ".boxtable", "font": ".8em Lato, Helvetica;", "color": "black;", "background-color": "transparent;", "margin": "0px;", "width": "100%;", "box-sizing": "border-box;" },
 		  "dialog box table cell": { "target": ".boxtablecell", "padding": "7px;", "border": "1px solid #999;", "text-align": "center" },
 		  "dialog box pushable table cell hover": { "target": ".boxtablecellpush:hover", "cursor": "pointer;" },
 		  //
@@ -87,19 +87,19 @@ let uiProfile = {
 		  "dialog box select option selected": { "target": ".selected", "background-color": "rgb(209,209,209);", "color": "#fff;" },
 		  "dialog box select option expanded": { "target": ".expanded", "margin": "0px !important;", "position": "absolute;" },
 		  //
-		  "dialog box radio": { "target": "input[type=radio]", "background": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 6px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box radio": { "target": "input[type=radio]", "background-color": "transparent;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 6px 10px;", "border-radius": "20%;", "width": "1.2em;", "height": "1.2em;" },
 		  "dialog box radio checked" : { "target": "input[type=radio]:checked::after", "content": "", "color": "white;" },
-		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
+		  "dialog box radio checked background" : { "target": "input[type=radio]:checked", "background-color": "#00a0df;", "border": "1px solid #00a0df;" },
 		  "dialog box radio label" : { "target": "input[type=radio] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "dialog box checkbox": { "target": "input[type=checkbox]", "background": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 6px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
+		  "dialog box checkbox": { "target": "input[type=checkbox]", "background-color": "#f3f3f3;", "border": "1px solid #777;", "font": ".8em/1 sans-serif;", "margin": "3px 5px 6px 10px;", "border-radius": "50%;", "width": "1.2em;", "height": "1.2em;" },
 		  "dialog box checkbox checked" : { "target": "input[type=checkbox]:checked::after", "content": "", "color": "white;" },
-		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background": "#00a0df;", "border": "1px solid #00a0df;" },
+		  "dialog box checkbox checked background" : { "target": "input[type=checkbox]:checked", "background-color": "#00a0df;", "border": "1px solid #00a0df;" },
 		  "dialog box checkbox label" : { "target": "input[type=checkbox] + label", "color": "#57C;", "font": ".8em Lato, Helvetica;", "margin": "0px 10px 0px 0px;" },
 		  //
-		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
-		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input text": { "target": "input[type=text]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background-color": "#f3f3f3;", "border": "1px solid #777;", "outline": "none;", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input password": { "target": "input[type=password]", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background-color": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
+		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background-color": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Tree
 		  "tree table": { "target": ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
 		  "tree error element": { "target": ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
@@ -179,13 +179,14 @@ After the 1st object (Mary) phone number change and the 2nd (John) delete - the 
 Client Mary record after phone number change by user 'root' has version 2 value and lastversion flag set, while object previous
 version 1 has unset lastversion flag. Note that previous object version values for non-changed user-defined elements are set to
 NULL, so Mary phone number next change creates object version 3 with previous object version 2 element 'eid1' set to NULL.
-Other words - just to save some disk space object versions history consists of changed elements only.
+In other words - just to save some disk space object versions history consists of changed elements only.
 As object versions are object data instnces - deleted objects are not removed from database, but marked by zero version only.
 All previous versions object data is available in that case, but cannot be changed at all. Considering all of this, all object
 history is transparent and available and all data is native. This is a global application conception - all functionality is
-documented and clear.
+documented and clear. The application acts as a kind of platform the users can develop their projects with custom data behaviour
+and layout.
 
-Go on. Application authentication is password based. Usernames and their passwords are stores in 'Users' OD.
+Go on. Application authentication is password based. Usernames and their passwords are stored in 'Users' OD.
 Initial username/password: root/root. Only one user instance can be logged in, so logged in instance automatically logs out
 another instance via other host/browser. Session lifetime is 10 hours (36000 sec).
 To add new user click context menu 'Add Object' on any 'Users' view (on default view 'All users' for example), then double 
@@ -203,9 +204,9 @@ but in case of non-existent username - the name is treated as a name of a group.
 menu. Other database configuration can be continued here or later via 'Database Configuration' sidebar context menu call.
 Let's have a look at database configuration dialog box and its features.
 
-First is 'Database' tab. This configuration section sets up general database features (name, description, limits) and its
-permissions. Database name can be changed after creation or removed (via empty name and description values set).
-Database permissions represent itself four user/group (one by line) list input text areas, one list for each configuraion
+First is 'Database' tab. This configuration section sets up database name, description and permissions. Database name can be
+changed after creation or removed (via empty name and description values set). Database permissions represent itself five
+user/group (one by line) list input text areas, one list for each configuraion
 section (tab). Lists can be of two types - 'allowed' type allowes changes for specified users and groups in the list and
 disallowed for others, thereby 'disallowed' type disallows changes for specified users and groups and allows for others.
 Be aware of empty 'allowed' lists - this setting 'freezes' the tab, so any changes will not be allowed for any user.
@@ -552,7 +553,10 @@ As it was mentioned above user events are generated after database object manipu
     CONFIRM (editable content after edit finish returns back to the controller and then to the handler to be processed)
     CONFIRMDIALOG (dialog box data after apply returns back to the controller and then to the handler to be processed)
  - new object:
-    INIT (user adds/creates new object via context menu or new object input)
+    INIT (user adds/creates new object via context menu or new object input). Context menu 'Add Object' creates new object
+    with parameters in a new object input table cells, while 'Clone Object' takes parameters from contexted object table cells.
+    These parameters are used as a <data> args (see hadler call section below) for the handlers called at new object creation
+    event via add/clone context menu.
  - delete object:
     DELETEOBJECT (user removes the object via context menu, the only event which is not passed to the handler - controller
 		  just removes the object from DB (creates new object empty instance with zero version and lastversion flag
@@ -582,14 +586,15 @@ arguments are parsed to be replaced by the next values:
     Property "string" is one key char, other properties do exist only in case of appropriate key pushed. Meta key for Mac OS
     is 'Cmd' key, for Window OS - 'Window' key.
     For DBLCLICK, INS, DEL, F2, F12 data arg is the same except the "string" property is undefined.
-    For INIT event data argument text content in 'new object' element table cells if exist, otherwise <data> is empty string ''.
+    For INIT event data argument text content in 'new object' or 'cloned object' element table cells if exist, otherwise <data>
+    is empty string ''.
     For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
     For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
     For CHANGE and SCHEDULE events <data> argument is undefined.
  - <JSON> is a special argument that is replaced by retrieved element data and should be in next format:
     {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
     First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
-    datavase/view names ("OD"/"OV") is used. Both identificator and name omitted - current database or view is used.
+    datavase/view names ("OD"/"OV") are used. Both identificator and name omitted - current database or view is used.
     Specified view must have 'Table' template.
     Next two properties "selection" and "limit" are SQL query parts to select necessary objects which element data need to be
     retrieved: SELECT .. FROM .. WHERE "selection" LIMIT "limit". Omitted "selection" property - current object is used,
@@ -773,7 +778,9 @@ line) the user is a member of. LINE FEED char is inserted at the end of the list
 line (last group name in the list) to be correct.
 
 Second - customization.php in 'User' database for the element #6. The script customizes user interface via css
-properties for css selectors shown as dialog box profiles.
+properties for css selectors shown as dialog box profiles. All users (except system account) are created with default
+customization, Default user 'root' preferably may not be used or changed in order to apply his customization (via
+'force-user' option in customization dialog) and restore some other users props.
 
 Another one - text.php - a kind of excel cell behaviour: F2 or double click makes cell content editable, DEL clears cell
 text, CTRL|ALT|SHIFT + Enter combination (see customization 'Application' profile) applies content changes, ESC exits
@@ -818,7 +825,7 @@ on the bottom, plus some cell spacing and cell highlighting. Input next JSONs in
 {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}
 {"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
 {"eid":"1", "oid":"${NEWOBJECTID}", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
-{"eid":"1", "oid":"${NEWOBJECTID}", "style":"background-color: rgb(191,255,191);"}
+{"eid":"1", "oid":"${NEWOBJECTID}", "style": "background-color: transparent; border: 2px solid #d1d8df;"}
 
 First JSON describes HTML tag <table> attributes (unset 'oid' case, see 'Element layout' help section): width attribue is a
 necessary condition to allow table cells width (in pixels) setting. Border-collapse separate value set allows cell spacing
@@ -829,7 +836,7 @@ horizontal position is 'x=0' (first column) and vertical is 'n' - sequence numbe
 is placed in a fist row (n=0), second object in a second row (n=1) and so on. Variable 'q' is an object selection count number,
 so 'input' object (third JSON for a new message input [oid=1]) goes to row number 'q'. For example - ten chat messages layout
 is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input. To highlight new message input
-field you may input last JSON to set light green background color.
+field you may input last JSON to set transparent background color and grey border.
 
 Next step - chat database consists of one user-defined element (for chat messages), so create it in a 'Element' tab of
 'Database configuration' dialog - just enter next handler command line (to fit the page some input args are moved to a new line,
@@ -1015,9 +1022,9 @@ Line 50. Pass dialog to the controller.`
 	      'c', 'INS' copies element formatted text to the clipboard
 	      'Shift+c', 'Shift+INS' copies element clear text to the clipboard
 	      'Shift+F' - regular expression search on the page*
-	      'z', 'y' - usual do/undo actions are not implemented, cos it is hard to undo element handlers action due
-			 to its unique and complicated behaviour. To see previous object versions (instances) use
-			 'object selection' mechanism.
+     Note that usual do/undo actions (CTRL+y/CTRL+z) are not implemented, cos it is hard to undo element handlers
+     action due to its unique and complicated behaviour. To see previous object versions (instances) use appropriate
+     'object selection'.
   - 'Mouse right button' click calls appropriate (sidebar, main field or table area) context menu.
   - 'Mouse over' event on any element for some time (default 1 sec) displays appropriate hint message if exist.
   - 'Drag-and-drop' operations like mouse pointer 'excel' table cells resizing are not implemented due to multiuser

@@ -25,7 +25,9 @@ try {
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
      $newProperties['element2']['data'] = 'Application users database';
-     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
+     $newProperties['element6']['data'] = $newProperties['element8']['data'] = "+User/groups allowed list to change 'Database' section|Disallowed list (allowed for others)|";
+     $newProperties['element7']['data'] = $newProperties['element9']['data'] = 'root';
+     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog' => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $userOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
@@ -41,8 +43,9 @@ try {
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user>';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user>';
+     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user> <{"prop":"odvisible"}> <{"prop":"odvisiblelist"}> <{"prop":"odwrite"}> <{"prop":"odwritelist"}>';
+     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user> <{"prop":"odvisible"}> <{"prop":"odvisiblelist"}> <{"prop":"odwrite"}> <{"prop":"odwritelist"}>';
+     //$newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
      $userOD['dialog']['Element']['User (id1)'] = $newElement;
 
@@ -65,7 +68,7 @@ try {
 
      initNewODDialogElements();
      $newElement['element1']['id'] = '3';
-     $newElement['element1']['data'] = 'Telephone';
+     $newElement['element1']['data'] = 'Contact';
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
@@ -78,7 +81,7 @@ try {
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
      $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $userOD['dialog']['Element']['Telephone (id3)'] = $newElement;
+     $userOD['dialog']['Element']['Contact (id3)'] = $newElement;
 
      initNewODDialogElements();
      $newElement['element1']['id'] = '4';
@@ -146,14 +149,14 @@ try {
      $client['ODid'] = '1';
      $client['allelements'] = ['1' => '', '2' => '', '3' => '', '4' => '', '5' => '', '6' => ''];
      $client['uniqelements'] = ['1' => ''];
-     $output = ['1' => ['cmd' => 'RESET', 'value' => 'system'] + DEFAULTELEMENTPROPS,
-    		'2' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
+     $output = ['1' => ['cmd' => 'RESET', 'value' => 'system', 'odvisible' => 'Visible DatabaseID:ViewID list for the user|+Hidden list for the user (others visible)', 'odvisiblelist' => '', 'odwrite' => 'Writable DatabaseID:ViewID list for the user|+Read-only list for the user (others writable)', 'odwritelist' => ''] + DEFAULTELEMENTPROPS,
+		'2' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
 		'3' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
 		'4' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
 		'5' => ['cmd' => 'RESET', 'value' => 'System account'] + DEFAULTELEMENTPROPS];
      AddObject($db, $client, $output);
 
-     $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => ''] + DEFAULTELEMENTPROPS,
+     $output = ['1' => ['cmd' => 'RESET', 'value' => DEFAULTUSER, 'odaddperm' => '+Allow user to add Object Databases|', 'password' => password_hash(DEFAULTPASSWORD, PASSWORD_DEFAULT), 'groups' => '', 'odvisible' => 'Visible DatabaseID:ViewID list for the user|+Hidden list for the user (others visible)', 'odvisiblelist' => '', 'odwrite' => 'Writable DatabaseID:ViewID list for the user|+Read-only list for the user (others writable)', 'odwritelist' => ''] + DEFAULTELEMENTPROPS,
     		'2' => ['cmd' => 'RESET', 'value' => 'Charlie'] + DEFAULTELEMENTPROPS,
 		'3' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,
 		'4' => ['cmd' => 'RESET', 'value' => ''] + DEFAULTELEMENTPROPS,

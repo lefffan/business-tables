@@ -283,7 +283,7 @@ function contextmenuEventHandler(event)
     {
      const chart = GetChartItem(target);
      if (!chart) CellBorderToggleSelect(cursor.td, target);
-     const DELETEITEM = mainTable[cursor.y]?.[cursor.x]?.realobject ? ACTIVEITEM + 'Delete Object</div>' : GREYITEM + 'Delete Object</div>';
+     const DELETEITEM = mainTable[cursor.y]?.[cursor.x]?.realobject ? ACTIVEITEM + 'Clone Object</div>' + ACTIVEITEM + 'Delete Object</div>' : GREYITEM + 'Clone Object</div>' + GREYITEM + 'Delete Object</div>';
      DrawContext(ACTIVEITEM + 'Add Object</div>' + DELETEITEM + ACTIVEITEM + 'Description</div>' + ACTIVEITEM + 'Copy</div>' + chart, target, event);
      return;
     }
@@ -312,7 +312,7 @@ function GetChartItem(target)
  const x = target.cellIndex, y = target.parentNode.rowIndex;
 
  // Selected area does exist and click is in the selected area
- if (x >= Math.min(drag.x1, drag.x2) && x <= Math.max(drag.x1, drag.x2) && y >= Math.min(drag.y1, drag.y2) && y <= Math.max(drag.y1, drag.y2)) return ACTIVEITEM + 'Chart</div>';
+ if (x >= Math.min(drag.x1, drag.x2) && x <= Math.max(drag.x1, drag.x2) && y >= Math.min(drag.y1, drag.y2) && y <= Math.max(drag.y1, drag.y2) && (drag.x1 !== drag.x2 || drag.y1 !== drag.y2)) return ACTIVEITEM + 'Chart</div>';
 
  UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
  delete drag.x1;

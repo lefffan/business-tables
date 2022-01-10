@@ -7,144 +7,6 @@ function CheckODString($odname)
  return substr(str_replace("'", '', str_replace('"', '', trim(str_replace("\\", '', $odname)))), 0, ODSTRINGMAXCHAR);
 }
 
-function GetTreeElementContent($db, &$client, &$content, $oid)
-{
- // Content is array of object elements: [<downlink node linked object element>, <local node linked object element>, <first layout element of local node>, <second..>]
- // Each array element consists of three props: element identificator, its title and value
-
- // First go through all elements in the layout and put them to the content
- foreach ($client['elementselection'] as $eid => $value)
-	 if ($eid != 'direction') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
-
- // Make query string to select element values from DB
- $query = '';
- foreach ($content as $key => $e) if ($key)
-	 {
-	  if (!isset($e['id'])) $query .= 'NULL,';
-	   elseif (array_search($e['id'], SERVICEELEMENTS) !== false) $query .= $e['id'].',';
-	   elseif (!isset($client['allelements'][$e['id']])) $query .= 'NULL,';
-	   else $query .= 'JSON_EXTRACT(eid'.$e['id'].", '$.value'),";
-	 }
-
- // Select prepared elements above from object id $oid and put them to content array begining from index 1.
- try {
-      $query = $db->prepare('SELECT '.substr($query, 0, -1)." FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND id=$oid");
-      $query->execute();
-      foreach ($query->fetch(PDO::FETCH_NUM) as $key => $value)
-	      $value ? $content[$key + 1]['value'] = $value : $content[$key + 1]['value'] = '';
-     }
- catch (PDOException $e)
-     {
-      lg($e);
-     }
-}
-
-function GetElementTitle($eid, &$allelements)
-{
- if (isset($allelements[$eid])) $title = $allelements[$eid]['element1']['data'];
-  elseif (array_search($eid, SERVICEELEMENTS) !== false) $title = $eid;
-  else  $title = "Unknown '$eid'";
-
- return $title;
-}
-
-function LinksIntersection($linknames, $linkprop, &$allelements)
-{
- if (gettype($linknames) === 'string') $linknames = [$linknames];
- if (gettype($linknames) !== 'array') return [];
- $links = []; // Array of [<remote element id>, <uplink object selection>]
-
- // Takes view props link names (via '|' or '/') and element link prop to calc intersected names
- if ($linkprop) foreach (preg_split("/\n/", $linkprop) as $value)
-    if (trim($value) && gettype($last = preg_split("/\|/", $value, 3)) === 'array') // Is linkprop line splited to 2 or 3 elements?
-    if (count($last) === 3)						// All fields are defined
-    if (($last[0] = trim($last[0])) && in_array($last[0], $linknames))	// Check linprop link names to match view props link names
-       $links[] = [trim($last[1]), trim($last[2])];
-
- return $links;
-}
-
-// Each $tree array element is class (content css class name), content (elemnt list and its values) and link (array of uplink nodes): ['link' => [nodes array], 'content' => [eid, etitle, evalue], 'class' => '']
-function DefineNodeLinks($db, &$client, $oid, &$linknames, &$tree, &$objects)
-{
- // Build a query for all elements to fetch their link and value props
- $query = '';
- foreach ($client['allelements'] as $eid => $element)
-	 $query .= "$eid, JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.link')), JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.value')), ";
- if (!$query) return;
- $query = substr($query, 0, -2);
-
- // Execute the query
- try {
-      $query = $db->prepare("SELECT $query FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0");
-      $query->execute();
-      $srcobject = $query->fetchAll(PDO::FETCH_NUM);
-     }
- catch (PDOException $e)
-     {
-      unset($srcobject);
-     }
- if (!isset($srcobject[0])) return; // No fetched object? Return
- $srcobject = $srcobject[0];
- $count = count($srcobject);
-
- // Test all link names one by one for the first match in case of non OR ('|') names delimiter (isset($linknames['']))
- $objlinknames = $linknames;
- if (isset($objlinknames['']))
-    {
-     foreach ($objlinknames as $key => $name) if ($key !== '')
-     for ($i = 0; $i < $count; $i += 3)
-	 if (LinksIntersection($name, $srcobject[$i + 1], $client['allelements']) !== [] && ($match = [$name])) break 2;
-     if (!isset($match)) return;
-     $objlinknames = $match;
-    }
-
- for ($i = 0; $i < $count; $i += 3)
- if (($links = LinksIntersection($objlinknames, $srcobject[$i + 1], $client['allelements'])) !== [] && ($srccontent = [['id' => $srcobject[$i], 'title' => $client['allelements'][$srcobject[$i]]['element1']['data'], 'value' => $srcobject[$i + 2]]]))
- foreach ($links as $value) // Get through all matched link names in a element link property
-	 {
-	  $content = $srccontent;
-	  $content[] = ['id' => $value[0], 'title' => GetELementTitle($value[0], $client['allelements'])];
-	  // Search uplink object id
-	  try {
-	       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND $value[1] LIMIT 1");
-	       $query->execute();
-	      }
-	  // Syntax error? Make virtual error node with error message as a content
-	  catch (PDOException $e)
-	      {
-	       $content[2]['value'] = "Object selection syntax error:<br>'$value[1]'<br>See 'Element layout' help section for right syntax..";
-	       $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
-	       continue; // Go to next uplink object search via $select
-	      }
-
-	  // Uplink object not found? Make virtual error node with error message as a content and continue
-	  $uplinkoid = $query->fetch(PDO::FETCH_NUM);
-	  if (!isset($uplinkoid[0]))
-	     {
-	      $content[2]['value'] = "Object selection links to nonexistent object:<br>'$value[1]'";
-	      $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
-	      continue;
-	     }
-
-	  // Check loop via uplink object id existence in $objects array that consists of object ids already in the tree. Continue if exists, otherwise remember uplink object id in $objects array
-	  if (isset($objects[$uplinkoid = $uplinkoid[0]]))
-	     {
-	      $content[2]['value'] = "Loop detected on link:<br>from remote node [object id'$oid']<br>to me [object id'$uplinkoid']!";
-	      $tree['link'][] = ['content' => $content, 'class' => 'treeerror'];
-	      continue;
-	     }
-	  $objects[$uplinkoid] = true; // Remember uplink object id for loop detection
-
-	  // Get tree element content, uplink and local linked elements
-	  GetTreeElementContent($db, $client, $content, $uplinkoid);
-
-	  // Build tree element and define uplink node tree via  recursive function call
-	  $tree['link'][] = ['link' => [], 'content' => $content, 'class' => 'treeelement'];
-	  DefineNodeLinks($db, $client, $uplinkoid, $linknames, $tree['link'][array_key_last($tree['link'])], $objects);
-	 }
-}
-
 function NewOD($db, &$client, &$output)
 {
  // Get dialog OD name, cut it and check
@@ -204,6 +66,8 @@ function EditOD($db, &$client, &$output)
      $query->execute();
      $query = $db->prepare("DROP TABLE IF EXISTS `data_$id`");
      $query->execute();
+     $dir = UPLOADDIR."$client[ODid]";
+     if (is_dir($dir)) removeDir($dir);
      return true;
     }
 
@@ -306,36 +170,23 @@ try {
 		  break;
 	     case 'CALL':
 		  // Check input data correctness
-		  if (!isset($client['allelements'], $client['elementselection'], $client['objectselection'], $client['viewtype']) && !Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $output)) break;
+		  if (!isset($client['allelements'], $client['elementselection'], $client['objectselection'], $client['viewtype'], $client['linknames']) && !Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $output)) break;
 
 		  // Get OV data for a 'Tree' view template
 		  if ($client['viewtype'] === 'Tree')
 		     {
-		      // Check link names
-		      $linknames = [];
-		      (($posAND = strpos($client['linknames'], '/')) !== false && (($posOR = strpos($client['linknames'], '|')) === false || $posOR > $posAND)) ? $delimiter = '/' : $delimiter = '|';
-		      foreach (preg_split("/\\".$delimiter."/", $client['linknames']) as $name) if (trim($name)) $linknames[] = trim($name);
-		      if ($linknames === [] && ($output['error'] = "Specified view '".$client['OV']."' has no link names defined!")) break;
-		      if ($delimiter === '/') $linknames[''] = '';
+		      // Break with error in case of no link name specified
+		      if ($client['linknames'] === [] && ($output['error'] = "Specified view '".$client['OV']."' has no link names defined!")) break;
 
 		      // Get object selection query string, array result is treated as dialog content to define view params
 		      $client['objectselection'] = GetObjectSelection($client['objectselection'], $client['params'], $client['auth']);
 		      if (gettype($client['objectselection']) === 'array' && ($output = ['cmd' => 'DIALOG', 'data' => $client['objectselection'], 'ODid' => $client['ODid'], 'ODid' => $client['OVid']] + $output)) break;
 
-		      // Get object selection head object id
-		      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` $client[objectselection]");
-		      $query->execute();
-		      $headid = $query->fetch(PDO::FETCH_ASSOC); // Get object selection first object to build the tree from
-		      if (!isset($headid['id']) && ($output['error'] = "Specified view '".$client['OV']."' has no objects matched current selection!")) break;
-		      $headid = $headid['id'];		// Put head object id in headid var
-		      $objects = [$headid => true];	// Remember head object id in a global array for loop detection
-		      $content = [[], []];		// Init empty content for head object
-
 		      // Build the tree
-		      GetTreeElementContent($db, $client, $content, $headid);
-		      $tree = ['link' => [], 'content' => $content, 'class' => 'treeelement']; // Init tree with head object
-		      DefineNodeLinks($db, $client, $headid, $linknames, $tree, $objects); // and build uplink part
-		      $output = ['cmd' => 'Tree', 'tree' => $tree] + $output;
+		      $data = [];
+		      CreateTree($db, $client, 0, $data, 'TREE');
+		      if (!isset($data['link']) && ($output['error'] = "Specified view '".$client['OV']."' has no objects matched current selection!")) break;
+		      $output = ['cmd' => 'Tree', 'data' => $data, 'params' => $client['params']] + $output;
 		      (isset($client['elementselection']['direction']) && $client['elementselection']['direction'] === 'up') ? $output['direction'] = 'up' : $output['direction'] = 'down';
 		      break;
 		     }
@@ -348,21 +199,30 @@ try {
 		      if (gettype($client['objectselection']) === 'array' && ($output = ['cmd' => 'DIALOG', 'data' => $client['objectselection'], 'ODid' => $client['ODid'], 'ODid' => $client['OVid']] + $output)) break;
 
 		      // Get element selection query string, in case of empty result return no element message as an error
-		      $elementQueryString = '';
+		      $ElementQuery = '';
 		      SetLayoutProperties($client, $db);
-		      foreach ($client['layout']['elements'] as $key => $value) if (intval($key) > 0) $elementQueryString .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
-		      if ($elementQueryString === '' && !count($client['layout']['virtual']))
-			 {
-			  $output['error'] = "Database '$client[OD]' Object View '$client[OV]' layout has no elements defined!";
-			  break;
-			 }
+		      foreach ($client['layout']['elements'] as $key => $value) if (intval($key) > 0) $ElementQuery .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
+		      if ($ElementQuery === '' && !count($client['layout']['virtual']) && ($output['error'] = "Database '$client[OD]' Object View '$client[OV]' layout has no elements defined!")) break;
+		      $client['elementquery'] = "id,version,owner,datetime,lastversion$ElementQuery";
 
 		      // Return OV refresh command to the client with object selection sql query result as a main field data
-		      $query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$client[ODid]` $client[objectselection]");
-		      $query->execute();
-		      $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'layout' => $client['layout'], 'params' => $client['params']] + $output;
+		      if ($client['linknames'] === [])
+			 {
+			  $query = $db->prepare("SELECT $client[elementquery] FROM `data_$client[ODid]` $client[objectselection]");
+			  $query->execute();
+			  $output = ['cmd' => 'Table', 'data' => $query->fetchAll(PDO::FETCH_ASSOC), 'layout' => $client['layout'], 'params' => $client['params']] + $output;
+			 }
+		       else
+			 {
+			  $data = [];
+			  CreateTree($db, $client, 0, $data, 'TABLE');
+			  if (!count($client['tree']) && !count($client['layout']['virtual']) && ($output['error'] = "Specified view '".$client['OV']."' has no objects matched current selection!")) break;
+			  $output = ['cmd' => 'Table', 'data' => $client['tree'], 'layout' => $client['layout'], 'params' => $client['params']] + $output;
+			 }
 		      break;
 		     }
+
+		  // Incorrect template
 		  $output = ['cmd' => '', 'error' => "Template '$client[viewtype]' is not supported!"];
 		  break;
 	     case 'New Database':
@@ -386,7 +246,7 @@ try {
 	     case 'Database Configuration':
 	          if (gettype($client['data']) === 'string') // Input data is a string (OD name), so get OD props
 		     {
- 		      $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
+		      $query = $db->prepare("SELECT odname,odprops FROM `$` WHERE id=:id");
 		      $query->execute([':id' => $client['data']]);
 		      $odprops = $query->fetch(PDO::FETCH_NUM);
 		      $odname = $odprops[0];

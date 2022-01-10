@@ -146,31 +146,33 @@ function initNewODDialogElements()
 
  $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - remove all elements in 'Element' tab<br>and set database name with its description empty."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
-		    'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
-		    'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
-		    'element6' => ['type' => 'radio', 'data' => "User/groups allowed list to change 'Database' section|+Disallowed list (allowed for others)|"],
+		    'element3' => ['type' => 'radio', 'data' => "User/group list the database is visible for|+Hidden for user/group list (visible for others)|"],
+		    'element4' => ['type' => 'textarea', 'data' => '', 'line' => ''],
+		    //'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
+		    //'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
+		    'element6' => ['type' => 'radio', 'data' => "'Database' user section|+Disallowed list (allowed for others)|"],
 		    'element7' => ['type' => 'textarea', 'data' => ''],
-		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'Element' section|+Disallowed list (allowed for others)|"],
+		    'element8' => ['type' => 'radio', 'data' => "User/group list allowed to change 'Element' section|+Disallowed list (allowed for others)|"],
 		    'element9' => ['type' => 'textarea', 'data' => ''],
-		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'View' section|+Disallowed list (allowed for others)|"],
+		    'element10' => ['type' => 'radio', 'data' => "User/group list allowed to change 'View' section|+Disallowed list (allowed for others)|"],
 		    'element11' => ['type' => 'textarea', 'data' => ''],
-		    'element12' => ['type' => 'radio', 'data' => "User/groups list allowed to change 'Rule' section|+Disallowed list (allowed for others)|"],
+		    'element12' => ['type' => 'radio', 'data' => "User/group list allowed to change 'Rule' section|+Disallowed list (allowed for others)|"],
 		    'element13' => ['type' => 'textarea', 'data' => '', 'line' => '']
 		   ];
 
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "Handler for 'INIT' event:", 'data' => ''],
-		    'element5' => ['type' => 'text', 'label' => "Handler for 'DBLCLICK' event:", 'data' => ''],
-		    'element6' => ['type' => 'text', 'label' => "Handler for 'KEYPRESS' event:", 'data' => ''],
-		    'element7' => ['type' => 'text', 'label' => "Handler for 'INS' event:", 'data' => ''],
-		    'element8' => ['type' => 'text', 'label' => "Handler for 'DEL' event:", 'data' => ''],
-		    'element9' => ['type' => 'text', 'label' => "Handler for 'F2' event:", 'data' => ''],
-		    'element10' => ['type' => 'text', 'label' => "Handler for 'F12' event:", 'data' => ''],
-		    'element11' => ['type' => 'text', 'label' => "Handler for 'CONFIRM' event:", 'data' => ''],
-		    'element12' => ['type' => 'text', 'label' => "Handler for 'CONFIRMDIALOG' event:", 'data' => ''],
-		    'element13' => ['type' => 'text', 'label' => "Handler for 'CHANGE' event:", 'data' => '', 'line' => '']
+		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "'INIT' event:", 'data' => ''],
+		    'element5' => ['type' => 'text', 'label' => "'DBLCLICK' event:", 'data' => ''],
+		    'element6' => ['type' => 'text', 'label' => "'KEYPRESS' event:", 'data' => ''],
+		    'element7' => ['type' => 'text', 'label' => "'INS' event:", 'data' => ''],
+		    'element8' => ['type' => 'text', 'label' => "'DEL' event:", 'data' => ''],
+		    'element9' => ['type' => 'text', 'label' => "'F2' event:", 'data' => ''],
+		    'element10' => ['type' => 'text', 'label' => "'F12' event:", 'data' => ''],
+		    'element11' => ['type' => 'text', 'label' => "'CONFIRM' event:", 'data' => ''],
+		    'element12' => ['type' => 'text', 'label' => "'CONFIRMDIALOG' event:", 'data' => ''],
+		    'element13' => ['type' => 'text', 'label' => "'CHANGE' event:", 'data' => '', 'line' => '']
 		   ];
 
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'View name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
@@ -180,18 +182,18 @@ function initNewODDialogElements()
 		    'element5' => ['type' => 'text', 'label' => 'Link name', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'textarea', 'head' => 'Element layout', 'data' => '', 'line' => '', 'help' => 'Element layout defines what elements should be displayed and how for the selected template.<br>Empty layout is a default behaviour, see appropriate help section for details.'],
 		    'element7' => ['type' => 'textarea', 'head' => 'Scheduler', 'data' => '', 'line' => '', 'help' => "Scheduler is an instruction list (one per line), each instruction executes command line<br>at specified datetime for specified element for all objects of the view.<br>Instruction represents itself one by one space separated args in next format:<br>&lt;minute 0-59> &lt;hour 0-23> &lt;mday 1-31> &lt;month 1-12> &lt;wday 0-7> &lt;element id number> &lt;command line><br>See 'Database Configuration' help section for details."],
-		    'element8' => ['type' => 'radio', 'data' => "User/groups list allowed to read this view|+Disallowed list (allowed for others)|"],
+		    'element8' => ['type' => 'radio', 'data' => "User/group list allowed to read this view|+Disallowed list (allowed for others)|"],
 		    'element9' => ['type' => 'textarea', 'data' => ''],
-		    'element10' => ['type' => 'radio', 'data' => "User/groups list allowed to change this view objects|+Disallowed list (allowed for others)|"],
+		    'element10' => ['type' => 'radio', 'data' => "User/group list allowed to change this view objects|+Disallowed list (allowed for others)|"],
 		    'element11' => ['type' => 'textarea', 'data' => '']
 		   ];
 
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'help' => "Rule profile name. It may be changed, but if renamed profile already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty profile name removes the rule."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed in the dialog box.<br>Message text element id number in a figure brackets (example: {1}) retreives appropriate element name.'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action applies object changes made by operation, 'Reject' cancels all changes."],
-		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object|', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=<object id> AND version=<version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
-		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=<object id> AND version=<version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
+		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object<br>|DBLCLICK|KEYPRESS|INS|DEL|F2|F12|', 'line' => ''],
+		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=&lt;object id> AND version=&lt;version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
+		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=&lt;object id> AND version=&lt;version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
 		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
@@ -301,6 +303,12 @@ function AddObject($db, &$client, &$output)
  $output = ['cmd' => '', 'alert' => $ruleresult['message']];
 }
 
+function removeDir($dir)
+{
+ if ($files = glob($dir.'/*')) foreach($files as $file) is_dir($file) ? removeDir($file) : unlink($file);
+ rmdir($dir);
+}
+
 function DeleteObject($db, &$client, &$output)
 {
  try {
@@ -325,6 +333,8 @@ function DeleteObject($db, &$client, &$output)
 	  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
 	  $output = ['cmd' => 'DELETEOBJECT'];
 	  if (isset($ruleresult['message']) && $ruleresult['message']) $output['alert'] = $ruleresult['message'];
+	  $dir = UPLOADDIR."$client[ODid]/$client[oId]";
+	  if (is_dir($dir)) removeDir($dir);
 	  if ($client['ODid'] === '1') $output['passchange'] = strval($client['oId']);
 	  return;
 	 }
@@ -387,10 +397,12 @@ function ProcessRules($db, &$client, $preversion, $postversion, $operation)
 }
 
 // Function returns next rule test results - true (match case), false (no match case) and string (pdo exception case query error)
-function CheckRule($db, &$client, $rule, $version)
+function CheckRule($db, &$client, $rule, $preversion, $postversion)
 {
  if (!isset($rule, $version) || $rule === '' || $version === '') return true; // Unset or empty rule or version - return true (match case)
- $rule = str_replace(':user', $client['auth'], $rule); // Replace key :user with the actual username inited add/delete/change operation
+ $rule = str_replace(':user', $client['auth'], $rule); // Replace key :user with the actual username inited the operation
+ $rule = str_replace(':preversion', $preversion, $rule); // Replace :preversion key
+ $rule = str_replace(':postversion', $postversion, $rule); // Replace :preversion key
 
  try {
       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND version=$version AND $rule");
@@ -547,11 +559,22 @@ function getUserName($db, $id)
 
 function getUserGroups($db, $id)
 {
+ // Fetch group list extracted from user JSON
  $query = $db->prepare("SELECT JSON_EXTRACT(eid1, '$.groups') FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
  $query->execute([':id' => $id]);
  $groups = $query->fetchAll(PDO::FETCH_NUM);
  if (!isset($groups[0][0])) return [];
- return UnsetEmptyArrayElements(explode("\\n", substr($groups[0][0], 1, -1)));
+ // Convert group list to the array
+ $groups = UnsetEmptyArrayElements(explode("\\n", substr($groups[0][0], 1, -1)));
+ // Check group names on existed username and exlude the group in case of true
+ foreach ($groups as $key => $name)
+	 {
+	  $query = $db->prepare("SELECT id FROM `uniq_1` WHERE eid1=:name");
+	  $query->execute([':name' => $name]);
+	  $group = $query->fetchAll(PDO::FETCH_NUM);
+	  if (isset($group[0][0])) unset($groups[$key]);
+	 }
+ return $groups;
 }
 
 function UnsetEmptyArrayElements($arr)
@@ -568,6 +591,20 @@ function getUserODAddPermission($db, $id)
  $odaddperm = $query->fetchAll(PDO::FETCH_NUM);
  if (isset($odaddperm[0][0])) return substr($odaddperm[0][0], 1, -1);
  return '';
+}
+
+function getUserProps($db, $id, $props)
+{
+ if (gettype($props) !== 'array' || !count($props)) return [];
+ $query = '';
+ foreach ($props as $prop) $query .= "JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.$prop')) as $prop,";
+ $query = substr($query, 0, -1);
+
+ $query = $db->prepare("SELECT $query FROM `data_1` WHERE id=:id AND lastversion=1 AND version!=0");
+ $query->execute([':id' => $id]);
+ $data = $query->fetchAll(PDO::FETCH_ASSOC);
+ if (isset($data[0])) return $data[0];
+ return [];
 }
 
 function getUserCustomization($db, $uid)
@@ -760,58 +797,6 @@ function GenerateRandomString($length = USERPASSMINLENGTH)
  return $randomstring;
 }
 
-function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
-{
- // Check input paramValues array and add reserved :user parameter value
- if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
- $i = -1;
- $len = strlen($objectSelection);
- if (gettype($params) != 'array') $params = [];
- $params[':user'] = $user;
- $isDialog = false;
- $objectSelectionNew = '';
- $objectSelectionParamsDialogProfiles = [];
-
- // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
- while  (++$i <= $len)
-     // Parameter delimiter char (single/double quote, colon or space) detected
-     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ' || $objectSelection[$i] === '\\')
-	{
-	 if (isset($newparam))
-	 if (isset($params[$newparam])) // Object selection input parameter key does exist? Do code below
-	    {
-	     // Add appropriate dialog element (html <input>) for the new parameter with existing parameter data
-	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $params[$newparam]];
-	     if (!$isDialog) $objectSelectionNew .= $params[$newparam]; // Insert appropriate pramater value to object selection
-	    }
-	  else // Otherwise dialog is required, so add appropriate dialog element (html <input>) for the new parameter with empty data
-	    {
-	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
-	     $isDialog = true;
-	    }
-	 if ($i === $len) break; // Break in case of end line
-	 $newparam = NULL;	 // No new paramter for default
-	 $objectSelection[$i] === ':' ? $newparam = ':' : $objectSelectionNew .= $objectSelection[$i]; // Char ':' starts new param, otherwise just record current char to the object selection string
-	}
-      else if (isset($newparam)) $newparam .= $objectSelection[$i]; // Otherwise: if new parameter is being setting - record current char
-      else $objectSelectionNew .= $objectSelection[$i]; // Otherwise record current char to the object selection string
-
- //  In case of no dialog (or anyway flag set) - return object selection string
- unset($params[':user']); // Is it needable?
- if (!$isDialog || $anyway) return $objectSelectionNew;
-
- // Otherwise return dialog array
- $buttons = OKCANCEL;
- $buttons['OK']['call'] = 'CALL';
- $buttons['CANCEL']['error'] = 'View output has been canceled';
- return [
-	 'title'   => 'Object View parameters',
-	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
-	 'buttons' => $buttons,
-	 'flags'   => ['style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;', 'esc' => '']
-	];
-}
-
 function Swap(&$a, &$b)
 {
  $swap = $a;
@@ -824,27 +809,82 @@ function Sidebar($db, &$client)
  $groups = getUserGroups($db, $client['uid']); // Get current user group list
  $groups[] = getUserName($db, $client['uid']); // and add username at the end of array
  $sidebar = [];
+ $user = getUserProps($db, $client['uid'], ['odvisible', 'odvisiblelist', 'odwrite', 'odwritelist']);
+ if (!isset($user['odvisible'], $user['odvisiblelist'], $user['odwrite'], $user['odwritelist'])) return [];
 
  $query = $db->prepare("SELECT id,odname FROM `$`"); // Select OD list - ids and names
  $query->execute();
  foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $value)
 	 {
+	  // Extract JSON OD configuration structure (database and view section)
 	  $name = $value['odname'];
 	  $id = $value['id'];
-	  $sidebar[$id] = ['name' => $name, 'view' => []]; // Make sidebar based on OD id array. Array values - OD name and view list array
-	  // Extract JSON OV structure
-	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$name'");
+	  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Database.Properties'),JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE odname='$name'");
 	  $query->execute();
-	  foreach (json_decode($query->fetch(PDO::FETCH_NUM)[0], true) as $key => $View) if ($key != 'New view')
+	  $dbprops = $query->fetchAll(PDO::FETCH_NUM);
+	  if (!isset($dbprops[0][0])) continue;
+	  $viewlist = json_decode($dbprops[0][1], true);
+	  $dbprops = json_decode($dbprops[0][0], true);
+	  if (gettype($dbprops) !== 'array' || gettype($viewlist) !== 'array') continue;
+
+	  // Check OD visible
+	  if (ViewRestrictionMatch(intval($id), 0, $user['odvisiblelist'], $user['odvisible'])) continue; // OD is hidden for the user
+	  if (UserRestrictionMatch($groups, $dbprops['element4']['data'], $dbprops['element3']['data'])) continue; // OD is hidden for the user
+
+	  // Create OD record for the sidebar array
+	  $sidebar[$id] = ['name' => $name, 'view' => []]; // Make sidebar based on OD id array. Array values - OD name and view list array
+	  foreach ($viewlist as $key => $View) if ($key != 'New view')
 		  {
-		   $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
-		   $pos = strpos($View['element8']['data'], '+');
-		   if (($count && $pos) || (!$count && !$pos)) continue; // Make OV off sidebar due to disallowed user/group intersection between requesting user and view display permissions ($View['element8-9']['data'])
+		   if (ViewRestrictionMatch(intval($id), intval($View['element1']['id']), $user['odvisiblelist'], $user['odvisible'])) continue; // OD is hidden for the user
+		   if (UserRestrictionMatch($groups, $View['element9']['data'], $View['element8']['data'])) continue; // OV is hidden for the user
 		   $sidebar[$id]['view'][$View['element1']['id']] = $View['element1']['data']; // Make OV based on its ids array and set active OD view below
 		   if ($id === $client['ODid'] && $View['element1']['id'] === $client['OVid']) $sidebar[$id]['active'] = $client['OVid'];
 		  }
 	 }
  return $sidebar;
+}
+
+function ViewRestrictionMatch($odid, $viewid, $list, $listtype)
+{
+ $pos = strpos($listtype, '+') ? true : false;
+
+ foreach (preg_split("/\n/", $list) as $value)
+	 {
+	  $od = preg_split("/\:/", $value, 3);
+	  $ov = isset($od[1]) ? intval(trim($od[1])) : 0;
+	  $od = intval(trim($od[0]));
+	  if ($pos)
+	     {
+	      if ($odid === $od && ((!$viewid && !$ov) || ($viewid && ($ov === $viewid || !$ov)))) return true;
+	     }
+	   else
+	     {
+	      if ($odid === $od && (!$viewid || ($odid === $od && $viewid && ($ov === $viewid || !$ov)))) return false;
+	     }
+	 }
+
+ return !$pos;
+}
+
+function UserRestrictionMatch(&$usergroups, $userlist, $listtype)
+{
+ $count = count(array_uintersect($usergroups, UnsetEmptyArrayElements(explode("\n", $userlist)), "strcmp"));
+ $pos = strpos($listtype, '+');
+ if (($count && $pos) || (!$count && !$pos)) return true;
+}
+
+
+function LinkNamesStringToArray($names)
+{
+ // Initing link names array
+ $linknames = [];
+ // Calculating delimiter
+ (($posAND = strpos($names, '/')) !== false && (($posOR = strpos($names, '|')) === false || $posOR > $posAND)) ? $delimiter = '/' : $delimiter = '|';
+ // Calculating link names separated by delimiter
+ foreach (preg_split("/\\".$delimiter."/", $names) as $name) if (trim($name)) $linknames[] = trim($name);
+ // Set empty key flag for delimiter '/'
+ if ($linknames !== [] && $delimiter === '/') $linknames[''] = '';
+ return $linknames;
 }
 
 function Check($db, $flags, &$client, &$output)
@@ -903,7 +943,13 @@ function Check($db, $flags, &$client, &$output)
 	      $client['elementselection'] = $value['element6']['data'];
 	      break;
 	     }
-     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype']) && ($output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!")) return;
+     if (!isset($client['elementselection'], $client['objectselection'], $client['viewtype'], $client['linknames']))
+	{
+	 $output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!";
+	 return;
+	}
+
+     $client['linknames'] = LinkNamesStringToArray($client['linknames']);
 
      if ($client['viewtype'] === 'Table')
 	{
@@ -964,13 +1010,23 @@ function Check($db, $flags, &$client, &$output)
      if ($client['oId'] < STARTOBJECTID && ($output['alert'] = 'Incorrect object identificator value!')) return;
      // Avoid object id = STARTOBJECTID (system user from User OD) to be deleted
      if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT' && ($output['alert'] = 'System account cannot be deleted!')) return;
+
      // Check for changes of object selection
      if (gettype($client['objectselection'] = GetObjectSelection($client['objectselection'], $client['params'], $client['auth'])) === 'array' && ($output['alert'] = "Object selection has been changed, please refresh Object View!")) return;
-     // Check object existence, uncommented query is more faster (cause no load for all object selection), but ignores LIMIT sql option
-     //$query = $db->prepare("SELECT id FROM (SELECT id,lastversion,version FROM `data_$client[ODid]` $client[objectselection]) _ WHERE id=$client[oId] AND lastversion=1 AND version!=0");
-     $query = $db->prepare("SELECT id FROM (SELECT * FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0) _ $client[objectselection]");
-     $query->execute();
-     if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]) && ($output['alert'] = "Please refresh, specified object (id=$client[oId]) doesn't exist in the view!")) return;
+
+     // Check object existence
+     if ($client['linknames'] === [])
+        {
+	 $query = $db->prepare("SELECT id FROM (SELECT * FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0) _ $client[objectselection]");
+	 $query->execute();
+	 if (!isset($query->fetchAll(PDO::FETCH_NUM)[0][0]) && ($output['alert'] = "Please refresh, specified object (id=$client[oId]) doesn't exist in the view!")) return;
+        }
+      else
+        {
+	 $tree = [];
+	 CreateTree($db, $client, 0, $tree, 'EXISTENCE');
+	 if (!isset($client['objects'][$client['oId']]) && ($output['alert'] = "Please refresh, specified object (id=$client[oId]) doesn't exist in the view!")) return;
+        }
     }
 
  if ($flags & CHECK_EID)
@@ -996,23 +1052,24 @@ function Check($db, $flags, &$client, &$output)
     {
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
-     if (count($View = $query->fetchAll(PDO::FETCH_NUM)) == 0 && ($output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!")) return;
+     if (!count($View = $query->fetchAll(PDO::FETCH_NUM)) && ($output['error'] = "Database '$client[OD]' Object View '$client[OV]' not found!")) return;
 
      $View = json_decode($View[0][0], true)[$client['OV']];	// Set current view array data
      $groups = getUserGroups($db, $client['uid']);		// Get current user group list
      $groups[] = $client['auth'];				// and add username at the end of array
 
+     $user = getUserProps($db, $client['uid'], ['odvisible', 'odvisiblelist', 'odwrite', 'odwritelist']);
+     if (!isset($user['odvisible'], $user['odvisiblelist'], $user['odwrite'], $user['odwritelist']) && ($output['error'] = "Unknown user '$client[auth]'!")) return;
+
      // Check on 'display' permissions
-     $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element9']['data'])), "strcmp"));
-     $pos = strpos($View['element8']['data'], '+');
-     if ((($count && $pos) || (!$count && !$pos)) && ($output['error'] = "OV read/write operations are not allowed!")) return;
+     if (ViewRestrictionMatch(intval($client['ODid']), intval($client['OVid']), $user['odvisiblelist'], $user['odvisible']) && ($output['error'] = "OV read/write operations are not allowed!")) return;
+     if (UserRestrictionMatch($groups, $View['element9']['data'], $View['element8']['data']) && ($output['error'] = "OV read/write operations are not allowed!")) return;
 
      // Check 'writable' permissions for non-CALL event
      if ($client['cmd'] !== 'CALL')
 	{
-	 $count = count(array_uintersect($groups, UnsetEmptyArrayElements(explode("\n", $View['element11']['data'])), "strcmp"));
-	 $pos = strpos($View['element10']['data'], '+');
-	 if ((($count && $pos) || (!$count && !$pos)) && ($output['alert'] = "OV write operation are not allowed!")) return;
+         if (ViewRestrictionMatch(intval($client['ODid']), intval($client['OVid']), $user['odwritelist'], $user['odwrite']) && ($output['alert'] = "OV write operation are not allowed!")) return;
+	 if (UserRestrictionMatch($groups, $View['element11']['data'], $View['element10']['data']) && ($output['alert'] = "OV write operation are not allowed!")) return;
 	}
     }
   else
@@ -1047,4 +1104,328 @@ function QueueCall($db, $socket, $id, &$message)
  $query = $db->prepare("INSERT INTO `$$$` (id,client) VALUES (:id,:message)");
  $query->execute([':id' => $id, ':message' => $message]);
  if ($socket) fwrite($socket, encode($message));
+}
+
+function CreateTree($db, &$client, $oid, &$data, $cmd)
+{
+ // Init head object and all tree objects global array for loop detection at the 1st entry
+ if ($oid === 0)
+    {
+     $client['objects'] = [];
+     if (!($oid = GetHeadId($db, $client))) return;
+     $client['objects'][$oid] = true;
+     $data = ['link' => [], 'oid' => $oid]; // Init tree with head object
+     switch ($cmd) // Process command
+	    {
+	     case 'TABLE':
+		  $client['tree'] = [];
+		  GetObjectData($db, $client, $oid);
+		  break;
+	     case 'SEARCH':
+		  $client['tree'] = [];
+		  GetObjectSearchData($db, $client, $oid);
+		  break;
+	     case 'TREE':
+		  $data['content'] = [[], []];
+		  GetTreeElementContent($db, $client, $data['content'], $oid);
+		  $data['class'] = 'treeelement';
+		  break;
+	     case 'EXISTENCE':
+		  if ($client['oId'] === $oid) return;
+		  break;
+	    }
+    }
+
+ // Tree search is finished?
+ if ((isset($client['treelastnode']) && $client['treelastnode'] === $oid) || (!isset($client['treelastnode']) && $cmd === 'EXISTENCE' && $client['oId'] === $oid) || ($cmd === 'SEARCH' && !$client['limit'])) return true;
+
+ // Get object all element link and value props
+ if (!($count = count($object = GetObjectElementLinksArray($db, $client, $oid)))) return;
+
+ // Get through all elements matched link names
+ $linknames = $client['linknames'];
+ for ($i = 0; $i < $count; $i += 3)
+ foreach (LinkMatch($linknames, $object[$i + 1]) as $value)
+	 {
+	  // Generate tree content
+	  if ($cmd === 'TREE') $content = [ ['id' => $object[$i], 'title' => $client['allelements'][$object[$i]]['element1']['data'], 'value' => $object[$i + 2]], ['id' => $value[0], 'title' => GetELementTitle($value[0], $client['allelements'])] ];
+
+	  // Search uplink object id
+	  try {
+	       $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND $value[1] LIMIT 1");
+	       $query->execute();
+	      }
+	  catch (PDOException $e) // Syntax error? Make virtual error node with error message as a content
+	      {
+	       if ($cmd === 'TREE') // Each $data (for cmd=TREE) array element is class (content css class name), content (elemnt list and its values) and link (array of uplink nodes): ['link' => [nodes array], 'content' => [eid, etitle, evalue], 'class' => '']
+		  {
+		   $content[2]['value'] = "Object link selection syntax error:<br>'$value[1]'";
+		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
+		  }
+	       continue; // Go to next uplink object search via $select
+	      }
+
+	  // Uplink object not found? Make virtual error node with error message as a content and continue
+	  $uplinkoid = $query->fetch(PDO::FETCH_NUM);
+	  $query->closeCursor();
+	  if (!isset($uplinkoid[0]))
+	     {
+	      if ($cmd === 'TREE')
+		  {
+	           $content[2]['value'] = "Object link selection points to nonexistent object:<br>'$value[1]'";
+		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
+		  }
+	      continue;
+	     }
+
+	  // Check loop via uplink object id existence in $objects array that consists of object ids already in the tree. Continue if exists, otherwise remember uplink object id in $objects array
+	  if (isset($client['objects'][$uplinkoid = $uplinkoid[0]]))
+	     {
+	      if ($cmd === 'TREE')
+		  {
+		   $content[2]['value'] = "Loop detected on link:<br>from remote node [object id'$oid']<br>to me [object id'$uplinkoid']!";
+		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
+		  }
+	      continue;
+	     }
+
+	  // Remember uplink object id for loop detection
+	  $client['objects'][$uplinkoid] = true;
+
+	  // Build tree element and define uplink node tree via recursive function call
+	  $data['link'][] = ['link' => [], 'oid' => $uplinkoid];
+	  $index = array_key_last($data['link']);
+	  if (($result = CreateTree($db, $client, $uplinkoid, $data['link'][$index], $cmd)) && isset($client['treelastnode']))
+	     {
+	      DeleteTree($data['link'], $client['objects'], $index);
+	      $data['link'] = [$data['link'][$index]];
+	      $index = 0;
+	     }
+	  switch ($cmd)
+		 {
+		  case 'TABLE':
+		       if ($result || !isset($client['treelastnode'])) GetObjectData($db, $client, $uplinkoid);
+		       break;
+		  case 'SEARCH':
+		       if ($result || !isset($client['treelastnode'])) GetObjectSearchData($db, $client, $uplinkoid);
+		       break;
+		  case 'TREE':
+		       $data['link'][$index] += ['content' => $content, 'class' => 'treeelement'];
+		       GetTreeElementContent($db, $client, $data['link'][$index]['content'], $uplinkoid);
+		       break;
+		 }
+	  if ($result) return true;
+	 }
+}
+
+function GetObjectSearchData($db, &$client, $oid)
+{
+ if (!$client['limit']) return;
+
+ try {
+      $query = $db->prepare("SELECT $client[select] FROM (SELECT * FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0) _ WHERE $client[selection]");
+      $query->execute();
+      $object = $query->fetchAll(PDO::FETCH_NUM);
+      if (isset($object[0]))
+	 {
+	  $client['tree'][] = $object[0];
+	  $client['limit'] --;
+	 }
+     }
+ catch (PDOException $e) {}
+}
+
+function GetObjectData($db, &$client, $oid)
+{
+ try {
+      $query = $db->prepare("SELECT $client[elementquery] FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0");
+      $query->execute();
+      $object = $query->fetchAll(PDO::FETCH_ASSOC);
+      if (isset($object[0])) $client['tree'][] = $object[0];
+     }
+ catch (PDOException $e) {}
+}
+
+function DeleteTree(&$tree, &$objects, $index = NULL)
+{
+ foreach ($tree as $key => $value)
+	 {
+	  if ($key === $index) continue;
+	  unset($objects[$value['oid']]);
+	  DeleteTree($value['link'], $objects);
+	 }
+}
+
+function GetHeadId($db, &$client)
+{
+ $selection = preg_split("/\n/", $client['objectselection']);
+ if (gettype($selection) !== 'array') return;
+
+ unset($client['treelastnode']);
+ if (isset($selection[1]))
+    {
+     $client['objectselection'] = $selection[1];
+     $client['treelastnode'] = GetHead($db, $client);
+    }
+
+ $client['objectselection'] = $selection[0];
+ return GetHead($db, $client);
+}
+
+function GetHead($db, &$client)
+{
+ // Execute object selection data from OD to get first found object to build the tree from
+ try {
+      $query = $db->prepare("SELECT id,version,lastversion FROM `data_$client[ODid]` $client[objectselection]");
+      $query->execute();
+     }
+ catch (PDOException $e)
+     {
+      return;
+     }
+
+ // Get 1st found real object
+ while ($head = $query->fetch(PDO::FETCH_ASSOC))
+       if (isset($head['id']) && $head['lastversion'] === '1' && $head['version'] !== '0')
+	  {
+	   $query->closeCursor();
+	   return $head['id'];
+	  }
+}
+
+function LinkMatch(&$linknames, $linkprop)
+{
+ if (gettype($linkprop) !== 'string' || !$linkprop) return [];
+ $links = []; // Array of [<remote element id>, <uplink object selection>]
+
+ // Calculate matched link names (via '|' or '/') list to element link prop
+ foreach (preg_split("/\n/", $linkprop) as $value)
+	 {
+	  if (!trim($value) || gettype($last = preg_split("/\|/", $value, 3)) !== 'array') continue; // Is linkprop line splited to 2 or 3 elements?
+	  if (count($last) !== 3) continue; // All fields are defined
+	  if (in_array(trim($last[0]), $linknames))
+	     {
+	      $links[] = [trim($last[1]), trim($last[2])]; // Check linprop link names to match view props link names
+	      if (isset($linknames[''])) $linknames = [trim($last[0])]; // Reset linknames array to use $last[0] as 1st found link name for other object element links (for '/' divided names, with key '' set, only)
+	     }
+	 }
+
+ // Return matched links result array
+ return $links;
+}
+
+function GetObjectElementLinksArray($db, &$client, $oid)
+{
+ // Build a query for all elements to fetch their link and value props
+ $query = '';
+ foreach ($client['allelements'] as $eid => $element)
+	 $query .= "$eid, JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.link')), JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.value')), ";
+ if (!$query) return [];
+ $query = substr($query, 0, -2);
+
+ // Execute the query
+ try {
+      $query = $db->prepare("SELECT $query FROM `data_$client[ODid]` WHERE id=$oid AND lastversion=1 AND version!=0");
+      $query->execute();
+      $object = $query->fetchAll(PDO::FETCH_NUM);
+     }
+ catch (PDOException $e)
+     {
+      unset($object);
+     }
+
+ // Return result array of object all element link and value props
+ if (isset($object[0][0])) return $object[0];
+ return []; // No fetched object? Return empty array
+}
+
+function GetTreeElementContent($db, &$client, &$content, $oid)
+{
+ // Content is array of object elements: [<downlink node linked object element>, <local node linked object element>, <first layout element of local node>, <second..>]
+ // Each array element consists of three props: element identificator, its title and value
+
+ // First go through all elements in the layout and put them to the content
+ foreach ($client['elementselection'] as $eid => $value)
+	 if ($eid != 'direction') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
+
+ // Make query string to select element values from DB
+ $query = '';
+ foreach ($content as $key => $e) if ($key)
+	 {
+	  if (!isset($e['id'])) $query .= 'NULL,';
+	   elseif (array_search($e['id'], SERVICEELEMENTS) !== false) $query .= $e['id'].',';
+	   elseif (!isset($client['allelements'][$e['id']])) $query .= 'NULL,';
+	   else $query .= 'JSON_EXTRACT(eid'.$e['id'].", '$.value'),";
+	 }
+
+ // Select prepared elements above from object id $oid and put them to content array begining from index 1.
+ try {
+      $query = $db->prepare('SELECT '.substr($query, 0, -1)." FROM `data_$client[ODid]` WHERE lastversion=1 AND version!=0 AND id=$oid");
+      $query->execute();
+      foreach ($query->fetch(PDO::FETCH_NUM) as $key => $value) $value ? $content[$key + 1]['value'] = $value : $content[$key + 1]['value'] = '';
+     }
+ catch (PDOException $e)
+     {
+      lg($e);
+     }
+}
+
+function GetElementTitle($eid, &$allelements)
+{
+ if (isset($allelements[$eid])) $title = $allelements[$eid]['element1']['data'];
+  elseif (array_search($eid, SERVICEELEMENTS) !== false) $title = $eid;
+  else  $title = "Unknown '$eid'";
+
+ return $title;
+}
+
+function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
+{
+ // Check input paramValues array and add reserved :user parameter value
+ if (gettype($objectSelection) != 'string' || ($objectSelection = trim($objectSelection)) === '') return DEFAULTOBJECTSELECTION;
+ $i = -1;
+ $len = strlen($objectSelection);
+ if (gettype($params) != 'array') $params = [];
+ $params[':user'] = $user;
+ $isDialog = false;
+ $objectSelectionNew = '';
+ $objectSelectionParamsDialogProfiles = [];
+
+ // Check $objectSelection every char and retrieve params in non-quoted substrings started with ':' and finished with space or another ':'
+ while  (++$i <= $len)
+     // Parameter delimiter char (single/double quote, colon or space) detected
+     if ($i === $len || $objectSelection[$i] === '"' || $objectSelection[$i] === "'" || $objectSelection[$i] === ':' || $objectSelection[$i] === ' ' || $objectSelection[$i] === '\\' || $objectSelection[$i] === "\n")
+	{
+	 if (isset($newparam))
+	 if (isset($params[$newparam])) // Object selection input parameter key does exist? Do code below
+	    {
+	     // Add appropriate dialog element (html <input>) for the new parameter with existing parameter data
+	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => $params[$newparam]];
+	     if (!$isDialog) $objectSelectionNew .= $params[$newparam]; // Insert appropriate pramater value to object selection
+	    }
+	  else // Otherwise dialog is required, so add appropriate dialog element (html <input>) for the new parameter with empty data
+	    {
+	     $objectSelectionParamsDialogProfiles[$newparam] = ['head' => "\n".str_replace('_', ' ', substr($newparam, 1)).':', 'type' => 'text', 'data' => ''];
+	     $isDialog = true;
+	    }
+	 if ($i === $len) break; // Break in case of end line
+	 $newparam = NULL;	 // No new paramter for default
+	 $objectSelection[$i] === ':' ? $newparam = ':' : $objectSelectionNew .= $objectSelection[$i]; // Char ':' starts new param, otherwise just record current char to the object selection string
+	}
+      else if (isset($newparam)) $newparam .= $objectSelection[$i]; // Otherwise: if new parameter is being setting - record current char
+      else $objectSelectionNew .= $objectSelection[$i]; // Otherwise record current char to the object selection string
+
+ //  In case of no dialog (or anyway flag set) - return object selection string
+ if (!$isDialog || $anyway) return $objectSelectionNew;
+
+ // Otherwise return dialog array
+ $buttons = OKCANCEL;
+ $buttons['OK']['call'] = 'CALL';
+ $buttons['CANCEL']['error'] = 'View output has been canceled';
+ return [
+	 'title'   => 'Object View parameters',
+	 'dialog'  => ['pad' => ['profile' => $objectSelectionParamsDialogProfiles]],
+	 'buttons' => $buttons,
+	 'flags'   => ['style' => 'min-width: 350px; min-height: 140px; max-width: 1500px; max-height: 500px;', 'esc' => '']
+	];
 }

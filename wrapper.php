@@ -156,7 +156,6 @@ function GetElementProperty($db, $output, &$client, $recursion)
  if (!isset($output['OVid']) && !isset($output['OV'])) $output['OVid'] = $client['OVid'];
  $output = ['cmd' => 'CALL', 'uid' => $client['uid'], 'auth' => $client['auth']] + $output;
  if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $output, $output) && !LogMessage($db, $client, $errormessage.$output['error'])) return '';
- if ($output['viewtype'] !== 'Table' && !LogMessage($db, $client, $errormessage.'allowed for table templates only!')) return '';
 
  // Fetch input array :parameters and unset all unknown
  foreach ($output as $key => $value)
@@ -166,11 +165,11 @@ function GetElementProperty($db, $output, &$client, $recursion)
 	    }
 	  else
 	    {
-	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop', 'limit'])) unset($output[$key]);
+	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'viewtype', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop', 'limit', 'linknames'])) unset($output[$key]);
 	    }
 
  // Fetch result lines limit
- $limit = 1;
+ $limit = '1';
  if (isset($output['limit']) && ctype_digit($output['limit']) && intval($output['limit']) > 0) $limit = strval(min(intval($output['limit']), ARGRESULTLIMITNUM));
 
  // Get OD/OV object selection
@@ -178,7 +177,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
  if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
 
  // Set default input arg object selection
- if (!isset($output['selection']) || gettype($output['selection']) !== 'string' || $output['selection'] === '')
+ if (!isset($output['selection']) || gettype($output['selection']) !== 'string' || trim($output['selection']) === '')
     $output['selection'] = "id=$client[oId] AND lastversion=1 AND version!=0";
   else
     $output['selection'] = GetObjectSelection($output['selection'], $output, $client['auth'], true);
@@ -192,47 +191,59 @@ function GetElementProperty($db, $output, &$client, $recursion)
  // Calculate select clause. In case of regular expression (/../) use all elements in a layout.
  if ($element[0] === '/' && $element[strlen($element) - 1] === '/')
     {
-     $regular = $select = '';
-     SetLayoutProperties($output);
-     foreach ($output['layout']['elements'] as $eid => $value)
+     $select = '';
+     if ($output['viewtype'] === 'Table') { SetLayoutProperties($output); $elements = $output['layout']['elements']; }
+      else if ($output['viewtype'] === 'Tree') $elements = $output['elementselection'];
+     foreach ($elements as $eid => $value)
 	     {
 	      if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
 	       elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
 	     }
      if (!$select) return '';
      $select = substr($select, 1);
-     $element = GetObjectSelection($element, $output, $client['auth']);
+     $element = GetObjectSelection($element, $output, $client['auth'], true);
     }
   elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
   elseif (ctype_digit($element))
 	 {
-	  SetLayoutProperties($output);
-	  if (isset($output['layout']['elements'][$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))";
+	  if ($output['viewtype'] === 'Table') { SetLayoutProperties($output); $elements = $output['layout']['elements']; }
+	   else if ($output['viewtype'] === 'Tree') $elements = $output['elementselection'];
+          if (isset($elements[$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))"; else return '';
 	 }
-  elseif (!LogMessage($db, $client, $errormessage."specified element doesn't exist in a view 'element layout' or incorrect!")) return '';
+  elseif (!LogMessage($db, $client, $errormessage."specified element is not defined in a view 'element layout' or incorrect!")) return '';
 
  // Result query
- try {
-      $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` WHERE $output[selection] LIMIT $limit) _ $output[objectselection]");
-      $query->execute();
-     }
- catch (PDOException $e)
-     {
-      LogMessage($db, $client, $errormessage.$e->getMessage());
-      return '';
-     }
- $data = $query->fetchAll(PDO::FETCH_NUM);
- if (!isset($data[0][0])) return '';
-
- // Search element in result $data
- $result = '';
- if (isset($regular))
+ if ($output['linknames'] === [])
     {
-     foreach ($data as $value) foreach ($value as $val) if (preg_match($element, $val)) $result .= $val."\n";
+     try {
+	  $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` $output[objectselection]) _ WHERE $output[selection] LIMIT $limit");
+	  $query->execute();
+	 }
+     catch (PDOException $e)
+         {
+	  LogMessage($db, $client, $errormessage.$e->getMessage());
+	  return '';
+	 }
+     $output['tree'] = $query->fetchAll(PDO::FETCH_NUM);
     }
   else
     {
-     foreach ($data as $value) $result .= $value[0]."\n";
+     $data = [];
+     $output['select'] = $select;
+     $output['limit'] = intval($limit);
+     CreateTree($db, $output, 0, $data, 'SEARCH');
+    }
+ if (!isset($output['tree'][0][0])) return '';
+
+ // Search element in result $data
+ $result = '';
+ if ($element[0] === '/') // Search from all elements via regular expression
+    {
+     foreach ($output['tree'] as $value) foreach ($value as $val) if (preg_match($element, $val)) $result .= $val."\n";
+    }
+  else // Search from exact element
+    {
+     foreach ($output['tree'] as $value) $result .= $value[0]."\n";
     }
  return substr($result, 0, -1);
 }

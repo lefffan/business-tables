@@ -11,7 +11,7 @@ const DIALOG = [
 		'title' => 'User properties', 
 		'buttons' => ['SAVE' => ['value' => 'SAVE', 'call' => '', 'enterkey' => ''],
 			      'CANCEL' => ['value' => 'CANCEL', 'style' => 'background-color: red;']],
-		'flags'  => ['style' => 'width: 500px; height: 500px;', 'esc' => '']
+		'flags'  => ['style' => 'width: 600px; height: 700px;', 'esc' => '']
 	       ];
 
 if (!isset($_SERVER['argv'][1])) exit;
@@ -19,19 +19,28 @@ switch ($_SERVER['argv'][1])
        {
 	case 'INIT':
 	     if (isset($_SERVER['argv'][2]))
-		echo json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '']);
+		echo json_encode(['cmd' => 'SET', 'value' => str_replace("\\", "", $_SERVER['argv'][2]), 'odaddperm' => '+Allow user to add Object Databases|', 'groups' => '', 'password' => '',  'odvisible' => 'Visible DatabaseID:ViewID list for the user|+Hidden list for the user (others visible)', 'odvisiblelist' => '', 'odwrite' => 'Writable DatabaseID:ViewID list for the user|+Read-only list for the user (others writable)', 'odwritelist' => '']);
 	     break;
 	case 'F2':
 	case 'DBLCLICK':
-	     if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3], $_SERVER['argv'][4], $_SERVER['argv'][5])) break;
+	     if (!isset($_SERVER['argv'][2], $_SERVER['argv'][3], $_SERVER['argv'][4], $_SERVER['argv'][5], $_SERVER['argv'][6], $_SERVER['argv'][7], $_SERVER['argv'][8], $_SERVER['argv'][9])) break;
 	     $user = $_SERVER['argv'][2];
 	     $perm = $_SERVER['argv'][3];
 	     $groups = $_SERVER['argv'][4];
 	     $initiator = $_SERVER['argv'][5];
+	     $visible = $_SERVER['argv'][6];
+	     $visiblelist = $_SERVER['argv'][7];
+	     $writable = $_SERVER['argv'][8];
+	     $writablelist = $_SERVER['argv'][9];
 
 	     if ($user == 'system') echo json_encode(['cmd' => 'ALERT', 'data' => "You can't change system account properties!"]);
 	      else if ($user == '') echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]]]]);
-	      else if ($initiator != $user) echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => '']]]]]]);
+	      else if ($initiator != $user) echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => ''], 'element4' => ['type' => 'checkbox', 'data' => $perm, 'line' => ''], 'element5' => ['type' => 'textarea', 'head' => 'One by line group list the user is a member of:', 'data' => $groups, 'line' => ''],
+							      'element6' => ['type' => 'radio', 'data' => $visible, 'head' => "Input colon divided database:view identificator combinations one by line.\nOmitted view id - restriction is applied for all views of specified database", 'help' => "Examples. '1:2' will restrict view id2 of database id1 for the user,\n'1' or '1:' will restrict database id1 all views. So hidden list of 1:2\nwill hide the specified view from the user with no read/write access.\n\nPer user restrictions test for the read/write view access is perfomed\ntogether with view specific restrictions listed in database view\nconfiguration.\n\nNon digit chars at the end of the line are ignored and can be used as a\ncomment for the specified id combination."],
+							      'element7' => ['type' => 'textarea', 'data' => $visiblelist],
+							      'element8' => ['type' => 'radio', 'data' => $writable],
+							      'element9' => ['type' => 'textarea', 'data' => $writablelist]
+							      ]]]]]);
 	      else echo json_encode(['cmd' => 'DIALOG', 'data' => DIALOG + ['dialog' => ['pad' => ['profile' => ['element0' => ['head'=>''], 'element1' => ['type' => 'text', 'head' => 'User:', 'data' => $user, 'line' => '', 'readonly' => ''], 'element2' => ['type' => 'password', 'head' => 'Password:', 'data' => '', 'line' => ''], 'element3' => ['type' => 'password', 'head' => 'Confirm password:', 'data' => '', 'line' => '']]]]]]);
 	     break;
 	case 'CONFIRMDIALOG':
@@ -62,6 +71,10 @@ switch ($_SERVER['argv'][1])
 		     foreach (preg_split("/\n/", $profile['element5']['data']) as $group)
 			     if (trim($group)) $output['groups'] .= trim($group)."\n";
 		    }
+		 if (isset($profile['element6']['data'])) $output['odvisible'] = $profile['element6']['data'];
+		 if (isset($profile['element7']['data'])) $output['odvisiblelist'] = $profile['element7']['data'];
+		 if (isset($profile['element8']['data'])) $output['odwrite'] = $profile['element8']['data'];
+		 if (isset($profile['element9']['data'])) $output['odwritelist'] = $profile['element9']['data'];
 
 		 // Setting password hash for non empty password field
 		 if ($pass) $output['password'] = password_hash($pass, PASSWORD_DEFAULT);
