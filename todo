@@ -9,6 +9,7 @@ Sunday
 7   footnote (snoska) for cells with [hint, description, unconfirmed, files, link]. Plus in contex menu description: hint, files attahced and link
 6   Add events as a new operations to the rule section (plus expression operationof a full sql request), add :group word in a rule selection
 
+
 Application:
   optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
   Oppoertunity to fetch image properties (like resolution) in GALLERY mode
