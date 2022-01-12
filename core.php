@@ -192,9 +192,8 @@ function initNewODDialogElements()
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed in the dialog box.<br>Message text element id number in a figure brackets (example: {1}) retreives appropriate element name.'],
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action applies object changes made by operation, 'Reject' cancels all changes."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object<br>|DBLCLICK|KEYPRESS|INS|DEL|F2|F12|', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Preprocessing rule', 'data' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=&lt;object id> AND version=&lt;version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
-		    'element6' => ['type' => 'textarea', 'head' => 'Postprocessing rule', 'data' => '', 'line' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=&lt;object id> AND version=&lt;version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
-		    'element7' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
+		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=&lt;object id> AND version=&lt;version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
+		    'element6' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
 
@@ -282,7 +281,7 @@ function AddObject($db, &$client, &$output)
       $query->execute($params);
 
       $client['oId'] = $newId;
-      $ruleresult = ProcessRules($db, $client, NULL, '1', 'Add object');
+      $ruleresult = ProcessRules($db, $client, 'Add object', '1', '1');
       if ($ruleresult['action'] === 'Accept')
          {
           $db->commit();
@@ -326,7 +325,7 @@ function DeleteObject($db, &$client, &$output)
       $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
       $query->execute();
 
-      $ruleresult = ProcessRules($db, $client, $version, 0, 'Delete object');
+      $ruleresult = ProcessRules($db, $client, 'Delete object', $version, '0');
       if ($ruleresult['action'] === 'Accept')
          {
 	  $db->commit();
@@ -360,7 +359,7 @@ function ParseRuleMsgElementId(&$client, $msg)
  return $msg;
 }
 
-function ProcessRules($db, &$client, $preversion, $postversion, $operation)
+function ProcessRules($db, &$client, $operation, $preversion, $postversion)
 {
  // Get rule profile json data
  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Rule') FROM $ WHERE id='$client[ODid]'");
@@ -372,49 +371,37 @@ function ProcessRules($db, &$client, $preversion, $postversion, $operation)
  unset($Rules['New rule']); // Exlude service 'New rule' profile
 
  // Process non empty expression rules one by one
- foreach ($Rules as $key => $value)
+ foreach ($Rules as $key => $rule)
 	 {
-	  if (strpos($value['element4']['data'], '+'.$operation) === false) continue; // No apply operation selected? Continue
-	  strpos($value['element3']['data'], '+Accept') === false ? $action = 'Reject' : $action = 'Accept'; // Set accept/reject action
-	  $message = ParseRuleMsgElementId($client['allelements'], trim($value['element2']['data'])); // and rule message
+	  $action = strpos($rule['element3']['data'], '+Accept') === false ? 'Reject' : 'Accept'; // Set accept/reject action
+	  if (strpos($rule['element4']['data'], '+'.$operation) === false) continue; // No apply operation selected? Continue
+	  if (($querystring = trim($rule['element5']['data'])) === '') continue; // Query is empty? Continue
+	  $querystring = str_replace(':user', $client['auth'], $querystring); // Replace with actual username inited the operation
+	  $querystring = str_replace(':preversion', $preversion, $querystring); // Replace with object version before operation
+	  $querystring = str_replace(':postversion', $postversion, $querystring); // Replace with object version after operation
+	  $querystring = str_replace(':oid', $client['oId'], $querystring); // Replace with object id
+	  $querystring = str_replace(':odtable', "`data_$client[ODid]`", $querystring); // Replace with sql table
 
-	  if (gettype($result = CheckRule($db, $client, trim($value['element5']['data']), $preversion)) === 'string')
-	     return ['action' => $action, 'message' => $result, 'log' => $result]; // Return action in case of error (match case)
-	  if ($result === false) continue; // Continue to next rule in case of no match
+	  // Perform a rule query
+	  try {
+	       $query = $db->prepare($querystring);
+	       $query->execute();
+	      }
+	  catch (PDOException $e)
+	      {
+	       return ['action' => 'Accept', 'message' => 'Rule error: '.$e->getMessage()];
+	      }
+	  $result = $query->fetch(PDO::FETCH_NUM);
+	  if (!isset($result[0]) || !$result[0] || $result[0] === '0') continue;
 
-	  if (gettype($result = CheckRule($db, $client, trim($value['element6']['data']), $postversion)) === 'string')
-	     return ['action' => $action, 'message' => $result, 'log' => $result]; // Return action in case of error (match case)
-	  if ($result === false) continue; // Continue to next rule in case of no match
-	
 	  // Rule match occured. Return its action
-	  $output = ['action' => $action, 'message' => $message];
-	  if (substr($value['element7']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$message'"; // Log rule message in case of approprate checkbox is set
+	  $output = ['action' => $action, 'message' => trim($rule['element2']['data'])];
+	  if (substr($rule['element6']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$output[message]'"; // Log rule message in case of approprate checkbox is set
 	  return $output;
 	 }
 
  // Return default action
  return ['action' => 'Accept', 'message' => ''];
-}
-
-// Function returns next rule test results - true (match case), false (no match case) and string (pdo exception case query error)
-function CheckRule($db, &$client, $rule, $preversion, $postversion)
-{
- if (!isset($rule, $version) || $rule === '' || $version === '') return true; // Unset or empty rule or version - return true (match case)
- $rule = str_replace(':user', $client['auth'], $rule); // Replace key :user with the actual username inited the operation
- $rule = str_replace(':preversion', $preversion, $rule); // Replace :preversion key
- $rule = str_replace(':postversion', $postversion, $rule); // Replace :preversion key
-
- try {
-      $query = $db->prepare("SELECT id FROM `data_$client[ODid]` WHERE id=$client[oId] AND version=$version AND $rule");
-      $query->execute();
-     }
- catch (PDOException $e)
-     {
-      return 'Rule error: '.$e->getMessage();
-     }
-
- if (isset($query->fetchAll(PDO::FETCH_NUM)[0][0])) return true; // Non empty result? Return true (match case)
- return false; // Else return false (no match)
 }
 
 function SetLayoutProperties(&$client, $db = NULL)
@@ -1068,8 +1055,25 @@ function Check($db, $flags, &$client, &$output)
      // Check 'writable' permissions for non-CALL event
      if ($client['cmd'] !== 'CALL')
 	{
-         if (ViewRestrictionMatch(intval($client['ODid']), intval($client['OVid']), $user['odwritelist'], $user['odwrite']) && ($output['alert'] = "OV write operation are not allowed!")) return;
+	 if (ViewRestrictionMatch(intval($client['ODid']), intval($client['OVid']), $user['odwritelist'], $user['odwrite']) && ($output['alert'] = "OV write operation are not allowed!")) return;
 	 if (UserRestrictionMatch($groups, $View['element11']['data'], $View['element10']['data']) && ($output['alert'] = "OV write operation are not allowed!")) return;
+	}
+
+     // Check rules
+     if (array_search($client['cmd'], ['DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12']) !== false)
+	{
+	 $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1");
+	 $query->execute();
+	 $version = $query->fetchAll(PDO::FETCH_NUM);
+	 if (!isset($version[0][0]) && ($output['alert'] = "Please refresh, specified object (id=$client[oId]) doesn't exist in the view!")) return;
+
+	 $ruleresult = ProcessRules($db, $client, $client['cmd'], $version[0][0], $version[0][0]);
+	 if ($ruleresult['action'] === 'Reject')
+	    {
+	     $output['alert'] = $ruleresult['message'];
+	     if (isset($ruleresult['log']) && $ruleresult['log']) $output['log'] = $ruleresult['log'];
+	     return;
+	    }
 	}
     }
   else

@@ -205,13 +205,12 @@ menu. Other database configuration can be continued here or later via 'Database 
 Let's have a look at database configuration dialog box and its features.
 
 First is 'Database' tab. This configuration section sets up database name, description and permissions. Database name can be
-changed after creation or removed (via empty name and description values set). Database permissions represent itself five
-user/group (one by line) list input text areas, one list for each configuraion
-section (tab). Lists can be of two types - 'allowed' type allowes changes for specified users and groups in the list and
-disallowed for others, thereby 'disallowed' type disallows changes for specified users and groups and allows for others.
-Be aware of empty 'allowed' lists - this setting 'freezes' the tab, so any changes will not be allowed for any user.
-Also note that 'Database' section tab empty 'allowed' list blocks any permission changes for other database configuration
-sections ('Element', 'View' and 'Rule') for any user forever.
+changed after creation or removed (via empty name and description). Database permissions represent itself five user/group
+(one by line) list input text areas, first list for the object database visibility restriction, other four lists - for each
+configuraion section (tab). Lists can be of two types - 'allowed' type allowes changes for specified users and groups in the
+list and disallowed for others, thereby 'disallowed' type disallows changes for specified users and groups and allows for others.
+Be aware of empty 'allowed' lists - the setting restricts all users, e.g. 'Database' section tab empty 'allowed' list blocks any
+changes (such as name, description, permissions) for any user forever.
 
 Second configuration section is 'Element'. Each object consists of builtin service elements and custom user elements.
 To add any custom element select 'New element' profile and fill at least one field - name, description or any event handler.
@@ -772,10 +771,18 @@ to refresh the current view.
 },
 element2: { line: '', style: HELPHEADSTYLE, head: `
 Application has some regular php handlers to manage user database, customization and element data.
-Fisrt - user.php in 'User' database for the element #1. The script creates users, changes their passwords, groupt membership
-and other user properties via dialog box on F2 or DBLCLICK element #1 event. Group membership is a list of the groups (one per
+Fisrt - user.php, see element #1 of 'User' database. The script creates users, changes their passwords, group membership and
+user permissions via dialog box on F2 or DBLCLICK element #1 event. Group membership is a list of the groups (one per
 line) the user is a member of. LINE FEED char is inserted at the end of the list automatically (if necessary) for the last
 line (last group name in the list) to be correct.
+User permissions represent two lists (for the read and write permission). Each list is a colon divided combination
+(one by line) of database:view identificators. Omitted view id - restriction is applied for all views of specified database.
+Non digit chars at the end of the line are ignored and can be used as a comment for the specified id combination.
+For a example - combination '1:2' will restrict view id2 of database id1 for the user, '1' or '1:' will restrict database id1
+all views. So hidden list of '1:2' will hide the specified view from the user with no read/write access, while visible list of
+'1:2' will hide all databases and views for the user, except database id1 view id2. Empty visible list for the user disable
+visibility of all views absolutely, so user can do nothing except reading this help:)
+Per user restrictions are applied together with view specific restrictions listed in database view configuration.
 
 Second - customization.php in 'User' database for the element #6. The script customizes user interface via css
 properties for css selectors shown as dialog box profiles. All users (except system account) are created with default
@@ -860,12 +867,12 @@ element ("element" property) - first/last name. Retrieved construction (user@fir
 (RGB(44,72,131) and bold font. After user@firstname - single space (' ') and light grey color styled datetime (<datetime>).
 Then - user chat message text of itself (<data>) on the next line (<br>).
 
-Last step - some chat restrictions for message removal and empty messages.
-Create rule profile for 'Delete object' operation with 'reject' action and both empty pre- and post- processing rules set
-empty (note that empty rule is a match case), so any message delete operation will be blocked due to 'reject' action.
-To allow user to delete only his own messages just add preprocessing rule: owner!=':user'.
-Second rule profile is a little bit more complicated - 'Add operation' with 'reject' action and next postprocessing rule:
-JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) NOT REGEXP '\\\\n.'
+Last step - some chat restrictions for message removal and empty messages. See 'Database Configuration' rule section help.
+Create rule profile for 'Delete object' operation with 'reject' action and query rule 'SELECT 1' to match any delete operation,
+so any message delete operation will be blocked due to 'reject' action. To allow user to delete only his own messages input next
+query: SELECT id FROM :odtable WHERE owner!=':user' AND id=':oid'
+Second rule profile is a little bit more complicated - 'Add operation' with 'reject' action and next query rule:
+SELECT id FROM :odtable WHERE id=:oid AND JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) NOT REGEXP '\\\\n.'
 Empty message in our chat is 'user@name datetime\\\\n' (due to <br>), minimal non empty message - 'user@name datetime\\\\n.',
 where '.' matches any char. To identify empty messages - match all except '\\\\n.', in other words, message text shouldn't match
 regular expression (NOT REGEXP) string '\\\\n.'. Since the chat message (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))) matches
@@ -1027,14 +1034,14 @@ Line 50. Pass dialog to the controller.`
      'object selection'.
   - 'Mouse right button' click calls appropriate (sidebar, main field or table area) context menu.
   - 'Mouse over' event on any element for some time (default 1 sec) displays appropriate hint message if exist.
-  - 'Drag-and-drop' operations like mouse pointer 'excel' table cells resizing are not implemented due to multiuser
-    complicated cells width/height interactive change. Use element layout (see appropriate help section) features
-    to set initial width and height of a table cell. By default, table and its cells width and height are adjusted
-    to fit the content.
-    Another drag operation - table area selection. Selected area then can be processed to draw the chart via
-    appropriate context menu. Two or more columns width area draws a piechart with an area top row as a pie names and
-    its per-column summarized values as a percent of a total amount. To use selected area column for the pie names -
-    area should be one column width, for the pie persentage - per row values of the next (non-selected) column are used.
+  - 'Mouse drag' operation on table cell selects and highlight table area. Selected area then can be processed to draw
+    the chart via appropriate context menu. Two or more columns width area draws a piechart with an area top row as a
+    pie names and its per-column summarized values as a percent of a total amount. To use selected area column for the
+    pie names - area should be one column width, for the pie persentage - per row values of the next (non-selected)
+    column are used.
+    Row/column resizing or cell 'drag-and-drop' operation like in 'excel' are not implemented due to multiuser complicated
+    width/height interactive change. Use element layout (see appropriate help section) features to set initial table
+    column width. By default, table column width are adjusted to fit the content.
 
 * will be available in a future releases`
 }}},

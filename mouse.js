@@ -284,18 +284,18 @@ function contextmenuEventHandler(event)
      const chart = GetChartItem(target);
      if (!chart) CellBorderToggleSelect(cursor.td, target);
      const DELETEITEM = mainTable[cursor.y]?.[cursor.x]?.realobject ? ACTIVEITEM + 'Clone Object</div>' + ACTIVEITEM + 'Delete Object</div>' : GREYITEM + 'Clone Object</div>' + GREYITEM + 'Delete Object</div>';
-     DrawContext(ACTIVEITEM + 'Add Object</div>' + DELETEITEM + ACTIVEITEM + 'Description</div>' + ACTIVEITEM + 'Copy</div>' + chart, target, event);
+     DrawContext(ACTIVEITEM + 'Add Object</div>' + DELETEITEM + ACTIVEITEM + 'Description</div>' + ACTIVEITEM + 'Copy</div>' + chart + ACTIVEITEM + 'View in a new tab</div>', target, event);
      return;
     }
 
  // Context event tree template
  if (OVtype === 'Tree' && (target === mainDiv || target === mainTablediv || target.tagName === 'TD'))
     {
-     DrawContext(GREYITEM + 'Hide Object</div>', target, event);
+     DrawContext(GREYITEM + 'Hide Object</div>' + ACTIVEITEM + 'View in a new tab</div>', target, event);
      return;
     }
 
- // COntext event on main div with unknown template or error message on
+ // Context event on main div with unknown template or error message on
  if (target === mainDiv)
     {
      DrawContext('', target, event);

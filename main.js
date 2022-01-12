@@ -939,6 +939,13 @@ function CallController(data)
 	 case 'Delete Object':
 	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
 	      break;
+	 case 'View in a new tab':
+	      const newwindow = window.open('about:blank', '_blank');
+	      newwindow.document.write(mainDiv.innerHTML); // Should i call mywindow.focus() or mywindow.close()
+	      newwindow.document.head.innerHTML = document.head.innerHTML;
+	      newwindow.document.body.style.backgroundColor = window.getComputedStyle(mainDiv).getPropertyValue("background-color");
+	      newwindow.document.body.style.overflow = 'auto';
+	      break;
 	 case 'CONFIRM':
 	       cursor.td.innerHTML = toHTMLCharsConvert(htmlCharsConvert(cursor.td.innerHTML));
 	 case 'CONFIRMDIALOG':

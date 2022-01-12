@@ -299,6 +299,7 @@ if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS,
    {
     if ($client['cmd'] === 'SCHEDULE') // Log error result for 'SCHEDULE' event, otherwise error is displayed as a main view message
        isset($output['error']) ? LogMessage($db, $client, $output['error']) : LogMessage($db, $client, $output['alert']);
+    if (isset($output['log'])) LogMessage($db, $client, $output['log']);
     $output = [$client['eId'] => ['cmd' => ''] + $output];
    }
 else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
@@ -384,7 +385,7 @@ switch ($output[$currenteid]['cmd'])
 			  }
 		  $client['eId'] = $currenteid;
 		  // Check changed object on existing rules
-		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version), 'Change object');
+		  $ruleresult = ProcessRules($db, $client, 'Change object', strval($version - 1), strval($version));
 		  if ($ruleresult['action'] === 'Accept')
 		     {
 		      if ($newmask != '') // Update new object version with new element data
