@@ -8,7 +8,6 @@ Footnote (snoska) for cells with [hint, description, unconfirmed, files, link]. 
   Color arrows for wrap via SVG
 
 Add events as a new operations to the rule section (plus expression operation of a full sql request), add :group word in a rule selection
-  Rule, handler <arg> fetch to wrap with the rollback at the end, virtual cell data fetch, object selection
   rule help
   rule hint in dialog box
   Should description and help (context menu items) text be selectable to copy/paste?
@@ -76,6 +75,7 @@ KeyBoard/Mouse
   See how zabbix is installed to have a point of view of serious application
   Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE,
     so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
+  All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
 
 - Front:
   effects at navigating images in GALLERY just like in drive.ru

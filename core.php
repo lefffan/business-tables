@@ -189,10 +189,10 @@ function initNewODDialogElements()
 		   ];
 
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'help' => "Rule profile name. It may be changed, but if renamed profile already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty profile name removes the rule."],
-		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed in the dialog box.<br>Message text element id number in a figure brackets (example: {1}) retreives appropriate element name.'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action applies object changes made by operation, 'Reject' cancels all changes."],
-		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation', 'data' => 'Add object|Delete object|Change object<br>|DBLCLICK|KEYPRESS|INS|DEL|F2|F12|', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Object instances before and after CRUD operations (add, delete, change) are passed to the analyzer and tested<br>on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a match<br>is found, the action corresponding to the matching rule profile is performed. Default action is accept.<br>Accept action applies changes, while reject action cancels all changes made by the operation.<br><br>Rule test is a simple SQL query selection, so non empty result of that selection - match is found, empty<br>result - no match. Query format:<br>'SELECT .. FROM `OD` WHERE id=&lt;object id> AND version=&lt;version number> AND <(pre|post)-processing rule>'<br>Version number defines object version before (for pre-processing rule) and after (for post-processing rule)<br>operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated<br>the operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no<br>object before operation, so nothing to check. Empty or error rules are match case, but error rule displays<br>error message instead of a rule message.<br><br>Simple example: pre-processing rule JSON_EXTRACT(eid1, '$.value')='root' with the action 'reject' and rule<br>apply operation 'delete object' prevents root user removal. Example query will look like:<br>SELECT .. FROM `data_1` WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'.<br>Next example with both rules empty and reject action for all operations freezes the database, so all changes<br>are rejected.<br>Another example: first profile with action accept preprocessing rule owner=':user' and second profile<br>reject action with both empty rules allowes to change self-created objects only."],
+		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed on the client side dialog box.'],
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action agrees specified event or operation, 'Reject' action cancels event or changes made by the operation."],
+		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation/event', 'data' => 'Add object|Delete object|Change object<br>|DBLCLICK|KEYPRESS|INS|DEL|F2|F12|', 'line' => ''],
+		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Any mouse/keyboard client side event or object add/delete/change operation is passed to the analyzer<br>to test on all rule profiles in alphabetical order (for the specified event or/and operation) until<br>the match is found. Rule query is a list of SQL query strings (one by line). Non-empty and non-zero<br>result of all query strings - match case, any empty, error or zero char '0' result - no match.<br>When a match is found, the action corresponding to the matching rule profile is performed, otherwise<br>default action 'accept' is applied."],
 		    'element6' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
@@ -375,24 +375,20 @@ function ProcessRules($db, &$client, $operation, $preversion, $postversion)
 	 {
 	  $action = strpos($rule['element3']['data'], '+Accept') === false ? 'Reject' : 'Accept'; // Set accept/reject action
 	  if (strpos($rule['element4']['data'], '+'.$operation) === false) continue; // No apply operation selected? Continue
-	  if (($querystring = trim($rule['element5']['data'])) === '') continue; // Query is empty? Continue
-	  $querystring = str_replace(':user', $client['auth'], $querystring); // Replace with actual username inited the operation
-	  $querystring = str_replace(':preversion', $preversion, $querystring); // Replace with object version before operation
-	  $querystring = str_replace(':postversion', $postversion, $querystring); // Replace with object version after operation
-	  $querystring = str_replace(':oid', $client['oId'], $querystring); // Replace with object id
-	  $querystring = str_replace(':odtable', "`data_$client[ODid]`", $querystring); // Replace with sql table
+	  if (($querytext = trim($rule['element5']['data'])) === '') continue; // Query is empty? Continue
+	  $querytext = str_replace(':user', $client['auth'], $querytext); // Replace with actual username inited the operation
+	  $querytext = str_replace(':preversion', $preversion, $querytext); // Replace with object version before operation
+	  $querytext = str_replace(':postversion', $postversion, $querytext); // Replace with object version after operation
+	  $querytext = str_replace(':oid', $client['oId'], $querytext); // Replace with object id
+	  $querytext = str_replace(':odtable', "`data_$client[ODid]`", $querytext); // Replace with sql table
 
-	  // Perform a rule query
-	  try {
-	       $query = $db->prepare($querystring);
-	       $query->execute();
-	      }
-	  catch (PDOException $e)
-	      {
-	       return ['action' => 'Accept', 'message' => 'Rule error: '.$e->getMessage()];
-	      }
-	  $result = $query->fetch(PDO::FETCH_NUM);
-	  if (!isset($result[0]) || !$result[0] || $result[0] === '0') continue;
+	  foreach (preg_split("/\n/", $querytext) as $querystring) // Perform a rule query
+		  {
+		   try { $query = $db->prepare($querystring); $query->execute(); }
+		   catch (PDOException $e) { return ['action' => 'Accept', 'message' => 'Rule error: '.$e->getMessage()]; }
+		   $result = $query->fetch(PDO::FETCH_NUM);
+		   if (!isset($result[0]) || !$result[0] || $result[0] === '0') continue 2;
+		  }
 
 	  // Rule match occured. Return its action
 	  $output = ['action' => $action, 'message' => trim($rule['element2']['data'])];

@@ -250,23 +250,39 @@ day at 3:00 (see 'Handlers' help section for args of text.php regular handler):
 And at the end - two text areas at the bottom are view permissions for read/write operations. 'Disallowed list' restricts
 specified users/groups and allows others, while 'Allowed list' allows specified and restricts others.
 
-Last configuration section is 'Rule'. Object instances before and after CRUD operations (add, delete, change) are passed to the
-analyzer and tested on all rule profiles in alphabetical order until the match is found for both pre and post rules. When a
-match is found, the action corresponding to the matching rule profile is performed. Default action is accept.
-Accept action applies changes, while reject action cancels all changes made by the operation. Rule test is a simple SQL query
-selection, so non empty result of that selection - match is found, empty result - no match. Query format:
-SELECT .. FROM 'OD' WHERE id=<object id> AND <(pre|post)-processing rule>
-So object instance before operation is tested on pre-processing and instance after operation is tested on post-processing rule
-after operation. Also both rules may contain a parameter :user, that is replaced with the actual username (initiated the
-operation) in the query string. Note that pre-processing rule for 'add object' operation is ignored - no object before operation,
-so nothing to check. Empty or error rules are match case, but error rule displays error message instead of a rule message.
-Simple example: pre-processing rule "JSON_EXTRACT(eid1, '$.value')='root'" with the action 'reject' and rule apply operation
-'delete object' in OD 'Users' prevents root user removal. Example query will look like:
-SELECT .. FROM data_1 WHERE id='4' AND version='1' AND JSON_EXTRACT(eid1, '$.value')='root'
-The query above is successfull, so perfomed action ('reject') disallowes user removal.
-Next example with both rules empty and reject action for all operations freezes the database, so all changes are rejected.
-Another example: first profile with action accept preprocessing rule "owner=':user'" and second profile reject
-action with both empty rules - allows to change self-created objects only.`
+Last configuration section is 'Rule'. Any mouse/keyboard client side event or object add/delete/change operation is passed to
+the analyzer to test on all rule profiles in alphabetical order (for the specified event or/and operation) until the match is
+found. Rule query is a list of SQL query strings (one by line). Non-empty and non-zero result of all query strings - match case,
+any empty, error or zero char '0' result - no match.
+When a match is found, the action corresponding to the matching rule profile is performed, otherwise default action 'accept'
+is applied. Accept action agrees specified event or operation, while reject action cancels event or changes made by the operation.
+Here some examples:
+1. SELECT 'root'=':user'
+2. SELECT 1 FROM :odtable WHERE id=:oid and version=:preversion and JSON_UNQUOTE(JSON_EXTRACT(eid2, '$.value'))='John'
+   SELECT 1 FROM :odtable WHERE id=:oid and version=:postversion and JSON_UNQUOTE(JSON_EXTRACT(eid2, '$.value'))='Mary'
+3. SELECT COUNT(version)>2 FROM data_1 WHERE id=:oid
+4. SELECT owner!=':user' from :odtable where id=:oid and version=1
+
+First example query with reject action for F2 event is called when the user presses F2 key and is true when user root presses
+F2. Therefore the rule cancels F2 event for the root.
+Second example with reject action for 'Delete Object' operation disallows element #2 value change from John to Mary, any other
+changes, for a example, from Mary to John are applied.
+Third example with reject action for 'Change Object' operation allows to change object only once. New object has one version
+(instance), after object is changed at the 1st time - it has two versions, so second change will have three versions and will
+be blocked (expression 'COUNT(version)>2' (3>2) is true).
+And the last example with reject action for change - allows to change self-created objects only via comparing created object
+(version=1) owner with the user the object is being changed by.
+
+Query strings may have some :keys (started with the colon) which are replaced with next values:
+:user - the user initiated event/operation
+:preversion - object instance version number before rule apply operation/event, unusable for 'Add Object', but equals :postversion
+:postversion - object instance version number after rule apply operation, unusable for events, but equals :preversion
+:oid - object id number operation/event is applied to
+:odtable - application object database sql table name
+
+When a match is found the rule message is displayed on the client side dialog box, except the events with 'accept' action which
+have its own client side beahviour. Set 'Log rule message' to save it to 'Logs' database. 
+To remove the rule - set its name empty, to disable the rule - uncheck all rule apply events/operations.`
 }}},
 
 "Object Selection": { profile: { element: { line: '', style: HELPHEADSTYLE, head:

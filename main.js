@@ -1519,7 +1519,7 @@ function warning(text, title, log = true)
 {
  if (!text || typeof text != 'string') return;
  if (typeof title != 'string') title = 'Warning';
- box = { title: title, dialog: {pad: {profile: {element: {head: '\n' + text}}}}, buttons: {OK: {value: "&nbsp;   OK   &nbsp;"}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
+ box = { title: title, dialog: {pad: {profile: {element: {style: HELPHEADSTYLE, head: '\n' + text}}}}, buttons: {OK: {value: "&nbsp;   OK   &nbsp;"}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
  ShowBox();
  if (log) lg(text);
 }
