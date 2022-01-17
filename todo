@@ -3,14 +3,9 @@ Wednesday
 	application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
     think how to make this big OD faster display process
     reverce cycles 'n in data' with 'eid in edis' and test perfomance
-
-Footnote (snoska) for cells with [hint, description, unconfirmed, files, link]. Plus in contex menu description: hint, files attahced and link
-  Color arrows for wrap via SVG
-
-Add events as a new operations to the rule section (plus expression operation of a full sql request), add :group word in a rule selection
-  rule help
-  rule hint in dialog box
-  Should description and help (context menu items) text be selectable to copy/paste?
+    remove console.time
+    Footnote (snoska) for cells with [hint, description, unconfirmed, files, link]. Plus in contex menu description: hint, files attahced and link
+    Color arrows for wrap via SVG
 
 KeyBoard/Mouse
   ctrl + right button click opens new browser tab with the cursor element text as url*
@@ -25,7 +20,8 @@ KeyBoard/Mouse
 	element.scrollTop = element.scrollHeight
 	var objDiv = document.getElementById("your_div"); objDiv.scrollTop = objDiv.scrollHeight;
   Scroll lock behaviour like in Excel
-
+  remove * from help
+  ctrl+<> prev view, next view
 -----------------------------------------------------------------
 - Application:
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud

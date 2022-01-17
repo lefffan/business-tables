@@ -81,8 +81,8 @@ function ParseHandlerResult($db, &$output, &$client)
 	      break;
 	 case 'SET':
 	 case 'RESET':
-	      // Adjust value, hint, description, style, alert properties
-	      ConvertToString($output, ['value', 'hint', 'description', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
+	      // Adjust value, hint, link, style and alert properties
+	      ConvertToString($output, ['value', 'hint', 'link', 'style', 'alert'], ELEMENTDATAVALUEMAXCHAR);
 	      if ($client['cmd'] === 'CHANGE') unset($output['alert']); // Alert is not supported for object 'CHANGE' event
 	      break;
 	 case 'UPLOADDIALOG':
@@ -401,9 +401,9 @@ switch ($output[$currenteid]['cmd'])
 		      try { $db->commit(); } // Commit object update operation
 		      catch (PDOException $e) { }
 		      if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']); // Log rule
-		      // Unset properties of all element of the object different from 'hint', 'description', 'value', 'style' and 'alert'
+		      // Unset properties of all element of the object different from 'hint', 'value', 'style' and 'alert'
 		      foreach ($output as $eid => $value) foreach ($value as $prop => $valeu)
-			      if (array_search($prop, ['hint', 'description', 'value', 'style', 'alert']) === false) unset($output[$eid][$prop]);
+			      if (array_search($prop, ['hint', 'value', 'style', 'link', 'alert']) === false) unset($output[$eid][$prop]);
 		      $output = ['cmd' => 'SET', 'data' => $output];
 		      // Log rule message if main element alert doesn't exist
 		      if (isset($ruleresult['message']) && $ruleresult['message'])	$output['alert'] = $ruleresult['message'];

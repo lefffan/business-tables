@@ -132,7 +132,6 @@ and may have some handlers (any script or binary) to create/manage element data,
 element data is a JSON, that may consist of any defined properties. Some properties are reserved for the special assingment:
 - 'value' is displayed in a table cell as a main element text (max 10K chars)
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
-- 'description' is element description displayed on context menu description click
 - 'style' is a css style attribute value applied to html table <td> tag.
 - 'link' is element connection list one by line, each connection is a link name, remote object selection and its element
   selection, all three divided by '|'.
@@ -415,9 +414,9 @@ column.
   |datetime   |  [value,                |                  | or                         |
   |version    |  style,                 | (for undefined   | virtual elements:          |
   |lastversion|  hint,                  | cell that has    | x (n),                     |
-  |1,2..      |  description,           | no any object    | y (n),                     |
-  |*          |  event,                 | element in)      | value,                     |
-  |           |  hidecol, hiderow]      |                  | [style, hint, description] |
+  |1,2..      |  event,                 | no any object    | y (n),                     |
+  |*          |  hidecol, hiderow]      | element in)      | value,                     |
+  |           |                         |                  | [style, hint]              |
   |           |                         |                  |                            |
   +-----------+-------------------------+------------------+----------------------------+
 
@@ -666,6 +665,10 @@ Available handler commands are:
  - 'SET'/'RESET'. Object element data set. Format: '{"cmd": "SET/RESET", "<prop1>": "<value1>", .., "<propN>": "<valueN>"}'.
    'SET' command updates all specified element JSON properties only. 'RESET' command does the same, but additionally removes
    all not specified properties. In fact, 'RESET' replaces element data with the handler output JSON.
+   Note that element data property 'value' is displayed as a main element table cell text, property 'hint' is displayed as a
+   footnote on element table cell mouse cursor navigation, upward triangle pictogram at the cell top right corner indicates
+   elements with the hint. Also downward triangle pictogram at the cell top right corner indicates elements with the 'link'
+   property and square pictogram indicates elements with files attached.
  - 'UPLOADDIALOG'. Format: '{"cmd": "UPLOADDIALOG"}'. The command makes the controller to call client side for the dialog box
    to upload/attach files to the object element.
  - 'DOWNLOADDIALOG'. Format: '{"cmd": "DOWNLOADDIALOG"}'. The command makes the controller to call client side for the dialog
@@ -822,9 +825,9 @@ editable mode with no changes. Handler supports next commands (as a first argume
   the prop2 (4th and 5th args) and others.
   To save dialog data with the new property values - set next handler for the CONFIRMDIALOG event:
   php text.php CONFIRMDIALOG <data>
-  Good practice for most elements is interface to edit some service props ('link', 'hint', 'description' or 'style')
+  Good practice for most elements is interface to edit some service props ('link', 'hint' and 'style')
   via dialog on INS event (for a example), so command line for that INS event ('insert' key push) will be:
-  php text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>
+  php text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>
 - SELECT allows to select one element value among predefined values separated via '|' in one arg passed to handler :
   php text.php SELECT 'value1|value2|value3..'
   Handler will call dialog box with select interface element with specified options value1, value, value3..

@@ -39,7 +39,7 @@ try {
 
      $newElement['element1']['id'] = '1';
      $newElement['element1']['data'] = 'User';
-     $newElement['element2']['data'] = "\nDouble click the username to change the password and other user properties";
+     $newElement['element2']['data'] = "Double click the username to change the password and other user properties";
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
@@ -58,7 +58,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -75,7 +75,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -92,7 +92,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -109,7 +109,7 @@ try {
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
      $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
      $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> description <{"prop":"description"}> style <{"prop":"style"}>';
+     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
      $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
      $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
      $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
@@ -120,7 +120,7 @@ try {
      initNewODDialogElements();
      $newElement['element1']['id'] = '6';
      $newElement['element1']['data'] = 'Customization';
-     $newElement['element2']['data'] = "\nDouble click appropriate cell to change color, font, background and other properties for the specified user";
+     $newElement['element2']['data'] = "Double click appropriate cell to change color, font, background and other properties for the specified user";
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
      $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event>';

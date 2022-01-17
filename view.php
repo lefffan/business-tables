@@ -201,7 +201,7 @@ try {
 		      // Get element selection query string, in case of empty result return no element message as an error
 		      $ElementQuery = '';
 		      SetLayoutProperties($client, $db);
-		      foreach ($client['layout']['elements'] as $key => $value) if (intval($key) > 0) $ElementQuery .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.description')) as eid$key"."description";
+		      foreach ($client['layout']['elements'] as $key => $value) if (intval($key) > 0) $ElementQuery .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.value')) as eid$key"."value,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.style')) as eid$key"."style,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.hint')) as eid$key"."hint,JSON_UNQUOTE(JSON_EXTRACT(eid$key, '$.link')) as eid$key"."link";
 		      if ($ElementQuery === '' && !count($client['layout']['virtual']) && ($output['error'] = "Database '$client[OD]' Object View '$client[OV]' layout has no elements defined!")) break;
 		      $client['elementquery'] = "id,version,owner,datetime,lastversion$ElementQuery";
 
@@ -218,6 +218,13 @@ try {
 			  CreateTree($db, $client, 0, $data, 'TABLE');
 			  if (!count($client['tree']) && !count($client['layout']['virtual']) && ($output['error'] = "Specified view '".$client['OV']."' has no objects matched current selection!")) break;
 			  $output = ['cmd' => 'Table', 'data' => $client['tree'], 'layout' => $client['layout'], 'params' => $client['params']] + $output;
+			 }
+		      $output['attached'] = [];
+		      if (is_dir($dir = UPLOADDIR."$client[ODid]")) foreach (scandir($dir) as $oid) if ($oid !== '.' && $oid !== '..')
+			 {
+			  $output['attached'][$oid] = [];
+			  if (is_dir("$dir/$oid")) foreach (scandir("$dir/$oid") as $eid) if ($eid !== '.' && $eid !== '..')
+			     if (IsDirEmpty("$dir/$oid/$eid")) $output['attached'][$oid][$eid] = true;
 			 }
 		      break;
 		     }

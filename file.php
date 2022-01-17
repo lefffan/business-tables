@@ -21,7 +21,6 @@ if (isset($_GET['id']))
 try {
      $query = $db->prepare('DELETE FROM `$$$` WHERE now()-time>'.strval(CALLFILEMNGTTIMEOUT));
      $query->execute();
-     $output = ['cmd' => ''];
      $query = $db->prepare("SELECT client FROM `$$$` WHERE id='$id'");
      $query->execute();
      $client = $query->fetchAll(PDO::FETCH_NUM);
@@ -49,8 +48,7 @@ switch ($cmd)
 	     foreach ($_FILES['files']['name'] as $i => $name)
 		     if (intval($_FILES['files']['size'][$i]) < MAXFILESIZE)
 		     if (move_uploaded_file($_FILES['files']['tmp_name'][$i], $prefix.$name)) $successfilecount++;
-	     $output += ['alert' => $successfilecount.' of '.$filecount.' file(-s) uploaded successfully!'];
-	     echo json_encode($output); // Echo output result
+	     echo json_encode(['cmd' => 'SET', 'data' => [$client['eId'] => ['attached' => IsDirEmpty(UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]")]], 'alert' => $successfilecount.' of '.$filecount.' file(-s) uploaded successfully!'] + $client); // Echo output result
 	     break;
 	case 'DOWNLOAD':
 	     $file = UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/".$client['list'][$_POST['fileindex']];
@@ -77,6 +75,6 @@ switch ($cmd)
 		      $filecount++;
 		      if (unlink(UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]/".$client['list'][$i])) $successfilecount++;
 		     }
-	     echo json_encode(['cmd' => '', 'alert' => $successfilecount.' of '.$filecount.' file(-s) deleted successfully!']); // Echo output result
+	     echo json_encode(['cmd' => 'SET', 'data' => [$client['eId'] => ['attached' => IsDirEmpty(UPLOADDIR."$client[ODid]/$client[oId]/$client[eId]")]], 'alert' => $successfilecount.' of '.$filecount.' file(-s) deleted successfully!'] + $client); // Echo output result
 	     break;
        }

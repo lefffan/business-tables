@@ -179,7 +179,7 @@ function GetLayoutProperties(eid, o, e, n, q)
  return arr;
 }
 
-function SetCell(arr, obj, eid, hiderow, hidecol)
+function SetCell(arr, obj, eid, hiderow, hidecol, attached)
 {
  // Create main table row if doesn't exist
  if (mainTable[arr.y] === undefined) mainTable[arr.y] = [];
@@ -187,10 +187,9 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
  // Virtual cell
  if (!eid)
     {
-     mainTable[arr.y][arr.x] = { data: arr.value, attr: datacellclass + arr.style };
+     mainTable[arr.y][arr.x] = { data: arr.value, attr: `${datacellclass ? ' class="' + datacellclass + '"' : ''}${arr.style}` };
      const cell = mainTable[arr.y][arr.x];
      if (arr.hint) cell.hint = toHTMLCharsConvert(arr.hint);
-     if (arr.description) cell.description = toHTMLCharsConvert(arr.description);
      // Calculate main table width and height
      mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
      mainTableHeight = Math.max(mainTableHeight, arr.y + 1);
@@ -199,32 +198,34 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
 
  // Data cell
  const oidnum = +obj.id;
- mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid };
+ mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid, noteclassindex: 0 };
  const cell = mainTable[arr.y][arr.x];
 
- // Value, hint and description are different for service and user elements
+ // Value, hint and link are different for service and user elements
  if (SERVICEELEMENTS.indexOf(eid) === -1)
     {
      cell.data = arr.value === undefined ? obj['eid' + eid + 'value'] : arr.value;
      cell.hint = arr.hint === undefined ? obj['eid' + eid + 'hint'] : arr.hint;
-     cell.description = arr.description === undefined ? obj['eid' + eid + 'description'] : arr.description;
+     if (obj['eid' + eid + 'link']) cell.noteclassindex += 2;
+     if (obj.lastversion === '1' && obj.version != '0' && oidnum >= STARTOBJECTID && attached?.[oidnum]?.[eid]) cell.noteclassindex += 4;
     }
   else
     {
      cell.data = arr.value === undefined ? obj[eid] : arr.value;
      if (arr.hint) cell.hint = arr.hint;
-     if (arr.description) cell.description = arr.description;
     }
+ if (cell.hint) cell.noteclassindex += 1;
+ const noteclass = cell.noteclassindex ? ' note' + cell.noteclassindex : '';
 
  // Add version and realobject flag to database (not virtual, title or new-input) objects
  if (oidnum >= STARTOBJECTID)
     {
-     cell.attr = datacellclass + arr.style;
+     cell.attr = `${(datacellclass + noteclass) ? ' class="' + datacellclass + noteclass + '"' : ''}${arr.style}`;
      cell.version = obj.version;
      cell.realobject = (obj.lastversion === '1' && obj.version != '0') ? true : false;
     }
- else if (oidnum === NEWOBJECTID) cell.attr = newobjectcellclass + arr.style;
- else if (oidnum === TITLEOBJECTID) cell.attr = titlecellclass + arr.style;
+ else if (oidnum === NEWOBJECTID) cell.attr = `${(newobjectcellclass + noteclass) ? ' class="' + newobjectcellclass + noteclass + '"' : ''}${arr.style}`;
+ else if (oidnum === TITLEOBJECTID) cell.attr = `${(titlecellclass + noteclass) ? ' class="' + titlecellclass + noteclass + '"' : ''}${arr.style}`;
 
  // Fix matched 'hiderow'/'hidecol' rows/columns to collapse
  if (arr.hiderow !== undefined && cell.data === arr.hiderow) hiderow[arr.y] = true;
@@ -248,8 +249,9 @@ function SetCell(arr, obj, eid, hiderow, hidecol)
  if (cell.hint) cell.hint = toHTMLCharsConvert(cell.hint);
 }
 
-function drawMain(data, layout)
+function drawMain(data, layout, attached)
 {
+lg(attached);
  // Reset unread messages counter and clear selected area
  ResetUnreadMessages();
  delete drag.x1;
@@ -309,7 +311,7 @@ console.time('1');
       if (!obj.id) break;
       arr = GetLayoutProperties(eids[eid], +obj.id, e, n, objectsOnThePage);
       if (typeof arr === 'string') error = arr;
-      if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol);
+      if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol, attached);
      }
 console.timeEnd('1');
 
@@ -713,24 +715,41 @@ function FromController(json)
 	         MakeCursorContentEditable(input.data);
 	      break;
 	 case 'SET':
-	      let x, y, value;
-	      if (objectTable[input.oId])
-	         for (let eid in input.data)
-		     if (objectTable[input.oId][eid])
-		        {
-			 x = objectTable[input.oId][eid].x;
-			 y = objectTable[input.oId][eid].y;
-			 if (typeof input.data[eid] === 'object')
-			    {
-			     input.data[eid]['value'] ? value = toHTMLCharsConvert(input.data[eid]['value']) : value = '';
-			     mainTablediv.rows[y].cells[x].contentEditable != EDITABLE ? mainTablediv.rows[y].cells[x].innerHTML = value : cursor.olddata = value;
-			     mainTablediv.rows[y].cells[x].setAttribute('style', input.data[eid]['style']);
-			     mainTable[y][x].data = input.data[eid]['value'];
-			     mainTable[y][x].hint = input.data[eid]['hint'];
-			     mainTable[y][x].description = input.data[eid]['description'];
-			    }
-			 CellBorderToggleSelect(null, cursor.td, false);
-		        }
+	      let x, y, value, cell;
+	      if (!objectTable[input.oId]) break;
+	      for (let eid in input.data) if (objectTable[input.oId][eid] && typeof input.data[eid] === 'object')
+		  {
+		   cell = mainTablediv.rows[y = objectTable[input.oId][eid].y].cells[x = objectTable[input.oId][eid].x];
+		   if (input.data[eid]['value'] !== undefined)
+		      {
+		       value = input.data[eid]['value'] ? toHTMLCharsConvert(input.data[eid]['value']) : '';
+		       cell.contentEditable != EDITABLE ? mainTablediv.rows[y].cells[x].innerHTML = value : cursor.olddata = value;
+		       mainTable[y][x].data = input.data[eid]['value'];
+		      }
+		   if (input.data[eid]['style'] !== undefined)
+		      {
+		       cell.setAttribute('style', input.data[eid]['style']);
+		      }
+		   // Pictogram process
+		   if (mainTable[y][x].noteclassindex) cell.classList.remove('note' + mainTable[y][x].noteclassindex);
+		   if (input.data[eid]['hint'] !== undefined)
+		      {
+		       mainTable[y][x].noteclassindex &= 6;
+		       if (mainTable[y][x].hint = input.data[eid]['hint']) mainTable[y][x].noteclassindex |= 1;
+		      }
+		   if (input.data[eid]['link'] !== undefined)
+		      {
+		       mainTable[y][x].noteclassindex &= 5;
+		       if (input.data[eid]['link']) mainTable[y][x].noteclassindex |= 2;
+		      }
+		   if (input.data[eid]['attached'] !== undefined)
+		      {
+		       mainTable[y][x].noteclassindex &= 3;
+		       if (input.data[eid]['attached']) mainTable[y][x].noteclassindex |= 4;
+		      }
+		   if (mainTable[y][x].noteclassindex) cell.classList.add('note' + mainTable[y][x].noteclassindex);
+		  }
+	      CellBorderToggleSelect(null, cursor.td, false);
 	      break;
 	 case 'CALL':
 	      imgdesc.style.display = 'none';
@@ -741,7 +760,7 @@ function FromController(json)
 	      break;
 	 case 'Table':
 	      paramsOV = input.params;
-	      drawMain(input.data, input.layout);
+	      drawMain(input.data, input.layout, input.attached);
 	      break;
 	 case 'Tree':
 	      DrawTree(input.data, input.direction);
@@ -897,7 +916,7 @@ function CallController(data)
 		 {
 		  let info = '';
 	          if (cell.version) info = 'Object version: ' + (cell.version === '0' ? 'object has been deleted' : `${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}\n`);
-		  if (cell.description) info += `Element description:\n<span style="color: #999;">${cell.description}</span>\n`;
+		  if (cell.hint) info += `Element hint:\n<span style="color: #999;">${cell.hint}</span>\n`;
 		  if (info) msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n' + info + '\n\n';
 		 }
 	      if (true) // Database info
@@ -1561,9 +1580,9 @@ function styleUI()
  style.innerHTML = inner;
 
  // Define css classes attribute string for all table cell types
- titlecellclass = isObjectEmpty(uiProfile["main field table title cell"], 'target') ? '' : ' class="titlecell"';
- newobjectcellclass = isObjectEmpty(uiProfile["main field table newobject cell"], 'target') ? '' : ' class="newobjectcell"';
- datacellclass = isObjectEmpty(uiProfile["main field table data cell"], 'target') ? '' : ' class="datacell"';
+ titlecellclass = isObjectEmpty(uiProfile["main field table title cell"], 'target') ? '' : 'titlecell';
+ newobjectcellclass = isObjectEmpty(uiProfile["main field table newobject cell"], 'target') ? '' : 'newobjectcell';
+ datacellclass = isObjectEmpty(uiProfile["main field table data cell"], 'target') ? '' : 'datacell';
  undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
 
  // Output uiProfile array to te console to use it as a default customization configuration

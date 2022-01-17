@@ -442,7 +442,7 @@ function SetLayoutProperties(&$client, $db = NULL)
 
 	  // Retrieve correct values only
 	  foreach ($arr as $key => $value)
-		  if (gettype($value) !== 'string' || array_search($key, ['eid', 'oid', 'x', 'y', 'style', 'value', 'hint', 'description', 'event', 'hiderow', 'hidecol']) === false)
+		  if (gettype($value) !== 'string' || array_search($key, ['eid', 'oid', 'x', 'y', 'style', 'value', 'hint', 'event', 'hiderow', 'hidecol']) === false)
 		     {
 		      unset($arr[$key]);
 		     }
@@ -497,13 +497,11 @@ function SetLayoutProperties(&$client, $db = NULL)
 		      {
 		       if (!isset($src['value'])) $src['value'] = ($pos = array_search($eid, SERVICEELEMENTS)) === false ? $client['allelements'][$eid]['element1']['data'] : SERVICEELEMENTTITLES[$pos];
 		       if (!isset($src['hint'])) $src['hint'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
-		       if (!isset($src['description'])) $src['description'] = array_search($eid, SERVICEELEMENTS) === false ? $client['allelements'][$eid]['element2']['data'] : '';
 		      }
 		   if ($oidnum === NEWOBJECTID)
 		      {
 		       if (!isset($src['value'])) $src['value'] = '';
 		       if (!isset($src['hint'])) $src['hint'] = '';
-		       if (!isset($src['description'])) $src['description'] = '';
 		      }
 		   if ($oid === '*' || isset($oidnum))
 		      {
@@ -1377,6 +1375,12 @@ function GetElementTitle($eid, &$allelements)
   else  $title = "Unknown '$eid'";
 
  return $title;
+}
+
+function IsDirEmpty($dir)
+{
+ if (is_dir($dir)) foreach (scandir($dir) as $name) if ($name !== '.' && $name !== '..') return true;
+ return false;
 }
 
 function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
