@@ -1,27 +1,10 @@
-Wednesday
     Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
 	application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
     think how to make this big OD faster display process
-    reverce cycles 'n in data' with 'eid in edis' and test perfomance
-    remove console.time
-    Footnote (snoska) for cells with [hint, description, unconfirmed, files, link]. Plus in contex menu description: hint, files attahced and link
-    Color arrows for wrap via SVG
 
-KeyBoard/Mouse
-  ctrl + right button click opens new browser tab with the cursor element text as url*
-  ctrl+shift+f regular expression search
-  ctrl+home/end not only set cursor at the table 1st row but move table also
-  Think about how alt|ctrl + [shift] + arrows shoud move a cursor
-    (Ctrl + arrows navigate cursor not by one cell, but by next/previous object (up, down) or next/previous element (left/right))
-    Alt + <> is unsupported cause it is back/forward browser default actions
-  shift + arrows selects area
-  Scroll main table/field if selected area selected via mouse cursor is going out of the main field
-  Scrolling table area selection:
-	element.scrollTop = element.scrollHeight
-	var objDiv = document.getElementById("your_div"); objDiv.scrollTop = objDiv.scrollHeight;
-  Scroll lock behaviour like in Excel
-  remove * from help
-  ctrl+<> prev view, next view
+    ctrl+shift+f regular expression search
+    mouse selecting with page scrolling
+    ctrl+<> prev view, next view (Alt + <> is unsupported cause it is back/forward browser default actions)
 -----------------------------------------------------------------
 - Application:
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
@@ -40,6 +23,9 @@ KeyBoard/Mouse
   Paste file or image to object element (or drag and drop to the corresponded cell)
     should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
   Object view MAP.
+  GALLERY shows all foto for default, otherwise - specified foto
+  macroses like in joe
+  virt cell depends on oid,eid
   Context menu Graph
   telnet, snmp and diagnostic functions
   System call 'NEWOBJECT' (to create object by user handlers)
@@ -51,7 +37,7 @@ KeyBoard/Mouse
   Task manager: restrict call (and call with no task delete option) of task manager for some users in user props
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
   At the end of app stable version make new customization
-  <date> <OD>, <OV>, <ODid>, <OVid> <path> parse in a handler command line
+  <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
 
 - JS, PHP, SQL, Highload:
@@ -74,6 +60,7 @@ KeyBoard/Mouse
   All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
 
 - Front:
+  Color arrows for wrap via SVG
   effects at navigating images in GALLERY just like in drive.ru
   dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
   Sort by header click for look like default element layout when header line at the top, bottom, left, right

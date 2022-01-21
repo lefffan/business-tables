@@ -11,12 +11,15 @@ function keydownEventHandler(event)
 		      expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
 		      break;
 		     }
-		  if (box.flags?.esc != undefined) // Box with esc flag set?
+		  if (box.flags?.esc !== undefined) // Box with esc flag set?
 		     {
 		      let button = SeekObjJSONProp(box.buttons, 'call');
-		      if (!button || !(button = box.buttons[button])) break;
-		      if (button['error']) displayMainError(button['error']);
-		      button['warning'] ? warning(button['warning']) : HideBox();
+		      if (button)
+			 {
+			  if (box.buttons[button]['error']) displayMainError(box.buttons[button]['error']);
+			  if (box.buttons[button]['warning']) { warning(box.buttons[button]['warning']); break; }
+			 }
+		      HideBox();
 		     }
 		  break;
 	     case 13: // Enter
@@ -91,37 +94,60 @@ function keydownEventHandler(event)
  if (OVtype === 'Table')
     {
      HideHint();
+
+     if (cursor.td?.contentEditable !== EDITABLE && event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode === 70)
+	{
+	 box = {title: 'REGEXP Search',
+		dialog: {pad: {profile: {element: {head: '\nEnter regular expression to search:', type: 'text', data: ''}}}},
+		buttons: {PREV: {value: ' < ', interactive: '', call: 'SEARCHPREV'},
+			  NEXT: {value: ' > ', interactive: '', call: 'SEARCHNEXT', enterkey: ''}},
+		flags: {esc: '', style: "min-width: 400px; min-height: 80px;"} };
+	 ShowBox();
+	}
+
      if (!cursor.td) return;
      switch (event.keyCode)
 	    {
 	     case 36: // Home
-		  moveCursor(cursor.x, 0, true);
+		  moveCursor(cursor.x, 0, event);
 		  break;
 	     case 35: // End
-		  moveCursor(cursor.x, mainTableHeight - 1, true);
+		  moveCursor(cursor.x, mainTableHeight - 1, event);
 		  break;
 	     case 33: // PgUp
-		  moveCursor(cursor.x, Math.max(Math.trunc((mainDiv.scrollTop - 0.5*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), 0), true);
+		  moveCursor(cursor.x, cursor.y - Math.trunc(mainDiv.clientHeight*mainTableHeight/mainDiv.scrollHeight), event);
 		  break;
 	     case 34: // PgDown
-		  moveCursor(cursor.x, Math.min(Math.trunc((mainDiv.scrollTop + 1.7*mainDiv.clientHeight)*mainTableHeight/mainDiv.scrollHeight), mainTableHeight - 1), true);
+		  moveCursor(cursor.x, cursor.y + Math.trunc(mainDiv.clientHeight*mainTableHeight/mainDiv.scrollHeight), event);
 		  break;
 	     case 38: // Up
-		  moveCursor(0, -1);
+		  if (!event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey)
+		     {
+		      if (objectTable[cursor.oId - 1]?.[cursor.eId])
+			 moveCursor(objectTable[cursor.oId - 1][cursor.eId].x, objectTable[cursor.oId - 1][cursor.eId].y, event);
+		      break;
+		     }
+		  moveCursor(cursor.x, cursor.y - 1, event);
 		  break;
 	     case 40: // Down
-		  moveCursor(0, 1);
+		  if (!event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey)
+		     {
+		      if (objectTable[cursor.oId + 1]?.[cursor.eId])
+			 moveCursor(objectTable[cursor.oId + 1][cursor.eId].x, objectTable[cursor.oId + 1][cursor.eId].y, event);
+		      break;
+		     }
+		  moveCursor(cursor.x, cursor.y + 1, event);
 		  break;
 	     case 37: //Left
-		  moveCursor(-1, 0);
+		  moveCursor(cursor.x - 1, cursor.y, event);
 		  break;
 	     case 39: //Right
-		  moveCursor(1, 0);
+		  moveCursor(cursor.x + 1, cursor.y, event);
 		  break;
 	     case 13: // Enter
 		  if (cursor.td.contentEditable !== EDITABLE)
 		     {
-		      moveCursor(0, 1);
+		      if (!event.ctrlKey && !event.altKey && !event.metaKey) moveCursor(cursor.x, cursor.y + (event.shiftKey ? -1 : 1), event);
 		      break;
 		     }
 		  let confirm, combinationKey = uiProfile['application']['Editable content apply input key combination'];
@@ -220,55 +246,36 @@ function ProcessControllerEventKeys(event)
  CallController(object);
 }
 
-function moveCursor(x, y, abs)
+function moveCursor(x, y, event)
 {
- if (cursor.td.contentEditable === EDITABLE || (abs && cursor.x == x && cursor.y == y)) return;
+ if (cursor.td.contentEditable === EDITABLE || event.getModifierState('ScrollLock')) return;
+ event.preventDefault();
+ x = Math.max(0, x); x = Math.min(x, mainTableWidth - 1);
+ y = Math.max(0, y); y = Math.min(y, mainTableHeight - 1);
 
- if (drag.x1 !== undefined) // Unselect area if selected
+ if (cursor.x === x && cursor.y === y) return;
+
+ if (!event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode !== 13) // Cursor moving with shift
+    {
+     if (drag.x1 === undefined)
+	{
+	 drag.x1 = cursor.x;
+	 drag.y1 = cursor.y;
+	}
+      else
+	{
+	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+	}
+     drag.x2 = x;
+     drag.y2 = y;
+     SelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+    }
+  else if (drag.x1 !== undefined) // Unselect area if selected// Cursor moving without shift, so if drag area does exist - unselect it
     {
      UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
      delete drag.x1;
     }
-
- let a = x, b = y;
- if (!abs)
-    {
-     a += cursor.x;
-     b += cursor.y;
-    }
- if (a < 0 || a >= mainTableWidth || b < 0 || b >= mainTableHeight) return;
-
- const newTD = mainTablediv.rows[b].cells[a];
- if (abs || isVisible(newTD) || (!isVisible(cursor.td) && tdVisibleSquare(newTD) > tdVisibleSquare(cursor.td)) || (y == 0 && xAxisVisible(newTD)) || (x == 0 && yAxisVisible(newTD)))
-    {
-     if (!abs) event.preventDefault();
-     CellBorderToggleSelect(cursor.td, newTD);
-    }
-}
-
-function tdVisibleSquare(elem)
-{
- const width = Math.min(elem.offsetLeft - mainDiv.scrollLeft + elem.offsetWidth, mainDiv.offsetWidth) - Math.max(elem.offsetLeft - mainDiv.scrollLeft, 0);
- const height = Math.min(elem.offsetTop - mainDiv.scrollTop + elem.offsetHeight, mainDiv.offsetHeight) - Math.max(elem.offsetTop - mainDiv.scrollTop, 0);
- return width * height;
-}
-
-function isVisible(e)
-{
- if (xAxisVisible(e) && yAxisVisible(e)) return true;
- return false;
-}
-
-function xAxisVisible(e)
-{
- if (e.offsetLeft >= mainDiv.scrollLeft && e.offsetLeft - mainDiv.scrollLeft + e.offsetWidth <= mainDiv.offsetWidth + 1) return true;
- return false;
-}
-
-function yAxisVisible(e)
-{
- if (e.offsetTop >= mainDiv.scrollTop && e.offsetTop - mainDiv.scrollTop + e.offsetHeight <= mainDiv.offsetHeight + 1) return true;
- return false;
+ CellBorderToggleSelect(cursor.td, mainTablediv.rows[y].cells[x]);
 }
 
 function rangeTest(a, b)

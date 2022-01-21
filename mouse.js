@@ -281,6 +281,14 @@ function contextmenuEventHandler(event)
  // Context event on table template cell
  if (OVtype === 'Table' && IsTableTemplateCell(target))
     {
+     if (event.ctrlKey)
+	{
+	 event.preventDefault();
+	 let url = target.innerText.trim();
+	 if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0 && url.indexOf('http:') !== 0) url = 'http://' + url;
+	 window.open(url);
+	 return;
+	}
      const chart = GetChartItem(target);
      if (!chart) CellBorderToggleSelect(cursor.td, target);
      const DELETEITEM = mainTable[cursor.y]?.[cursor.x]?.realobject ? ACTIVEITEM + 'Clone Object</div>' + ACTIVEITEM + 'Delete Object</div>' : GREYITEM + 'Clone Object</div>' + GREYITEM + 'Delete Object</div>';

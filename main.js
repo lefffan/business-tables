@@ -251,7 +251,6 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
 
 function drawMain(data, layout, attached)
 {
-lg(attached);
  // Reset unread messages counter and clear selected area
  ResetUnreadMessages();
  delete drag.x1;
@@ -285,7 +284,6 @@ lg(attached);
  if (!(objectsOnThePage = data.length)) data = [{}];
  VirtualElements = 0;
 
-console.time('1');
  for (let eid in eids)
  for (n = 0, obj = data[0]; n < data.length; obj = data[++n])
      {
@@ -313,7 +311,6 @@ console.time('1');
       if (typeof arr === 'string') error = arr;
       if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol, attached);
      }
-console.timeEnd('1');
 
  for (let i = 0; i < layout['virtual'].length; i++, n++)
      {
@@ -373,7 +370,6 @@ console.timeEnd('1');
  for (x = 0; x < mainTableWidth - hidecol.length; x++) undefinedRow += undefinedCell;
  undefinedRow += '</tr>';
 
-console.time('2');
  // Set inner html content for the table view and add event listeners
  for (y = 0; y < mainTableHeight; y++)
      {
@@ -396,7 +392,6 @@ console.time('2');
 	  }
       rowHTML += '</tr>';
      }
-console.timeEnd('2');
 
  // Main table becomes empty due to hidden rows/columns?
  if (!mainTableWidth)
@@ -405,7 +400,6 @@ console.timeEnd('2');
      return;
     }
 
-console.time('3');
  // Set main view HTML
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
@@ -454,7 +448,6 @@ console.time('3');
  cmd = '';
  delete cursor.cmd;
  delete cursor.edit;
-console.timeEnd('3');
 }
 
 function CalcTree(tree)
@@ -581,14 +574,14 @@ function SelectTableArea(x1, y1, x2, y2)
 {
  for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
  for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++)
-     if (x != x1 || y != y1) mainTablediv.rows[y].cells[x].classList.add('selectedcell');
+     /*if (x != x1 || y != y1)*/ mainTablediv.rows[y].cells[x].classList.add('selectedcell');
 }
 
 function UnSelectTableArea(x1, y1, x2, y2)
 {
  for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
  for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++)
-     if (x != x1 || y != y1) mainTablediv.rows[y].cells[x].classList.remove('selectedcell');
+     /*if (x != x1 || y != y1)*/ mainTablediv.rows[y].cells[x].classList.remove('selectedcell');
 }
 
 function SeekObjJSONProp(object, name, value)
@@ -840,6 +833,9 @@ function CallController(data)
 
  switch (cmd)
 	{
+	 case 'SEARCHPREV':
+	 case 'SEARCHNEXT':
+	      return;
 	 case 'BROWSE':
 	      browse.click();
 	      return;
@@ -1054,7 +1050,6 @@ function htmlCharsConvert(string)
 function EncodeHTMLSpecialChars(string)
 {
  if (!string) return '';
- //if (brtagonly) return string.replace(new RegExp('\n', 'g'), '<br>');
  for (let i = 0; i < HTMLSPECIALCHARS.length; i ++) string = string.replace(new RegExp(HTMLUSUALCHARS[i], 'g'), HTMLSPECIALCHARS[i]);
  return string;
 }
@@ -1100,6 +1095,7 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
      oldCell.style.boxShadow = "none";
     }
  if (!newCell) return;
+
  if (uiProfile['main field table cursor cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table cursor cell']['outline'];
  if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
  if (setFocusElement)
@@ -1108,10 +1104,26 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
      cursor.x = newCell.cellIndex;
      cursor.y = newCell.parentNode.rowIndex;
      cursor.oId = cursor.eId = 0;
-     if (mainTable[cursor.y] && mainTable[cursor.y][cursor.x])
+     if (mainTable[cursor.y]?.[cursor.x])
         {
 	 cursor.oId = mainTable[cursor.y][cursor.x].oId;
 	 cursor.eId = mainTable[cursor.y][cursor.x].eId;
+	}
+     if (newCell.offsetLeft < mainDiv.scrollLeft)
+	{
+	 mainDiv.scrollLeft = newCell.offsetLeft - 1;
+	}
+      else if (newCell.offsetLeft + newCell.offsetWidth > mainDiv.scrollLeft + mainDiv.offsetWidth)
+	{
+	 mainDiv.scrollLeft = newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 1;
+	}
+     if (newCell.offsetTop < mainDiv.scrollTop)
+	{
+	 mainDiv.scrollTop = newCell.offsetTop - 1;
+	}
+      else if (newCell.offsetTop + newCell.offsetHeight > mainDiv.scrollTop + mainDiv.offsetHeight)
+	{
+	 mainDiv.scrollTop = newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 1;
 	}
     }
 }
