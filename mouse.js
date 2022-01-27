@@ -19,18 +19,20 @@ function mousemoveEventHandler(event)
     {
      const target = IsTableTemplateCell(event.target);
      if (drag.element) // Process table selecting
+     if (target)
 	{
-         if (target)
-	    {
-	     UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
-	     SelectTableArea(drag.x1, drag.y1, drag.x2 = target.cellIndex, drag.y2 = target.parentNode.rowIndex);
-	    }
-	  else
-	    {
-	     // Add non table area selecting
-	    }
+	 if (drag.x1 === target.cellIndex && drag.y1 === target.parentNode.rowIndex) return;
+	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+	 SelectTableArea(drag.x1, drag.y1, drag.x2 = target.cellIndex, drag.y2 = target.parentNode.rowIndex);
+	 CellBorderToggleSelect(cursor.td, target); // Highlight cursor
 	 return;
 	}
+      else
+	{
+	 // Add non table area selecting
+	 return;
+	}
+
      let x, y;
      if (target && mainTable[y = target.parentNode.rowIndex]?.[x = target.cellIndex]?.hint) // Process table cell hint event
 	{
@@ -146,7 +148,7 @@ function mousedownEventHandler(event)
     }
 
  // Target is an element the mousedown event occured on, so adjust it to select proper element
- if (target.classList.contains('wrap')) target = target.nextSibling;
+ if (target.classList.contains('wrap') || target.classList.contains('unwrap') || target.classList.contains('emptywrap')) target = target.nextSibling;
   else if (target.classList.contains('changescount')) target = target.parentNode;
 
  // OD item mouse click? Refresh sidebar and wrap/unwrap database view list
@@ -252,7 +254,7 @@ function contextmenuEventHandler(event)
     }
 
  // Target is an element the context event occured on, so adjust it to select proper element
- if (target.classList.contains('wrap')) target = target.nextSibling; // Wrap icon click? Use next sibling (OD/OV) as a target
+ if (target.classList.contains('wrap') || target.classList.contains('unwrap') || target.classList.contains('emptywrap')) target = target.nextSibling; // Wrap icon click? Use next sibling (OD/OV) as a target
   else if (target.classList.contains('changescount')) target = target.parentNode; // Footnote count click? Use parent node (OD/OV) as a target
   else if (cursor.td && event.which === 0) target = cursor.td; // Context key on active cursor? Use cursor.td
   else if (!(target = IsTableTemplateCell(target))) target = event.target; // Adjust to the table template cell, otherwise leave it unchanged

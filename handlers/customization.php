@@ -40,6 +40,6 @@ switch ($_SERVER['argv'][1])
 	     CheckEffect($data['dialog']['pad']['dialog box']['element7']['data']);
 	     CheckEffect($data['dialog']['pad']['dialog box select']['element15']['data']);
 
-	     echo json_encode(['cmd' => 'SET', 'dialog' => json_encode($data['dialog'])]);
+	     echo json_encode(['cmd' => 'SET', 'dialog' => json_encode($data['dialog'], JSON_HEX_APOS | JSON_HEX_QUOT)]);
 	     break;
        }

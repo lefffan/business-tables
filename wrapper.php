@@ -413,7 +413,11 @@ switch ($output[$currenteid]['cmd'])
 		      if ($client['ODid'] === '1' && strval($client['eId']) === '6' && strval($client['uid']) === strval($client['oId']))
 			 {
 			  $output['customization'] = getUserCustomization($db, $client['uid']);
-			  if (!isset($output['customization'])) unset($output['customization']);
+			  if (gettype($output['customization']) !== 'array')
+			     {
+			      if (gettype($output['customization']) === 'string') $output['alert'] = 'Customization JSON coding error: '. $output['customization'];
+			      unset($output['customization']);
+			     }
 			 }
 		      break;
 		     }

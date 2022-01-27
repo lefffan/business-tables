@@ -118,14 +118,14 @@ function drawSidebar(data)
 	   if (data[odid]['view'][ovid].substr(0, 1) != '_')
 	      {
 	       if (sidebar[odid]?.['count']?.[ovid] && (data[odid]['count'][ovid] = sidebar[odid]['count'][ovid])) count =  ' <span class="changescount">'+ sidebar[odid]['count'][ovid] + '</span>';
-	       ovlistHTML += `<tr${text}><td class="wrap"></td><td class="sidebar-ov" data-odid="${odid}" data-ovid="${ovid}" data-od="${data[odid]['name']}" data-ov="${data[odid]['view'][ovid]}">${data[odid]['view'][ovid]}${count}</td></tr>`;
+	       ovlistHTML += `<tr${text}><td class="emptywrap"></td><td class="sidebar-ov" data-odid="${odid}" data-ovid="${ovid}" data-od="${data[odid]['name']}" data-ov="${data[odid]['view'][ovid]}">${data[odid]['view'][ovid]}${count}</td></tr>`;
 	      }
 	  }
 
       // Draw wrap icon
-      if (ovlistHTML === '') sidebarHTML += '<tr><td class="wrap"></td>';  // Insert empty wrap icon
-       else if (data[odid]['wrap'] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['unwrap'] + '</td>'; // Insert unwrap icon
-        else sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap icon']['wrap'] + '</td>'; // Insert wrap icon
+      if (ovlistHTML === '') sidebarHTML += '<tr><td class="emptywrap"></td>';  // Insert empty wrap icon
+       else if (data[odid]['wrap'] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap']['content'] + '</td>'; // Insert wrap icon
+        else sidebarHTML += '<tr><td class="unwrap">' + uiProfile['sidebar unwrap']['content'] + '</td>'; // Insert unwrap icon
 
       // Insert OD name
       sidebarHTML += `<td class="sidebar-od" data-odid="${odid}">${data[odid]['name']}</td></tr>`;
@@ -882,9 +882,22 @@ function CallController(data)
 	      object = { "cmd": cmd };
 	      if (typeof data != 'string') object.data = data;
 	      break;
+	 case 'CALLHISTORY':
+	      delete sidebar[ODid]['active'];
+	      ODid = viewhistory[viewindex].ODid;
+	      OVid = viewhistory[viewindex].OVid;
+	      sidebar[ODid]['active'] = OVid;
+	      drawSidebar(sidebar);
+	      object = { cmd: 'CALL' };
+	      break;
+	 case 'CALL':
+	      if (ODid !== '' && (viewindex === -1 || viewhistory[viewindex].ODid !== ODid || viewhistory[viewindex].OVid !== OVid))
+		 {
+		  viewhistory[++viewindex] = {ODid: ODid, OVid: OVid};
+	          viewhistory.splice(viewindex + 1);
+		 }
 	 case 'Database Configuration':
 	 case 'SIDEBAR':
-	 case 'CALL':
 	 case 'LOGIN':
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
@@ -987,6 +1000,8 @@ function CallController(data)
 		  return;
 		 }
 	      user = OD = OV = ODid = OVid = OVtype = '';
+	      viewindex = -1;
+	      viewhistory = [];
 	      cursor = {};
 	      object = { cmd: 'LOGOUT' };
 	}
@@ -1044,7 +1059,7 @@ function htmlCharsConvert(string)
  for (let i = 0; i < HTMLSPECIALCHARS.length; i ++)
      string = string.replace(new RegExp(HTMLSPECIALCHARS[i], 'g'), HTMLUSUALCHARS[i]);
 
- if (string.charCodeAt(string.length - 1) === 10) return string.slice(0, -1); else return string; // Last char is '\n' (ASCII code 0x0A)? Remove it.
+ return string;
 }
 
 function EncodeHTMLSpecialChars(string)
@@ -1068,6 +1083,7 @@ function toHTMLCharsConvert(string, spantag = true)
  if (!spantag)
     {
      string = EncodeHTMLSpecialChars(string);
+     return string;
      return string.replace(/<br>$/g, "<br><br>"); // FF fucking bug
     }
 
@@ -1083,7 +1099,7 @@ function toHTMLCharsConvert(string, spantag = true)
 	newstring += EncodeHTMLSpecialChars(string);
 	break;
        }
- return newstring.replace(/<br>$/g, "<br><br>"); // FF fucking bug
+ return newstring;
 }
 
 function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)

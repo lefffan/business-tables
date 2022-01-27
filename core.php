@@ -591,6 +591,7 @@ function getUserProps($db, $id, $props)
 function getUserCustomization($db, $uid)
 {
  $customization = json_decode(getElementProp($db, '1', $uid, '6', 'dialog'), true); // Get current user JSON customization and decode it
+ if (($error = json_last_error_msg()) !== 'No error') return $error;
 
  // If current user customization forces to use another user customization, and the user doesn't point to itself and does exist - get it
  if (($forceuser = $customization['pad']['application']['element3']['data']) != '' && $forceuser != 'system' && ($forceuser = getUserId($db, $forceuser)))

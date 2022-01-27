@@ -91,6 +91,30 @@ function keydownEventHandler(event)
      return;
     }
 
+ // For estimated OV types (table, tree, map)
+ if (event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey)
+    {
+     switch (event.keyCode)
+	    {
+	     case 37: //Left
+		  if (viewindex > 0)
+		     {
+		      cmd = 'CALLHISTORY';
+		      viewindex--;
+		      CallController();
+		     }
+		  return;;
+	     case 39: //Right
+		  if (viewindex < viewhistory.length - 1 && viewindex !== -1)
+		     {
+		      cmd = 'CALLHISTORY';
+		      viewindex++;
+		      CallController();
+		     }
+		  return;
+	    }
+    }
+
  if (OVtype === 'Table')
     {
      HideHint();

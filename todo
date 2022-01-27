@@ -1,10 +1,14 @@
-    Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
-	application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
+Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
+    application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
     think how to make this big OD faster display process
+    text cell version via Ctrl+H
 
-    ctrl+shift+f regular expression search
-    mouse selecting with page scrolling
-    ctrl+<> prev view, next view (Alt + <> is unsupported cause it is back/forward browser default actions)
+ctrl+shift+f regular expression search
+  case sencitive
+  template
+  usual expression
+  regular expresion
+  selected area
 -----------------------------------------------------------------
 - Application:
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
@@ -60,7 +64,6 @@
   All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
 
 - Front:
-  Color arrows for wrap via SVG
   effects at navigating images in GALLERY just like in drive.ru
   dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
@@ -721,3 +724,5 @@ chat layout:
 
 
 
+1. search по innerText -> element, start, end
+2. if found - inserting another span tag - 

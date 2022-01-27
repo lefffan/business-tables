@@ -21,6 +21,7 @@ const MAXFILESIZE = 157286400;
 const MAXFILEUPLOADS = 20;
 const HELPHEADSTYLE = 'font-family: monospace, sans-serif; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;';
 
+let viewindex = -1, viewhistory = [];
 let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';
 let selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
@@ -36,10 +37,10 @@ let uiProfile = {
 		  "application": { "target": "body", "background-color": "#343E54;", "Force to use next user customization (empty or non-existent user - option is ignored)": "", "Editable content apply input key combination": "Ctrl+Enter", "_Editable content apply input key combination": "Available options: 'Ctrl+Enter', 'Alt+Enter', 'Shift+Enter' and 'Enter'.<br>Any other values do set no way to apply content editable changes by key combination." },
 		  // Sidebar
 		  "sidebar": { "target": ".sidebar", "border": "none;", "background-color": "rgb(16,91,160);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
-		  "sidebar wrap icon": { "wrap": "+", "unwrap": "&#0150;" }, //{ "wrap": "+", "unwrap": "&#0150" }, "wrap": "&#9658;", "unwrap": "&#9660;"
-		  "sidebar wrap cell": { "target": ".wrap", "font-size": "70%;", "padding": "3px 5px;" },
+		  "sidebar unwrap": { "target": ".unwrap", "font-size": "70%;", "padding": "3px 8px;", "content": "", "background-repeat": "no-repeat !important;", "background-position": "center;", "background-size": "70% 70%;", "background-image": `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 5L21 12M21 12L14 19M21 12L3 12' stroke='green' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");` },
+		  "sidebar wrap": { "target": ".wrap", "font-size": "70%;", "padding": "3px 8px;", "content": "", "background-repeat": "no-repeat !important;", "background-position": "center;", "background-size": "70% 70%;", "background-image": `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 14L12 21M12 21L19 14M12 21L12 3' stroke='green' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");` },
 		  "sidebar item active": { "target": ".itemactive", "background-color": "#4578BF;", "color": "#FFFFFF;", "font": "1.1em Lato, Helvetica;" },
-		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#4578BF;", "cursor": "pointer;" },
+		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#3568AF;", "cursor": "pointer;" },
 		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;", "font": "1.1em Lato, Helvetica;"  },
 		  "sidebar object view": { "target": ".sidebar-ov", "padding": "2px 5px 2px 10px;", "margin": "0px;", "color": "", "font": "0.9em Lato, Helvetica;" },
 		  "sidebar view changes count": { "target": ".changescount", "vertical-align": "super;", "padding": "2px 3px 2px 3px;", "color": "rgb(232,187,174);", "font": "0.6em Lato, Helvetica;", "background-color": "rgb(251,11,22);", "border-radius": "35%"},
@@ -1039,9 +1040,9 @@ Line 50. Pass dialog to the controller.`
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Enter + [Shift]</span> moves cursor down [up]
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Enter + [Shift|Ctrl|Alt]</span> applies content changes in content-editable mode. Key combination depends on user
     cusomization 'application' property. New-object input content 'apply' creates new object
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Alt + ^|v</span>: previous|next object cursor navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">ScrollLock on</span> scrolls the entire table instead of cursor navigating cells
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + <|></span> previous|next view navigation
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Alt + ^|v</span>: previous|next object cursor navigation
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Alt + <|></span> previous|next view navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + c|INS</span> copies element formatted text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift+c|Shift+INS</span> copies element clear text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search
