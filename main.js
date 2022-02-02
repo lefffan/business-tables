@@ -189,7 +189,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
     {
      mainTable[arr.y][arr.x] = { data: arr.value, attr: `${datacellclass ? ' class="' + datacellclass + '"' : ''}${arr.style}` };
      const cell = mainTable[arr.y][arr.x];
-     if (arr.hint) cell.hint = toHTMLCharsConvert(arr.hint);
+     if (arr.hint) cell.hint = ToHTMLChars(arr.hint);
      // Calculate main table width and height
      mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
      mainTableHeight = Math.max(mainTableHeight, arr.y + 1);
@@ -246,7 +246,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
     }
 
  // Convert hint to html chars
- if (cell.hint) cell.hint = toHTMLCharsConvert(cell.hint);
+ if (cell.hint) cell.hint = ToHTMLChars(cell.hint);
 }
 
 function drawMain(data, layout, attached)
@@ -263,7 +263,7 @@ function drawMain(data, layout, attached)
     }
   else
     {
-     if (cursor.td?.contentEditable === EDITABLE && cursor.oId !== NEWOBJECTID) cursor.edit = { data: htmlCharsConvert(cursor.td.innerHTML), oId: cursor.oId,  eId: cursor.eId };
+     if (cursor.td?.contentEditable === EDITABLE && cursor.oId !== NEWOBJECTID) cursor.edit = { data: FromHTMLChars(cursor.td.innerHTML), oId: cursor.oId,  eId: cursor.eId };
      cursor.newobject = {};
      for (let eid in objectTable[NEWOBJECTID])
 	 {
@@ -382,7 +382,7 @@ function drawMain(data, layout, attached)
 	   if (cell = mainTable[y][x])
 	      {
 	       if (cell.oId === NEWOBJECTID && cursor.newobject?.[cell.eId]) cell.data = cursor.newobject[cell.eId];
-	       rowHTML += `<td${cell.attr}>${toHTMLCharsConvert(cell.data)}</td>`;
+	       rowHTML += `<td${cell.attr}>${ToHTMLChars(cell.data)}</td>`;
 	       // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
 	       if (cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)
 		  objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
@@ -614,17 +614,6 @@ function BoxApply(buttonprop)
  button['warning'] ? warning(button['warning']) : HideBox();
 }
 
-function MakeCursorContentEditable(data)
-{
- try { cursor.td.contentEditable = EDITABLE; }
- catch { cursor.td.contentEditable = (EDITABLE = 'true'); } // Fucking FF doesn't support 'plaintext' contentEditable type
- cursor.olddata = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
- // Fucking FF has bug inserting <br> in case of cursor at the end of content, so empty content automatically generates <br> tag! Fuck!
- cursor.td.innerHTML = typeof data === 'string' ? toHTMLCharsConvert(data, false) : cursor.olddata;
- if (cursor.td.innerHTML.slice(-4) != '<br>') ContentEditableCursorSet(cursor.td);
- cursor.td.focus();
-}
-
 function ShowImage(value)
 {
  gallery.index += value;
@@ -715,9 +704,8 @@ function FromController(json)
 		   cell = mainTablediv.rows[y = objectTable[input.oId][eid].y].cells[x = objectTable[input.oId][eid].x];
 		   if (input.data[eid]['value'] !== undefined)
 		      {
-		       value = input.data[eid]['value'] ? toHTMLCharsConvert(input.data[eid]['value']) : '';
-		       cell.contentEditable != EDITABLE ? mainTablediv.rows[y].cells[x].innerHTML = value : cursor.olddata = value;
 		       mainTable[y][x].data = input.data[eid]['value'];
+		       if (cell.contentEditable != EDITABLE) mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(input.data[eid]['value']);
 		      }
 		   if (input.data[eid]['style'] !== undefined)
 		      {
@@ -835,6 +823,7 @@ function CallController(data)
 	{
 	 case 'SEARCHPREV':
 	 case 'SEARCHNEXT':
+	      NewSearch();
 	      return;
 	 case 'BROWSE':
 	      browse.click();
@@ -975,7 +964,6 @@ function CallController(data)
 	      newwindow.document.body.style.overflow = 'auto';
 	      break;
 	 case 'CONFIRM':
-	       cursor.td.innerHTML = toHTMLCharsConvert(htmlCharsConvert(cursor.td.innerHTML));
 	 case 'CONFIRMDIALOG':
 	 case 'DBLCLICK':
 	 case 'KEYPRESS':
@@ -1053,55 +1041,6 @@ function displayMainError(errormsg, reset = true)
  if (reset) OVtype = '';
 }
 
-function htmlCharsConvert(string)
-{
- if (!string) return '';
- for (let i = 0; i < HTMLSPECIALCHARS.length; i ++)
-     string = string.replace(new RegExp(HTMLSPECIALCHARS[i], 'g'), HTMLUSUALCHARS[i]);
-
- return string;
-}
-
-function EncodeHTMLSpecialChars(string)
-{
- if (!string) return '';
- for (let i = 0; i < HTMLSPECIALCHARS.length; i ++) string = string.replace(new RegExp(HTMLUSUALCHARS[i], 'g'), HTMLSPECIALCHARS[i]);
- return string;
-}
-
-function EncodeSpanTag(string)
-{
- const start = string.indexOf('>') + 1;
- const length = string.lastIndexOf('<') - start;
- return string.substr(0, start) + EncodeHTMLSpecialChars(string.substr(start, length)) + string.substr(start + length);
-}
-
-function toHTMLCharsConvert(string, spantag = true)
-{
- if (!string) return '';
-
- if (!spantag)
-    {
-     string = EncodeHTMLSpecialChars(string);
-     return string;
-     return string.replace(/<br>$/g, "<br><br>"); // FF fucking bug
-    }
-
- let result, newstring = '';
- while (true)
-    if (result = /< *span[ .*?>|>](.|\n)*?< *\/span *>/.exec(string))
-       {
-	newstring += EncodeHTMLSpecialChars(string.substr(0, result.index)) + EncodeSpanTag(result[0]);
-	string = string.substr(result.index + result[0].length);
-       }
-     else
-       {
-	newstring += EncodeHTMLSpecialChars(string);
-	break;
-       }
- return newstring;
-}
-
 function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
 {
  mainDiv.focus();
@@ -1162,7 +1101,7 @@ function ShowBox(scrollLeft, scrollTop)
     }
 
  HideContextmenu();
- if (typeof box.title === 'string') inner = '<div class="title">' + toHTMLCharsConvert(box.title) + '</div>' + inner; // Add title
+ if (typeof box.title === 'string') inner = '<div class="title">' + ToHTMLChars(box.title) + '</div>' + inner; // Add title
  inner += '<div class="footer">'; // Add 'footer' div and buttons to (if exist)
  for (let button in box.buttons)
      {
@@ -1170,8 +1109,8 @@ function ShowBox(scrollLeft, scrollTop)
       if (box.buttons[button]['value'])
 	 {
 	  inner += '<div class="button" data-button="' + button + '"';
-	  if (box.buttons[button]['style']) inner += ' style="' + escapeHTMLTags(box.buttons[button]['style'].trim()) + '"';
-	  inner += '>' + escapeHTMLTags(box.buttons[button]['value']) + '</div>';
+	  if (box.buttons[button]['style']) inner += ' style="' + AdjustAttribute(box.buttons[button]['style']) + '"';
+	  inner += '>' + EncodeHTMLSpecialChars(box.buttons[button]['value']) + '</div>';
 	 }
       if (box.buttons[button]['timer'])
 	 {
@@ -1264,7 +1203,7 @@ function getInnerDialog()
 	 {
 	  inner += '<pre class="element-headers"';
 	  if (element.style && typeof element.style === 'string') inner += ` style="${element.style}"`;
-	  inner += '>' + toHTMLCharsConvert(element.head);
+	  inner += '>' + ToHTMLChars(element.head);
 	  if (element.help && typeof element.help == "string") inner += ' <span name="' + name + '" class="help-icon"> ? </span>';
 	  inner += '</pre>';
 	 }
@@ -1284,8 +1223,8 @@ function getInnerDialog()
 			    {
 			     inner += '<td class="boxtablecell';
 			     data[row][cell].call != undefined ? inner += ' boxtablecellpush" data-button="' + cell + '"' : inner += '"';
-			     if (data[row][cell].style)  inner += ` style="${escapeHTMLTags(data[row][cell].style)}"`;
-			     inner += '>' + escapeHTMLTags(data[row][cell].value) + '</td>';
+			     if (data[row][cell].style)  inner += ` style="${AdjustAttribute(data[row][cell].style)}"`;
+			     inner += '>' + EncodeHTMLSpecialChars(data[row][cell].value) + '</td>';
 			    }
 			inner += '</tr>';
 		       }
@@ -1329,7 +1268,7 @@ function getInnerDialog()
 	      case 'text':
 		   if (element.label) inner += `<label for="${name}" class="element-headers">${element.label}</label>`;
 		   readonly = element.readonly !== undefined ? ' readonly' : '';
-		   inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + escapeDoubleQuotes(data) + '"' + readonly + '>';
+		   inner += '<input type="' + element.type + '" class="' + element.type + '" name="' + name + '" value="' + AdjustAttribute(data) + '"' + readonly + '>';
 		   break;
 	      case 'textarea':
 		   readonly = element.readonly !== undefined ? ' readonly' : '';
@@ -1342,7 +1281,7 @@ function getInnerDialog()
  if (inner != '')
     {
      data = '';
-     if (box.flags?.style && typeof box.flags.style === 'string') data = ' style ="' + escapeHTMLTags(box.flags.style) + '"';
+     if (box.flags?.style && typeof box.flags.style === 'string') data = ' style ="' + AdjustAttribute(box.flags.style) + '"';
      return '<div class="boxcontentwrapper"'+ data +'>' + inner + '</div>';
     }
 }
@@ -1512,14 +1451,6 @@ function HideHint()
  hint = null;
 }
 
-function ContentEditableCursorSet(element)
-{
- range.selectNodeContents(element);
- range.collapse(false);
- selection.removeAllRanges();
- selection.addRange(range);
-}
-
 function EllipsesClip(string, limit)
 {
  if (typeof limit === 'string') limit = Number(limit);
@@ -1549,17 +1480,6 @@ function CopyBuffer(plaintext)
 
  document.body.removeChild(textarea);
  cursor.td.style.outline = uiProfile['main field table cursor cell']['clipboard outline'];
-}
-
-function escapeDoubleQuotes(string)
-{
- return string.replace(/"/g,"&quot;");
-}
-
-function escapeHTMLTags(string)
-{
- if (string) return string.replace(/</g,"&lt;").replace(/"/g,"&quot;");
- return '';
 }
 
 function warning(text, title, log = true)
@@ -1615,4 +1535,123 @@ function styleUI()
 
  // Output uiProfile array to te console to use it as a default customization configuration
  // lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
+}
+
+function ConfirmEditableContent(addobject)
+{
+ cursor.td.contentEditable = NOTEDITABLE;
+ mainTable[cursor.y][cursor.x].data = FromHTMLChars(cursor.td.innerHTML);
+ cursor.td.innerHTML = ToHTMLChars(mainTable[cursor.y][cursor.x].data);
+
+ if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
+    {
+     if (!addobject) return;
+     cmd = 'Add Object';
+     CallController();
+    }
+  else
+    {
+     cmd = 'CONFIRM';
+     CallController(mainTable[cursor.y][cursor.x].data);
+    }
+
+ lg('innerHTML', cursor.td.innerHTML);
+ lg('innerText', cursor.td.innerText);
+ lg('cell data', mainTable[cursor.y][cursor.x].data);
+}
+
+function MakeCursorContentEditable(data)
+{
+ // Make cursor cell editable
+ cursor.td.focus();
+ try { cursor.td.contentEditable = EDITABLE; }
+ catch { cursor.td.contentEditable = (EDITABLE = 'true'); } // Fucking FF doesn't support 'plaintext' contentEditable type
+
+ // Adjust the content
+ if (typeof data !== 'string') data = mainTable[cursor.y][cursor.x].data;
+ cursor.td.innerHTML = EncodeHTMLSpecialChars(data);
+
+ // Set cursor at the end of the content
+ range.selectNodeContents(cursor.td);
+ range.collapse(false);
+ selection.removeAllRanges();
+ selection.addRange(range);
+}
+
+////////////
+function DecodeHTMLSpecialChars(string)
+{
+ if (typeof string !== 'string' || !string) return '';
+ for (let i = 0; i < HTMLSPECIALCHARS.length; i ++) string = string.replace(new RegExp(HTMLSPECIALCHARS[i], 'g'), HTMLUSUALCHARS[i]);
+ return string;
+}
+
+function EncodeHTMLSpecialChars(string)
+{
+ if (typeof string !== 'string' || !string) return '';
+ for (let i = 0; i < HTMLSPECIALCHARS.length; i ++) string = string.replace(new RegExp(HTMLUSUALCHARS[i], 'g'), HTMLSPECIALCHARS[i]);
+ return string;
+}
+////////////
+
+function FromHTMLChars(string)
+{
+ return DecodeHTMLSpecialChars(string);
+}
+
+function ToHTMLChars(string, spanarray)
+{
+ if (typeof string !== 'string' || !string) return '';
+ let result, newstring = '';
+
+ while (result = /<span .*?>|<span *>|<\/span *>/.exec(string))
+       {
+	newstring += EncodeHTMLSpecialChars(string.substr(0, result.index)) + result[0];
+	string = string.substr(result.index + result[0].length);
+	if (spanarray)
+	   {
+	    const last = spanarray.length ? spanarray[spanarray.length - 1] : 0;
+	    spanarray.push(result.index + last);
+	   }
+       }
+
+ return newstring + EncodeHTMLSpecialChars(string);
+}
+
+function NewSearch()
+{
+ const search = boxDiv.querySelector('input').value;
+ let pos;
+
+ for (let y = 0; y < mainTableHeight; y++)
+ for (let x = 0; x < mainTableWidth; x++)
+     {
+      const spanarray = [], cell = mainTablediv.rows[y].cells[x];
+      let result, newstring = '', string = mainTable[y][x].data;
+      cell.innerHTML = ToHTMLChars(mainTable[y][x].data, spanarray);
+
+//////
+ while (result = /<span .*?>|<span *>|<\/span *>/.exec(string))
+       {
+	newstring += string.substr(0, result.index) + result[0];
+	string = string.substr(result.index + result[0].length);
+	const last = spanarray.length ? spanarray[spanarray.length - 1] : 0;
+	spanarray.push({index: result.index + last, tag: rsult[0]});
+       }
+ newstring += string;
+/////
+
+      if ((pos = cell.innerText.indexOf(search)) === -1)
+	 {
+	 }
+       else
+	 {
+	 }
+     }
+}
+
+function AdjustAttribute(string)
+{
+ if (typeof string !== 'string' || !string) return '';
+ return string.trim().replace(/<|>|"/g, '');
 }

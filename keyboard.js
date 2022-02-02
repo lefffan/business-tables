@@ -92,7 +92,7 @@ function keydownEventHandler(event)
     }
 
  // For estimated OV types (table, tree, map)
- if (event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey)
+ if (event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey && cursor.td?.contentEditable !== EDITABLE)
     {
      switch (event.keyCode)
 	    {
@@ -121,12 +121,16 @@ function keydownEventHandler(event)
 
      if (cursor.td?.contentEditable !== EDITABLE && event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode === 70)
 	{
-	 box = {title: 'REGEXP Search',
-		dialog: {pad: {profile: {element: {head: '\nEnter regular expression to search:', type: 'text', data: ''}}}},
+	 box = {title: 'Search string',
+		dialog: {pad: {profile: {element1: {head: '\n', type: 'text', data: ''},
+					 element2: {head: '', type: 'radio', data: '+Standart|Template|Regexp'},
+					 element3: {line: '', type: 'checkbox', data: 'Case sensitive'},
+					}}},
 		buttons: {PREV: {value: ' < ', interactive: '', call: 'SEARCHPREV'},
 			  NEXT: {value: ' > ', interactive: '', call: 'SEARCHNEXT', enterkey: ''}},
 		flags: {esc: '', style: "min-width: 400px; min-height: 80px;"} };
 	 ShowBox();
+	 return;
 	}
 
      if (!cursor.td) return;
@@ -183,26 +187,16 @@ function keydownEventHandler(event)
 		  if (!confirm)
 		     {
 		      event.preventDefault();
-		      document.execCommand('insertLineBreak', false, null); // "('insertHTML', false, '<br>')" doesn't work in fucking FF
+                      document.execCommand('insertLineBreak', false, null);
 		      break;
 		     }
-		  //--------------------
-		  cursor.td.contentEditable = NOTEDITABLE;
-		  if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
-		     {
-		      mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-		      cmd = 'Add Object';
-		      CallController();
-		      break;
-		     }
-		  cmd = 'CONFIRM';
-		  CallController(htmlCharsConvert(cursor.td.innerHTML));
+		  ConfirmEditableContent(true);
 		  break;
 	     case 27: // Esc
 		  if (cursor.td.contentEditable === EDITABLE)
 		     {
 		      cursor.td.contentEditable = NOTEDITABLE;
-		      cursor.td.innerHTML = cursor.olddata;
+		      cursor.td.innerHTML =  ToHTMLChars(mainTable[cursor.y][cursor.x].data);
 		      break;
 		     }
 		  CellBorderToggleSelect(null, cursor.td, false); // Normilize cell outline off buffered dashed style cell

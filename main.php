@@ -178,7 +178,7 @@ while (true)
 		 }
 	      $output['log'] = $output['alert'] = "Controller error: $msg!";
 	     }
-	 
+	
 	 // Write output result to the client socket
 	 if ($output != ['cmd' => ''] && isset($socketarray[$cid]))
 	    {

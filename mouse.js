@@ -181,19 +181,10 @@ function mousedownEventHandler(event)
     }
 
  // Mouse clilck out of main field content editable table cell? Save cell inner for a new element, otherwise send it to the controller
- if (cursor.td?.contentEditable === EDITABLE && cursor.td != event.target)
+ if (cursor.td?.contentEditable === EDITABLE)
     {
-     if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
-	{
-         mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-         cursor.td.innerHTML = toHTMLCharsConvert(mainTable[cursor.y][cursor.x].data);
-	}
-      else
-	{
-         cmd = 'CONFIRM';
-         CallController(htmlCharsConvert(cursor.td.innerHTML));
-	}
-     cursor.td.contentEditable = NOTEDITABLE;
+     if (cursor.td === target) return;
+     ConfirmEditableContent();
     }
 
  // Table template view mouse click event?
@@ -239,18 +230,7 @@ function contextmenuEventHandler(event)
  if (cursor.td?.contentEditable === EDITABLE)
     {
      if (cursor.td === target) return;
-     cursor.td.contentEditable = NOTEDITABLE;
-     if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
-	{
-	 mainTable[cursor.y][cursor.x].data = htmlCharsConvert(cursor.td.innerHTML);
-	}
-      else
-	{
-	 cmd = 'CONFIRM';
-	 CallController(htmlCharsConvert(cursor.td.innerHTML));
-	}
-     // Main field table cell click?
-     if (IsTableTemplateCell(target)) CellBorderToggleSelect(cursor.td, target);
+     ConfirmEditableContent();
     }
 
  // Target is an element the context event occured on, so adjust it to select proper element

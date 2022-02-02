@@ -1058,12 +1058,11 @@ Line 50. Pass dialog to the controller.`
     pie names and its per-column summarized values as a percent of a total amount. To use selected area column for the
     pie names - area should be one column width, for the pie persentage - per row values of the next (non-selected)
     column are used.
-    Row/column resizing or cell 'drag-and-drop' operation like in 'excel' are not implemented due to multiuser complicated
-    width/height interactive change. Use element layout (see appropriate help section) features to set initial table
-    column width. By default, table column width are adjusted to fit the content.
 
-Note that usual do/undo actions (Ctrl+y|z) are not implemented, cos it is hard to undo element handlers actions due to
-its unique and complicated behaviour. To see previous object versions (instances) use appropriate 'object selection'.`
+Note that usual do/undo actions (Ctrl+y|z) are not implemented, cause of impossible multiuser database actions rollback.
+To see user object database changes use object versions (instances) history via appropriate 'object selection'.
+Row/column resizing operation like in 'excel' are not implemented also, use element layout (see appropriate help section)
+properties to set initial table column width. By default, table column width are adjusted to fit the content.`
 }}},
 },
 
