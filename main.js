@@ -1124,7 +1124,9 @@ function ShowBox(scrollLeft, scrollTop)
  boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%"; // Calculate left box position
  boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%"; // Calculate top box position
  boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'show'; // Show box div
- if (uiProfile["dialog box"]["filter"]) sidebarDiv.style.filter = mainDiv.style.filter = uiProfile["dialog box"]["filter"]; // Apply filters if exist
+
+ if (uiProfile["dialog box"]["filter"] && box.flags.nofilter === undefined)
+    sidebarDiv.style.filter = mainDiv.style.filter = uiProfile["dialog box"]["filter"]; // Apply filters if exist
  uiProfile["dialog box"]["effect"] === 'none' ? SetFirstDialogElementFocus() : boxDiv.addEventListener('transitionend', SetFirstDialogElementFocus); // Set focus on first text-input element
 
  box.contentDiv = boxDiv.querySelector('.boxcontentwrapper');
@@ -1599,7 +1601,7 @@ function FromHTMLChars(string)
  return DecodeHTMLSpecialChars(string);
 }
 
-function ToHTMLChars(string, spanarray)
+function ToHTMLChars(string)
 {
  if (typeof string !== 'string' || !string) return '';
  let result, newstring = '';
@@ -1608,11 +1610,6 @@ function ToHTMLChars(string, spanarray)
        {
 	newstring += EncodeHTMLSpecialChars(string.substr(0, result.index)) + result[0];
 	string = string.substr(result.index + result[0].length);
-	if (spanarray)
-	   {
-	    const last = spanarray.length ? spanarray[spanarray.length - 1] : 0;
-	    spanarray.push(result.index + last);
-	   }
        }
 
  return newstring + EncodeHTMLSpecialChars(string);
@@ -1620,33 +1617,72 @@ function ToHTMLChars(string, spanarray)
 
 function NewSearch()
 {
- const search = boxDiv.querySelector('input').value;
- let pos;
+ // remove highlight after box close
+ // search hints
+ // onchange input new search via settimeout
+ // search results display
+ // class to uiProfile
+ // search results navigation
+ // add spaces for \n in found strings
+ // if two \n at the end add <br> at newsrting innerHTML
 
- for (let y = 0; y < mainTableHeight; y++)
- for (let x = 0; x < mainTableWidth; x++)
+ const input = boxDiv.querySelector('input').value;
+ if (!input) return;
+ const regexp = RegExp(input, 'g');
+ const spanregexp = RegExp(/<span .*?>|<span *>|<\/span *>/, 'g');
+ const spantag = '<span style="background-color: yellow;">';
+
+ for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
+ for (let x = 0; x < mainTableWidth; x++) if (mainTable[y][x]?.data)
      {
-      const spanarray = [], cell = mainTablediv.rows[y].cells[x];
-      let result, newstring = '', string = mainTable[y][x].data;
-      cell.innerHTML = ToHTMLChars(mainTable[y][x].data, spanarray);
+      // Init vars
+      const cell = mainTablediv.rows[y].cells[x];
+      let matches, spanmatches;
+      let index = 0, length = 0, newstring = '', string = mainTable[y][x].data;
 
-//////
- while (result = /<span .*?>|<span *>|<\/span *>/.exec(string))
-       {
-	newstring += string.substr(0, result.index) + result[0];
-	string = string.substr(result.index + result[0].length);
-	const last = spanarray.length ? spanarray[spanarray.length - 1] : 0;
-	spanarray.push({index: result.index + last, tag: rsult[0]});
-       }
- newstring += string;
-/////
+      // Refresh cell data with its actual data, so then remove 'highlight' flag
+      delete cell.highlight;
+      cell.innerHTML = ToHTMLChars(string);
+      //let innerText = cell.innerText.replace(/\n\n$/, '\n');
+      let innerText = cell.innerText;
 
-      if ((pos = cell.innerText.indexOf(search)) === -1)
-	 {
-	 }
-       else
-	 {
-	 }
+      // Search user regexp (continue if not found) and span tags
+      if ((matches = innerText.matchAll(regexp)) === null) continue;
+      matches = Array.from(matches, m => [m[0], m.index])
+      cell.highlight = cell.innerHTML;
+
+      // Search span tags
+      if ((spanmatches = string.matchAll(spanregexp)) === null) spanmatches = [];
+      spanmatches = Array.from(spanmatches, m => [m[0], m.index])
+      spanmatches.push(['', string.length]);
+
+      // Get through all found span tags
+      for (const span of spanmatches)
+	  {
+	   // start: index; end: span[1] - length;
+	   for (let i = 0; i < matches.length; i++)
+	    if (matches[i][1] >= index && matches[i][1] < span[1] - length) // Match start index is in the range
+	    if (matches[i][1] + matches[i][0].length > span[1] - length) // Match end index is out of range
+	       {
+		newstring += innerText.substr(index, matches[i][1] - index);
+		newstring += spantag + innerText.substr(matches[i][1], span[1] - length - matches[i][1]) + '</span>';
+		matches[i][0] = matches[i][0].substr(span[1] - length - matches[i][1]);
+		matches[i][1] = span[1] - length;
+		index = span[1] - length;
+		break;
+	       }
+	     else
+	       {
+		newstring += innerText.substr(index, matches[i][1] - index);
+		newstring += spantag + innerText.substr(matches[i][1], matches[i][0].length) + '</span>';
+		index = matches[i][1] + matches[i][0].length;
+	       }
+	   newstring += innerText.substr(index, span[1] - length - index);
+	   index = span[1] - length;
+	   length += span[0].length;
+	   newstring += span[0];
+	  }
+      cell.innerHTML = ToHTMLChars(newstring);
      }
 }
 

@@ -121,14 +121,14 @@ function keydownEventHandler(event)
 
      if (cursor.td?.contentEditable !== EDITABLE && event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode === 70)
 	{
-	 box = {title: 'Search string',
-		dialog: {pad: {profile: {element1: {head: '\n', type: 'text', data: ''},
-					 element2: {head: '', type: 'radio', data: '+Standart|Template|Regexp'},
-					 element3: {line: '', type: 'checkbox', data: 'Case sensitive'},
+	 box = {title: 'Search',
+		dialog: {pad: {profile: {element1: {head: '\nEnter regular expression to search:', type: 'text', data: ''},
+					 //element2: {head: '', type: 'radio', data: '+Standart|Template|Regexp'},
+					 element3: {lin: '', type: 'checkbox', data: 'Case sensitive'},
 					}}},
 		buttons: {PREV: {value: ' < ', interactive: '', call: 'SEARCHPREV'},
 			  NEXT: {value: ' > ', interactive: '', call: 'SEARCHNEXT', enterkey: ''}},
-		flags: {esc: '', style: "min-width: 400px; min-height: 80px;"} };
+		flags: {esc: '', style: "min-width: 400px; min-height: 80px;", nofilter: ''} };
 	 ShowBox();
 	 return;
 	}
