@@ -584,13 +584,16 @@ function UnSelectTableArea(x1, y1, x2, y2)
      /*if (x != x1 || y != y1)*/ mainTablediv.rows[y].cells[x].classList.remove('selectedcell');
 }
 
-function SeekObjJSONProp(object, name, value)
+function SeekObjJSONProp(object, name, match) // Search property name in object properties, false match searches returns 1st found prop with nonexistent name
 {
- // Undefined value - search for non-existent json prop, null - any existing json prop, otherwise specified value json prop
  for (let prop in object)
+  if (object[prop][name] === undefined)
      {
-      if (object[prop] === undefined) if (value === undefined) return prop; else continue;
-      if (value === null || object[prop][name] === value) return prop;
+      if (!match) return prop;
+     }
+   else
+     {
+      if (match) return prop;
      }
 }
 
@@ -823,7 +826,8 @@ function CallController(data)
 	{
 	 case 'SEARCHPREV':
 	 case 'SEARCHNEXT':
-	      NewSearch();
+	      if (box.search.length < 2) return;
+	      cmd === 'SEARCHPREV' ? RegexpSearchIndexChange(-1) : RegexpSearchIndexChange(1);
 	      return;
 	 case 'BROWSE':
 	      browse.click();
@@ -1369,15 +1373,28 @@ function setOptionSelected(data, value) // Function selects option (by setting '
 function HideBox()
 {
  clearTimeout(buttonTimerId);
- if (box)
+ if (!box) return;
+
+ if (uiProfile["dialog box"]["effect"] != 'none') boxDiv.removeEventListener('transitionend', SetFirstDialogElementFocus);
+ boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'hide';
+ expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
+ mainDiv.style.filter = 'none';
+ sidebarDiv.style.filter = 'none';
+
+ if (box.search)
     {
-     box = null;
-     if (uiProfile["dialog box"]["effect"] != 'none') boxDiv.removeEventListener('transitionend', SetFirstDialogElementFocus);
-     boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'hide';
-     expandedDiv.className = 'select expanded ' + uiProfile["dialog box select"]["effect"] + 'hide';
-     mainDiv.style.filter = 'none';
-     sidebarDiv.style.filter = 'none';
+     clearTimeout(searchTimerId);
+     let cell;
+     for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
+     for (let x = 0; x < mainTableWidth; x++) if (cell = mainTable[y][x])
+      if (cell.matched !== undefined)
+	 {
+	  mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(cell.data);
+	  delete cell.matched;
+         }
     }
+
+ box = null;
 }
 
 function getAbsoluteX(element, flag = '')
@@ -1556,10 +1573,6 @@ function ConfirmEditableContent(addobject)
      cmd = 'CONFIRM';
      CallController(mainTable[cursor.y][cursor.x].data);
     }
-
- lg('innerHTML', cursor.td.innerHTML);
- lg('innerText', cursor.td.innerText);
- lg('cell data', mainTable[cursor.y][cursor.x].data);
 }
 
 function MakeCursorContentEditable(data)
@@ -1617,20 +1630,35 @@ function ToHTMLChars(string)
 
 function NewSearch()
 {
+lg ('New search');
  // remove highlight after box close
  // search hints
  // onchange input new search via settimeout
  // search results display
  // class to uiProfile
  // search results navigation
- // add spaces for \n in found strings
- // if two \n at the end add <br> at newsrting innerHTML
 
- const input = boxDiv.querySelector('input').value;
- if (!input) return;
- const regexp = RegExp(input, 'g');
+ box.search = [];
+ box.searchindex = -1;
+ RegexpSearchIndexChange(0);
+
+ let regexp, input = boxDiv.querySelector('input').value;
+
+ try { regexp = RegExp(input, 'g'); }
+ catch { input = ''; }
+ if (!input) // Empty input
+    {
+     for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
+     for (let x = 0; x < mainTableWidth; x++) if (mainTable[y][x]?.matched)
+	 {
+	  delete mainTable[y][x].matched;
+	  mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(mainTable[y][x].data);
+	 }
+     return;
+    }
+
  const spanregexp = RegExp(/<span .*?>|<span *>|<\/span *>/, 'g');
- const spantag = '<span style="background-color: yellow;">';
+ const spantag = '<span class="matchb">';
 
  for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
  for (let x = 0; x < mainTableWidth; x++) if (mainTable[y][x]?.data)
@@ -1640,20 +1668,18 @@ function NewSearch()
       let matches, spanmatches;
       let index = 0, length = 0, newstring = '', string = mainTable[y][x].data;
 
-      // Refresh cell data with its actual data, so then remove 'highlight' flag
-      delete cell.highlight;
+      // Refresh cell data with its actual data
+      delete mainTable[y][x].matched;
       cell.innerHTML = ToHTMLChars(string);
-      //let innerText = cell.innerText.replace(/\n\n$/, '\n');
-      let innerText = cell.innerText;
+      let innerText = cell.innerText.replace(/\n\n$/, '\n');
+      let inneradd = /\n\n$/.test(cell.innerText) ? '<br>' : '';
 
       // Search user regexp (continue if not found) and span tags
-      if ((matches = innerText.matchAll(regexp)) === null) continue;
-      matches = Array.from(matches, m => [m[0], m.index])
-      cell.highlight = cell.innerHTML;
+      matches = Array.from(innerText.matchAll(regexp), m => [m[0], m.index])
+      if (!matches.length) continue;
 
       // Search span tags
-      if ((spanmatches = string.matchAll(spanregexp)) === null) spanmatches = [];
-      spanmatches = Array.from(spanmatches, m => [m[0], m.index])
+      spanmatches = Array.from(string.matchAll(spanregexp), m => [m[0], m.index])
       spanmatches.push(['', string.length]);
 
       // Get through all found span tags
@@ -1665,16 +1691,22 @@ function NewSearch()
 	    if (matches[i][1] + matches[i][0].length > span[1] - length) // Match end index is out of range
 	       {
 		newstring += innerText.substr(index, matches[i][1] - index);
-		newstring += spantag + innerText.substr(matches[i][1], span[1] - length - matches[i][1]) + '</span>';
+		///
+		box.search.push({x: x, y: y, pos: newstring.length + 18});
+		///
+		newstring += spantag + innerText.substr(matches[i][1], span[1] - length - matches[i][1]).replace(/\n/g, ' \n') + '</span>';
 		matches[i][0] = matches[i][0].substr(span[1] - length - matches[i][1]);
 		matches[i][1] = span[1] - length;
 		index = span[1] - length;
 		break;
 	       }
-	     else
+	     else // Match end index is in range
 	       {
 		newstring += innerText.substr(index, matches[i][1] - index);
-		newstring += spantag + innerText.substr(matches[i][1], matches[i][0].length) + '</span>';
+		///
+		box.search.push({x: x, y: y, pos: newstring.length + 18});
+		///
+		newstring += spantag + innerText.substr(matches[i][1], matches[i][0].length).replace(/\n/g, ' \n') + '</span>';
 		index = matches[i][1] + matches[i][0].length;
 	       }
 	   newstring += innerText.substr(index, span[1] - length - index);
@@ -1682,8 +1714,50 @@ function NewSearch()
 	   length += span[0].length;
 	   newstring += span[0];
 	  }
-      cell.innerHTML = ToHTMLChars(newstring);
+      cell.innerHTML = ToHTMLChars(mainTable[y][x].matched = newstring) + inneradd;
      }
+
+ box.search.length === 0 ? RegexpSearchIndexChange(0) : RegexpSearchIndexChange(1);
+}
+
+function RegexpSearchIndexChange(index)
+{
+ let string, oldcell, newcell;
+
+ if (box.searchindex !== -1)
+    {
+     string = mainTable[box.search[box.searchindex].y][box.search[box.searchindex].x].matched;
+     oldcell = mainTablediv.rows[box.search[box.searchindex].y].cells[box.search[box.searchindex].x];
+     oldcell.innerHTML = ToHTMLChars(string.substr(0, box.search[box.searchindex].pos) + 'b' + string.substr(box.search[box.searchindex].pos + 1));
+    }
+  else
+    {
+     if (cursor.td) oldcell = cursor.td;
+    }
+
+ if (index !== 0)
+    {
+     box.searchindex += index;
+     if (box.searchindex < 0) box.searchindex = box.search.length - 1;
+      else if (box.searchindex >= box.search.length) box.searchindex = 0;
+    }
+
+ if (box.searchindex !== -1)
+    {
+     string = mainTable[box.search[box.searchindex].y][box.search[box.searchindex].x].matched;
+     newcell = mainTablediv.rows[box.search[box.searchindex].y].cells[box.search[box.searchindex].x];
+     newcell.innerHTML = ToHTMLChars(string.substr(0, box.search[box.searchindex].pos) + 'a' + string.substr(box.search[box.searchindex].pos + 1));
+    }
+
+ if (box.searchindex === -1)
+    {
+     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search:`;
+    }
+  else
+    {
+     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search (${box.searchindex + 1} of ${box.search.length}):`;
+     CellBorderToggleSelect(oldcell, (cursor.td = newcell));
+    }
 }
 
 function AdjustAttribute(string)

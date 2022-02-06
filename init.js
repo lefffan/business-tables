@@ -25,7 +25,7 @@ let viewindex = -1, viewhistory = [];
 let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';
 let selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
-let loadTimerId, tooltipTimerId, buttonTimerId, undefinedcellRuleIndex, socket;
+let loadTimerId, tooltipTimerId, buttonTimerId, searchTimerId, undefinedcellRuleIndex, socket;
 let mainTable, mainTableWidth, mainTableHeight, objectTable, paramsOV;
 let objectsOnThePage, VirtualElements;
 let user = '', cmd = '', OD = '', OV = '', ODid = '', OVid = '', OVtype = '';

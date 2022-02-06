@@ -24,7 +24,7 @@ function keydownEventHandler(event)
 		  break;
 	     case 13: // Enter
 		  if (event.target.tagName === 'INPUT' && (event.target.type === 'text' || event.target.type === 'password'))
-		     BoxApply(SeekObjJSONProp(box.buttons, 'enterkey', null));
+		     BoxApply(SeekObjJSONProp(box.buttons, 'enterkey', true));
 		  break;
 	    }
      return;
@@ -128,8 +128,11 @@ function keydownEventHandler(event)
 					}}},
 		buttons: {PREV: {value: ' < ', interactive: '', call: 'SEARCHPREV'},
 			  NEXT: {value: ' > ', interactive: '', call: 'SEARCHNEXT', enterkey: ''}},
-		flags: {esc: '', style: "min-width: 400px; min-height: 80px;", nofilter: ''} };
+		flags: {esc: '', style: "min-width: 400px; min-height: 80px;", nofilter: ''},
+		search: []
+	       };
 	 ShowBox();
+	 boxDiv.querySelector('input').oninput = () => { clearTimeout(searchTimerId); searchTimerId = setTimeout(NewSearch, 500); };
 	 return;
 	}
 

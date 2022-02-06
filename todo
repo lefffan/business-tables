@@ -2,15 +2,12 @@ Megacom MRTG emulation (test big OD display if Loading... error message is displ
     application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
     think how to make this big OD faster display process
     text cell version via Ctrl+H
-
 ctrl+shift+f regular expression search
-  case sencitive
-  template
-  usual expression
-  regular expresion
-  selected area
+paste text = new controller cmd with buffered data, see below
 -----------------------------------------------------------------
 - Application:
+  Paste file or image to object element (or drag and drop to the corresponded cell)
+    should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
     System call 'NEWTABURL'
   optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
@@ -24,8 +21,6 @@ ctrl+shift+f regular expression search
   Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list.
   what about edit after edit command, for a example wrong text to confirm and edit command called once again?
-  Paste file or image to object element (or drag and drop to the corresponded cell)
-    should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
   Object view MAP.
   GALLERY shows all foto for default, otherwise - specified foto
   macroses like in joe

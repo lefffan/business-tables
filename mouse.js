@@ -364,10 +364,11 @@ function contextFitMainDiv(x, y)
 function IsTableTemplateCell(element)
 {
  if (OVtype !== 'Table') return;
+ while (element.tagName === 'SPAN') element = element.parentNode;
  let target = element.tagName === 'TD' ? element : element.parentNode;
  if (target.tagName !== 'TD') return;
 
- list = target.classList;
+ const list = target.classList;
  if (list.contains('datacell') || list.contains('titlecell') || list.contains('newobjectcell') || list.contains('undefinedcell')) return target;
 }
 
