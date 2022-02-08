@@ -1505,7 +1505,7 @@ function warning(text, title, log = true)
 {
  if (!text || typeof text != 'string') return;
  if (typeof title != 'string') title = 'Warning';
- box = { title: title, dialog: {pad: {profile: {element: {style: HELPHEADSTYLE, head: '\n' + text}}}}, buttons: {OK: {value: "&nbsp;   OK   &nbsp;"}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
+ box = { title: title, dialog: {pad: {profile: {element: {style: HELPHEADSTYLE, head: '\n' + text}}}}, buttons: {OK: {value: "    OK    "}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
  ShowBox();
  if (log) lg(text);
 }
@@ -1630,26 +1630,29 @@ function ToHTMLChars(string)
 
 function NewSearch()
 {
-lg ('New search');
- // remove highlight after box close
  // search hints
- // onchange input new search via settimeout
- // search results display
- // class to uiProfile
- // search results navigation
+ // help
 
  box.search = [];
  box.searchindex = -1;
  RegexpSearchIndexChange(0);
 
- let regexp, input = boxDiv.querySelector('input').value;
-
- try { regexp = RegExp(input, 'g'); }
- catch { input = ''; }
- if (!input) // Empty input
+ let regexp, input = box.input.value, j = 0;
+ let x1 = 0, y1 = 0, x2 = mainTableWidth, y2 = mainTableHeight;
+ if (drag.x1 !== undefined && (drag.x1 != drag.x2 || drag.y1 != drag.y2))
     {
-     for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
-     for (let x = 0; x < mainTableWidth; x++) if (mainTable[y][x]?.matched)
+     x1 = Math.min(drag.x1, drag.x2);
+     y1 = Math.min(drag.y1, drag.y2);
+     x2 = Math.max(drag.x1, drag.x2) + 1;
+     y2 = Math.max(drag.y1, drag.y2) + 1;
+    }
+
+ try { regexp = RegExp(input, `g${box.casesensitive.checked ? '' : 'i'}`); }
+ catch { input = ''; }
+ if (!input) // Empty or regexp error input
+    {
+     for (let y = y1; y < y2; y++) if (mainTable[y])
+     for (let x = x1; x < x2; x++) if (mainTable[y][x]?.matched)
 	 {
 	  delete mainTable[y][x].matched;
 	  mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(mainTable[y][x].data);
@@ -1660,8 +1663,8 @@ lg ('New search');
  const spanregexp = RegExp(/<span .*?>|<span *>|<\/span *>/, 'g');
  const spantag = '<span class="matchb">';
 
- for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
- for (let x = 0; x < mainTableWidth; x++) if (mainTable[y][x]?.data)
+ for (let y = y1; y < y2; y++) if (mainTable[y])
+ for (let x = x1; x < x2; x++) if (mainTable[y][x]?.data)
      {
       // Init vars
       const cell = mainTablediv.rows[y].cells[x];
@@ -1671,8 +1674,7 @@ lg ('New search');
       // Refresh cell data with its actual data
       delete mainTable[y][x].matched;
       cell.innerHTML = ToHTMLChars(string);
-      let innerText = cell.innerText.replace(/\n\n$/, '\n');
-      let inneradd = /\n\n$/.test(cell.innerText) ? '<br>' : '';
+      let innerText = cell.innerText;
 
       // Search user regexp (continue if not found) and span tags
       matches = Array.from(innerText.matchAll(regexp), m => [m[0], m.index])
@@ -1688,33 +1690,32 @@ lg ('New search');
 	   // start: index; end: span[1] - length;
 	   for (let i = 0; i < matches.length; i++)
 	    if (matches[i][1] >= index && matches[i][1] < span[1] - length) // Match start index is in the range
-	    if (matches[i][1] + matches[i][0].length > span[1] - length) // Match end index is out of range
 	       {
-		newstring += innerText.substr(index, matches[i][1] - index);
-		///
-		box.search.push({x: x, y: y, pos: newstring.length + 18});
-		///
-		newstring += spantag + innerText.substr(matches[i][1], span[1] - length - matches[i][1]).replace(/\n/g, ' \n') + '</span>';
-		matches[i][0] = matches[i][0].substr(span[1] - length - matches[i][1]);
-		matches[i][1] = span[1] - length;
-		index = span[1] - length;
-		break;
-	       }
-	     else // Match end index is in range
-	       {
-		newstring += innerText.substr(index, matches[i][1] - index);
-		///
-		box.search.push({x: x, y: y, pos: newstring.length + 18});
-		///
-		newstring += spantag + innerText.substr(matches[i][1], matches[i][0].length).replace(/\n/g, ' \n') + '</span>';
-		index = matches[i][1] + matches[i][0].length;
+		if (!box.search[j]) box.search[j] = [];
+		if (matches[i][1] + matches[i][0].length > span[1] - length) // Match end index is out of range
+		   {
+		    newstring += innerText.substr(index, matches[i][1] - index);
+		    box.search[j].push({x: x, y: y, pos: newstring.length + 18}); ///
+		    newstring += spantag + innerText.substr(matches[i][1], span[1] - length - matches[i][1]).replace(/\n/g, ' \n') + '</span>';
+		    matches[i][0] = matches[i][0].substr(span[1] - length - matches[i][1]);
+		    matches[i][1] = span[1] - length;
+		    index = span[1] - length;
+		    break;
+		   }
+		 else // Match end index is in range
+		   {
+		    newstring += innerText.substr(index, matches[i][1] - index);
+		    box.search[j++].push({x: x, y: y, pos: newstring.length + 18}); ///
+		    newstring += spantag + innerText.substr(matches[i][1], matches[i][0].length).replace(/\n/g, ' \n') + '</span>';
+		    index = matches[i][1] + matches[i][0].length;
+		   }
 	       }
 	   newstring += innerText.substr(index, span[1] - length - index);
 	   index = span[1] - length;
 	   length += span[0].length;
 	   newstring += span[0];
 	  }
-      cell.innerHTML = ToHTMLChars(mainTable[y][x].matched = newstring) + inneradd;
+      cell.innerHTML = ToHTMLChars(mainTable[y][x].matched = newstring);
      }
 
  box.search.length === 0 ? RegexpSearchIndexChange(0) : RegexpSearchIndexChange(1);
@@ -1726,9 +1727,11 @@ function RegexpSearchIndexChange(index)
 
  if (box.searchindex !== -1)
     {
-     string = mainTable[box.search[box.searchindex].y][box.search[box.searchindex].x].matched;
-     oldcell = mainTablediv.rows[box.search[box.searchindex].y].cells[box.search[box.searchindex].x];
-     oldcell.innerHTML = ToHTMLChars(string.substr(0, box.search[box.searchindex].pos) + 'b' + string.substr(box.search[box.searchindex].pos + 1));
+     oldcell = mainTablediv.rows[box.search[box.searchindex][0].y].cells[box.search[box.searchindex][0].x];
+     string = mainTable[box.search[box.searchindex][0].y][box.search[box.searchindex][0].x].matched;
+
+     for (let j of box.search[box.searchindex]) string = string.substr(0, j.pos) + 'b' + string.substr(j.pos + 1)
+     oldcell.innerHTML = ToHTMLChars(string);
     }
   else
     {
@@ -1744,20 +1747,25 @@ function RegexpSearchIndexChange(index)
 
  if (box.searchindex !== -1)
     {
-     string = mainTable[box.search[box.searchindex].y][box.search[box.searchindex].x].matched;
-     newcell = mainTablediv.rows[box.search[box.searchindex].y].cells[box.search[box.searchindex].x];
-     newcell.innerHTML = ToHTMLChars(string.substr(0, box.search[box.searchindex].pos) + 'a' + string.substr(box.search[box.searchindex].pos + 1));
+     newcell = mainTablediv.rows[box.search[box.searchindex][0].y].cells[box.search[box.searchindex][0].x];
+     string = mainTable[box.search[box.searchindex][0].y][box.search[box.searchindex][0].x].matched;
+
+     for (let j of box.search[box.searchindex]) string = string.substr(0, j.pos) + 'a' + string.substr(j.pos + 1)
+     newcell.innerHTML = ToHTMLChars(string);
     }
 
  if (box.searchindex === -1)
     {
      boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search:`;
+     box.input.value === '' ? box.input.classList.remove('matchn') : box.input.classList.add('matchn');
     }
   else
     {
+     box.input.classList.remove('matchn');
      boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search (${box.searchindex + 1} of ${box.search.length}):`;
      CellBorderToggleSelect(oldcell, (cursor.td = newcell));
     }
+ box.input.focus();
 }
 
 function AdjustAttribute(string)

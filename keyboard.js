@@ -132,7 +132,10 @@ function keydownEventHandler(event)
 		search: []
 	       };
 	 ShowBox();
-	 boxDiv.querySelector('input').oninput = () => { clearTimeout(searchTimerId); searchTimerId = setTimeout(NewSearch, 500); };
+	 box.input = boxDiv.querySelector('input');
+	 box.casesensitive = boxDiv.querySelector('.checkbox');
+	 box.input.oninput = () => { clearTimeout(searchTimerId); searchTimerId = setTimeout(NewSearch, 350); };
+	 box.casesensitive.oninput = () => { clearTimeout(searchTimerId); NewSearch(); };
 	 return;
 	}
 
