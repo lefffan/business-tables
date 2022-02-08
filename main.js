@@ -1630,9 +1630,6 @@ function ToHTMLChars(string)
 
 function NewSearch()
 {
- // search hints
- // help
-
  box.search = [];
  box.searchindex = -1;
  RegexpSearchIndexChange(0);
@@ -1724,6 +1721,7 @@ function NewSearch()
 function RegexpSearchIndexChange(index)
 {
  let string, oldcell, newcell;
+ const regexpsearchhint = '<span name="element1" class="help-icon"> ? </span>';
 
  if (box.searchindex !== -1)
     {
@@ -1756,13 +1754,13 @@ function RegexpSearchIndexChange(index)
 
  if (box.searchindex === -1)
     {
-     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search:`;
+     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search: ${regexpsearchhint}`;
      box.input.value === '' ? box.input.classList.remove('matchn') : box.input.classList.add('matchn');
     }
   else
     {
      box.input.classList.remove('matchn');
-     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search (${box.searchindex + 1} of ${box.search.length}):`;
+     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search (${box.searchindex + 1} of ${box.search.length}): ${regexpsearchhint}`;
      CellBorderToggleSelect(oldcell, (cursor.td = newcell));
     }
  box.input.focus();

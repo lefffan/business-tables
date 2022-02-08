@@ -1045,7 +1045,7 @@ Line 50. Pass dialog to the controller.`
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Alt + <|></span> previous|next view navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + c|INS</span> copies element formatted text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift+c|Shift+INS</span> copies element clear text to the clipboard
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search, see search dialog hint for brief regexp syntax
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + right button single click</span> on any table cell opens new browser tab with that cell text as url
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + a</span> selects entire table area
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Shift + <|>|^|v|Home|End|PageUp|PageDown</span> selects appropriate table area
@@ -1066,6 +1066,50 @@ properties to set initial table column width. By default, table column width are
 }}},
 },
 
-buttons: { OK: {value: "&nbsp;   OK   &nbsp;"}},
+buttons: { OK: {value: "   OK    "}},
 flags:   { esc: "", style: "min-width: 1100px; min-height: 600px; width: 1100px; height: 720px;" }
 };
+
+
+const regexphint = `<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">                             Brief RegEx syntax</span>
+
+\\ Marks the next character as either a special character or a literal.
+  For example: "\\n" matches a newline character.The sequence \\\\ matches \\ and \\( matches (.
+^ Matches the beginning of input.
+$ Matches the end of input.
+* Matches the preceding character zero or more times. For example, "zo*" matches either z or zoo.
++ Matches the preceding character one or more times. For example, "zo+" matches zoo but not z.
+? Matches the preceding character zero or one time. For example, a?ve? matches the ve in never.
+. Matches any single character except a newline character.
+(subexpression) Matches subexpression and remembers the match. If a part of a regular expression is
+  enclosed in parentheses, that part of the regular expression is grouped together.
+  Thus a regex operator can be applied to the entire group.
+x|y Matches either x or y. For example, z|wood matches z or wood. (z|w)oo matches zoo or wood.
+{n} n is a non negative integer. Matches exactly n times.
+  For example, o{2} does not match the o in Bob, but matches the first two o's in foooood.
+{n,} n is a non negative integer. Matches at least n times.
+  For example, o{2,} does not match the o in Bob and matches all the o's in "foooood."
+o{1,} is equivalent to o+. o{0,} is equivalent to o*.
+{n,m} m and n are nonnegative integers. Matches at leastn and at mostm times.
+  For example, o{1,3} matches the first three o's in "fooooood." o{0,1} is equivalent to o?.
+[xyz] A character set. Matches any one of the enclosed characters. For example, [abc] matches the a in plain.
+[^xyz] A negative character set. Matches any character not enclosed. For example, [^abc] matches the p in plain.
+[a-z] A range of characters. Matches any character in the specified range.
+  For example, "[a-z]" matches any lowercase alphabetic character in the range a through z.
+[^m-z] A negative range characters. Matches any character not in the specified range.
+  For example, [^m-z] matches any character not in the range m through z.
+\\b Matches a word boundary, that is, the position between a word and a space.
+  For example, er\\b matches the er in never but not the er in verb.
+\\B Matches a non-word boundary. ea*r\\B matches the ear in never early.
+\\d Matches a digit character. Equivalent to [0-9].
+\\D Matches a non-digit character. Equivalent to [^0-9].
+\\r Matches a carriage return character.
+\\s Matches any white space including space, tab, form-feed, and so on. Equivalent to [ \\f\\n\\r\\t\\v].
+\\S Matches any nonwhite space character. Equivalent to [^ \\f\\n\\r\\t\\v].
+\\t Matches a tab character.
+\\v Matches a vertical tab character.
+\\w Matches any word character including underscore. Equivalent to [A-Za-z0 -9_]. Use it in the search field.
+\\W Matches any non-word character. Equivalent to [^A-Za-z0-9_].
+\\num Matches num, where num is a positive integer, denoting a reference back to remembered matches.
+  For example, (.)\\1 matches two consecutive identical characters.
+\\xn Matches hexadecimal n escape value - \\x41 matches A. Allows ASCII codes to be used in regular expressions.`;
