@@ -102,10 +102,12 @@ function drawSidebar(data)
       (sidebar[odid] === undefined || sidebar[odid]['wrap'] === undefined) ? data[odid]['wrap'] = true : data[odid]['wrap'] = sidebar[odid]['wrap'];
        if (!data[odid]['count']) data[odid]['count'] = {};
 
+      data[odid]['name'] = AdjustAttribute(data[odid]['name']);
       // Create OV names list with active OV check 
       ovlistHTML = '';
       for (let ovid in data[odid]['view'])
-    	  {
+	  {
+	   data[odid]['view'][ovid] = AdjustAttribute(data[odid]['view'][ovid]);
 	   count = text = '';
 	   if (data[odid]['active'] === ovid)
 	      {
@@ -128,7 +130,7 @@ function drawSidebar(data)
         else sidebarHTML += '<tr><td class="unwrap">' + uiProfile['sidebar unwrap']['content'] + '</td>'; // Insert unwrap icon
 
       // Insert OD name
-      sidebarHTML += `<td class="sidebar-od" data-odid="${odid}">${data[odid]['name']}</td></tr>`;
+      sidebarHTML += `<td class="sidebar-od" data-odid="${odid}">${AdjustAttribute(data[odid]['name'])}</td></tr>`;
 
       // Insert OV names list if OD is unwrapped
       if (data[odid]['wrap'] === false) sidebarHTML += ovlistHTML;
@@ -187,7 +189,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
  // Virtual cell
  if (!eid)
     {
-     mainTable[arr.y][arr.x] = { data: arr.value, attr: `${datacellclass ? ' class="' + datacellclass + '"' : ''}${arr.style}` };
+     mainTable[arr.y][arr.x] = { data: arr.value ? arr.value : '', attr: `${datacellclass ? ' class="' + datacellclass + '"' : ''}${arr.style}` };
      const cell = mainTable[arr.y][arr.x];
      if (arr.hint) cell.hint = ToHTMLChars(arr.hint);
      // Calculate main table width and height
@@ -205,6 +207,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
  if (SERVICEELEMENTS.indexOf(eid) === -1)
     {
      cell.data = arr.value === undefined ? obj['eid' + eid + 'value'] : arr.value;
+     if (cell.data === null) cell.data = '';
      cell.hint = arr.hint === undefined ? obj['eid' + eid + 'hint'] : arr.hint;
      if (obj['eid' + eid + 'link']) cell.noteclassindex += 2;
      if (obj.lastversion === '1' && obj.version != '0' && oidnum >= STARTOBJECTID && attached?.[oidnum]?.[eid]) cell.noteclassindex += 4;
@@ -212,6 +215,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
   else
     {
      cell.data = arr.value === undefined ? obj[eid] : arr.value;
+     if (cell.data === null) cell.data = '';
      if (arr.hint) cell.hint = arr.hint;
     }
  if (cell.hint) cell.noteclassindex += 1;
@@ -330,7 +334,7 @@ function drawMain(data, layout, attached)
  if (error) warning(error);
 
  // Create html table of mainTable array, props[0][0] = { style: , table: }
- layout['undefined']['style'] = layout['undefined']['style'] ? ` style="${layout['undefined']}"` : '';
+ layout['undefined']['style'] = layout['undefined']['style'] ? ` style="${layout['undefined']['style']}"` : '';
  const undefinedCell = '<td' + undefinedcellclass + layout['undefined']['style'] + '></td>';
 
  // Rotate table on a layout['table']['direction'] property set
@@ -733,7 +737,7 @@ function FromController(json)
 		      }
 		   if (mainTable[y][x].noteclassindex) cell.classList.add('note' + mainTable[y][x].noteclassindex);
 		  }
-	      CellBorderToggleSelect(null, cursor.td, false);
+	      CellBorderToggleSelect(null, cursor.td, 0);
 	      break;
 	 case 'CALL':
 	      imgdesc.style.display = 'none';
@@ -910,7 +914,7 @@ function CallController(data)
 		  if (!cell) msg += 'Object id: undefined\nElement id: undefined';
 		   else if (cell.oId === NEWOBJECTID && Number(cell.eId) > 0) msg += `Input new object data for element id: ${cell.eId}`;
 		   else if (cell.oId === TITLEOBJECTID) msg += `Title for element id: ${cell.eId}`;
-		   else if (cell.oId > STARTOBJECTID) msg += `Object id: ${cell.oId}\nElement id: ${cell.eId}`;
+		   else if (cell.oId >= STARTOBJECTID) msg += `Object id: ${cell.oId}\nElement id: ${cell.eId}`;
 		   else msg += `Object id: undefined\nElement id: virtual`;
 		  msg += `\nPosition 'x': ${cursor.x}\nPosition 'y': ${cursor.y}\n\n`;
 		 }
@@ -919,7 +923,7 @@ function CallController(data)
 		  let info = '';
 	          if (cell.version) info = 'Object version: ' + (cell.version === '0' ? 'object has been deleted' : `${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}\n`);
 		  if (cell.hint) info += `Element hint:\n<span style="color: #999;">${cell.hint}</span>\n`;
-		  if (info) msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n' + info + '\n\n';
+		  if (info) msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n' + info + '\n';
 		 }
 	      if (true) // Database info
 		 {
@@ -933,7 +937,7 @@ function CallController(data)
 	      if (true) // Table info
 		 {
 		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Table</span>\n';
-		  msg += `Columns: ${mainTableWidth}\nRows: ${mainTableHeight}`;
+		  msg += `Columns: ${mainTableWidth}\nRows: ${mainTableHeight}\nCells: ${mainTableWidth * mainTableHeight}`;
 		  if (drag.x1 !== undefined && (drag.x1 != drag.x2 || drag.y1 != drag.y2))
 		     {
 		      count = new Set();
@@ -1045,7 +1049,7 @@ function displayMainError(errormsg, reset = true)
  if (reset) OVtype = '';
 }
 
-function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
+function CellBorderToggleSelect(oldCell, newCell, focus = FOCUS_VERTICAL | FOCUS_HORIZONTAL)
 {
  mainDiv.focus();
  if (oldCell)
@@ -1057,33 +1061,35 @@ function CellBorderToggleSelect(oldCell, newCell, setFocusElement = true)
 
  if (uiProfile['main field table cursor cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table cursor cell']['outline'];
  if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
- if (setFocusElement)
+
+ cursor.td = newCell;
+ cursor.x = newCell.cellIndex;
+ cursor.y = newCell.parentNode.rowIndex;
+ cursor.oId = cursor.eId = 0;
+ if (mainTable[cursor.y]?.[cursor.x])
     {
-     cursor.td = newCell;
-     cursor.x = newCell.cellIndex;
-     cursor.y = newCell.parentNode.rowIndex;
-     cursor.oId = cursor.eId = 0;
-     if (mainTable[cursor.y]?.[cursor.x])
-        {
-	 cursor.oId = mainTable[cursor.y][cursor.x].oId;
-	 cursor.eId = mainTable[cursor.y][cursor.x].eId;
-	}
-     if (newCell.offsetLeft < mainDiv.scrollLeft)
-	{
-	 mainDiv.scrollLeft = newCell.offsetLeft - 1;
-	}
-      else if (newCell.offsetLeft + newCell.offsetWidth > mainDiv.scrollLeft + mainDiv.offsetWidth)
-	{
-	 mainDiv.scrollLeft = newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 1;
-	}
-     if (newCell.offsetTop < mainDiv.scrollTop)
-	{
-	 mainDiv.scrollTop = newCell.offsetTop - 1;
-	}
-      else if (newCell.offsetTop + newCell.offsetHeight > mainDiv.scrollTop + mainDiv.offsetHeight)
-	{
-	 mainDiv.scrollTop = newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 1;
-	}
+     cursor.oId = mainTable[cursor.y][cursor.x].oId;
+     cursor.eId = mainTable[cursor.y][cursor.x].eId;
+    }
+
+ if (focus & FOCUS_HORIZONTAL)
+ if (newCell.offsetLeft <= mainDiv.scrollLeft + 1)
+    {
+     mainDiv.scrollLeft = newCell.offsetLeft - 1;
+    }
+  else if (newCell.offsetLeft + newCell.offsetWidth > mainDiv.scrollLeft + mainDiv.offsetWidth)
+    {
+     mainDiv.scrollLeft = newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 11;
+    }
+
+ if (focus & FOCUS_VERTICAL)
+ if (newCell.offsetTop <= mainDiv.scrollTop + 1)
+    {
+     mainDiv.scrollTop = newCell.offsetTop - 1;
+    }
+  else if (newCell.offsetTop + newCell.offsetHeight > mainDiv.scrollTop + mainDiv.offsetHeight)
+    {
+     mainDiv.scrollTop = newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 11;
     }
 }
 
@@ -1193,7 +1199,7 @@ function getInnerDialog()
      // In case of default first profile set zero value to use as a select attribute
      if (typeof data === 'string') data = 0;
      // Add header, select block and divider
-     inner += '<div class="select" type="select-profile"><div value="' + data + '">' + box.flags.profile + '</div></div><div class="divider"></div>';
+     inner += '<div class="select" type="select-profile"><div value="' + data + '">' + AdjustAttribute(box.flags.profile) + '</div></div><div class="divider"></div>';
     }
 
  //------------------Parsing interface element in box.dialog.<current pad>.<current profile>------------------
@@ -1229,7 +1235,7 @@ function getInnerDialog()
 			    {
 			     inner += '<td class="boxtablecell';
 			     data[row][cell].call != undefined ? inner += ' boxtablecellpush" data-button="' + cell + '"' : inner += '"';
-			     if (data[row][cell].style)  inner += ` style="${AdjustAttribute(data[row][cell].style)}"`;
+			     if (data[row][cell].style) inner += ` style="${AdjustAttribute(data[row][cell].style)}"`;
 			     inner += '>' + EncodeHTMLSpecialChars(data[row][cell].value) + '</td>';
 			    }
 			inner += '</tr>';
@@ -1254,7 +1260,7 @@ function getInnerDialog()
 		       {
 			if (data[0] == '+')		// The option is selected (first char is '+')? Add it to the dialog interface
 			   {
-			    inner += `<div class="select" name="${name}" type="select-one"><div value="${count}">${data.substr(1)}</div></div>`;
+			    inner += `<div class="select" name="${name}" type="select-one"><div value="${count}">${AdjustAttribute(data.substr(1))}</div></div>`;
 			    break;
 			   }
 			count ++;
@@ -1278,7 +1284,7 @@ function getInnerDialog()
 		   break;
 	      case 'textarea':
 		   readonly = element.readonly !== undefined ? ' readonly' : '';
-		   inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '"' + readonly + '>' + data + '</textarea>';
+		   inner += '<textarea type="' + element.type + '" class="textarea" name="' + name + '"' + readonly + '>' + AdjustAttribute(data) + '</textarea>';
 		   break;
 	     }
       if (element.line != undefined) inner += '<div class="divider"></div>';
@@ -1330,9 +1336,9 @@ function saveDialogProfile()
 		      if (element.checked) el.data += '+';
 		      el.data += element.nextSibling.innerHTML + '|';
 		      break;
-		 case 'password':
 		 case 'text':
 		 case 'textarea':
+		 case 'password':
 		      el.data = element.value;
 		      break;
 		}
@@ -1769,5 +1775,6 @@ function RegexpSearchIndexChange(index)
 function AdjustAttribute(string)
 {
  if (typeof string !== 'string' || !string) return '';
- return string.trim().replace(/<|>|"/g, '');
+ return string.trim().replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+ //return string.trim().replace(/<|>|"/g, '');
 }

@@ -1,9 +1,15 @@
 Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
-    application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
-    think how to make this big OD faster display process
-    text cell version via Ctrl+H
-ctrl+shift+f regular expression search
+application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
+think how to make this big OD faster display process + loading in % (via settimeout)
+text cell version via Ctrl+H
+ctrl+shift+f regular expression search - check on additional allowed tags like b, a, font
 paste text = new controller cmd with buffered data, see below
+Cell focusing shows the begining of the cell! Not the end of the cell!
+Cell editing resets current styles!!!!! (for a example horizontal align)
+allowed tags in cell span, b, font, a 
+table width 100% (fixed cell width) line wrapping?
+megacom tree via links in mrtg.php
+final megacom mrtg db making via paper on my workplace
 -----------------------------------------------------------------
 - Application:
   Paste file or image to object element (or drag and drop to the corresponded cell)
@@ -23,6 +29,7 @@ paste text = new controller cmd with buffered data, see below
   what about edit after edit command, for a example wrong text to confirm and edit command called once again?
   Object view MAP.
   GALLERY shows all foto for default, otherwise - specified foto
+  not only regexp search but search on mask with only one asterisk as a special char
   macroses like in joe
   virt cell depends on oid,eid
   Context menu Graph
@@ -44,6 +51,7 @@ paste text = new controller cmd with buffered data, see below
     for php ORM Doctrine can be used
     index columns: alter table data_1 add index (`lastversion`);
     unbuffered queries and partial OV output mysql_unbuffered_query()
+    https://www.sqlstyle.guide/ru/
   Problems of deploying - can i use maria db on commerisal base? 
   Use another user (instead of root) with priv granted to 'OEDB' database only and Unicode for MySQL https://mathiasbynens.be/notes/mysql-utf8mb4 http://phpfaq.ru/mysql/charset
   secure php.ini and can socket number be more than 1024?

@@ -22,6 +22,7 @@ function mousemoveEventHandler(event)
      if (target)
 	{
 	 if (drag.x1 === target.cellIndex && drag.y1 === target.parentNode.rowIndex) return;
+	 if (drag.x2 === target.cellIndex && drag.y2 === target.parentNode.rowIndex) return;
 	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
 	 SelectTableArea(drag.x1, drag.y1, drag.x2 = target.cellIndex, drag.y2 = target.parentNode.rowIndex);
 	 CellBorderToggleSelect(cursor.td, target); // Highlight cursor
@@ -192,7 +193,7 @@ function mousedownEventHandler(event)
     {
      if (!(target = IsTableTemplateCell(target))) return;
      ResetUnreadMessages(); // Reset the counter
-     CellBorderToggleSelect(cursor.td, target); // Highlight cursor
+     CellBorderToggleSelect(cursor.td, target, 0); // Highlight cursor
 
      if (drag.x1 !== undefined) // Unselect area if selected
 	{
@@ -272,7 +273,7 @@ function contextmenuEventHandler(event)
 	 return;
 	}
      const chart = GetChartItem(target);
-     if (!chart) CellBorderToggleSelect(cursor.td, target);
+     if (!chart) CellBorderToggleSelect(cursor.td, target, 0);
      const DELETEITEM = mainTable[cursor.y]?.[cursor.x]?.realobject ? ACTIVEITEM + 'Clone Object</div>' + ACTIVEITEM + 'Delete Object</div>' : GREYITEM + 'Clone Object</div>' + GREYITEM + 'Delete Object</div>';
      DrawContext(ACTIVEITEM + 'Add Object</div>' + DELETEITEM + ACTIVEITEM + 'Description</div>' + ACTIVEITEM + 'Copy</div>' + chart + ACTIVEITEM + 'View in a new tab</div>', target, event);
      return;
@@ -366,7 +367,7 @@ function IsTableTemplateCell(element)
  if (OVtype !== 'Table') return;
  while (element.tagName === 'SPAN') element = element.parentNode;
  let target = element.tagName === 'TD' ? element : element.parentNode;
- if (target.tagName !== 'TD') return;
+ if (!target || target.tagName !== 'TD') return;
 
  const list = target.classList;
  if (list.contains('datacell') || list.contains('titlecell') || list.contains('newobjectcell') || list.contains('undefinedcell')) return target;
@@ -448,14 +449,14 @@ function BoxEventHandler(event)
 		      if (typeof (data = box.dialog[box.flags.pad][box.flags.profile][selectExpandedDiv.attributes.name.value]["data"]) === 'string')
 		      for (data of data.split('|'))
 			  //if (data.length > 0 && (data[0] != '+' || data.length > 1)) // Check non empty options
-			  if (data[0] == '+') inner += '<div class="selected" value="' + (count++) + '">' + data.substr(1) + '</div>'; // Current option
-			   else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
+			  if (data[0] == '+') inner += '<div class="selected" value="' + (count++) + '">' + AdjustAttribute(data.substr(1)) + '</div>'; // Current option
+			   else inner += '<div value="' + (count++) + '">' + AdjustAttribute(data) + '</div>'; // Other options
 		     }
 		   else
 		     {
 		      for (data in box.dialog[box.flags.pad]) if (typeof box.dialog[box.flags.pad][data] === "object")
-			  if (data === box.flags.profile) inner += '<div class="selected" value="' + (count++) + '">' + data + '</div>'; // Current option
-			   else inner += '<div value="' + (count++) + '">' + data + '</div>'; // Other options
+			  if (data === box.flags.profile) inner += '<div class="selected" value="' + (count++) + '">' + AdjustAttribute(data) + '</div>'; // Current option
+			   else inner += '<div value="' + (count++) + '">' + AdjustAttribute(data) + '</div>'; // Other options
 		     }
 		  expandedDiv.innerHTML  = inner; // Fill expandedDiv with innerHTML
 		  expandedDiv.style.top  = selectExpandedDiv.offsetTop + boxDiv.offsetTop + selectExpandedDiv.offsetHeight + 'px'; // Place expandedDiv top position

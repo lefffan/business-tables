@@ -20,6 +20,8 @@ const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
 const MAXFILESIZE = 157286400;
 const MAXFILEUPLOADS = 20;
 const HELPHEADSTYLE = 'font-family: monospace, sans-serif; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;';
+const FOCUS_VERTICAL = 0b01;
+const FOCUS_HORIZONTAL = 0b10;
 
 let viewindex = -1, viewhistory = [];
 let EDITABLE = 'plaintext-only';
@@ -351,8 +353,8 @@ attribute, event and etc, for a example - '{"oid": "..", "eid": "..", "x": "..",
   '{"eid":"*", "style":"background-color: #000;", "oid":"o%2===1 && o>2"}' will paint all odd (o%2===1) and actual (o>2) objects with
   the black background color. Expressions may contain next vars:
 	'o' is an object id number in the selection
-	'e' is element id number (undefined for service elements)
-	'n' is object number in the selection (for the first object n=0, for the second n=1 and so on)
+	'e' is element order number in element layout (for the first element e=0, for the second e=1 and so on)
+	'n' is object order number in the selection (for the first object n=0, for the second n=1 and so on)
 	'q' is a total object count.
   Empty 'oid' property ("oid": "") defines 'style' and 'hiderow' attributes for undefined cell that has no object element placed
   (via x, y coordinates) in. Property 'eid' is ignored.

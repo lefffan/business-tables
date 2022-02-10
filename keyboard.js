@@ -143,16 +143,16 @@ function keydownEventHandler(event)
      switch (event.keyCode)
 	    {
 	     case 36: // Home
-		  moveCursor(cursor.x, 0, event);
+		  moveCursor(cursor.x, 0, event, FOCUS_VERTICAL);
 		  break;
 	     case 35: // End
-		  moveCursor(cursor.x, mainTableHeight - 1, event);
+		  moveCursor(cursor.x, mainTableHeight - 1, event, FOCUS_VERTICAL);
 		  break;
 	     case 33: // PgUp
-		  moveCursor(cursor.x, cursor.y - Math.trunc(mainDiv.clientHeight*mainTableHeight/mainDiv.scrollHeight), event);
+		  moveCursor(cursor.x, cursor.y - Math.trunc(mainDiv.clientHeight*mainTableHeight/mainDiv.scrollHeight), event, FOCUS_VERTICAL);
 		  break;
 	     case 34: // PgDown
-		  moveCursor(cursor.x, cursor.y + Math.trunc(mainDiv.clientHeight*mainTableHeight/mainDiv.scrollHeight), event);
+		  moveCursor(cursor.x, cursor.y + Math.trunc(mainDiv.clientHeight*mainTableHeight/mainDiv.scrollHeight), event, FOCUS_VERTICAL);
 		  break;
 	     case 38: // Up
 		  if (!event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey)
@@ -161,7 +161,7 @@ function keydownEventHandler(event)
 			 moveCursor(objectTable[cursor.oId - 1][cursor.eId].x, objectTable[cursor.oId - 1][cursor.eId].y, event);
 		      break;
 		     }
-		  moveCursor(cursor.x, cursor.y - 1, event);
+		  moveCursor(cursor.x, cursor.y - 1, event, FOCUS_VERTICAL);
 		  break;
 	     case 40: // Down
 		  if (!event.ctrlKey && !event.shiftKey && event.altKey && !event.metaKey)
@@ -170,13 +170,13 @@ function keydownEventHandler(event)
 			 moveCursor(objectTable[cursor.oId + 1][cursor.eId].x, objectTable[cursor.oId + 1][cursor.eId].y, event);
 		      break;
 		     }
-		  moveCursor(cursor.x, cursor.y + 1, event);
+		  moveCursor(cursor.x, cursor.y + 1, event, FOCUS_VERTICAL);
 		  break;
 	     case 37: //Left
-		  moveCursor(cursor.x - 1, cursor.y, event);
+		  moveCursor(cursor.x - 1, cursor.y, event, FOCUS_HORIZONTAL);
 		  break;
 	     case 39: //Right
-		  moveCursor(cursor.x + 1, cursor.y, event);
+		  moveCursor(cursor.x + 1, cursor.y, event, FOCUS_HORIZONTAL);
 		  break;
 	     case 13: // Enter
 		  if (cursor.td.contentEditable !== EDITABLE)
@@ -205,7 +205,7 @@ function keydownEventHandler(event)
 		      cursor.td.innerHTML =  ToHTMLChars(mainTable[cursor.y][cursor.x].data);
 		      break;
 		     }
-		  CellBorderToggleSelect(null, cursor.td, false); // Normilize cell outline off buffered dashed style cell
+		  CellBorderToggleSelect(null, cursor.td, 0); // Normilize cell outline off buffered dashed style cell
 	          break;
 	     case 45:  // Ins
 	     case 46:  // Del
@@ -270,7 +270,7 @@ function ProcessControllerEventKeys(event)
  CallController(object);
 }
 
-function moveCursor(x, y, event)
+function moveCursor(x, y, event, focus)
 {
  if (cursor.td.contentEditable === EDITABLE || event.getModifierState('ScrollLock')) return;
  event.preventDefault();
@@ -299,7 +299,7 @@ function moveCursor(x, y, event)
      UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
      delete drag.x1;
     }
- CellBorderToggleSelect(cursor.td, mainTablediv.rows[y].cells[x]);
+ CellBorderToggleSelect(cursor.td, mainTablediv.rows[y].cells[x], focus);
 }
 
 function rangeTest(a, b)
