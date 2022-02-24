@@ -22,8 +22,13 @@ const MAXFILEUPLOADS = 20;
 const HELPHEADSTYLE = 'font-family: monospace, sans-serif; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;';
 const FOCUS_VERTICAL = 0b01;
 const FOCUS_HORIZONTAL = 0b10;
+const ALLOWEDTAGS = ['b', 'a', 'font', 'span'];
+const ALLOWEDTAGNAMES = ['B', 'A', 'FONT', 'SPAN'];
+const SPANHIGHLIGHT = '<span class="matchb">';
+const REGEXSEARCHTITLE = 'Search';
 
-let viewindex = -1, viewhistory = [];
+let allowedtagsregexp, allowedtagsregexpg, allowedtagsregexpstring = '';
+let viewindex = -1, viewhistory = [], perfomance;
 let EDITABLE = 'plaintext-only';
 let NOTEDITABLE = 'false';
 let selectExpandedDiv = null, boxDiv, expandedDiv, contextmenu, contextmenuDiv, hint, hintDiv, mainDiv, sidebarDiv, mainTablediv;
@@ -32,7 +37,7 @@ let mainTable, mainTableWidth, mainTableHeight, objectTable, paramsOV;
 let objectsOnThePage, VirtualElements;
 let user = '', cmd = '', OD = '', OV = '', ODid = '', OVid = '', OVtype = '';
 let undefinedcellclass, titlecellclass, newobjectcellclass, datacellclass;
-let box = null, sidebar = {}, cursor = {}, oldcursor = {}, drag = {};
+let box = null, sidebar = {}, cursor = {}, oldcursor = {}, drag = {}, search = {};
 let browse, imgwrapper, img, gallery, imgdesc, canvas;
 let uiProfile = {
 		  // Body
@@ -53,7 +58,7 @@ let uiProfile = {
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "rgb(232,255,232);", "font": "", "text-align": "center" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "", "font": "12px/14px arial;", "text-align": "center" },
 		  "main field table undefined cell": { "target": ".undefinedcell", "padding": "10px;", "border": "", "background-color": "" },
-		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "0 0 5px rgba(100,0,0,0.5)", "clipboard outline": "red dashed 2px" },
+		  "main field table cursor cell": { "outline": "red solid 1px", "shadow": "", "clipboard outline": "red dashed 2px" },
 		  "main field table selected cell": { "target": ".selectedcell", "background-color": "rgb(189,200,203) !important;" },
 		  "main field table mouse pointer": { "target": ".main table tbody tr td:not([contenteditable=" + EDITABLE + "])", "cursor": "cell;" },
 		  "main field message": { "target": ".main h1", "color": "#BBBBBB;" },
@@ -815,13 +820,12 @@ Another one - text.php - a kind of excel cell behaviour: F2 or double click make
 text, CTRL|ALT|SHIFT + Enter combination (see customization 'Application' profile) applies content changes, ESC exits
 editable mode with no changes. Handler supports next commands (as a first argument):
 - SET or SETTEXT sets all input args concatenated to one string as an element main text (element 'value' property).
-  For a example, handler command line 'php text.php SET Alex is 20 years old' will set next cell content/text with no
-  spaces: 'Alexis20yearsold'. Handler 'php text.php SET "Alex is 20 years old"' will set 'Alex is 20 years old'.
+  For a example, handler command line 'php text.php SET Alex is 20 years old' will set next cell content/text of
+  concatenated args: 'Alexis20yearsold', while 'php text.php SET "Alex is 20 years old"' will set 'Alex is 20 years old'.
 - EDIT makes controller to call client side to edit element main text (element 'value' property). Format:
-  php text.php EDIT arg
-  Cell content (element main text) is set to arg and becomes editable, omitted arg - current cell content becomes
+  php text.php EDIT arg1 arg2..
+  Cell content (element main text) of all concatenated args becomes editable, omitted args - current cell content becomes
   editable. To apply changed content after edit - set next handler for the CONFIRM event: php text.php SET <data>
-  All other arguments after 'arg' are ignored, so qoute arg text to be treated as a single one.
 - SETPROP allows to edit any element property via dialog box, command line format:
   php text.php SETPROP prop1 <{"prop":"prop1"}> prop2 <{"prop":"prop2"}>..
   where 2nd arg prop1 is a first property name to edit, 3rd arg is JSON to retrieve prop1 property value, similarly for
@@ -870,13 +874,13 @@ field you may input last JSON to set transparent background color and grey borde
 Next step - chat database consists of one user-defined element (for chat messages), so create it in a 'Element' tab of
 'Database configuration' dialog - just enter next handler command line (to fit the page some input args are moved to a new line,
 so don't forget the args to be divided by space chars) for INIT event to process new chat messages:
-php text.php SETTEXT
+php text.php SET
 <span><</span>span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">
 <user>@
 <{"ODid":"1", "OVid":"1", "selection":"lastversion=1 and version!=0 and JSON_EXTRACT(eid1, '$.value')=':user'", "element":"2"}>
-</span>
+<span><</span>/span>
 ' '
-<span><</span>span style="color: #999;"><datetime></span><br>
+<span><</span>span style="color: #999;"><datetime><span><</span>/span><br>
 <data>
 
 Script 'text.php' is a regular application handler for text and other operations, its behaviour and input args are described in

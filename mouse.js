@@ -21,10 +21,13 @@ function mousemoveEventHandler(event)
      if (drag.element) // Process table selecting
      if (target)
 	{
-	 if (drag.x1 === target.cellIndex && drag.y1 === target.parentNode.rowIndex) return;
+	 if (drag.x1 === target.cellIndex && drag.y1 === target.parentNode.rowIndex && drag.x2 === target.cellIndex && drag.y2 === target.parentNode.rowIndex) return;
 	 if (drag.x2 === target.cellIndex && drag.y2 === target.parentNode.rowIndex) return;
-	 UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
-	 SelectTableArea(drag.x1, drag.y1, drag.x2 = target.cellIndex, drag.y2 = target.parentNode.rowIndex);
+	 ReselectTableArea(drag.x1, drag.y1, drag.x2, drag.y2,  target.cellIndex, target.parentNode.rowIndex);	//
+	 drag.x2 = target.cellIndex;										//
+	 drag.y2 = target.parentNode.rowIndex;									//
+	 //UnSelectTableArea(drag.x1, drag.y1, drag.x2, drag.y2);
+	 //SelectTableArea(drag.x1, drag.y1, drag.x2 = target.cellIndex, drag.y2 = target.parentNode.rowIndex);
 	 CellBorderToggleSelect(cursor.td, target); // Highlight cursor
 	 return;
 	}
@@ -176,7 +179,6 @@ function mousedownEventHandler(event)
      OD = target.dataset.od;
      OV = target.dataset.ov;
      cmd = 'CALL';
-     displayMainError('Loading...');
      CallController();
      return;
     }
@@ -365,12 +367,9 @@ function contextFitMainDiv(x, y)
 function IsTableTemplateCell(element)
 {
  if (OVtype !== 'Table') return;
- while (element.tagName === 'SPAN') element = element.parentNode;
- let target = element.tagName === 'TD' ? element : element.parentNode;
- if (!target || target.tagName !== 'TD') return;
-
- const list = target.classList;
- if (list.contains('datacell') || list.contains('titlecell') || list.contains('newobjectcell') || list.contains('undefinedcell')) return target;
+ while (ALLOWEDTAGNAMES.indexOf(element?.tagName) !== -1) element = element.parentNode;
+ if (element.tagName === 'TD')
+ if (element.classList.contains('datacell') || element.classList.contains('titlecell') || element.classList.contains('newobjectcell') || element.classList.contains('undefinedcell')) return element;
 }
 
 function BoxEventHandler(event)

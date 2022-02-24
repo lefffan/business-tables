@@ -26,6 +26,30 @@ if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
 	 echo json_encode(['cmd' => 'GALLERY']);
 	 break;
     case 'EDIT':
+	 if (!isset($_SERVER['argv'][2]))
+	    {
+	     echo json_encode(['cmd' => 'EDIT']);
+	     break;
+	    }
+	 $out = ['cmd' => 'EDIT', 'data' => ''];
+	 foreach ($_SERVER['argv'] as $key => $value) if ($key > 1)
+		 if (gettype($data = json_decode($value, true)) === 'array')
+		    {
+		     if ($data['altkey'] || $data['ctrlkey'] || $data['metakey'])
+			{
+			 $out = ['cmd' => ''];
+			 break;
+			}
+		     $out['data'] .= $data['string'];
+		    }
+		  else
+		    {
+		     $out['data'] .= $value;
+		    }
+	 $out['data'] = str_ireplace('<br>', "\n", $out['data']);
+	 echo json_encode($out);
+	 break;
+	 //
 	 $out = ['cmd' => 'EDIT'];
 	 if (isset($_SERVER['argv'][2]))
 	 if (gettype($data = json_decode($_SERVER['argv'][2], true)) === 'array')
@@ -39,6 +63,23 @@ if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
 	    }
 	 echo json_encode($out);
 	 break;
+    case 'SETa':
+    case 'SETTEXTa':
+	 $out = ['cmd' => 'EDIT', 'value' => ''];
+	 foreach ($_SERVER['argv'] as $key => $value) if ($key > 1)
+		 if (gettype($data = json_decode($value, true)) === 'array')
+		    {
+		     if ($data['altkey'] || $data['ctrlkey'] || $data['metakey']) continue;
+		     $out['value'] .= $data['string'];
+		    }
+		  else
+		    {
+		     $out['value'] .= $value;
+		    }
+	 $out['value'] = str_ireplace('<br>', "\n", $out['value']);
+	 echo json_encode($out);
+	 break;
+	 //
     case 'SET':
     case 'SETTEXT':
 	 $string = '';

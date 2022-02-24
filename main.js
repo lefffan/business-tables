@@ -38,8 +38,12 @@ window.onload = function()
  imgdesc = document.createElement('div');
  imgdesc.classList.add('imgdesc');
 
+ // Other initialization
  cmd = 'CALL';
  CreateWebSocket();
+ for (let tag of ALLOWEDTAGS) allowedtagsregexpstring += `<${tag} .*?>|<${tag} *>|<\/${tag} *>|`;
+ allowedtagsregexp = new RegExp(allowedtagsregexpstring.substring(0, allowedtagsregexpstring.length - 1));
+ allowedtagsregexpg = new RegExp(allowedtagsregexpstring.substring(0, allowedtagsregexpstring.length - 1), 'g');
 }
 
 function CreateWebSocket()
@@ -177,7 +181,6 @@ function GetLayoutProperties(eid, o, e, n, q)
  if ((Math.max(mainTableWidth, arr.x + 1) * Math.max(mainTableHeight, arr.y + 1)) > TABLE_MAX_CELLS || arr.x < 0 || arr.y < 0) return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ${TABLE_MAX_CELLS} cells`;
 
  for (let rule in style) arr['style'] += `${rule}: ${style[rule]}; `;
- arr['style'] = arr['style'] ? ` style="${arr.style}"` : '';
  return arr;
 }
 
@@ -189,8 +192,9 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
  // Virtual cell
  if (!eid)
     {
-     mainTable[arr.y][arr.x] = { data: arr.value ? arr.value : '', attr: `${datacellclass ? ' class="' + datacellclass + '"' : ''}${arr.style}` };
+     mainTable[arr.y][arr.x] = { data: arr.value ? arr.value : '', style: arr.style };
      const cell = mainTable[arr.y][arr.x];
+     cell.attr = `${datacellclass ? ' class="' + datacellclass + '"' : ''}${cell.style ? 'style="' + cell.style + '"' : ''}`;
      if (arr.hint) cell.hint = ToHTMLChars(arr.hint);
      // Calculate main table width and height
      mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
@@ -200,7 +204,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
 
  // Data cell
  const oidnum = +obj.id;
- mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid, noteclassindex: 0 };
+ mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid, noteclassindex: 0, style: arr.style };
  const cell = mainTable[arr.y][arr.x];
 
  // Value, hint and link are different for service and user elements
@@ -211,6 +215,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
      cell.hint = arr.hint === undefined ? obj['eid' + eid + 'hint'] : arr.hint;
      if (obj['eid' + eid + 'link']) cell.noteclassindex += 2;
      if (obj.lastversion === '1' && obj.version != '0' && oidnum >= STARTOBJECTID && attached?.[oidnum]?.[eid]) cell.noteclassindex += 4;
+     cell.style += obj['eid' + eid + 'style']
     }
   else
     {
@@ -224,12 +229,12 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
  // Add version and realobject flag to database (not virtual, title or new-input) objects
  if (oidnum >= STARTOBJECTID)
     {
-     cell.attr = `${(datacellclass + noteclass) ? ' class="' + datacellclass + noteclass + '"' : ''}${arr.style}`;
+     cell.attr = `${(datacellclass + noteclass) ? ' class="' + datacellclass + noteclass + '"' : ''}${cell.style ? 'style="' + cell.style + '"' : ''}`;
      cell.version = obj.version;
      cell.realobject = (obj.lastversion === '1' && obj.version != '0') ? true : false;
     }
- else if (oidnum === NEWOBJECTID) cell.attr = `${(newobjectcellclass + noteclass) ? ' class="' + newobjectcellclass + noteclass + '"' : ''}${arr.style}`;
- else if (oidnum === TITLEOBJECTID) cell.attr = `${(titlecellclass + noteclass) ? ' class="' + titlecellclass + noteclass + '"' : ''}${arr.style}`;
+ else if (oidnum === NEWOBJECTID) cell.attr = `${(newobjectcellclass + noteclass) ? ' class="' + newobjectcellclass + noteclass + '"' : ''}${cell.style ? 'style="' + cell.style + '"' : ''}`;
+ else if (oidnum === TITLEOBJECTID) cell.attr = `${(titlecellclass + noteclass) ? ' class="' + titlecellclass + noteclass + '"' : ''}${cell.style ? 'style="' + cell.style + '"' : ''}`;
 
  // Fix matched 'hiderow'/'hidecol' rows/columns to collapse
  if (arr.hiderow !== undefined && cell.data === arr.hiderow) hiderow[arr.y] = true;
@@ -285,35 +290,42 @@ function drawMain(data, layout, attached)
 
  const eids = layout['elements'], hiderow = [], hidecol = [];
  let arr, obj, error, n;
- if (!(objectsOnThePage = data.length)) data = [{}];
+ objectsOnThePage = data.length;
  VirtualElements = 0;
 
  for (let eid in eids)
- for (n = 0, obj = data[0]; n < data.length; obj = data[++n])
      {
-      const e = eids[eid]['order'];
-      // New-input object (once for the 1st object of the selection when n=0)
-      if (eids[eid][NEWOBJECTID])
+      const element = eids[eid];
+      const e = element['order'];
+      // Draw title object for the element
+      let checktitle = false;
+      if (element[TITLEOBJECTID])
 	 {
-	  arr = GetLayoutProperties(eids[eid], NEWOBJECTID, e, n, objectsOnThePage);
-	  if (typeof arr === 'string') error = arr;
-	  if (typeof arr === 'object') SetCell(arr, {id: NEWOBJECTID}, eid, hiderow, hidecol);
-	  delete eids[eid][NEWOBJECTID];
-	 }
-      // Title object
-      if (eids[eid][TITLEOBJECTID])
-	 {
-	  arr = GetLayoutProperties(eids[eid], TITLEOBJECTID, e, n, objectsOnThePage);
+	  arr = GetLayoutProperties(element, TITLEOBJECTID, e, 0, objectsOnThePage);
 	  if (typeof arr === 'string') error = arr;
 	  if (typeof arr === 'object') SetCell(arr, {id: TITLEOBJECTID}, eid, hiderow, hidecol);
-	  // In case of constant x,y coordinates (no 'o|e|n|q' variables in x,y) remove title object to make it used only once
-	  if (!n && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].x)) && !(/o|e|n|q/.test(eids[eid][TITLEOBJECTID].y))) delete eids[eid][TITLEOBJECTID];
+	  // In case of constant x,y coordinates (no 'o|e|n' variables in x,y) check title only once here
+	  checktitle = (/o|e|n/.test(element[TITLEOBJECTID].x) || /o|e|n/.test(element[TITLEOBJECTID].y)) ? true : false;
 	 }
-      // Database object
-      if (!obj.id) break;
-      arr = GetLayoutProperties(eids[eid], +obj.id, e, n, objectsOnThePage);
-      if (typeof arr === 'string') error = arr;
-      if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol, attached);
+      // Draw new-input object for the element
+      if (element[NEWOBJECTID])
+	 {
+	  arr = GetLayoutProperties(element, NEWOBJECTID, e, 0, objectsOnThePage);
+	  if (typeof arr === 'string') error = arr;
+	  if (typeof arr === 'object') SetCell(arr, {id: NEWOBJECTID}, eid, hiderow, hidecol);
+	 }
+      // Process OV objects
+      for (n = 0; n < data.length; n++)
+	  {
+	   obj = data[n];
+	   arr = GetLayoutProperties(element, +obj.id, e, n, objectsOnThePage);
+	   if (typeof arr === 'string') error = arr;
+	   if (typeof arr === 'object') SetCell(arr, obj, eid, hiderow, hidecol, attached);
+	   if (!checktitle || !n) continue;
+	   arr = GetLayoutProperties(element, TITLEOBJECTID, e, n, objectsOnThePage);
+	   if (typeof arr === 'string') error = arr;
+	   if (typeof arr === 'object') SetCell(arr, {id: TITLEOBJECTID}, eid, hiderow, hidecol);
+	  }
      }
 
  for (let i = 0; i < layout['virtual'].length; i++, n++)
@@ -323,6 +335,7 @@ function drawMain(data, layout, attached)
       if (typeof arr === 'object') SetCell(arr, {});
       VirtualElements++;
      }
+ perfomance.push({ time: new Date(), process: 'Table configuring: ' });
 
  // Handle some errors
  if (!mainTableWidth)
@@ -363,6 +376,7 @@ function drawMain(data, layout, attached)
      mainTableHeight = newy;
      mainTable = table;
     }
+ perfomance.push({ time: new Date(), process: 'Table rotation: ' });
 
  // Add table attributes
  let rowHTML = '<table';
@@ -375,27 +389,28 @@ function drawMain(data, layout, attached)
  undefinedRow += '</tr>';
 
  // Set inner html content for the table view and add event listeners
+ const newtable = [];
  for (y = 0; y < mainTableHeight; y++)
      {
-      if (hiderow[y + disp] || (!mainTable[y] && layout['undefined']['hiderow'] !== undefined)) { mainTable.splice(y, 1); mainTableHeight--; y--; disp++; continue; }
+      if (hiderow[y] || (!mainTable[y] && layout['undefined']['hiderow'] !== undefined)) { disp++; continue; }
       if (!mainTable[y]) { rowHTML += undefinedRow; continue; }
+      newtable[y - disp] = mainTable[y];
       rowHTML += '<tr>';
       for (x = 0; x < mainTableWidth; x++)
 	  {
 	   if (hidecol[x]) { mainTable[y].splice(x, 1); mainTableWidth--; x--; continue; }
-	   if (cell = mainTable[y][x])
-	      {
-	       if (cell.oId === NEWOBJECTID && cursor.newobject?.[cell.eId]) cell.data = cursor.newobject[cell.eId];
-	       rowHTML += `<td${cell.attr}>${ToHTMLChars(cell.data)}</td>`;
-	       // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
-	       if (cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)
-		  objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y } };
-	       continue;
-	      }
-	   rowHTML += undefinedCell;
+	   if (!(cell = mainTable[y][x])) { rowHTML += undefinedCell; continue; }
+	   if (cell.oId === NEWOBJECTID && cursor.newobject?.[cell.eId]) cell.data = cursor.newobject[cell.eId];
+	   rowHTML += `<td${cell.attr}>${ToHTMLChars(cell.data)}</td>`;
+	   // objectTable[oid][id|version|owner|datetime|lastversion|1|2..] = { x: , y: }
+	   if (cell.realobject || cell.oId === TITLEOBJECTID || cell.oId === NEWOBJECTID)
+	      objectTable[cell.oId] ? objectTable[cell.oId][cell.eId] = { x: x, y: y - disp } : objectTable[cell.oId] = { [cell.eId]: { x: x, y: y - disp } };
 	  }
       rowHTML += '</tr>';
      }
+ mainTable = newtable;
+ mainTableHeight -= disp;
+ perfomance.push({ time: new Date(), process: 'Preparing HTML data: ' });
 
  // Main table becomes empty due to hidden rows/columns?
  if (!mainTableWidth)
@@ -405,9 +420,9 @@ function drawMain(data, layout, attached)
     }
 
  // Set main view HTML
+ clearTimeout(loadTimerId);
  mainDiv.innerHTML = rowHTML + '</tbody></table>';
  mainTablediv = mainDiv.querySelector('table');
- clearTimeout(loadTimerId);
 
  // Cursor object/element id does exist? Calculate x and y position
  if (cursor.oId && cursor.eId && objectTable[cursor.oId]?.[cursor.eId])
@@ -421,11 +436,9 @@ function drawMain(data, layout, attached)
     {
      cursor.y = Math.min(cursor.y, mainTableHeight - 1);
      cursor.x = Math.min(cursor.x, mainTableWidth - 1)
-     CellBorderToggleSelect(null, (cursor.td = mainTablediv.rows[cursor.y].cells[cursor.x]));
+     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
      if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable();
      if (cursor.edit !== undefined && cursor.edit.oId === cursor.oId && cursor.edit.eId === cursor.eId) MakeCursorContentEditable(cursor.edit.data);
-     mainDiv.scrollTop = mainDiv.scrollHeight * cursor.y / mainTableHeight;
-     mainDiv.scrollLeft = mainDiv.scrollWidth * cursor.x / mainTableWidth;
     }
 
  // Start event does exist? Process it
@@ -574,6 +587,18 @@ function GetTreeElementContent(content)
  return data;
 }
 
+function ReselectTableArea(x1, y1, x2, y2, x3, y3)
+{
+ for (let y = Math.min(y1, y2, y3); y <= Math.max(y1, y2, y3); y++)
+ for (let x = Math.min(x1, x2, x3); x <= Math.max(x1, x2, x3); x++)
+     {
+      if (y >= Math.min(y1, y2) && y <= Math.max(y1, y2) && x >= Math.min(x1, x2) && x <= Math.max(x1, x2) && (y < Math.min(y1, y3) || y > Math.max(y1, y3) || x < Math.min(x1, x3) || x > Math.max(x1, x3)))
+	 mainTablediv.rows[y].cells[x].classList.remove('selectedcell');
+       else if (y >= Math.min(y1, y3) && y <= Math.max(y1, y3) && x >= Math.min(x1, x3) && x <= Math.max(x1, x3))
+	 mainTablediv.rows[y].cells[x].classList.add('selectedcell');
+     }
+}
+
 function SelectTableArea(x1, y1, x2, y2)
 {
  for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
@@ -714,9 +739,9 @@ function FromController(json)
 		       mainTable[y][x].data = input.data[eid]['value'];
 		       if (cell.contentEditable != EDITABLE) mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(input.data[eid]['value']);
 		      }
-		   if (input.data[eid]['style'] !== undefined)
+		   if (input.data[eid]['style'])
 		      {
-		       cell.setAttribute('style', input.data[eid]['style']);
+		       cell.setAttribute('style', mainTable[y][x].style + input.data[eid]['style']);
 		      }
 		   // Pictogram process
 		   if (mainTable[y][x].noteclassindex) cell.classList.remove('note' + mainTable[y][x].noteclassindex);
@@ -741,16 +766,20 @@ function FromController(json)
 	      break;
 	 case 'CALL':
 	      imgdesc.style.display = 'none';
+	      perfomance.push({ time: new Date(), process: 'User authorization: ' });
+	      loadTimerId = setTimeout(displayMainError, 500, 'Loading');
 	 case 'SIDEBAR':
 	 case 'New Database':
 	 case 'Database Configuration':
 	      Hujax("view.php", FromController, { method: 'POST', body: JSON.stringify(input.data), headers: { 'Content-Type': 'application/json; charset=UTF-8'} });
 	      break;
 	 case 'Table':
+	      perfomance.push({ time: new Date(), process: 'OV data server response: ' });
 	      paramsOV = input.params;
 	      drawMain(input.data, input.layout, input.attached);
 	      break;
 	 case 'Tree':
+	      perfomance.push({ time: new Date(), process: 'OV data server response: ' });
 	      DrawTree(input.data, input.direction);
 	      break;
 	 case '':
@@ -764,6 +793,7 @@ function FromController(json)
  if (input.error !== undefined)	displayMainError(input.error);
  if (input.alert)		warning(input.alert);
  if (input.count)		IncreaseUnreadMessages(input.count.odid, input.count.ovid);
+ if (input.cmd === 'Table' || input.cmd === 'Tree') setTimeout(0, perfomance.push({ time: new Date(), process: 'Layout and rendering: ' }));
 }
 
 function UploadDialog()
@@ -830,8 +860,12 @@ function CallController(data)
 	{
 	 case 'SEARCHPREV':
 	 case 'SEARCHNEXT':
-	      if (box.search.length < 2) return;
-	      cmd === 'SEARCHPREV' ? RegexpSearchIndexChange(-1) : RegexpSearchIndexChange(1);
+	      if (search.match.length < 2) return;
+	      search.previndex = search.index;
+	      cmd === 'SEARCHPREV' ? search.index -- : search.index ++;
+	      if (search.index < 0) search.index = search.match.length - 1;
+	       else if (search.index >= search.match.length) search.index = 0;
+	      RegexRefresh();
 	      return;
 	 case 'BROWSE':
 	      browse.click();
@@ -886,6 +920,7 @@ function CallController(data)
 	      sidebar[ODid]['active'] = OVid;
 	      drawSidebar(sidebar);
 	      object = { cmd: 'CALL' };
+	      perfomance = [{ time: new Date(), process: 'Start' }];
 	      break;
 	 case 'CALL':
 	      if (ODid !== '' && (viewindex === -1 || viewhistory[viewindex].ODid !== ODid || viewhistory[viewindex].OVid !== OVid))
@@ -893,6 +928,7 @@ function CallController(data)
 		  viewhistory[++viewindex] = {ODid: ODid, OVid: OVid};
 	          viewhistory.splice(viewindex + 1);
 		 }
+	      perfomance = [{ time: new Date(), process: 'Start' }];
 	 case 'Database Configuration':
 	 case 'SIDEBAR':
 	 case 'LOGIN':
@@ -906,7 +942,7 @@ function CallController(data)
 	      DrawChart(drag.x1, drag.y1, drag.x2, drag.y2);
 	      break;
 	 case 'Description':
-	      let cell, msg = '', count = 1;
+	      let cell, msg = '', count = 1, greyspan = '<span style="color: #999;">';
 	      if (cursor.td) // Cursor cell info
 		 {
 		  if (mainTable[cursor.y]?.[cursor.x]) cell = mainTable[cursor.y][cursor.x];
@@ -944,10 +980,17 @@ function CallController(data)
 		      for (let y = Math.min(drag.y1, drag.y2); y <= Math.max(drag.y1, drag.y2); y++)
 		      for (let x = Math.min(drag.x1, drag.x2); x <= Math.max(drag.x1, drag.x2); x++)
 			  if ((cell = mainTable[y][x]) && cell.oId >= STARTOBJECTID && cell.realobject) count.add(cell.oId);
-		      msg += `\nSelected area:\n  <span style="color: #999;">Objects count: ${count.size}</span>`;
-		      msg += `\n  <span style="color: #999;">Width, cells: ${Math.abs(drag.x2 - drag.x1) + 1}</span>`;
-		      msg += `\n  <span style="color: #999;">Height, cells: ${Math.abs(drag.y2 - drag.y1) + 1}</span>`;
+		      msg += `\nSelected area:\n  ${greyspan}Objects count: ${count.size}</span>`;
+		      msg += `\n  ${greyspan}Width, cells: ${Math.abs(drag.x2 - drag.x1) + 1}</span>`;
+		      msg += `\n  ${greyspan}Height, cells: ${Math.abs(drag.y2 - drag.y1) + 1}</span>`;
 		     }
+		 }
+	      if (Array.isArray(perfomance) && perfomance.length > 1)
+		 {
+		  msg += '\n\n<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">View open process perfomance</span>';
+		  for (let i = 1; i < perfomance.length; i ++)
+		      msg += `\n${greyspan}${perfomance[i].process}</span>${ (perfomance[i].time - perfomance[i-1].time) / 1000} sec`;
+		  msg += `\nOverall: ${ (perfomance[perfomance.length-1].time - perfomance[0].time) / 1000} sec`;
 		 }
 	      warning(msg, 'Description', false);
 	      break;
@@ -1040,11 +1083,10 @@ function displayMainError(errormsg, reset = true)
 
  if (errormsg.substr(0, 7) === 'Loading')
     {
-     errormsg === 'Loading...' ? errormsg = 'Loading' : errormsg += '.';
-     loadTimerId = setTimeout(displayMainError, 500, errormsg);
+     loadTimerId = setTimeout(displayMainError, 500, errormsg === 'Loading...' ? 'Loading' : errormsg + '.');
      errormsg = errormsg.replace(/Loading/, '').replace(/./g, '&nbsp;') + errormsg;
     }
- if (errormsg !== 'Loading') mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
+ mainDiv.innerHTML = '<h1>' + errormsg + '</h1>';
 
  if (reset) OVtype = '';
 }
@@ -1079,7 +1121,7 @@ function CellBorderToggleSelect(oldCell, newCell, focus = FOCUS_VERTICAL | FOCUS
     }
   else if (newCell.offsetLeft + newCell.offsetWidth > mainDiv.scrollLeft + mainDiv.offsetWidth)
     {
-     mainDiv.scrollLeft = newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 11;
+     mainDiv.scrollLeft = Math.min(newCell.offsetLeft, newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 11);
     }
 
  if (focus & FOCUS_VERTICAL)
@@ -1089,7 +1131,7 @@ function CellBorderToggleSelect(oldCell, newCell, focus = FOCUS_VERTICAL | FOCUS
     }
   else if (newCell.offsetTop + newCell.offsetHeight > mainDiv.scrollTop + mainDiv.offsetHeight)
     {
-     mainDiv.scrollTop = newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 11;
+     mainDiv.scrollTop = Math.min(newCell.offsetTop, newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 11);
     }
 }
 
@@ -1390,14 +1432,7 @@ function HideBox()
  if (box.search)
     {
      clearTimeout(searchTimerId);
-     let cell;
-     for (let y = 0; y < mainTableHeight; y++) if (mainTable[y])
-     for (let x = 0; x < mainTableWidth; x++) if (cell = mainTable[y][x])
-      if (cell.matched !== undefined)
-	 {
-	  mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(cell.data);
-	  delete cell.matched;
-         }
+     //setTimeout(RegexSearch, 0);
     }
 
  box = null;
@@ -1511,7 +1546,7 @@ function warning(text, title, log = true)
 {
  if (!text || typeof text != 'string') return;
  if (typeof title != 'string') title = 'Warning';
- box = { title: title, dialog: {pad: {profile: {element: {style: HELPHEADSTYLE, head: '\n' + text}}}}, buttons: {OK: {value: "    OK    "}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 500px;"} };
+ box = { title: title, dialog: {pad: {profile: {element: {style: HELPHEADSTYLE, head: '\n' + text}}}}, buttons: {OK: {value: "    OK    "}}, flags: {esc: "", style: "min-width: 500px; min-height: 65px; max-width: 1500px; max-height: 700px;"} };
  ShowBox();
  if (log) lg(text);
 }
@@ -1625,7 +1660,7 @@ function ToHTMLChars(string)
  if (typeof string !== 'string' || !string) return '';
  let result, newstring = '';
 
- while (result = /<span .*?>|<span *>|<\/span *>/.exec(string))
+ while (result = allowedtagsregexp.exec(string))
        {
 	newstring += EncodeHTMLSpecialChars(string.substr(0, result.index)) + result[0];
 	string = string.substr(result.index + result[0].length);
@@ -1634,142 +1669,191 @@ function ToHTMLChars(string)
  return newstring + EncodeHTMLSpecialChars(string);
 }
 
-function NewSearch()
+function RegexGetHighlightedString(matches, allowedtagsmatches, innerText, x, y)
 {
- box.search = [];
- box.searchindex = -1;
- RegexpSearchIndexChange(0);
+ let index = 0, length = 0, newstring = '';
 
- let regexp, input = box.input.value, j = 0;
- let x1 = 0, y1 = 0, x2 = mainTableWidth, y2 = mainTableHeight;
- if (drag.x1 !== undefined && (drag.x1 != drag.x2 || drag.y1 != drag.y2))
-    {
-     x1 = Math.min(drag.x1, drag.x2);
-     y1 = Math.min(drag.y1, drag.y2);
-     x2 = Math.max(drag.x1, drag.x2) + 1;
-     y2 = Math.max(drag.y1, drag.y2) + 1;
-    }
-
- try { regexp = RegExp(input, `g${box.casesensitive.checked ? '' : 'i'}`); }
- catch { input = ''; }
- if (!input) // Empty or regexp error input
-    {
-     for (let y = y1; y < y2; y++) if (mainTable[y])
-     for (let x = x1; x < x2; x++) if (mainTable[y][x]?.matched)
-	 {
-	  delete mainTable[y][x].matched;
-	  mainTablediv.rows[y].cells[x].innerHTML = ToHTMLChars(mainTable[y][x].data);
-	 }
-     return;
-    }
-
- const spanregexp = RegExp(/<span .*?>|<span *>|<\/span *>/, 'g');
- const spantag = '<span class="matchb">';
-
- for (let y = y1; y < y2; y++) if (mainTable[y])
- for (let x = x1; x < x2; x++) if (mainTable[y][x]?.data)
+ for (let tag of allowedtagsmatches) // Get through all found span tags, start: index; end: tag[1] - length;
      {
-      // Init vars
-      const cell = mainTablediv.rows[y].cells[x];
-      let matches, spanmatches;
-      let index = 0, length = 0, newstring = '', string = mainTable[y][x].data;
-
-      // Refresh cell data with its actual data
-      delete mainTable[y][x].matched;
-      cell.innerHTML = ToHTMLChars(string);
-      let innerText = cell.innerText;
-
-      // Search user regexp (continue if not found) and span tags
-      matches = Array.from(innerText.matchAll(regexp), m => [m[0], m.index])
-      if (!matches.length) continue;
-
-      // Search span tags
-      spanmatches = Array.from(string.matchAll(spanregexp), m => [m[0], m.index])
-      spanmatches.push(['', string.length]);
-
-      // Get through all found span tags
-      for (const span of spanmatches)
+      let j = search.match.length;
+      for (let i = 0; i < matches.length; i++) if (matches[i][1] >= index && matches[i][1] < tag[1] - length) // Match start index is in the range
 	  {
-	   // start: index; end: span[1] - length;
-	   for (let i = 0; i < matches.length; i++)
-	    if (matches[i][1] >= index && matches[i][1] < span[1] - length) // Match start index is in the range
-	       {
-		if (!box.search[j]) box.search[j] = [];
-		if (matches[i][1] + matches[i][0].length > span[1] - length) // Match end index is out of range
-		   {
-		    newstring += innerText.substr(index, matches[i][1] - index);
-		    box.search[j].push({x: x, y: y, pos: newstring.length + 18}); ///
-		    newstring += spantag + innerText.substr(matches[i][1], span[1] - length - matches[i][1]).replace(/\n/g, ' \n') + '</span>';
-		    matches[i][0] = matches[i][0].substr(span[1] - length - matches[i][1]);
-		    matches[i][1] = span[1] - length;
-		    index = span[1] - length;
-		    break;
-		   }
-		 else // Match end index is in range
-		   {
-		    newstring += innerText.substr(index, matches[i][1] - index);
-		    box.search[j++].push({x: x, y: y, pos: newstring.length + 18}); ///
-		    newstring += spantag + innerText.substr(matches[i][1], matches[i][0].length).replace(/\n/g, ' \n') + '</span>';
-		    index = matches[i][1] + matches[i][0].length;
-		   }
-	       }
-	   newstring += innerText.substr(index, span[1] - length - index);
-	   index = span[1] - length;
-	   length += span[0].length;
-	   newstring += span[0];
+	   if (!search.match[j]) search.match[j] = [];
+	   if (matches[i][1] + matches[i][0].length > tag[1] - length) // Match end index is out of range
+	      {
+	       newstring += innerText.substr(index, matches[i][1] - index);
+	       search.match[j].push({x: x, y: y, pos: newstring.length + 18}); ///
+	       newstring += SPANHIGHLIGHT + innerText.substr(matches[i][1], tag[1] - length - matches[i][1]).replace(/\n/g, ' \n') + '</span>';
+	       matches[i][0] = matches[i][0].substr(tag[1] - length - matches[i][1]);
+	       matches[i][1] = tag[1] - length;
+	       index = tag[1] - length;
+	       break;
+	      }
+	    else // Match end index is in range
+	      {
+	       newstring += innerText.substr(index, matches[i][1] - index);
+	       search.match[j++].push({x: x, y: y, pos: newstring.length + 18}); ///
+	       newstring += SPANHIGHLIGHT + innerText.substr(matches[i][1], matches[i][0].length).replace(/\n/g, ' \n') + '</span>';
+	       index = matches[i][1] + matches[i][0].length;
+	      }
 	  }
-      cell.innerHTML = ToHTMLChars(mainTable[y][x].matched = newstring);
+      newstring += innerText.substr(index, tag[1] - length - index);
+      index = tag[1] - length;
+      length += tag[0].length;
+      newstring += tag[0];
      }
-
- box.search.length === 0 ? RegexpSearchIndexChange(0) : RegexpSearchIndexChange(1);
+ return newstring;
 }
 
-function RegexpSearchIndexChange(index)
+function RegexSearch()
 {
- let string, oldcell, newcell;
+ let x, y, count = 100;
+
+ while (search.y < search.y2)
+       {
+	if (mainTable[y = search.y]) while (search.x < search.x2)
+	   {
+	    // Current cell is not empty?
+	    if (!mainTable[y][x = search.x] || !mainTable[y][x].data)
+	       {
+		search.x++;
+		continue;
+	       }
+
+	    // Init vars
+	    const cell = mainTablediv.rows[y].cells[x];
+	    let innerText = cell.innerText, matches, allowedtagsmatches, string = mainTable[y][x].data;
+	    count --;
+
+	    // See old cell highlighting and remove it if exist
+	    if (mainTable[y][x].matched !== undefined)
+	       {
+		delete mainTable[y][x].matched;
+		cell.innerHTML = ToHTMLChars(string);
+		innerText = cell.innerText;
+		count -= 10;
+	       }
+
+	    // Search current cell on user input regexp and make highlighted cell in case of successful
+	    matches = (search.error || !search.input.value) ? [] : Array.from(innerText.matchAll(search.regexp), m => [m[0], m.index])
+	    if (matches.length)
+	       {
+		// Search span tags
+		allowedtagsmatches = Array.from(string.matchAll(allowedtagsregexpg), m => [m[0], m.index]) // Make allowed tags match array
+		allowedtagsmatches.push(['', string.length]); // and add fake element to finish the string
+		cell.innerHTML = ToHTMLChars(mainTable[y][x].matched = RegexGetHighlightedString(matches, allowedtagsmatches, innerText, x, y));
+		count -= 10;
+	       }
+
+	    // Cell is processed, goto next cell
+	    search.x++;
+
+	    // Count is exceeded? Set next search via setTimeout
+	    if (count < 1)
+	       {
+		searchTimerId = setTimeout(RegexSearch, 0);
+		RegexRefresh();
+		return;
+	       }
+	   }
+      search.y++;
+      search.x = search.x1;
+     }
+ RegexRefresh(true);
+}
+
+function RegexOninput(caseinput)
+{
+ if (search.error && caseinput) return; // Incorrect regex with case-sensitive button change? Return with no action
+ RegexInit();
+
+ try { search.regexp = RegExp(search.input.value, `g${search.casesensitive.checked ? '' : 'i'}`); }
+ catch { search.error = true; RegexRefresh(true); }
+
+ clearTimeout(searchTimerId);
+ searchTimerId = setTimeout(RegexSearch, 350);
+}
+
+function RegexRefresh(searchend)
+{
+ let string, newcell;
  const regexpsearchhint = '<span name="element1" class="help-icon"> ? </span>';
 
- if (box.searchindex !== -1)
+ // Unhighlight previous match
+ if (search.previndex !== -1 && search.previndex !== search.index)
     {
-     oldcell = mainTablediv.rows[box.search[box.searchindex][0].y].cells[box.search[box.searchindex][0].x];
-     string = mainTable[box.search[box.searchindex][0].y][box.search[box.searchindex][0].x].matched;
+     string = mainTable[search.match[search.previndex][0].y][search.match[search.previndex][0].x].matched; // and its matched srting with non active yellow highlighting
+     for (let j of search.match[search.previndex]) string = string.substr(0, j.pos) + 'b' + string.substr(j.pos + 1) // Is it needable?
+     cursor.td.innerHTML = ToHTMLChars(string);
+    }
 
-     for (let j of box.search[box.searchindex]) string = string.substr(0, j.pos) + 'b' + string.substr(j.pos + 1)
-     oldcell.innerHTML = ToHTMLChars(string);
+ // No search index is selected by the user and any match does exist? Set start index
+ if (search.index === -1 && search.match.length) search.index = 0;
+
+ // Refresh search dialog
+ if (search.index === -1) // No match found
+    {
+     search.title.innerHTML = REGEXSEARCHTITLE;
+     search.header.innerHTML = `<br>Enter regular expression to search: ${regexpsearchhint}`; // Make default header
+     searchend && search.input.value !== '' ? search.input.classList.add('matchn') : search.input.classList.remove('matchn'); // Set red background of input for non empty input value
     }
   else
     {
-     if (cursor.td) oldcell = cursor.td;
+     search.input.classList.remove('matchn'); // Remove no-match red background
+     search.title.innerHTML = 'Searching ' + String((100 * (((search.x2 - search.x1)*(search.y - search.y1)) + search.x)/((search.x2 - search.x1)*(search.y2 - search.y1))).toFixed(2)) + '%';
+     search.header.innerHTML = `<br>Enter regular expression to search (${search.index + 1} of ${search.match.length}): ${regexpsearchhint}`; // Set matches count
     }
 
- if (index !== 0)
+ // Highlight new match in case of search index change
+ if (search.index !== -1 && search.previndex !== search.index)
     {
-     box.searchindex += index;
-     if (box.searchindex < 0) box.searchindex = box.search.length - 1;
-      else if (box.searchindex >= box.search.length) box.searchindex = 0;
-    }
-
- if (box.searchindex !== -1)
-    {
-     newcell = mainTablediv.rows[box.search[box.searchindex][0].y].cells[box.search[box.searchindex][0].x];
-     string = mainTable[box.search[box.searchindex][0].y][box.search[box.searchindex][0].x].matched;
-
-     for (let j of box.search[box.searchindex]) string = string.substr(0, j.pos) + 'a' + string.substr(j.pos + 1)
+     search.previndex = search.index;
+     newcell = mainTablediv.rows[search.match[search.index][0].y].cells[search.match[search.index][0].x];
+     string = mainTable[search.match[search.index][0].y][search.match[search.index][0].x].matched;
+     for (let j of search.match[search.index]) string = string.substr(0, j.pos) + 'a' + string.substr(j.pos + 1)
      newcell.innerHTML = ToHTMLChars(string);
+     CellBorderToggleSelect(cursor.td, newcell); // Put cursor on a matched position
     }
 
- if (box.searchindex === -1)
+ // Focus search dialog input
+ search.input.focus();
+}
+
+function RegexInit(firstinit)
+{
+ // Init these regex search vars anyway
+ search.match = [];
+ search.index = -1;
+ search.previndex = -1;
+ search.error = false;
+ search.x = search.x1;
+ search.y = search.y1;
+ if (!firstinit) return;
+
+ // Init these regex search vars only once
+ search.input = boxDiv.querySelector('input');
+ search.casesensitive = boxDiv.querySelector('.checkbox');
+ search.header = boxDiv.querySelector('pre');
+ search.title = boxDiv.querySelector('.title');
+ search.input.oninput = () => { RegexOninput(); };
+ search.casesensitive.oninput = () => { RegexOninput(true); };
+
+ // Define search area and start position
+ if (drag.x1 !== undefined && (drag.x1 != drag.x2 || drag.y1 != drag.y2))
     {
-     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search: ${regexpsearchhint}`;
-     box.input.value === '' ? box.input.classList.remove('matchn') : box.input.classList.add('matchn');
+     search.x1 = Math.min(drag.x1, drag.x2);
+     search.y1 = Math.min(drag.y1, drag.y2);
+     search.x2 = Math.max(drag.x1, drag.x2) + 1;
+     search.y2 = Math.max(drag.y1, drag.y2) + 1;
     }
   else
     {
-     box.input.classList.remove('matchn');
-     boxDiv.querySelector('pre').innerHTML = `<br>Enter regular expression to search (${box.searchindex + 1} of ${box.search.length}): ${regexpsearchhint}`;
-     CellBorderToggleSelect(oldcell, (cursor.td = newcell));
+     search.x1 = search.y1 = 0;
+     search.x2 = mainTableWidth;
+     search.y2 = mainTableHeight;
     }
- box.input.focus();
+ search.x = search.x1;
+ search.y = search.y1;
 }
 
 function AdjustAttribute(string)

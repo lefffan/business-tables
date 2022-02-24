@@ -121,21 +121,17 @@ function keydownEventHandler(event)
 
      if (cursor.td?.contentEditable !== EDITABLE && event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode === 70)
 	{
-	 box = {title: 'Search',
+	 box = {title: REGEXSEARCHTITLE,
 		dialog: {pad: {profile: {element1: {head: '\nEnter regular expression to search:', type: 'text', data: '', help: regexphint},
 					 //element2: {head: '', type: 'radio', data: '+Standart|Template|Regexp'},
 					 element3: {lin: '', type: 'checkbox', data: 'Case sensitive'},
 					}}},
 		buttons: {PREV: {value: ' < ', interactive: '', call: 'SEARCHPREV'},
 			  NEXT: {value: ' > ', interactive: '', call: 'SEARCHNEXT', enterkey: ''}},
-		flags: {esc: '', style: "min-width: 400px; min-height: 80px;", nofilter: ''},
-		search: []
+		flags: {esc: '', style: "min-width: 400px; min-height: 80px;", nofilter: ''}
 	       };
 	 ShowBox();
-	 box.input = boxDiv.querySelector('input');
-	 box.casesensitive = boxDiv.querySelector('.checkbox');
-	 box.input.oninput = () => { clearTimeout(searchTimerId); searchTimerId = setTimeout(NewSearch, 350); };
-	 box.casesensitive.oninput = () => { clearTimeout(searchTimerId); NewSearch(); };
+	 RegexInit(true);
 	 return;
 	}
 

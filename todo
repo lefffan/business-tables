@@ -1,15 +1,13 @@
-Megacom MRTG emulation (test big OD display if Loading... error message is displayed)
-application customization: current view refresh at sidebar OV select will show 'loading from server.. then processing data..'
-think how to make this big OD faster display process + loading in % (via settimeout)
-text cell version via Ctrl+H
-ctrl+shift+f regular expression search - check on additional allowed tags like b, a, font
+MRTG BASE
+    text cell version via Ctrl+H
+    megacom tree via links in mrtg.php
+    final megacom mrtg db making via paper on my workplace
+    setki.xls
+    table width 100% (fixed cell width) line wrapping?
+
 paste text = new controller cmd with buffered data, see below
-Cell focusing shows the begining of the cell! Not the end of the cell!
-Cell editing resets current styles!!!!! (for a example horizontal align)
-allowed tags in cell span, b, font, a 
-table width 100% (fixed cell width) line wrapping?
-megacom tree via links in mrtg.php
-final megacom mrtg db making via paper on my workplace
+regexp search hide box and range js instead of span highlighting
+table build and <tr> adding via timeout
 -----------------------------------------------------------------
 - Application:
   Paste file or image to object element (or drag and drop to the corresponded cell)
@@ -67,6 +65,9 @@ final megacom mrtg db making via paper on my workplace
   All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
 
 - Front:
+  At cursor moving (when pos is changed) - make page scroll only if most part of the cell is invisible, otherwise - no scrollgin. In case of cursor moving (when pos is unchanged, for a example at edge cell) - scroll the page to the edge of the cell.
+  non table area selecting - comare event mouse coordinate from drag x1,y1 and increase/decrease drag x2,y2 coordinate so
+  smooth scrolling for rows more than 500 - event preventdefault on scroll event plus settimeout (dispatch scrolling event, 100);
   effects at navigating images in GALLERY just like in drive.ru
   dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
@@ -90,6 +91,7 @@ final megacom mrtg db making via paper on my workplace
 	      OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
+  background for html body
 
 - Controller:
   prevent multiple call controller on one element from one user, example: multiple key press while server didn't respond the previous event
