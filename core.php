@@ -271,7 +271,7 @@ function AddObject($db, &$client, &$output)
       $query  = "id,version,owner";
       $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
       $values = ':id,:version,:owner';
-      foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid])) !== false)
+      foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid], JSON_UNESCAPED_UNICODE)) !== false)
 	      {
 	       $query .= ',eid'.strval($eid);
 	       $params[':eid'.strval($eid)] = $json;
@@ -974,7 +974,7 @@ function Check($db, $flags, &$client, &$output)
 		 if (gettype($arr = json_decode($value, true, 2)) === 'array') break;
 	 if (gettype($arr) !== 'array') $arr = ['id' => ''];
 	 foreach ($arr as $id => $value)
-		 if (!isset($client['allelements'][$id]) && array_search($id, SERVICEELEMENTS) === false && $id !== 'direction')
+		 if (!isset($client['allelements'][$id]) && array_search($id, SERVICEELEMENTS) === false && $id !== 'rotate')
 		    unset($arr[$id]);
 	 $client['elementselection'] = $arr;
 	}
@@ -1111,17 +1111,16 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
  if ($oid === 0)
     {
      $client['objects'] = [];
+     $client['tree'] = [];
      if (!($oid = GetHeadId($db, $client))) return;
      $client['objects'][$oid] = true;
      $data = ['link' => [], 'oid' => $oid]; // Init tree with head object
      switch ($cmd) // Process command
 	    {
 	     case 'TABLE':
-		  $client['tree'] = [];
 		  GetObjectData($db, $client, $oid);
 		  break;
 	     case 'SEARCH':
-		  $client['tree'] = [];
 		  GetObjectSearchData($db, $client, $oid);
 		  break;
 	     case 'TREE':
@@ -1158,7 +1157,7 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
 	      {
 	       if ($cmd === 'TREE') // Each $data (for cmd=TREE) array element is class (content css class name), content (elemnt list and its values) and link (array of uplink nodes): ['link' => [nodes array], 'content' => [eid, etitle, evalue], 'class' => '']
 		  {
-		   $content[2]['value'] = "Object link selection syntax error:<br>'$value[1]'";
+		   $content[2]['value'] = "Link syntax error: '$value[1]'";
 		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
 		  }
 	       continue; // Go to next uplink object search via $select
@@ -1171,7 +1170,7 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
 	     {
 	      if ($cmd === 'TREE')
 		  {
-	           $content[2]['value'] = "Object link selection points to nonexistent object:<br>'$value[1]'";
+	           $content[2]['value'] = "Link points to nonexistent object: '$value[1]'";
 		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
 		  }
 	      continue;
@@ -1182,7 +1181,7 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
 	     {
 	      if ($cmd === 'TREE')
 		  {
-		   $content[2]['value'] = "Loop detected on link:<br>from remote node [object id'$oid']<br>to me [object id'$uplinkoid']!";
+		   $content[2]['value'] = "Loop from object id $oid to me [object id $uplinkoid]!";
 		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
 		  }
 	      continue;
@@ -1345,7 +1344,7 @@ function GetTreeElementContent($db, &$client, &$content, $oid)
 
  // First go through all elements in the layout and put them to the content
  foreach ($client['elementselection'] as $eid => $value)
-	 if ($eid != 'direction') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
+	 if ($eid != 'rotate') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
 
  // Make query string to select element values from DB
  $query = '';
@@ -1354,7 +1353,7 @@ function GetTreeElementContent($db, &$client, &$content, $oid)
 	  if (!isset($e['id'])) $query .= 'NULL,';
 	   elseif (array_search($e['id'], SERVICEELEMENTS) !== false) $query .= $e['id'].',';
 	   elseif (!isset($client['allelements'][$e['id']])) $query .= 'NULL,';
-	   else $query .= 'JSON_EXTRACT(eid'.$e['id'].", '$.value'),";
+	   else $query .= 'JSON_UNQUOTE(JSON_EXTRACT(eid'.$e['id'].", '$.value')),";
 	 }
 
  // Select prepared elements above from object id $oid and put them to content array begining from index 1.

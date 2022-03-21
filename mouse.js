@@ -284,7 +284,7 @@ function contextmenuEventHandler(event)
  // Context event tree template
  if (OVtype === 'Tree' && (target === mainDiv || target === mainTablediv || target.tagName === 'TD'))
     {
-     DrawContext(GREYITEM + 'Hide Object</div>' + ACTIVEITEM + 'View in a new tab</div>', target, event);
+     DrawContext(ACTIVEITEM + 'View in a new tab</div>', target, event);
      return;
     }
 

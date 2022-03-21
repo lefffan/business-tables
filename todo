@@ -1,48 +1,50 @@
 MRTG BASE
     text cell version via Ctrl+H
-    megacom tree via links in mrtg.php
+    megacom tree via links in mrtg.php (mpls links are apparent)
     final megacom mrtg db making via paper on my workplace
     setki.xls
-    table width 100% (fixed cell width) line wrapping?
+    telnet, snmp and diagnostic functions
 
 paste text = new controller cmd with buffered data, see below
-regexp search hide box and range js instead of span highlighting
-table build and <tr> adding via timeout
+regexp search
+    hide box
+    range js instead of span highlighting
+    tree view type release
+At cursor moving (when pos is changed) - make page scroll only if most part of the cell is invisible, otherwise - no scrolling. In case of cursor moving (when pos is unchanged, for a example at edge cell) - scroll the page to the edge of the cell. Fix chat to show whole last new object input
+
+always show my context menu on tree, select tree element, process dblclick
+mouse singleclick + [Ctrl|Alt] on tree element call ov + [link in a new tab] of appropriate object element as an arg?
 -----------------------------------------------------------------
 - Application:
   Paste file or image to object element (or drag and drop to the corresponded cell)
-    should it be realized via handler event just like KEYPRESS for pasting text or by new event, for a example - FILE
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
-    System call 'NEWTABURL'
   optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
-  Oppoertunity to fetch image properties (like resolution) in GALLERY mode
   Change favicon -> tabels
   Downloading big files don't show progress bar downloading process, so how to show it?
   Fetch progress for uploading files https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/upload
   Application version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
-  in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
   Export OV data to xls/txt file
-  Request changes of contenteditable cell after content is applied when other user has already changed the content while the cell being editable.
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list.
   what about edit after edit command, for a example wrong text to confirm and edit command called once again?
   Object view MAP.
   GALLERY shows all foto for default, otherwise - specified foto
+    Show image properties (like resolution) in GALLERY mode
   not only regexp search but search on mask with only one asterisk as a special char
   macroses like in joe
   virt cell depends on oid,eid
   Context menu Graph
-  telnet, snmp and diagnostic functions
   System call 'NEWOBJECT' (to create object by user handlers)
   TREE:
-    Tree element layout: style (for example to see what nodes are down by seeing them via red background) and callOV/link-in-a-new-tab by mouse double click
-    hide/show tree element rebuilds the tree (context menu hide/show)
+    Tree element layout: style (for example to see what nodes are down by seeing them via red background)
     Tree wire name (arrow name) to mark fiber cooper radio..
+    element link hint to show full element value
   Crontab element execution once immediately
   Task manager: restrict call (and call with no task delete option) of task manager for some users in user props
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
   At the end of app stable version make new customization
   <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
+    in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
@@ -63,9 +65,9 @@ table build and <tr> adding via timeout
   Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE,
     so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
   All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
+  Table build and <tr> adding via timeout
 
 - Front:
-  At cursor moving (when pos is changed) - make page scroll only if most part of the cell is invisible, otherwise - no scrollgin. In case of cursor moving (when pos is unchanged, for a example at edge cell) - scroll the page to the edge of the cell.
   non table area selecting - comare event mouse coordinate from drag x1,y1 and increase/decrease drag x2,y2 coordinate so
   smooth scrolling for rows more than 500 - event preventdefault on scroll event plus settimeout (dispatch scrolling event, 100);
   effects at navigating images in GALLERY just like in drive.ru
@@ -278,6 +280,13 @@ selection.addRange(range);
 - https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
 - https://css-tricks.com/lodge/svg/09-svg-data-uris/
 - https://observablehq.com/@d3/mobile-patent-suits
+-----------------------NEW SVG:-----------------------
+https://yoksel.github.io/url-encoder/
+https://webformyself.com/milliard-sposobov-togo-kak-ispolzovat-svg/
+https://coderoad.ru/56426722/CSS-фон-для-элемента-SVG
+https://html5css.ru/tags/tag_svg.php
+https://developer.mozilla.org/ru/docs/Web/SVG/Element/rect
+https://developer.mozilla.org/ru/docs/Web/SVG/Tutorial/Gradients
 --------------------------Input style:--------------------------
 - http://jsfiddle.net/js5x06nL/
 --------------------------JWT:--------------------------
@@ -776,3 +785,28 @@ o{1,} is equivalent to o+. o{0,} is equivalent to o*.
 \num Matches num, where num is a positive integer, denoting a reference back to remembered matches.
   For example, (.)\1 matches two consecutive identical characters.
 \xn Matches hexadecimal n escape value - \x41 matches A. Allows ASCII codes to be used in regular expressions.
+
+
+
+
+
+
+
+
+
+{"eid":"id", "oid":"1", "x":"0", "y":"106*n", "style":"width: 10%;"}
+{"eid":"id", "oid":"*", "x":"1", "y":"106*n", "style": "padding: 3px; text-align: left; width: 90%;"}
+
+a{"eid":"101", "oid":"*", "x":"1", "y":"106*n+e"}
+a{"eid":"101", "oid":"1", "x":"0", "y":"106*n+e"}
+a{"eid":"102", "oid":"*", "x":"1", "y":"106*n+e"}
+a{"eid":"102", "oid":"1", "x":"0", "y":"106*n+e"}
+a{"eid":"103", "oid":"*", "x":"1", "y":"106*n+e"}
+a{"eid":"103", "oid":"1", "x":"0", "y":"106*n+e"}
+a{"eid":"104", "oid":"*", "x":"1", "y":"106*n+e"}
+a{"eid":"104", "oid":"1", "x":"0", "y":"106*n+e"}
+{"eid":"*", "oid":"1", "x":"0", "y":"106*n+e"}
+{"eid":"*", "oid":"*", "x":"1", "y":"106*n+e", "style": "padding: 3px; text-align: left; word-wrap: break-word;", "hiderow":""}
+
+{"oid":"", "style":"padding: 20px; border: none;"}
+{"style":"width: 99%;table-layout: fixed;"}

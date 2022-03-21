@@ -1,4 +1,5 @@
 
+
 // Style default user inteface profile and append style DOM element to the document head
 styleUI();
 document.head.appendChild(style);
@@ -66,6 +67,24 @@ function loog(...data)
  if (user) add = "Account '" + user + "', " + add;
  lg(add);
  data.forEach((value) => console.dir(value));
+}
+
+async function ReadBuffer()
+{
+ if (!window.navigator.clipboard)
+    {
+     warning("Your browser doesn't support clipboard read operations!");
+     return;
+    }
+
+ try {
+      let text = await navigator.clipboard.readText();
+      lg(text);
+     }
+ catch (error)
+     {
+      warning('Browser clipboard read operation error: ' + error);
+     }
 }
 
 async function Hujax(url, callback, options)
@@ -178,9 +197,10 @@ function GetLayoutProperties(eid, o, e, n, q)
  try { arr.x = Math.trunc(eval(arr.x)); arr.y = Math.trunc(eval(arr.y)); }
  catch { arr.x = undefined; }
  if (isNaN(arr.x) || isNaN(arr.y)) return `Specified view '${OV}' element layout has some 'x','y' incorrect coordinate definitions!\nSee element element layout help section`;
- if ((Math.max(mainTableWidth, arr.x + 1) * Math.max(mainTableHeight, arr.y + 1)) > TABLE_MAX_CELLS || arr.x < 0 || arr.y < 0) return `Some elements coordiantes (view '${OV}') are out of range. Max table size allowed - ${TABLE_MAX_CELLS} cells`;
+ if (arr.x < 0 || arr.y < 0) return `View '${OV} warning: element coordiantes (x=${arr.x}, y=${arr.y}) for object number ${n} are less than zero`;
+ if ((Math.max(mainTableWidth, arr.x + 1) * Math.max(mainTableHeight, arr.y + 1)) > TABLE_MAX_CELLS) return `View '${OV} warning: element coordiantes (x=${arr.x}, y=${arr.y}) for object number ${n} are out of range. Max table size allowed - ${TABLE_MAX_CELLS} cells`;
 
- for (let rule in style) arr['style'] += `${rule}: ${style[rule]}; `;
+ for (let rule in style) arr['style'] += `${rule}:${style[rule]}; `;
  return arr;
 }
 
@@ -350,24 +370,24 @@ function drawMain(data, layout, attached)
  layout['undefined']['style'] = layout['undefined']['style'] ? ` style="${layout['undefined']['style']}"` : '';
  const undefinedCell = '<td' + undefinedcellclass + layout['undefined']['style'] + '></td>';
 
- // Rotate table on a layout['table']['direction'] property set
+ // Rotate table on a layout['table']['rotate'] property set
  let x, y;
- if (layout['table']['direction'] === '180')
+ if (layout['table']['rotate'] === '180')
     {
      const table = [];
      for (y = 0; y < mainTableHeight; y++)
 	 if (mainTable[y]) table[mainTableHeight - 1 - y] = mainTable[y];
      mainTable = table;
     }
- else if (layout['table']['direction'] === '90' || layout['table']['direction'] === '270')
+ else if (layout['table']['rotate'] === '90' || layout['table']['rotate'] === '270')
     {
      const table = [];
      let newx, newy;
      for (y = 0; y < mainTableHeight; y++) if (mainTable[y])
      for (x = 0; x < mainTableWidth; x++) if (mainTable[y][x])
 	 {
-	  newy = layout['table']['direction'] === '270' ? mainTableWidth - 1 - x : x;
-	  newx = layout['table']['direction'] === '90' ? mainTableHeight - 1 - y : y;
+	  newy = layout['table']['rotate'] === '270' ? mainTableWidth - 1 - x : x;
+	  newx = layout['table']['rotate'] === '90' ? mainTableHeight - 1 - y : y;
 	  if (!table[newy]) table[newy] = [];
 	  table[newy][newx] = mainTable[y][x];
 	 }
@@ -380,7 +400,7 @@ function drawMain(data, layout, attached)
 
  // Add table attributes
  let rowHTML = '<table';
- for (let attr in layout['table']) if (attr !== 'direction') rowHTML += ` ${attr}="${layout['table'][attr]}"`;
+ for (let attr in layout['table']) if (attr !== 'rotate') rowHTML += ` ${attr}="${layout['table'][attr]}"`;
  rowHTML += '><tbody>';
 
  // Create 'undefined' html tr element row
@@ -493,7 +513,7 @@ function BuildTree(tree, y, x)
     }
 }
 
-function DrawTree(tree, direction)
+function DrawTree(tree, rotate)
 {
  let x, y, stockrow, arrowrow, objectrow, content, title, value, trs = '';
 
@@ -538,27 +558,26 @@ function DrawTree(tree, direction)
 	     //----------------------
 	     objectrow += mainTable[y][x]['class'] + '>' + GetTreeElementContent(mainTable[y][x]['content']) + '</td>';
 	     //----------------------
-	     if (!(value = '') && mainTable[y][x]['content'][0]['value']) value = EllipsesClip(mainTable[y][x]['content'][0]['value'], uiProfile['tree element']['object element value max chars']);
+	     value = EllipsesClip(mainTable[y][x]['content'][0]['value'], uiProfile['tree element']['object element value max chars']);
 	     title = EllipsesClip(mainTable[y][x]['content'][0]['title'], uiProfile['tree element']['object element title max chars']);
-	     stockrow += '><div class="treelink"><div style="justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription"><span>' + title + '</span></div><div class="treelinkstock"></div><div style="justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'end' : 'start') + ';" class="treelinkdescription">' + value + '</div></div></td>';
+	     stockrow += '><div class="treelink"><div style="justify-content: flex-end; align-items: flex-' + (rotate === '180' ? 'end' : 'start') + ';" class="treelinkdescription"><span>' + title + '</span></div><div class="treelinkstock"></div><div style="justify-content: flex-start; align-items: flex-' + (rotate === '180' ? 'end' : 'start') + ';" class="treelinkdescription">' + value + '</div></div></td>';
 	     //----------------------
 	     if (content = mainTable[y][x]['content'][1])
 	        {
 		 title = EllipsesClip(content['title'], uiProfile['tree element']['object element title max chars']);
 		 value = EllipsesClip(content['value'], uiProfile['tree element']['object element value max chars']);
-
 		 arrowrow += '><div class="treelink"><div style="' + (content['title'] === undefined ? 'color: red; ' : '');
-		 arrowrow += 'justify-content: flex-end; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
+		 arrowrow += 'justify-content: flex-end; align-items: flex-' + (rotate === '180' ? 'start' : 'end') + ';" class="treelinkdescription">';
 		 arrowrow += '<span>' + (content['title'] === undefined ? 'Unknown element:' : title) + '</span></div>';
-		 arrowrow += '<div class="treelinkarrow' + direction + '"></div>';
+		 arrowrow += '<div class="treelinkarrow' + (rotate === '180' ? 'up' : 'down') + '"></div>';
 		 arrowrow += '<div style="' + (content['title'] === undefined ? 'color: red; ' : '');
-		 arrowrow += 'justify-content: flex-start; align-items: flex-' + (direction === 'up' ? 'start' : 'end') + ';" class="treelinkdescription">';
+		 arrowrow += 'justify-content: flex-start; align-items: flex-' + (rotate === '180' ? 'start' : 'end') + ';" class="treelinkdescription">';
 		 arrowrow += '<span>' + (content['title'] === undefined ? EllipsesClip(content['id'], uiProfile['tree element']['object element value max chars']) : value) + '</span></div></td>';
 		}
 	     //----------------------
 	     x += mainTable[y][x]['colspan'];
 	    }
-      if (direction === 'up')
+      if (rotate === '180')
          {
           if (y > 0) trs = '<tr>' + arrowrow + '</tr><tr>' + stockrow + '</tr>' + trs;
           trs = '<tr>' + objectrow + '</tr>' + trs;
@@ -573,15 +592,35 @@ function DrawTree(tree, direction)
  mainDiv.innerHTML = '<table class="treetable"><tbody>' + trs + '</tbody></table>';
 }
 
+function EllipsesClip(string, limit)
+{
+ if (typeof string === 'number') string = String(string);
+ if (typeof string !== 'string') return '';
+ if (typeof limit !== 'number') limit = Number(limit);
+ if (limit < 3) limit = 3;
+
+ let result, newstring = '';
+
+ while (result = allowedtagsregexp.exec(string))
+       {
+	newstring += string.substr(0, result.index);
+	string = string.substr(result.index + result[0].length);
+       }
+
+ newstring += string;
+ newstring = newstring.replace(/\n/g, ' ');
+ if (newstring.length > limit) newstring = newstring.substr(0, limit - 2) + '..';
+
+ return EncodeHTMLSpecialChars(newstring);
+}
+
 function GetTreeElementContent(content)
 {
- let title, value, data = '';
+ let data = '';
  for (let i = 2; i < content.length; i++)
      {
-      if (title = content[i]['title'])
-	 data += `<span class="underlined">${EllipsesClip(title, uiProfile['tree element']['object element title max chars'])}</span>: `;
-      if (value = content[i]['value'])
-	 data += title === undefined ? value : EllipsesClip(value, uiProfile['tree element']['object element value max chars']);
+      if (content[i]['title']) data += `<span class="underlined">${EllipsesClip(content[i]['title'], uiProfile['tree element']['object element title max chars'])}</span>: `;
+      data += EllipsesClip(content[i]['value'], uiProfile['tree element']['object element value max chars']);
       data += '<br>';
      }
  return data;
@@ -767,7 +806,7 @@ function FromController(json)
 	 case 'CALL':
 	      imgdesc.style.display = 'none';
 	      perfomance.push({ time: new Date(), process: 'User authorization: ' });
-	      loadTimerId = setTimeout(displayMainError, 500, 'Loading');
+	      displayMainError('Loading');
 	 case 'SIDEBAR':
 	 case 'New Database':
 	 case 'Database Configuration':
@@ -780,7 +819,7 @@ function FromController(json)
 	      break;
 	 case 'Tree':
 	      perfomance.push({ time: new Date(), process: 'OV data server response: ' });
-	      DrawTree(input.data, input.direction);
+	      DrawTree(input.data, input.rotate);
 	      break;
 	 case '':
 	      break;
@@ -979,7 +1018,7 @@ function CallController(data)
 		      count = new Set();
 		      for (let y = Math.min(drag.y1, drag.y2); y <= Math.max(drag.y1, drag.y2); y++)
 		      for (let x = Math.min(drag.x1, drag.x2); x <= Math.max(drag.x1, drag.x2); x++)
-			  if ((cell = mainTable[y][x]) && cell.oId >= STARTOBJECTID && cell.realobject) count.add(cell.oId);
+			  if (mainTable[y] && (cell = mainTable[y][x]) && cell.oId >= STARTOBJECTID && cell.realobject) count.add(cell.oId);
 		      msg += `\nSelected area:\n  ${greyspan}Objects count: ${count.size}</span>`;
 		      msg += `\n  ${greyspan}Width, cells: ${Math.abs(drag.x2 - drag.x1) + 1}</span>`;
 		      msg += `\n  ${greyspan}Height, cells: ${Math.abs(drag.y2 - drag.y1) + 1}</span>`;
@@ -1511,16 +1550,6 @@ function HideHint()
  hint = null;
 }
 
-function EllipsesClip(string, limit)
-{
- if (typeof limit === 'string') limit = Number(limit);
- if (!string || typeof string !== 'string' || typeof limit !== 'number') return '';
- if (limit < 3) limit = 3;
-
- if (string.length > limit) return string.substr(0, limit - 2) + '..';
- return string;
-}
-
 function CopyBuffer(plaintext)
 {
  const textarea = document.createElement('textarea');
@@ -1594,7 +1623,7 @@ function styleUI()
  undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
 
  // Output uiProfile array to te console to use it as a default customization configuration
- // lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
+ //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
 }
 
 function ConfirmEditableContent(addobject)
@@ -1793,7 +1822,7 @@ function RegexRefresh(searchend)
  // Refresh search dialog
  if (search.index === -1) // No match found
     {
-     search.title.innerHTML = REGEXSEARCHTITLE;
+     search.title.innerHTML = search.input.value ? 'Searching ' + String((100 * (((search.x2 - search.x1)*(search.y - search.y1)) + search.x)/((search.x2 - search.x1)*(search.y2 - search.y1))).toFixed(2)) + '%' : REGEXSEARCHTITLE;
      search.header.innerHTML = `<br>Enter regular expression to search: ${regexpsearchhint}`; // Make default header
      searchend && search.input.value !== '' ? search.input.classList.add('matchn') : search.input.classList.remove('matchn'); // Set red background of input for non empty input value
     }

@@ -236,7 +236,14 @@ function ProcessControllerEventKeys(event)
  if (!mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId)) return;
  let newcmd, object = { metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey };
 
- if (event.keyCode === 45) newcmd = 'INS'; else if (event.keyCode === 46) newcmd = 'DEL'; else if (event.keyCode === 113) newcmd = 'F2'; else if (event.keyCode === 123) newcmd = 'F12'; else
+ if (event.keyCode === 45) newcmd = 'INS'; else if (event.keyCode === 46) newcmd = 'DEL'; else if (event.keyCode === 113) newcmd = 'F2';
+  else if (event.keyCode === 123)
+    {
+     newcmd = 'F12';
+     // Prevent default action Developer Console call (via 'F12') in Firefox browser
+     event.preventDefault();
+    }
+  else
     {
      newcmd = 'KEYPRESS';
      object['string'] = event.key;

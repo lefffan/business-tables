@@ -46,7 +46,7 @@ if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
 		    {
 		     $out['data'] .= $value;
 		    }
-	 $out['data'] = str_ireplace('<br>', "\n", $out['data']);
+	 if (isset($out['data'])) $out['data'] = str_ireplace('<br>', "\n", $out['data']);
 	 echo json_encode($out);
 	 break;
 	 //

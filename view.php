@@ -187,7 +187,7 @@ try {
 		      CreateTree($db, $client, 0, $data, 'TREE');
 		      if (!isset($data['link']) && ($output['error'] = "Specified view '".$client['OV']."' has no objects matched current selection!")) break;
 		      $output = ['cmd' => 'Tree', 'data' => $data, 'params' => $client['params']] + $output;
-		      (isset($client['elementselection']['direction']) && $client['elementselection']['direction'] === 'up') ? $output['direction'] = 'up' : $output['direction'] = 'down';
+		      if (isset($client['elementselection']['rotate'])) $output['rotate'] = $client['elementselection']['rotate'];
 		      break;
 		     }
 

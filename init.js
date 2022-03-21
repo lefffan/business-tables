@@ -1,5 +1,5 @@
 
-const TABLE_MAX_CELLS = 300000;
+const TABLE_MAX_CELLS = 600000;
 const TITLEOBJECTID = 1;
 const NEWOBJECTID = 2;
 const STARTOBJECTID = 3;
@@ -110,8 +110,8 @@ let uiProfile = {
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background-color": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Tree
 		  "tree table": { "target": ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
-		  "tree error element": { "target": ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", },
-		  "tree element": { "target": ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "object element value max chars": "60", "object element title max chars": "15", },
+		  "tree error element": { "target": ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "white-space": "" },
+		  "tree element": { "target": ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "white-space": "nowrap;", "object element value max chars": "60", "object element title max chars": "15", },
 		  "tree arrow stock": { "target": ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "60px;", },
 		  "tree arrow down": { "target": ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree arrow up": { "target": ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
@@ -345,7 +345,7 @@ attribute, event and etc, for a example - '{"oid": "..", "eid": "..", "x": "..",
 
 - 'oid'. Property 'oid' defines object id and can take next values:
 	exact object id number (starts from 1, where ${TITLEOBJECTID} - title object, ${TITLEOBJECTID} - new object, 3.. - database objects)
-	asterisk (*)
+	asterisk * (all objects except title and new object input)
 	expression (with four possible vars: o, e, n, q)
   HTML style (style), position (x, y) and other attributes are applied to the specified object element defined by oid/eid combination,
   see oid/eid table below. All actual objects in database have their unique identificators (starts from ${STARTOBJECTID}). Every database has
@@ -369,13 +369,13 @@ attribute, event and etc, for a example - '{"oid": "..", "eid": "..", "x": "..",
   the data to be used as a virtual element value. In case of a error 'value' property remains unchanged. Virtual elements are useful to
   output some total/summary data ('SELECT SUM|COUNT|AVG.. FROM data_<OD id>..') to build related graphs and charts.
   Well, JSON with unset 'oid' is treated as a virtual element, but with unset x, y or value all JSON properties are treated as HTML
-  table tag attributes, see some layouts in 'Examples' help section. Besides table attributes 'direction' word ca be used as a property
-  to set table rotation. Possible values: 90, 180 and 270. These are the angles the HTML table should be rotate at. Unknown 'direction'
+  table tag attributes, see some layouts in 'Examples' help section. Besides table attributes 'rotate' word ca be used as a property
+  to set table rotation. Possible values: 90, 180 and 270. These are the angles the HTML table should be rotate at. Unknown 'rotate'
   value makes no effect.
 - 'eid'. Property 'eid' is an element id and can take next values:
 	exact element id number (starts from 1)
 	service element names (id, version, owner, datetime, lastversion)
-	asterisk (*)
+	asterisk * (all user defined elements 1, 2, 3..)
   Similar to 'oid' property 'eid' defines exact element (via its identificator or name) or all elements (*) of the specified object
   x, y, style and other properties should be applied to.
 - 'x','y'. Object element position on HTML table is defined by table cell x,y coordinates. These properties are arithmetic expressions
@@ -418,7 +418,7 @@ column.
   +-----------+-------------------------+------------------+----------------------------+
   |           |                         |                  |                            |
   |id         |  x (o, e, n, q),        |                  | table attributes           |
-  |owner      |  y (o, e, n, q),        | [style, hiderow] | and direction              |
+  |owner      |  y (o, e, n, q),        | [style, hiderow] | and rotate                 |
   |datetime   |  [value,                |                  | or                         |
   |version    |  style,                 | (for undefined   | virtual elements:          |
   |lastversion|  hint,                  | cell that has    | x (n),                     |
@@ -525,8 +525,8 @@ object6, element9: 'l1|10|id=7' (..)
 In addition to the tree template settings - view 'element layout' field defines tree node content and tree scheme direction.
 The object node content is a simple list of element titles and its values. Layout is a JSON list field generally, so first
 correct JSON is used for the template only. The JSON should contain element identificators (id, datetime, owner.. 1, 2..)
-as a JSON property names (property values are ignored) plus 'direction' tree property 'up' or 'down' (for default).
-Empty layout field - all user defined elements plus 'id' with 'down' direction are used.
+as a JSON property names (property values are ignored) plus 'rotate' tree property with '180' value to flip the scheme.
+Other rotate values (for default) make no effect. Empty layout field - all user defined elements plus 'id' are displayed.
 Correct empty JSON '{}' as an 'element layout' displays no content, while all error JSONs - only 'id' element.`
 }}},
 
@@ -855,21 +855,21 @@ First step - create database and 'Table' templated view.
 Second - all database actual objects (user messages) should be selected (default behaviour), so leave 'Object selection' empty.
 Third - 'Element layout' should display messages in descending order with old messages on the top and new object (new message input)
 on the bottom, plus some cell spacing and cell highlighting. Input next JSONs in element layout field:
-{"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}
+{"style":"width: 96%; table-layout: fixed; margin: 10px; border-collapse: separate;", "cellspacing":"15"}
 {"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
-{"eid":"1", "oid":"${NEWOBJECTID}", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
+{"eid":"1", "oid":"${NEWOBJECTID}", "x":"0", "y":"q", "event":"", "style":"width: 100%; text-align: left; border-radius: 7px;"}
 {"eid":"1", "oid":"${NEWOBJECTID}", "style": "background-color: transparent; border: 2px solid #d1d8df;"}
 
-First JSON describes HTML tag <table> attributes (unset 'oid' case, see 'Element layout' help section): width attribue is a
-necessary condition to allow table cells width (in pixels) setting. Border-collapse separate value set allows cell spacing
-of 15 pixels between chat messages.
+First JSON describes HTML tag <table> attributes (unset 'oid' case, see 'Element layout' help section): table-layout attribue is a
+necessary condition to allow table cells fixed width. Border-collapse separate value set allows cell spacing of 15 pixels between
+chat messages.
 Second JSON describes all chat messages (all objects in object selection [oid=0] for element id 1 [eid=1]). All these cells are
 styled via 'style' property with left text align, rounded border (5px) and light grey background color (#DDD). Object element
 horizontal position is 'x=0' (first column) and vertical is 'n' - sequence number in a selection - first object (first message)
 is placed in a fist row (n=0), second object in a second row (n=1) and so on. Variable 'q' is an object selection count number,
 so 'input' object (third JSON for a new message input [oid=1]) goes to row number 'q'. For example - ten chat messages layout
-is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input. To highlight new message input
-field you may input last JSON to set transparent background color and grey border.
+is first 10 rows (0-9) for messages and next row number 10 (eleventh row) for new message input (3rd and 4th JSONs). To highlight
+new message input field you may input last JSON to set transparent background color and 2px width grey border (2px solid #d1d8df).
 
 Next step - chat database consists of one user-defined element (for chat messages), so create it in a 'Element' tab of
 'Database configuration' dialog - just enter next handler command line (to fit the page some input args are moved to a new line,

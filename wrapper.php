@@ -145,8 +145,10 @@ function GetElementProperty($db, $output, &$client, $recursion)
 {
  if (gettype($output) !== 'array') return '';
 
- if ($client['oId'] === 0) $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and new object (element id$client[eId]) handler call: ";
-  else $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
+ if ($client['oId'] === 0)
+    $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and new object (element id$client[eId]) handler call: ";
+  else
+    $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
 
  $recursion++;
  if ($recursion > ARGRECURSIONNUM && !LogMessage($db, $client, $errormessage."recursive calls exceed max allowed ($recursion)!")) return '';
@@ -173,6 +175,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
  if (isset($output['limit']) && ctype_digit($output['limit']) && intval($output['limit']) > 0) $limit = strval(min(intval($output['limit']), ARGRESULTLIMITNUM));
 
  // Get OD/OV object selection
+ if ($output['ODid'] === $client['ODid'] && $output['OVid'] === $client['OVid']) $output += $client['params'];
  $output['objectselection'] = GetObjectSelection($output['objectselection'], $output, $client['auth']);
  if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
 
