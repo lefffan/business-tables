@@ -138,8 +138,6 @@ while (true)
 		       if (isset($client['auth'])) $output['log'] = $title ? 'User '.$client['auth'].' session timeout!' : 'User '.$client['auth'].' has logged out!';
 		       break;
 		  case 'CALL': // OV display event, 1st step - dialog data (if exist) OV params fetch
-		       $client['params'] = [];
-		       if (isset($client['data']['dialog']['pad']['profile'])) foreach ($client['data']['dialog']['pad']['profile'] as $key => $value) $client['params'][$key] = $value['data'];
 		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
 		  case 'New Database':
 		  case 'Database Configuration':

@@ -971,10 +971,10 @@ function Check($db, $flags, &$client, &$output)
       else
         {
 	 foreach (preg_split("/\n/", $client['elementselection']) as $value)
-		 if (gettype($arr = json_decode($value, true, 2)) === 'array') break;
+		 if (gettype($arr = json_decode($value, true, 4)) === 'array') break;
 	 if (gettype($arr) !== 'array') $arr = ['id' => ''];
 	 foreach ($arr as $id => $value)
-		 if (!isset($client['allelements'][$id]) && array_search($id, SERVICEELEMENTS) === false && $id !== 'rotate')
+		 if (!isset($client['allelements'][$id]) && array_search($id, SERVICEELEMENTS) === false && $id !== 'rotate' && $id !== 'call')
 		    unset($arr[$id]);
 	 $client['elementselection'] = $arr;
 	}
@@ -1114,7 +1114,8 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
      $client['tree'] = [];
      if (!($oid = GetHeadId($db, $client))) return;
      $client['objects'][$oid] = true;
-     $data = ['link' => [], 'oid' => $oid]; // Init tree with head object
+     $data = ['link' => []]; // Init tree with head object
+     if (isset($client['elementselection']['call'])) $data['oid'] = $oid; // If call prop is set - place oid for tree element to retreive params after user call
      switch ($cmd) // Process command
 	    {
 	     case 'TABLE':
@@ -1191,7 +1192,7 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
 	  $client['objects'][$uplinkoid] = true;
 
 	  // Build tree element and define uplink node tree via recursive function call
-	  $data['link'][] = ['link' => [], 'oid' => $uplinkoid];
+	  $data['link'][] = ['link' => []];
 	  $index = array_key_last($data['link']);
 	  if (($result = CreateTree($db, $client, $uplinkoid, $data['link'][$index], $cmd)) && isset($client['treelastnode']))
 	     {
@@ -1209,6 +1210,7 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
 		       break;
 		  case 'TREE':
 		       $data['link'][$index] += ['content' => $content, 'class' => 'treeelement'];
+		       if (isset($client['elementselection']['call'])) $data['link'][$index]['oid'] = $uplinkoid; // If call prop is set - place oid for tree element to retreive params after user call
 		       GetTreeElementContent($db, $client, $data['link'][$index]['content'], $uplinkoid);
 		       break;
 		 }
@@ -1344,7 +1346,7 @@ function GetTreeElementContent($db, &$client, &$content, $oid)
 
  // First go through all elements in the layout and put them to the content
  foreach ($client['elementselection'] as $eid => $value)
-	 if ($eid != 'rotate') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
+	 if ($eid != 'rotate' && $eid != 'call') $content[] = ['id' => $eid, 'title' => GetElementTitle($eid, $client['allelements'])];
 
  // Make query string to select element values from DB
  $query = '';
@@ -1372,7 +1374,7 @@ function GetElementTitle($eid, &$allelements)
 {
  if (isset($allelements[$eid])) $title = $allelements[$eid]['element1']['data'];
   elseif (array_search($eid, SERVICEELEMENTS) !== false) $title = $eid;
-  else  $title = "Unknown '$eid'";
+  else  $title = '';
 
  return $title;
 }

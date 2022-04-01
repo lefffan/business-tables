@@ -499,7 +499,7 @@ function CalcTree(tree)
 function BuildTree(tree, y, x)
 {
  if (!mainTable[y]) mainTable[y] = [];
- mainTable[y][x] = { colspan: tree['colspan'], content: tree['content']};
+ mainTable[y][x] = { colspan: tree['colspan'], content: tree['content'], oid: tree['oid']};
  tree['class'] ? mainTable[y][x]['class'] = ' class="' + tree['class'] + '"' : mainTable[y][x]['class'] = '';
 
  if (tree.link && tree.link.length)
@@ -519,6 +519,7 @@ function DrawTree(tree, rotate)
 
  // Flush old data
  clearTimeout(loadTimerId);
+ cursor = { ODid: ODid, OVid: OVid };
 
  // Calculate and build object tree
  mainTable = [];
@@ -556,7 +557,7 @@ function DrawTree(tree, rotate)
 		 objectrow += ' colspan=' + mainTable[y][x]['colspan'];
 		}
 	     //----------------------
-	     objectrow += mainTable[y][x]['class'] + '>' + GetTreeElementContent(mainTable[y][x]['content']) + '</td>';
+	     objectrow += mainTable[y][x]['class'] + ` data-x='${x}' data-y='${y}'>` + GetTreeElementContent(mainTable[y][x]['content']) + '</td>';
 	     //----------------------
 	     value = EllipsesClip(mainTable[y][x]['content'][0]['value'], uiProfile['tree element']['object element value max chars']);
 	     title = EllipsesClip(mainTable[y][x]['content'][0]['title'], uiProfile['tree element']['object element title max chars']);

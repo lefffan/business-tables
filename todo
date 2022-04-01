@@ -6,16 +6,12 @@ MRTG BASE
     telnet, snmp and diagnostic functions
 
 paste text = new controller cmd with buffered data, see below
-regexp search
-    hide box
-    range js instead of span highlighting
-    tree view type release
+regexp search - hide box
 At cursor moving (when pos is changed) - make page scroll only if most part of the cell is invisible, otherwise - no scrolling. In case of cursor moving (when pos is unchanged, for a example at edge cell) - scroll the page to the edge of the cell. Fix chat to show whole last new object input
-
-always show my context menu on tree, select tree element, process dblclick
 mouse singleclick + [Ctrl|Alt] on tree element call ov + [link in a new tab] of appropriate object element as an arg?
 -----------------------------------------------------------------
 - Application:
+  regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
   optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
@@ -38,6 +34,8 @@ mouse singleclick + [Ctrl|Alt] on tree element call ov + [link in a new tab] of 
     Tree element layout: style (for example to see what nodes are down by seeing them via red background)
     Tree wire name (arrow name) to mark fiber cooper radio..
     element link hint to show full element value
+    regexp search
+    context menu expand/hide uplink and downlink subtree
   Crontab element execution once immediately
   Task manager: restrict call (and call with no task delete option) of task manager for some users in user props
   How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
@@ -45,6 +43,7 @@ mouse singleclick + [Ctrl|Alt] on tree element call ov + [link in a new tab] of 
   <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
     in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
+  Execute scheduler apparently for every OD
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:

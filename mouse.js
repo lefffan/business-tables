@@ -75,6 +75,17 @@ function dblclickEventHandler(event)
 	}
      return;
     }
+
+ if (OVtype === 'Tree')
+    {
+     const target = IsTableTemplateCell(event.target);
+     if (target && mainTable[target.dataset?.y]?.[target.dataset?.x]?.oid)
+        {
+	 cmd = 'CALL';
+         CallController(mainTable[target.dataset.y][target.dataset.x].oid);
+	}
+     return;
+    }
 }
 
 function mouseupEventHandler(event)
@@ -214,6 +225,13 @@ function mousedownEventHandler(event)
      drag.y1 = drag.y2 = cursor.y;
      return;
     }
+
+ // Tree template view mouse click event?
+ if (OVtype === 'Tree')
+    {
+     if (!(target = IsTableTemplateCell(target))) return;
+     CellBorderToggleSelect(cursor.td, target, 0); // Highlight cursor
+    }
 }
 
 function contextmenuEventHandler(event)
@@ -282,8 +300,9 @@ function contextmenuEventHandler(event)
     }
 
  // Context event tree template
- if (OVtype === 'Tree' && (target === mainDiv || target === mainTablediv || target.tagName === 'TD'))
+ if (OVtype === 'Tree' && target !== document.body)
     {
+     if (IsTableTemplateCell(target)) CellBorderToggleSelect(cursor.td, target);
      DrawContext(ACTIVEITEM + 'View in a new tab</div>', target, event);
      return;
     }
@@ -366,10 +385,10 @@ function contextFitMainDiv(x, y)
 
 function IsTableTemplateCell(element)
 {
- if (OVtype !== 'Table') return;
+ if (OVtype !== 'Table' && OVtype !== 'Tree') return;
  while (ALLOWEDTAGNAMES.indexOf(element?.tagName) !== -1) element = element.parentNode;
  if (element.tagName === 'TD')
- if (element.classList.contains('datacell') || element.classList.contains('titlecell') || element.classList.contains('newobjectcell') || element.classList.contains('undefinedcell')) return element;
+ if (element.classList.contains('datacell') || element.classList.contains('titlecell') || element.classList.contains('newobjectcell') || element.classList.contains('undefinedcell') || element.classList.contains('treeelement') || element.classList.contains('treeerror')) return element;
 }
 
 function BoxEventHandler(event)
