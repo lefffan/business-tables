@@ -522,12 +522,23 @@ object4, element4: 'l1|7|id=6'  (..)
 object5, element6: 'l1|8|id=6'  (..)
 object6, element9: 'l1|10|id=7' (..)
 
-In addition to the tree template settings - view 'element layout' field defines tree node content and tree scheme direction.
-The object node content is a simple list of element titles and its values. Layout is a JSON list field generally, so first
-correct JSON is used for the template only. The JSON should contain element identificators (id, datetime, owner.. 1, 2..)
-as a JSON property names (property values are ignored) plus 'rotate' tree property with '180' value to flip the scheme.
-Other rotate values (for default) make no effect. Empty layout field - all user defined elements plus 'id' are displayed.
-Correct empty JSON '{}' as an 'element layout' displays no content, while all error JSONs - only 'id' element.`
+In addition to the tree template settings - 'Element layout' defines tree node content (element titles and values list),
+tree scheme direction and call parameters via JSON format. The first found correct JSON is used. Element layout JSON should
+contain element identificators (id, datetime, owner.. 1, 2..) as a JSON property names (property values are ignored) plus
+'rotate' and 'call' optional properties. Property 'rotate' defines scheme direction - the '180' value (other values are
+ignored and make no effect) flips the tree scheme. Property 'call' represents nested JSON to call the specififed view at
+object tree node mouse double click. Have a look to the next layout example:
+{ "datetime": "", "1": "", "rotate": "180", "call": {"ODid": "1", "OVid": "2", ":ip": "3"} }
+
+Layout JSON above displays the flipped tree (rotated at 180 degrees) with tree nodes of two elements (datetime and element
+id1) in. Node mouse double click calls the view id2 of database id1 with clicked object element id3 value passed as an ':ip'
+parameter to the view object selection. In case of database/view identificators ("ODid"/"OVid") omitted - current
+database/view is used. All 'call' JSON properties are optional, so empty 'call' JSON ("call": {}) just reopens current
+view (tree).
+
+Empty element layout field is treated as a default one and displays all defined elements plus 'id' as a node content.
+Layout empty JSON '{}' is treated as a correct one and displays no node content, while layout all error JSONs - only 'id'
+element.`
 }}},
 
 "Handlers": { profile: { element1: { line: '', style: HELPHEADSTYLE, head:
@@ -616,7 +627,7 @@ arguments are parsed to be replaced by the next values:
  - <JSON> is a special argument that is replaced by retrieved element data and should be in next format:
     {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
     First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
-    datavase/view names ("OD"/"OV") are used. Both identificator and name omitted - current database or view is used.
+    database/view names ("OD"/"OV") are used. Both identificator and name omitted - current database or view is used.
     Specified view must have 'Table' template.
     Next two properties "selection" and "limit" are SQL query parts to select necessary objects which element data need to be
     retrieved: SELECT .. FROM .. WHERE "selection" LIMIT "limit". Omitted "selection" property - current object is used,
@@ -1048,11 +1059,11 @@ Line 50. Pass dialog to the controller.`
     cusomization 'application' property. New-object input content 'apply' creates new object
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">ScrollLock on</span> scrolls the entire table instead of cursor navigating cells
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Alt + ^|v</span>: previous|next object cursor navigation
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Alt + <|></span> previous|next view navigation
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + <|></span> previous|next view navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + c|INS</span> copies element formatted text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift+c|Shift+INS</span> copies element clear text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search, see search dialog hint for brief regexp syntax
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + right button single click</span> on any table cell opens new browser tab with that cell text as url
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + right button single click</span> on any http page DOM element opens new browser tab with element inner text as an url
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + a</span> selects entire table area
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Shift + <|>|^|v|Home|End|PageUp|PageDown</span> selects appropriate table area
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">ESC</span> cancels all changes and exits content editable mode or dialog box with no changes

@@ -236,7 +236,7 @@ function mousedownEventHandler(event)
 
 function contextmenuEventHandler(event)
 {
- let target = event.target;
+ let url, target = event.target;
  HideHint();
 
  // Prevent default context menu while dialog box up, right mouse click or context key press on already existed context menu
@@ -252,6 +252,16 @@ function contextmenuEventHandler(event)
     {
      if (cursor.td === target) return;
      ConfirmEditableContent();
+    }
+
+ // Right btn mouse click with Ctrl pushed opens new tab with event.target inner text as an url
+ if (event.ctrlKey && event.which && (url = target.innerText?.trim()))
+    {
+     event.preventDefault();
+     if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0 && url.indexOf('http:') !== 0) url = 'https://' + url;
+     try { window.open(url); }
+     catch {}
+     return;
     }
 
  // Target is an element the context event occured on, so adjust it to select proper element
@@ -284,14 +294,6 @@ function contextmenuEventHandler(event)
  // Context event on table template cell
  if (OVtype === 'Table' && IsTableTemplateCell(target))
     {
-     if (event.ctrlKey)
-	{
-	 event.preventDefault();
-	 let url = target.innerText.trim();
-	 if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0 && url.indexOf('http:') !== 0) url = 'http://' + url;
-	 window.open(url);
-	 return;
-	}
      const chart = GetChartItem(target);
      if (!chart) CellBorderToggleSelect(cursor.td, target, 0);
      const DELETEITEM = mainTable[cursor.y]?.[cursor.x]?.realobject ? ACTIVEITEM + 'Clone Object</div>' + ACTIVEITEM + 'Delete Object</div>' : GREYITEM + 'Clone Object</div>' + GREYITEM + 'Delete Object</div>';

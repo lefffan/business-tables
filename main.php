@@ -137,7 +137,23 @@ while (true)
 		       $output = LogoutUser($null, $null, NULL, $title = (isset($client['auth']) && $now - $client['authtime'] > SESSIONLIFETIME) ? "\nSession timeout, please log in!\n\nUsername" : '');
 		       if (isset($client['auth'])) $output['log'] = $title ? 'User '.$client['auth'].' session timeout!' : 'User '.$client['auth'].' has logged out!';
 		       break;
-		  case 'CALL': // OV display event, 1st step - dialog data (if exist) OV params fetch
+		  case 'CALL': // OV display event
+		       // Calculate view input params (if exist) first
+		       $client['params'] = [];
+		       if (isset($client['data']['dialog']['pad']['profile']))
+			  {
+			   foreach ($client['data']['dialog']['pad']['profile'] as $key => $value) $client['params'][$key] = $value['data'];
+			  }
+			else if (gettype($client['data']) === 'string' && $client['data'] && Check($db, GET_VIEWS, $client, $output) && gettype($client['elementselection']['call']) === 'array')
+			  {
+			   foreach ($client['elementselection']['call'] as $key => $eid)
+				   if ($key[0] === ':')
+				   if (array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid]))
+				      $client['params'][$key] = getElementProp($db, $client['ODid'], $client['data'], $eid, 'value');
+			   if (isset($client['elementselection']['call']['ODid'])) $client['ODid'] = $client['elementselection']['call']['ODid'];
+			   if (isset($client['elementselection']['call']['OVid'])) $client['OVid'] = $client['elementselection']['call']['OVid'];
+			   unset($client['elementselection']);
+			  }
 		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event
 		  case 'New Database':
 		  case 'Database Configuration':

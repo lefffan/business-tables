@@ -5,12 +5,16 @@ MRTG BASE
     setki.xls
     telnet, snmp and diagnostic functions
 
-paste text = new controller cmd with buffered data, see below
+paste text = new controller cmd with buffered data, see below, no KEYPRESS
 regexp search - hide box
+
+Today:
 At cursor moving (when pos is changed) - make page scroll only if most part of the cell is invisible, otherwise - no scrolling. In case of cursor moving (when pos is unchanged, for a example at edge cell) - scroll the page to the edge of the cell. Fix chat to show whole last new object input
-mouse singleclick + [Ctrl|Alt] on tree element call ov + [link in a new tab] of appropriate object element as an arg?
+view id is not shown
 -----------------------------------------------------------------
 - Application:
+  handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
+  To allow html table in cells add tr, td, tbody and table tags to allowed tags?
   regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud

@@ -172,25 +172,6 @@ try {
 		  // Check input data correctness
 		  if (!isset($client['allelements'], $client['elementselection'], $client['objectselection'], $client['viewtype'], $client['linknames']) && !Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $output)) break;
 
-		  // Calculate view params
-		  $client['params'] = [];
-		  if (isset($client['data']['dialog']['pad']['profile']))
-		     {
-		      foreach ($client['data']['dialog']['pad']['profile'] as $key => $value)
-			      $client['params'][$key] = $value['data'];
-		     }
-		   else if (gettype($client['data']) === 'string' && $client['data'] && gettype($client['elementselection']['call']) === 'array')
-		     {
-		      foreach ($client['elementselection']['call'] as $key => $eid)
-			      if ($key[0] === ':')
-			      if (array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid])) 
-				 $client['params'][$key] = getElementProp($db, $client['ODid'], $client['data'], $eid, 'value');
-
-		      if (isset($client['elementselection']['call']['ODid'])) $client['ODid'] = $client['elementselection']['call']['ODid'];
-		      if (isset($client['elementselection']['call']['OVid'])) $client['OVid'] = $client['elementselection']['call']['OVid'];
-		      if (!Check($db, CHECK_OD_OV | GET_ELEMENTS | GET_VIEWS | CHECK_ACCESS, $client, $output)) break;
-		     }
-
 		  // Get OV data for a 'Tree' view template
 		  if ($client['viewtype'] === 'Tree')
 		     {
