@@ -147,9 +147,7 @@ while (true)
 			else if (gettype($client['data']) === 'string' && $client['data'] && Check($db, GET_VIEWS, $client, $output) && gettype($client['elementselection']['call']) === 'array')
 			  {
 			   foreach ($client['elementselection']['call'] as $key => $eid)
-				   if ($key[0] === ':')
-				   if (array_search($eid, SERVICEELEMENTS) !== false || isset($client['allelements'][$eid]))
-				      $client['params'][$key] = getElementProp($db, $client['ODid'], $client['data'], $eid, 'value');
+				   if ($key[0] === ':') $client['params'][$key] = getElementProp($db, $client['ODid'], $client['data'], $eid, 'value');
 			   if (isset($client['elementselection']['call']['ODid'])) $client['ODid'] = $client['elementselection']['call']['ODid'];
 			   if (isset($client['elementselection']['call']['OVid'])) $client['OVid'] = $client['elementselection']['call']['OVid'];
 			   unset($client['elementselection']);

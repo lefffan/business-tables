@@ -33,6 +33,7 @@ try {
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
 
      $newView['element1']['id'] = '1';
+     $newView['element1']['head'] = "View (id$1) name";
      $newView['element1']['data'] = 'All users';
      $newView['element6']['data'] = ' *';
      $userOD['dialog']['View']['All users'] = $newView;
@@ -173,6 +174,7 @@ try {
      $logOD['dialog']['View']['New view']['element1']['id'] = '2';
 
      $newView['element1']['id'] = '1';
+     $newView['element1']['head'] = "View (id$1) name";
      $newView['element1']['data'] = 'All logs';
      $newView['element6']['data'] = 'id,datetime,1';
      $newView['element10']['data'] = '+User/groups list allowed to change this view objects|Disallowed list (allowed for others)|';

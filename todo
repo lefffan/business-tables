@@ -5,12 +5,10 @@ MRTG BASE
     setki.xls
     telnet, snmp and diagnostic functions
 
-paste text = new controller cmd with buffered data, see below, no KEYPRESS
+paste text = new controller cmd with buffered data, see below, may be KEYPRESS?
 regexp search - hide box
+hint in object element info description is fucked!
 
-Today:
-At cursor moving (when pos is changed) - make page scroll only if most part of the cell is invisible, otherwise - no scrolling. In case of cursor moving (when pos is unchanged, for a example at edge cell) - scroll the page to the edge of the cell. Fix chat to show whole last new object input
-view id is not shown
 -----------------------------------------------------------------
 - Application:
   handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
@@ -793,21 +791,14 @@ o{1,} is equivalent to o+. o{0,} is equivalent to o*.
 
 
 
-
-
-
-
+right mrtg layout:
 {"eid":"id", "oid":"1", "x":"0", "y":"106*n", "style":"width: 10%;"}
 {"eid":"id", "oid":"*", "x":"1", "y":"106*n", "style": "padding: 3px; text-align: left; width: 90%;"}
 
-a{"eid":"101", "oid":"*", "x":"1", "y":"106*n+e"}
-a{"eid":"101", "oid":"1", "x":"0", "y":"106*n+e"}
-a{"eid":"102", "oid":"*", "x":"1", "y":"106*n+e"}
-a{"eid":"102", "oid":"1", "x":"0", "y":"106*n+e"}
-a{"eid":"103", "oid":"*", "x":"1", "y":"106*n+e"}
-a{"eid":"103", "oid":"1", "x":"0", "y":"106*n+e"}
-a{"eid":"104", "oid":"*", "x":"1", "y":"106*n+e"}
-a{"eid":"104", "oid":"1", "x":"0", "y":"106*n+e"}
+{"eid":"101", "oid":"1"}
+{"eid":"102", "oid":"1"}
+{"eid":"103", "oid":"1"}
+{"eid":"104", "oid":"1"}
 {"eid":"*", "oid":"1", "x":"0", "y":"106*n+e"}
 {"eid":"*", "oid":"*", "x":"1", "y":"106*n+e", "style": "padding: 3px; text-align: left; word-wrap: break-word;", "hiderow":""}
 

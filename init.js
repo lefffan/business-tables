@@ -20,8 +20,9 @@ const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
 const MAXFILESIZE = 157286400;
 const MAXFILEUPLOADS = 20;
 const HELPHEADSTYLE = 'font-family: monospace, sans-serif; -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;';
-const FOCUS_VERTICAL = 0b01;
-const FOCUS_HORIZONTAL = 0b10;
+const FOCUS_VERTICAL = 0b001;
+const FOCUS_HORIZONTAL = 0b010;
+const FOCUS_EDGE = 0b100;
 const ALLOWEDTAGS = ['b', 'a', 'font', 'span'];
 const ALLOWEDTAGNAMES = ['B', 'A', 'FONT', 'SPAN'];
 const SPANHIGHLIGHT = '<span class="matchb">';
@@ -137,7 +138,7 @@ As it was mentioned above - each object is a set of service and user-defined ele
 (id, owner, datetime, version, lastversion) represent service data, which is set automatically while object is changed
 or created. Each custom user-defined element is numbered (with eid1, eid2.. as a column names in database structure)
 and may have some handlers (any script or binary) to create/manage element data, see 'Handler' help section. User-defined
-element data is a JSON, that may consist of any defined properties. Some properties are reserved for the special assingment:
+element data is a JSON, that may consist of any defined properties. Some of them are reserved for the special assingment:
 - 'value' is displayed in a table cell as a main element text (max 10K chars)
 - 'hint' is displayed as element hint text on mouse cursor cell navigation
 - 'style' is a css style attribute value applied to html table <td> tag.
@@ -315,10 +316,10 @@ selection string 'WHERE lastversion=1 AND version!=0' is applied and result quer
 This format together with object structure provides native and effective selection of object sets via powerful SQL
 capabilities! To make object selection process more flexible user can use some parameters in object selection string. These
 parameters should start from char ':' and finish with space, single or double qoutes, backslash or another ':'. Parsed
-parameter name is set as a question (with chars '_' replaced with spaces) in client side dialog box at the object view call
+parameter name is set as a question (with chars '_' replaced with spaces) on client side dialog box at the object view call
 open. Parameter name :user is reserved and replaced with the username the specified view is called by.
 
-Object selection string example for 'Logs' object database:
+Object selection string example for built-in 'Logs' object database:
 WHERE lastversion=1 AND version!=0 AND JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) regexp ':Select_log_string_to_search'
 The selection example displays dialog with input question 'Select log string to search'.
 Parameter ':Select_log_string_to_search' is replaced by input string to build result query, so the controller
@@ -1062,7 +1063,7 @@ Line 50. Pass dialog to the controller.`
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + <|></span> previous|next view navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + c|INS</span> copies element formatted text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift+c|Shift+INS</span> copies element clear text to the clipboard
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search, see search dialog hint for brief regexp syntax
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search, see search dialog hint for the brief regexp syntax
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + right button single click</span> on any http page DOM element opens new browser tab with element inner text as an url
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + a</span> selects entire table area
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Shift + <|>|^|v|Home|End|PageUp|PageDown</span> selects appropriate table area

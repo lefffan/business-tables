@@ -273,14 +273,19 @@ function ProcessControllerEventKeys(event)
  CallController(object);
 }
 
-function moveCursor(x, y, event, focus)
+function moveCursor(x, y, event, focus = FOCUS_VERTICAL | FOCUS_HORIZONTAL)
 {
  if (cursor.td.contentEditable === EDITABLE || event.getModifierState('ScrollLock')) return;
  event.preventDefault();
  x = Math.max(0, x); x = Math.min(x, mainTableWidth - 1);
  y = Math.max(0, y); y = Math.min(y, mainTableHeight - 1);
 
- if (cursor.x === x && cursor.y === y) return;
+ if (cursor.x === x && cursor.y === y)
+    {
+     if (x === mainTableWidth - 1) CellBorderToggleSelect(null, cursor.td, FOCUS_HORIZONTAL | FOCUS_EDGE);
+     if (y === mainTableHeight - 1) CellBorderToggleSelect(null, cursor.td, FOCUS_VERTICAL | FOCUS_EDGE);
+     return;
+    }
 
  if (!event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode !== 13) // Cursor moving with shift
     {

@@ -26,7 +26,7 @@ function DrawChart(x1, y1, x2, y2)
       sum += value;
      }
 
- if (!sum) return warning("No numerical data found!");
+ if (!sum) return warning("Chart draw failed: no numerical data found!");
 
  mainTablediv.style.display = 'none';
  OVtype = 'Chart';

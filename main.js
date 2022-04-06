@@ -1,5 +1,4 @@
 
-
 // Style default user inteface profile and append style DOM element to the document head
 styleUI();
 document.head.appendChild(style);
@@ -456,7 +455,7 @@ function drawMain(data, layout, attached)
     {
      cursor.y = Math.min(cursor.y, mainTableHeight - 1);
      cursor.x = Math.min(cursor.x, mainTableWidth - 1)
-     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x]);
+     CellBorderToggleSelect(null, mainTablediv.rows[cursor.y].cells[cursor.x], FOCUS_VERTICAL | FOCUS_HORIZONTAL | FOCUS_EDGE);
      if (cursor.oId === NEWOBJECTID) MakeCursorContentEditable();
      if (cursor.edit !== undefined && cursor.edit.oId === cursor.oId && cursor.edit.eId === cursor.eId) MakeCursorContentEditable(cursor.edit.data);
     }
@@ -998,8 +997,8 @@ function CallController(data)
 		 {
 		  let info = '';
 	          if (cell.version) info = 'Object version: ' + (cell.version === '0' ? 'object has been deleted' : `${cell.version}\nActual version: ${cell.realobject ? 'yes' : 'no'}\n`);
-		  if (cell.hint) info += `Element hint:\n<span style="color: #999;">${cell.hint}</span>\n`;
-		  if (info) msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element</span>\n' + info + '\n';
+		  if (cell.hint) info += `Element hint:\n<span style="color: #999;">${FromHTMLChars(cell.hint)}</span>\n`;
+		  if (info) msg += '<span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Object element info</span>\n' + info + '\n';
 		 }
 	      if (true) // Database info
 		 {
@@ -1139,39 +1138,41 @@ function CellBorderToggleSelect(oldCell, newCell, focus = FOCUS_VERTICAL | FOCUS
      oldCell.style.outline = "none";
      oldCell.style.boxShadow = "none";
     }
- if (!newCell) return;
-
- if (uiProfile['main field table cursor cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table cursor cell']['outline'];
- if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
-
- cursor.td = newCell;
- cursor.x = newCell.cellIndex;
- cursor.y = newCell.parentNode.rowIndex;
- cursor.oId = cursor.eId = 0;
- if (mainTable[cursor.y]?.[cursor.x])
+ if (newCell)
     {
-     cursor.oId = mainTable[cursor.y][cursor.x].oId;
-     cursor.eId = mainTable[cursor.y][cursor.x].eId;
-    }
-
- if (focus & FOCUS_HORIZONTAL)
- if (newCell.offsetLeft <= mainDiv.scrollLeft + 1)
-    {
-     mainDiv.scrollLeft = newCell.offsetLeft - 1;
-    }
-  else if (newCell.offsetLeft + newCell.offsetWidth > mainDiv.scrollLeft + mainDiv.offsetWidth)
-    {
-     mainDiv.scrollLeft = Math.min(newCell.offsetLeft, newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 11);
-    }
-
- if (focus & FOCUS_VERTICAL)
- if (newCell.offsetTop <= mainDiv.scrollTop + 1)
-    {
-     mainDiv.scrollTop = newCell.offsetTop - 1;
-    }
-  else if (newCell.offsetTop + newCell.offsetHeight > mainDiv.scrollTop + mainDiv.offsetHeight)
-    {
-     mainDiv.scrollTop = Math.min(newCell.offsetTop, newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 11);
+     // Outline cursor cell
+     if (uiProfile['main field table cursor cell']['outline'] != undefined) newCell.style.outline = uiProfile['main field table cursor cell']['outline'];
+     if (uiProfile['main field table cursor cell']['shadow'] != undefined) newCell.style.boxShadow = uiProfile['main field table cursor cell']['shadow'];
+     // Fill cursor object
+     cursor.td = newCell;
+     cursor.x = newCell.cellIndex;
+     cursor.y = newCell.parentNode.rowIndex;
+     cursor.oId = cursor.eId = 0;
+     if (mainTable[cursor.y]?.[cursor.x])
+	{
+         cursor.oId = mainTable[cursor.y][cursor.x].oId;
+         cursor.eId = mainTable[cursor.y][cursor.x].eId;
+	}
+     // Set cursor visible on horizontal
+     if (focus & FOCUS_HORIZONTAL)
+     if (newCell.offsetLeft <= mainDiv.scrollLeft + 1)
+	{
+	 mainDiv.scrollLeft = (focus & FOCUS_EDGE) ? newCell.offsetLeft - 1 + mainDiv.offsetWidth : newCell.offsetLeft - 1
+        }
+      else if (newCell.offsetLeft + newCell.offsetWidth > mainDiv.scrollLeft + mainDiv.offsetWidth)
+        {
+	 mainDiv.scrollLeft = (focus & FOCUS_EDGE) ? Math.max(newCell.offsetLeft, newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 11) : Math.min(newCell.offsetLeft, newCell.offsetLeft + newCell.offsetWidth - mainDiv.offsetWidth + 11);
+        }
+     // Set cursor visible on horizontal
+     if (focus & FOCUS_VERTICAL)
+     if (newCell.offsetTop <= mainDiv.scrollTop + 1)
+        {
+         mainDiv.scrollTop = (focus & FOCUS_EDGE) ? newCell.offsetTop - 1  + mainDiv.offsetHeight : newCell.offsetTop - 1;
+        }
+      else if (newCell.offsetTop + newCell.offsetHeight > mainDiv.scrollTop + mainDiv.offsetHeight)
+        {
+         mainDiv.scrollTop = (focus & FOCUS_EDGE) ? Math.max(newCell.offsetTop, newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 11) : Math.min(newCell.offsetTop, newCell.offsetTop + newCell.offsetHeight - mainDiv.offsetHeight + 11);
+        }
     }
 }
 
