@@ -7,7 +7,6 @@ MRTG BASE
 
 paste text = new controller cmd with buffered data, see below, may be KEYPRESS?
 regexp search - hide box
-hint in object element info description is fucked!
 
 -----------------------------------------------------------------
 - Application:

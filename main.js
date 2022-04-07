@@ -1470,10 +1470,12 @@ function HideBox()
  mainDiv.style.filter = 'none';
  sidebarDiv.style.filter = 'none';
 
- if (box.search)
+ if (!search.error)
     {
      clearTimeout(searchTimerId);
-     //setTimeout(RegexSearch, 0);
+     RegexInit();
+     search.error = true;
+     setTimeout(RegexSearch, 0);
     }
 
  box = null;
@@ -1824,14 +1826,14 @@ function RegexRefresh(searchend)
  // Refresh search dialog
  if (search.index === -1) // No match found
     {
-     search.title.innerHTML = search.input.value ? 'Searching ' + String((100 * (((search.x2 - search.x1)*(search.y - search.y1)) + search.x)/((search.x2 - search.x1)*(search.y2 - search.y1))).toFixed(2)) + '%' : REGEXSEARCHTITLE;
+     search.title.innerHTML = search.input.value ? 'Searching ' + String(Math.min(100, (100 * (((search.x2 - search.x1)*(search.y - search.y1)) + search.x)/((search.x2 - search.x1)*(search.y2 - search.y1)))).toFixed(2)) + '%' : REGEXSEARCHTITLE;
      search.header.innerHTML = `<br>Enter regular expression to search: ${regexpsearchhint}`; // Make default header
      searchend && search.input.value !== '' ? search.input.classList.add('matchn') : search.input.classList.remove('matchn'); // Set red background of input for non empty input value
     }
   else
     {
      search.input.classList.remove('matchn'); // Remove no-match red background
-     search.title.innerHTML = 'Searching ' + String((100 * (((search.x2 - search.x1)*(search.y - search.y1)) + search.x)/((search.x2 - search.x1)*(search.y2 - search.y1))).toFixed(2)) + '%';
+     search.title.innerHTML = 'Searching ' + String(Math.min(100, (100 * (((search.x2 - search.x1)*(search.y - search.y1)) + search.x)/((search.x2 - search.x1)*(search.y2 - search.y1)))).toFixed(2)) + '%';
      search.header.innerHTML = `<br>Enter regular expression to search (${search.index + 1} of ${search.match.length}): ${regexpsearchhint}`; // Set matches count
     }
 
