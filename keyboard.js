@@ -230,13 +230,41 @@ function keydownEventHandler(event)
     }
 }
 
+function PasteBuffer(string)
+{
+ if (!string || typeof string !== 'string') string = '';
+
+ if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
+    {
+     MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data + string);
+     return;
+    }
+
+ if (string && mainTable[cursor.y][cursor.x]['realobject'])
+    {
+     cmd = 'KEYPRESS';
+     CallController({ metakey: false, altkey: false, shiftkey: false, ctrlkey: false, string: string });
+     return;
+    }
+}
+
 function ProcessControllerEventKeys(event)
 {
  if (cursor.td.contentEditable === EDITABLE) return;
  if (!mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId)) return;
  let newcmd, object = { metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey };
 
- if (event.keyCode === 45) newcmd = 'INS'; else if (event.keyCode === 46) newcmd = 'DEL'; else if (event.keyCode === 113) newcmd = 'F2';
+ if (event.keyCode === 45)
+    {
+     if (!object.ctrlkey && !object.altkey && !object.metakey && object.shiftkey)
+	{
+	 ReadBuffer().then(PasteBuffer);
+	 return;
+	}
+     newcmd = 'INS';
+    }
+  else if (event.keyCode === 46) newcmd = 'DEL';
+  else if (event.keyCode === 113) newcmd = 'F2';
   else if (event.keyCode === 123)
     {
      newcmd = 'F12';

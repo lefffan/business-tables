@@ -70,20 +70,24 @@ function loog(...data)
 
 async function ReadBuffer()
 {
+ let text;
+
  if (!window.navigator.clipboard)
     {
      warning("Your browser doesn't support clipboard read operations!");
-     return;
+     return '';
     }
 
  try {
-      let text = await navigator.clipboard.readText();
-      lg(text);
+      text = await navigator.clipboard.readText();
      }
  catch (error)
      {
       warning('Browser clipboard read operation error: ' + error);
+      return '';
      }
+
+ return text;
 }
 
 async function Hujax(url, callback, options)
@@ -1470,7 +1474,7 @@ function HideBox()
  mainDiv.style.filter = 'none';
  sidebarDiv.style.filter = 'none';
 
- if (!search.error)
+ if (search.error === false)
     {
      clearTimeout(searchTimerId);
      RegexInit();

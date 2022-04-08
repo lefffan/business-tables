@@ -4,10 +4,6 @@ MRTG BASE
     final megacom mrtg db making via paper on my workplace
     setki.xls
     telnet, snmp and diagnostic functions
-
-paste text = new controller cmd with buffered data, see below, may be KEYPRESS?
-regexp search - hide box
-
 -----------------------------------------------------------------
 - Application:
   handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
