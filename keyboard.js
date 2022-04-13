@@ -223,6 +223,13 @@ function keydownEventHandler(event)
 		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey) CopyBuffer(event.shiftKey);
 		  ProcessControllerEventKeys(event);
 		  break;
+	     case 86: // 'v'
+		  if (cursor.td.contentEditable === EDITABLE) break;
+		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
+		     {
+		      ReadBuffer().then(PasteBuffer);
+		      break;
+		     }
 	     default: // Space, letters, digits
 		  if (rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) ProcessControllerEventKeys(event);
 	}

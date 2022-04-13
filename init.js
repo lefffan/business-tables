@@ -191,8 +191,8 @@ In other words - just to save some disk space object versions history consists o
 As object versions are object data instnces - deleted objects are not removed from database, but marked by zero version only.
 All previous versions object data is available in that case, but cannot be changed at all. Considering all of this, all object
 history is transparent and available and all data is native. This is a global application conception - all functionality is
-documented and clear. The application acts as a kind of platform the users can develop their projects with custom data behaviour
-and layout.
+documented and clear. The system offers array of benefits and solutions and acts as a kind of platform the users can develop
+their projects with custom data behaviour and layout.
 
 Go on. Application authentication is password based. Usernames and their passwords are stored in 'Users' OD.
 Initial username/password: root/root. Only one user instance can be logged in, so logged in instance automatically logs out
@@ -618,39 +618,45 @@ arguments are parsed to be replaced by the next values:
     For KEYPRESS event data is a JSON string with next format:
     {"string": "<key char>", "altkey": "",  "ctrlkey": "", "metakey": "", "shiftkey": ""}
     Property "string" is one key char, other properties do exist only in case of appropriate key pushed. Meta key for Mac OS
-    is 'Cmd' key, for Window OS - 'Window' key.
+    is 'Cmd' key, for Window OS - 'Window' key. Note that clipboard paste (Ctrl+v or Shift+Ins) on object element emulates
+    KEYPRESS event with pasting text as event data.
     For DBLCLICK, INS, DEL, F2, F12 data arg is the same except the "string" property is undefined.
     For INIT event data argument text content in 'new object' or 'cloned object' element table cells if exist, otherwise <data>
     is empty string ''.
     For CONFIRM event after html element <td> editable content apply  - <data> argument is that content text data.
     For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
     For CHANGE and SCHEDULE events <data> argument is undefined.
- - <JSON> is a special argument that is replaced by retrieved element data and should be in next format:
-    {"ODid": .., "OD": .., "OVid": .., "OV": .., "selection": .., "element": .., "prop": .., "limit": .., ":..": ..}
-    First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
-    database/view names ("OD"/"OV") are used. Both identificator and name omitted - current database or view is used.
-    Specified view must have 'Table' template.
-    Next two properties "selection" and "limit" are SQL query parts to select necessary objects which element data need to be
-    retrieved: SELECT .. FROM .. WHERE "selection" LIMIT "limit". Omitted "selection" property - current object is used,
-    omitted "limit" - number is set to 1.
-    Last two properties "element" and "prop" select element of the selected object. Omitted "element" current element (the
-    event was initiated on) is used. Omitted "prop" - property "value" of element JSON data is used. Property "element"
-    is exact element id (user element id number or service element name - id,owner,datetime..) or regular expression ("/../")
-    to search first match among all elements specified in database view 'Element layout'. 
-    <JSON> may consist of some additional (nested) JSONS (with property names starting from ':'), which values are retrived
-    the same way. These retrieved values then are used as a replacements in current JSON "element" regular expressions and
-    "selection" properties:
+ - <JSON> is a special argument that is replaced by retrieved element data. JSON format:
+    {"ODid": .., "OD": .., "OVid": .., "OV": .., "object": .., "element": .., "prop": .., "limit": .., ":..": ..}
+    Data is retrieved from element(s) "element" property "prop" of object(s) "object" of the database "ODid"/"OD" view
+    "OVid"/"OV". First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
+    database/view names ("OD"/"OV") are used. Both identificator and name omitted - current database/view are used.
+    Property "object" (together with "limit") identifies database objects via SQL query, that selects only necessary objects
+    (among all view objects) the element data to retrieve from. Query fromat:
+    SELECT .. FROM .. WHERE "object" LIMIT "limit".
+    Omitted "object" property in case of the current database view specified - current object (to retrieve element data) is
+    used, in case of another database view specified - all view objects are used (so as for empty "object" string). Omitted or
+    incorrect "limit" - number is set to 1, max number is 256.
+    Last two "element" and "prop" identify element (of the selected objects above) to retrieve the value from. This value
+    replaces <JSON> arg in a result handler command line. Omitted "element" current element (the event was initiated on) is
+    used. Omitted "prop" - property "value" of element JSON data is used. Property "element" may be treated as an exact element
+    id (user element id number or service element name - id,owner,datetime..) or as a regular expression (with '/' as a leading
+    and trailing character). Regular expression searches first matched element among all elements specified in the database
+    view 'Element layout'. Don't forget to escape backslash '\\' characters in a regular expression string.
+    Also <JSON> may consist of some additional (nested) JSONs (with property names starting from ':'), which values are
+    retrieved the same way. These retrieved values then are used as a replacements in current JSON regexp "element" and
+    "object" properties, here is an example:
     <{ .. "element": "/:arg/", ":arg": {..} }>
     Max 'nesting' levels number is 3, see 'Examples' help section for extra info.
     In case of multiple objects as a selection result - <JSON> argument will be replaced by property of specified element
     or found (via regular expression) elements of all selected objects (max 256, each in a new line).
-    Therefore, <JSON> argument selects objects of the view (based on "selection" and "limit"), takes element (or elements)
+    Therefore, <JSON> argument selects objects of the view (based on "object" and "limit", max is 256), takes element(s)
     and optionally its property (based on "element" and "prop") and then replaces <JSON argument> with the retrieved value.
+    All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated as a correct one. Thus, empty
+    (or with unknown properties) JSON will be replaced by the current object element value.
 
-All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated as a correct one. Empty (or with
-unknown properties) JSON is replaced by the current object element value.
-Not listed above argument cases remain untouched, but passed without angle brackets to avoid stdin/stdout redirections, so any
-single angle brackets are truncated in a result command line.
+Not listed above argument cases (<user>, <oid>, <event>..) remain untouched and qouted to be treated as a single command
+line argument. Non-paired angle brackets are truncated in a result command line to avoid stdin/stdout redirections.
 
 					    <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">HANDLER COMMAND</span>
 To make database changes or some client side actions - user handlers should return (output to stdout) some commands in JSON
@@ -889,7 +895,7 @@ so don't forget the args to be divided by space chars) for INIT event to process
 php text.php SET
 <span><</span>span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">
 <user>@
-<{"ODid":"1", "OVid":"1", "selection":"lastversion=1 and version!=0 and JSON_EXTRACT(eid1, '$.value')=':user'", "element":"2"}>
+<{"ODid":"1", "OVid":"1", "object":"lastversion=1 and version!=0 and JSON_EXTRACT(eid1, '$.value')=':user'", "element":"2"}>
 <span><</span>/span>
 ' '
 <span><</span>span style="color: #999;"><datetime><span><</span>/span><br>
@@ -900,7 +906,7 @@ a 'Handlers' help section. First input arg (SETTEXT) is for setting element text
 to one string. As it was mentioned in a 'Handler' help section - every angle brackets quoted string is parsed for JSON or service
 strings such as <user> (our case), <datetime>, <data>  and others. String <user> is replaced by the username the handler is called
 from, in our chat context - the user the message is posted by. Next arg is user first (last) name as it is in OD 'Users' (ODid=1)
-and OV 'All users' (OVid=1). This arg is retrieved via JSON that searches user object ("selection" property) and takes its second 
+and OV 'All users' (OVid=1). This arg is retrieved via JSON that searches user object ("object" property) and takes its second 
 element ("element" property) - first/last name. Retrieved construction (user@firstname) is styled by <span> tag: deep blue color
 (RGB(44,72,131) and bold font. After user@firstname - single space (' ') and light grey color styled datetime (<datetime>).
 Then - user chat message text of itself (<data>) on the next line (<br>).
@@ -943,10 +949,10 @@ group name among all users and output the result.
 
 Use qouted JSON argument in a handler command line (see 'Handlers' help section for details) for element to retrieve users
 of the group specified, for a example, in the current element value (":group": {}) or explicitly (":group": "wheel"):
-php text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups'))
+php text.php SET <{"ODid":"1", "OVid":"1","object":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups'))
 regexp '^:group\\\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\\\n:group\\\\n')", "limit": "100","element":"1",":group": {}}>
 
-Property "selection" is a SQL 'WHERE' operator expression to select 1st element ("element":"1") 'value' property (username).
+Property "object" is a SQL 'WHERE' operator expression to select 1st element ("element":"1") 'value' property (username).
 First condition (regexp '^:group\\\\n') matches first line group names, second condition (regexp '\\\\n:group\\\\n')) -
 all other group names from the second line with the symbol LINE FEED (\\n) before. Double slash escapes single slash for the correct
 line feed char. Request result is limited to 100 records.`

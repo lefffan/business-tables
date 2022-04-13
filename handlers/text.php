@@ -17,9 +17,10 @@ if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
 	    }
 	  else
 	    {
-	     if ($data['shiftkey']) echo json_encode(['cmd' => 'UPLOADDIALOG']);
-	      else if ($data['ctrlkey']) echo json_encode(['cmd' => 'DOWNLOADDIALOG']);
-	      else if ($data['altkey']) echo json_encode(['cmd' => 'UNLOADDIALOG']);
+	     if (!$data['altkey'] && $data['shiftkey'] && !$data['ctrlkey']) echo json_encode(['cmd' => 'UPLOADDIALOG']);
+	      else if (!$data['altkey'] && !$data['shiftkey'] && $data['ctrlkey']) echo json_encode(['cmd' => 'DOWNLOADDIALOG']);
+	      else if ($data['altkey'] && !$data['shiftkey'] && !$data['ctrlkey']) echo json_encode(['cmd' => 'UNLOADDIALOG']);
+	      else if ($data['altkey'] && !$data['shiftkey'] && $data['ctrlkey']) echo json_encode(['cmd' => 'CALL', 'OVd' => '_History', 'OD' => 'Logs', 'OVid' => '1', '' => '', ]);
 	     break;
 	    }
     case 'GALLERY':

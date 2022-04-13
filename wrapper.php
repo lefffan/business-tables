@@ -77,7 +77,7 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'CALL':
 	      // Unsupported command
 	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'CALL' command on '$client[cmd]' event!")) return;
-	      cutKeys($output, ['cmd', 'ODid', 'OVid', 'params']);
+	      cutKeys($output, ['cmd', 'ODid', 'OVid', 'OD', 'OV', 'params']);
 	      break;
 	 case 'SET':
 	 case 'RESET':
@@ -167,7 +167,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
 	    }
 	  else
 	    {
-	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'viewtype', 'objectselection', 'elementselection', 'allelements', 'selection', 'element', 'prop', 'limit', 'linknames'])) unset($output[$key]);
+	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'viewtype', 'objectselection', 'elementselection', 'allelements', 'object', 'element', 'prop', 'limit', 'linknames'])) unset($output[$key]);
 	    }
 
  // Fetch result lines limit
@@ -180,10 +180,18 @@ function GetElementProperty($db, $output, &$client, $recursion)
  if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
 
  // Set default input arg object selection
- if (!isset($output['selection']) || gettype($output['selection']) !== 'string' || trim($output['selection']) === '')
-    $output['selection'] = "id=$client[oId] AND lastversion=1 AND version!=0";
+ if (!isset($output['object']) && $output['ODid'] === $client['ODid'] && $output['OVid'] === $client['OVid'])
+    {
+     $output['object'] = "id=$client[oId] AND lastversion=1 AND version!=0";
+    }
+  else if (!isset($output['object']) || gettype($output['object']) !== 'string' || trim($output['object']) === '')
+    {
+     $output['object'] = '1=1';
+    }
   else
-    $output['selection'] = GetObjectSelection($output['selection'], $output, $client['auth'], true);
+    {
+     $output['object'] = GetObjectSelection($output['object'], $output, $client['auth'], true);
+    }
 
  // Calculate prop
  $prop = isset($output['prop']) ? trim($output['prop']) : 'value';
@@ -192,7 +200,8 @@ function GetElementProperty($db, $output, &$client, $recursion)
  $element = isset($output['element']) ? trim($output['element']) : $client['eId'];
 
  // Calculate select clause. In case of regular expression (/../) use all elements in a layout.
- if ($element[0] === '/' && $element[strlen($element) - 1] === '/')
+ // old: if ($element[0] === '/' && $element[strlen($element) - 1] === '/')
+ if ($element[0] === '/' && ($pos = strpos($element, '/', 2)) !== false)
     {
      $select = '';
      if ($output['viewtype'] === 'Table') { SetLayoutProperties($output); $elements = $output['layout']['elements']; }
@@ -204,7 +213,12 @@ function GetElementProperty($db, $output, &$client, $recursion)
 	     }
      if (!$select) return '';
      $select = substr($select, 1);
-     $element = GetObjectSelection($element, $output, $client['auth'], true);
+
+     if (!($flags = substr($element, $pos + 1))) $flags = '';
+     $regex = substr($element, 1, $pos - 1);
+     $regex = GetObjectSelection($regex, $output, $client['auth'], true);
+     if (!$regex) return '';
+     $element = '/'.$regex.'/'.$flags;
     }
   elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
   elseif (ctype_digit($element))
@@ -219,11 +233,11 @@ function GetElementProperty($db, $output, &$client, $recursion)
  if ($output['linknames'] === [])
     {
      try {
-	  $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` $output[objectselection]) _ WHERE $output[selection] LIMIT $limit");
+	  $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` $output[objectselection]) _ WHERE $output[object] LIMIT $limit");
 	  $query->execute();
 	 }
      catch (PDOException $e)
-         {
+	 {
 	  LogMessage($db, $client, $errormessage.$e->getMessage());
 	  return '';
 	 }
@@ -248,6 +262,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
     {
      foreach ($output['tree'] as $value) $result .= $value[0]."\n";
     }
+
  return substr($result, 0, -1);
 }
 

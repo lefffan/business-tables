@@ -267,6 +267,7 @@ while (true)
 		       case 'DOWNLOADDIALOG':
 		       case 'UNLOADDIALOG':
 		       case 'GALLERY':
+lg($handler['OD']);
 			    if (Check($db, CHECK_OD_OV, $handler, $output))
 			       {
 				CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);

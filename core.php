@@ -747,7 +747,8 @@ function handshake($connect)
  $line = fgets($connect);
  $header = explode(' ', $line);
  $info['method'] = $header[0];
- $info['uri'] = $header[1];
+ $info['uri'] = '';
+ if (isset($header[1])) $info['uri'] = $header[1];
 
  while ($line = rtrim(fgets($connect)))
        {

@@ -1,11 +1,15 @@
 MRTG BASE
-    text cell version via Ctrl+H
+    text cell version via Ctrl+H (OD OV names)
     megacom tree via links in mrtg.php (mpls links are apparent)
     final megacom mrtg db making via paper on my workplace
-    setki.xls
-    telnet, snmp and diagnostic functions
+    setki.xls (preg flags)
+    grafics, telnet, snmp and diagnostic functions
+    tree element dbl click doesn't store view history
 -----------------------------------------------------------------
 - Application:
+  Automatic change view notification (analyze new object version match for every view of database and view element match element changed
+  Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
+  User should have capability to log/see the command line the controller generates at any element to debug errors
   handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
   To allow html table in cells add tr, td, tbody and table tags to allowed tags?
   regexp search - range js instead of span highlighting
@@ -324,6 +328,8 @@ razbiralso s socket fragmentation gluk, full doc:
 https://datatracker.ietf.org/doc/html/rfc6455
 https://tools.ietf.org/id/draft-ietf-hybi-thewebsocketprotocol-09.html
 https://noio-ws.readthedocs.io/en/latest/overview_of_websockets.html
+--------Clipboard JS------------------
+https://web-standards.ru/articles/clipboard-api/
 --------------------------
 upload files:
 ; Whether to allow HTTP file uploads.
@@ -726,6 +732,10 @@ php /usr/local/src/tabels/handlers/text.php SET <{"ODid":"1", "OVid":"1","select
 setki:
 * * * * * 4 ping -c 1 <{"element":"1"}> | grep loss
 on F12: php /usr/local/src/tabels/handlers/text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
+
+setki real:
+SET <{"ODid":"3", "OVid":"2", "selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) regexp ':ip'", "limit": "100","element":"1",":ip": {"element":"1"}}>
+SET <{"ODid":"3", "OVid":"2", "limit": "100","element":"/:ip/",":ip": {"element":"1"}}>hui
 
 chat layout: 
 {"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}

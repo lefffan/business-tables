@@ -35,7 +35,7 @@ function NewOD($db, &$client, &$output)
 
  // Insert new OD properties
  $query = $db->prepare("UPDATE `$` SET odprops=:odprops WHERE id=$id");
- $query->execute([':odprops' => json_encode(adjustODProperties($db, $client['data'], $id))]);
+ $query->execute([':odprops' => json_encode(adjustODProperties($db, $client['data'], $id), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE)]);
 
  return true;
 }
@@ -134,7 +134,7 @@ function EditOD($db, &$client, &$output)
  if ($alertstring) $output['alert'] = "You're not allowed to change ".substr($alertstring, 0, -2)." properties!";
  // Writing new properties
  $query = $db->prepare("UPDATE `$` SET odname=:odname,odprops=:odprops WHERE id=:id");
- $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($db, $client['data'], $id)), ':id' => $id]);
+ $query->execute([':odname' => $newodname, ':odprops' => json_encode(adjustODProperties($db, $client['data'], $id), JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE), ':id' => $id]);
 
  return true;
 }
