@@ -1896,6 +1896,7 @@ function RegexInit(firstinit)
 function AdjustAttribute(string)
 {
  if (typeof string !== 'string' || !string) return '';
- return string.trim().replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+ return string.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+ //return string.trim().replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
  //return string.trim().replace(/<|>|"/g, '');
 }

@@ -20,9 +20,12 @@ if (isset($_SERVER['argv'][1])) switch($_SERVER['argv'][1])
 	     if (!$data['altkey'] && $data['shiftkey'] && !$data['ctrlkey']) echo json_encode(['cmd' => 'UPLOADDIALOG']);
 	      else if (!$data['altkey'] && !$data['shiftkey'] && $data['ctrlkey']) echo json_encode(['cmd' => 'DOWNLOADDIALOG']);
 	      else if ($data['altkey'] && !$data['shiftkey'] && !$data['ctrlkey']) echo json_encode(['cmd' => 'UNLOADDIALOG']);
-	      else if ($data['altkey'] && !$data['shiftkey'] && $data['ctrlkey']) echo json_encode(['cmd' => 'CALL', 'OVd' => '_History', 'OD' => 'Logs', 'OVid' => '1', '' => '', ]);
+	      else if ($data['altkey'] && !$data['shiftkey'] && $data['ctrlkey']) echo json_encode(['cmd' => 'CALL', 'OV' => '_History', 'ODid' => '1', '' => '', ]);
 	     break;
 	    }
+    case 'HUI':
+	 echo json_encode(['cmd' => 'CALL', 'OV' => '_History', 'params' => [':id'=>$_SERVER['argv'][2]]]);
+	 break;
     case 'GALLERY':
 	 echo json_encode(['cmd' => 'GALLERY']);
 	 break;

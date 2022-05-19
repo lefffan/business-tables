@@ -87,7 +87,7 @@ function adjustODProperties($db, $data, $ODid)
 	 }
  $data['dialog']['Element']['New element'] = $newElement; // Reset 'New element' profile to default
  $data['dialog']['Element']['New element']['element1']['id'] = $eidnew; // and set its possible id
- 
+
  // New view section handle
  if (!isset($data['dialog']['View']['New view']['element1']['data'])) return NULL;
  $vidnew = strval($data['dialog']['View']['New view']['element1']['id']);
@@ -137,6 +137,7 @@ function adjustODProperties($db, $data, $ODid)
  $data['buttons'] = SAVECANCEL;
  $data['buttons']['SAVE']['call'] = 'Database Configuration';
  if (!isset($data['flags'])) $data['flags'] = [];
+
  return $data;
 }
 
@@ -193,7 +194,7 @@ function initNewODDialogElements()
 		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action agrees specified event or operation, 'Reject' action cancels event or changes made by the operation."],
 		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation/event', 'data' => 'Add object|Delete object|Change object<br>|DBLCLICK|KEYPRESS|INS|DEL|F2|F12|', 'line' => ''],
 		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Any mouse/keyboard client side event or object add/delete/change operation is passed to the analyzer<br>to test on all rule profiles in alphabetical order (for the specified event or/and operation) until<br>the match is found. Rule query is a list of SQL query strings (one by line). Non-empty and non-zero<br>result of all query strings - match case, any empty, error or zero char '0' result - no match.<br>When a match is found, the action corresponding to the matching rule profile is performed, otherwise<br>default action 'accept' is applied."],
-		    'element6' => ['type' => 'checkbox', 'data' => '+Log rule message|', 'line' => '', 'help' => '']
+		    'element6' => ['type' => 'checkbox', 'data' => 'Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
 
@@ -821,7 +822,6 @@ function Sidebar($db, &$client)
 		   if (ViewRestrictionMatch(intval($id), intval($View['element1']['id']), $user['odvisiblelist'], $user['odvisible'])) continue; // OD is hidden for the user
 		   if (UserRestrictionMatch($groups, $View['element9']['data'], $View['element8']['data'])) continue; // OV is hidden for the user
 		   $sidebar[$id]['view'][$View['element1']['id']] = $View['element1']['data']; // Make OV based on its ids array and set active OD view below
-		   if ($id === $client['ODid'] && $View['element1']['id'] === $client['OVid']) $sidebar[$id]['active'] = $client['OVid'];
 		  }
 	 }
  return $sidebar;
@@ -876,19 +876,28 @@ function Check($db, $flags, &$client, &$output)
     {
      $output['sidebar'] = Sidebar($db, $client);
      if (count($output['sidebar']) == 0 && ($output['error'] = 'Please create Object Database first!')) return;
-     if ($client['ODid'] === '' && ($output['error'] = 'Please create/select Object View!')) return;
+     if (isset($client['ODid']) && $client['ODid'] === '' && ($output['error'] = 'Please create/select Object View!')) return;
 
      // Fetch OD id in case of OD name exist
      if (!isset($client['ODid']) && isset($client['OD']))
-	 foreach ($output['sidebar'] as $id => $value) if ($value['name'] === $client['OD'] && ($client['ODid'] = $id)) break;
+	foreach ($output['sidebar'] as $id => $value) if ($value['name'] === $client['OD'] && ($client['ODid'] = strval($id))) break;
 
      // Fetch OV id in case of OV name exist
      if (isset($client['ODid']) && !isset($client['OVid']) && isset($client['OV']))
-	 foreach ($output['sidebar'][$client['ODid']]['view'] as $id => $value) if ($value === $client['OV'] && ($client['OVid'] = $id)) break;
+	foreach ($output['sidebar'][$client['ODid']]['view'] as $id => $value) if ($value === $client['OV'] && ($client['OVid'] = strval($id))) break;
 
-     if (!isset($output['sidebar'][$client['ODid']]['view'][$client['OVid']]) && ($output['error'] = "Database '$client[OD]' or its View '$client[OV]' not found!")) return;
+     // Check defined OD/OV existence
+     if (!isset($client['ODid']) || !isset($client['OVid']) || !isset($output['sidebar'][$client['ODid']]['view'][$client['OVid']]))
+	{
+	 if (!isset($client['OD'])) $client['OD'] = "unknown id $client[ODid]";
+	 if (!isset($client['OV'])) $client['OV'] = "unknown id $client[OVid]";
+	 $output['error'] = "Database '$client[OD]' or its View '$client[OV]' not found!";
+	 return;
+	}
+
      $client['OD'] = $output['sidebar'][$client['ODid']]['name'];
      $client['OV'] = $output['sidebar'][$client['ODid']]['view'][$client['OVid']];
+     $output['sidebar'][$client['ODid']]['active'] = $client['OVid']; // Active OD/OV definition moved down to the check function
     }
 
  if ($flags & GET_ELEMENTS)
@@ -896,7 +905,11 @@ function Check($db, $flags, &$client, &$output)
      $client['allelements'] = $client['uniqelements'] = []; // Flush all and uniq elements array and build them below
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id='$client[ODid]'"); // Get element section
      $query->execute();
-     if (!count($elements = $query->fetchAll(PDO::FETCH_NUM)) && ($output['error'] = "Object View '$client[OV]' of Database '$client[OD]' not found!")) return;
+     if (!count($elements = $query->fetchAll(PDO::FETCH_NUM)))
+	{
+	 $output['error'] = "Database '$client[OD]' not found!";
+	 return;
+	}
 
      // Convert profiles assoc array to num array with element identificators as array elements instead of profile names and sort it
      foreach (json_decode($elements[0][0], true) as $key => $value) if ($key != 'New element') // Go through all element profiles

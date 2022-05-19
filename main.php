@@ -24,6 +24,10 @@ $clientsarray = [[]];
 $null = NULL;
 $stream = false;
 
+//echo "Starting server..		OK\n";
+//exec(PHPBINARY.' '.APPDIR.SCHEDULERBINARY.' >/dev/null &');
+//echo "Starting scheduler..	OK\n";
+
 while (true)
 {
  $read = $socketarray; // Make copy of array of sockets
@@ -213,7 +217,7 @@ while (true)
 		   LogoutUser($socketarray, $clientsarray, $handler['passchange'], "\nUser password has been changed!\n\nUsername");
 		   unset($handler['passchange']);
 		  }
-	       $count = ['cmd' => '', 'count' => ['odid' => $handler['ODid'], 'ovid' => $handler['OVid']]];
+	       $count = ['cmd' => '', 'count' => ['odid' => isset($handler['ODid']) ? $handler['ODid'] : '', 'ovid' => isset($handler['OVid']) ? $handler['OVid'] : '']];
 	       $countmessage = encode(json_encode($count));
 
 	       switch ($handler['cmd'])
@@ -267,14 +271,11 @@ while (true)
 		       case 'DOWNLOADDIALOG':
 		       case 'UNLOADDIALOG':
 		       case 'GALLERY':
-lg($handler['OD']);
-			    if (Check($db, CHECK_OD_OV, $handler, $output))
-			       {
-				CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);
-				$handler['data'] = GenerateRandomString();
-				$message = json_encode($handler); // Var $handler['cmd'] already has appropriate command ('CALL', 'UPLOAD'..)
-				QueueCall($db, $socketarray[$hid], $handler['data'], $message);
-			       }
+			    Check($db, CHECK_OD_OV, $handler, $output);
+			    CopyArrayElements($clientsarray[$hid], $handler, ['auth', 'uid']);
+			    $handler['data'] = GenerateRandomString();
+			    $message = json_encode($handler); // Var $handler['cmd'] already has appropriate command ('CALL', 'UPLOAD'..)
+			    QueueCall($db, $socketarray[$hid], $handler['data'], $message);
 			    break;
 		      }
 	  $query = $db->prepare("DELETE FROM `$$` WHERE id=$value[id]");

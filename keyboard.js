@@ -92,7 +92,7 @@ function keydownEventHandler(event)
     }
 
  // For estimated OV types (table, tree, map)
- if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey && cursor.td?.contentEditable !== EDITABLE)
+ if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && cursor.td?.contentEditable !== EDITABLE)
     {
      switch (event.keyCode)
 	    {

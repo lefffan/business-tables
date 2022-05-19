@@ -29,7 +29,6 @@ function ParseHandlerResult($db, &$output, &$client)
 
  // Incorrect handler response JSON
  if ((!isset($output['cmd']) || array_search($output['cmd'], HANDLEREVENTS) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
-
  // Parse handler output array
  switch ($output['cmd'])
 	{
@@ -78,6 +77,8 @@ function ParseHandlerResult($db, &$output, &$client)
 	      // Unsupported command
 	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'CALL' command on '$client[cmd]' event!")) return;
 	      cutKeys($output, ['cmd', 'ODid', 'OVid', 'OD', 'OV', 'params']);
+	      if (!isset($output['OD']) && !isset($output['ODid'])) $output['ODid'] = $client['ODid'];
+	      if (!isset($output['OV']) && !isset($output['OVid'])) $output['OVid'] = $client['OVid'];
 	      break;
 	 case 'SET':
 	 case 'RESET':
@@ -102,7 +103,7 @@ function ParseHandlerResult($db, &$output, &$client)
 function ConvertToString(&$arr, $keys, $limit = NULL)
 {
  $result = true;
- 
+
  foreach ($keys as $key => $value) if (isset($arr[$value]))
 	 {
 	  if (gettype($arr[$value]) === 'integer') $arr[$value] = strval($arr[$value]);
@@ -151,7 +152,8 @@ function GetElementProperty($db, $output, &$client, $recursion)
     $errormessage = "Incorrect JSON input argument for database '$client[OD]' (view '$client[OV]') and object id$client[oId] (element id$client[eId]) handler call: ";
 
  $recursion++;
- if ($recursion > ARGRECURSIONNUM && !LogMessage($db, $client, $errormessage."recursive calls exceed max allowed ($recursion)!")) return '';
+ //if ($recursion > ARGRECURSIONNUM && !LogMessage($db, $client, $errormessage."recursive calls exceed max allowed ($recursion)!")) return '';
+ if ($recursion > ARGRECURSIONNUM) return '';
 
  // Fetch OD/OV, check them and their access
  if (!isset($output['ODid']) && !isset($output['OD'])) $output['ODid'] = $client['ODid'];
@@ -167,7 +169,7 @@ function GetElementProperty($db, $output, &$client, $recursion)
 	    }
 	  else
 	    {
-	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'viewtype', 'objectselection', 'elementselection', 'allelements', 'object', 'element', 'prop', 'limit', 'linknames'])) unset($output[$key]);
+	     if (!in_array($key, ['OD', 'OV', 'ODid', 'OVid', 'viewtype', 'objectselection', 'elementselection', 'allelements', 'object', 'element', 'prop', 'limit', 'linknames', 'regex', 'regexp'])) unset($output[$key]);
 	    }
 
  // Fetch result lines limit
@@ -177,7 +179,8 @@ function GetElementProperty($db, $output, &$client, $recursion)
  // Get OD/OV object selection
  if ($output['ODid'] === $client['ODid'] && $output['OVid'] === $client['OVid']) $output += $client['params'];
  $output['objectselection'] = GetObjectSelection($output['objectselection'], $output, $client['auth']);
- if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
+ //if (gettype($output['objectselection']) !== 'string' && !LogMessage($db, $client, $errormessage.'incomplete object selection parameters!')) return '';
+ if (gettype($output['objectselection']) !== 'string') return '';
 
  // Set default input arg object selection
  if (!isset($output['object']) && $output['ODid'] === $client['ODid'] && $output['OVid'] === $client['OVid'])
@@ -196,44 +199,36 @@ function GetElementProperty($db, $output, &$client, $recursion)
  // Calculate prop
  $prop = isset($output['prop']) ? trim($output['prop']) : 'value';
 
- // Calculate element. Absent case - current element is used.
- $element = isset($output['element']) ? trim($output['element']) : $client['eId'];
-
- // Calculate select clause. In case of regular expression (/../) use all elements in a layout.
- // old: if ($element[0] === '/' && $element[strlen($element) - 1] === '/')
- if ($element[0] === '/' && ($pos = strpos($element, '/', 2)) !== false)
+ // Calculate elements list via $output['element']. Absent case - current element is used, empty list - all elements of the view, otherwise elements via comma
+ if (isset($output['element']) && gettype($output['element']) === 'string') $output['element'] = trim($output['element']); else $output['element'] = $client['eId'];
+ if ($output['viewtype'] === 'Table') { SetLayoutProperties($output); $elements = $output['layout']['elements']; }
+  else if ($output['viewtype'] === 'Tree') $elements = $output['elementselection'];
+ $select = '';
+ if ($output['element'] === '')
     {
-     $select = '';
-     if ($output['viewtype'] === 'Table') { SetLayoutProperties($output); $elements = $output['layout']['elements']; }
-      else if ($output['viewtype'] === 'Tree') $elements = $output['elementselection'];
      foreach ($elements as $eid => $value)
-	     {
-	      if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
-	       elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
-	     }
-     if (!$select) return '';
-     $select = substr($select, 1);
-
-     if (!($flags = substr($element, $pos + 1))) $flags = '';
-     $regex = substr($element, 1, $pos - 1);
-     $regex = GetObjectSelection($regex, $output, $client['auth'], true);
-     if (!$regex) return '';
-     $element = '/'.$regex.'/'.$flags;
+	     if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
+	      elseif ($eid !== '0') $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
     }
-  elseif (in_array($element, SERVICEELEMENTS)) $select = $element;
-  elseif (ctype_digit($element))
-	 {
-	  if ($output['viewtype'] === 'Table') { SetLayoutProperties($output); $elements = $output['layout']['elements']; }
-	   else if ($output['viewtype'] === 'Tree') $elements = $output['elementselection'];
-          if (isset($elements[$element])) $select = "JSON_UNQUOTE(JSON_EXTRACT(eid$element, '$.$prop'))"; else return '';
-	 }
-  elseif (!LogMessage($db, $client, $errormessage."specified element is not defined in a view 'element layout' or incorrect!")) return '';
+  else
+    {
+     foreach (preg_split("/,/", $output['element']) as $eid)
+	     if (in_array($eid, SERVICEELEMENTS)) $select .= ','.$eid;
+	      elseif (isset($elements[$eid])) $select .= ",JSON_UNQUOTE(JSON_EXTRACT(eid$eid, '$.$prop'))";
+    }
+ //if (!$select && !LogMessage($db, $client, $errormessage."specified element is not defined in a view 'element layout' or incorrect!")) return '';
+ if (!$select) return '';
+ $select = substr($select, 1);
+
+ // Calculate two regexp strings
+ if (isset($output['regexp']) && ($output['regexp'] = CalcRegex($output['regexp'], $output, $client['auth'])) === false) return '';
+ if (isset($output['regex']) && ($output['regex'] = CalcRegex($output['regex'], $output, $client['auth'])) === false) return '';
 
  // Result query
  if ($output['linknames'] === [])
     {
      try {
-	  $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` $output[objectselection]) _ WHERE $output[object] LIMIT $limit");
+	  $query = $db->prepare("SELECT $select FROM (SELECT * FROM `data_$output[ODid]` $output[objectselection]) _ WHERE $output[object]");
 	  $query->execute();
 	 }
      catch (PDOException $e)
@@ -252,18 +247,34 @@ function GetElementProperty($db, $output, &$client, $recursion)
     }
  if (!isset($output['tree'][0][0])) return '';
 
- // Search element in result $data
+ // Search on regex and regexp
  $result = '';
- if ($element[0] === '/') // Search from all elements via regular expression
-    {
-     foreach ($output['tree'] as $value) foreach ($value as $val) if (preg_match($element, $val)) $result .= $val."\n";
-    }
-  else // Search from exact element
-    {
-     foreach ($output['tree'] as $value) $result .= $value[0]."\n";
-    }
+ foreach ($output['tree'] as $value) foreach ($value as $val)
+	 {
+	  if (isset($output['regex']))
+	     {
+	      $matches = [];
+	      if (!preg_match($output['regex'], $val, $matches)) continue;
+	      if (isset($output['regexp']) && !preg_match($output['regexp'], $matches[0])) continue;
+	     }
+	  $result .= $val."\n";
+          $limit --;
+          if (!$limit) break 2;
+	 }
 
  return substr($result, 0, -1);
+}
+
+function CalcRegex($regex, &$output, $auth)
+{
+ if (gettype($regex) !== 'string' || ($regex = trim($regex)) === '' || $regex[0] !== '/' || ($pos = strpos($regex, '/', 2)) === false) return false;
+
+ if (!($flags = substr($regex, $pos + 1))) $flags = '';
+ $regex = substr($regex, 1, $pos - 1);
+ $regex = GetObjectSelection($regex, $output, $auth, true);
+ if (!$regex) return false;
+
+ return '/'.$regex.'/'.$flags;
 }
 
 function GetCMD($db, &$client, $cmdline = false)
@@ -359,6 +370,12 @@ switch ($output[$currenteid]['cmd'])
 		     if ($output['cmd'] !== 'GALLERY' || array_search($ext, ['jpg', 'png', 'gif', 'bmp']) !== false) $list[] = $name;
 		    }
 		 count($list) ? $output['list'] = $list : $output = ['cmd' => '', 'alert' => $output['cmd'] === 'GALLERY' ? 'No images attached to the object element! Upload some image files first!' : 'No files attached to the object element. Upload some files first!'];
+		 break;
+		}
+	     if ($output['cmd'] === 'CALL') // Unset client OD/OV parameters to use them from handler responce of 'CALL' event
+		{
+		 unset($_client['OD'], $_client['OV'], $_client['ODid'], $_client['OVid']);
+		 break;
 		}
 	     break;
         case 'SET':

@@ -1,17 +1,60 @@
-MRTG BASE
-    text cell version via Ctrl+H (OD OV names)
-    megacom tree via links in mrtg.php (mpls links are apparent)
-    final megacom mrtg db making via paper on my workplace
-    setki.xls (preg flags)
-    grafics, telnet, snmp and diagnostic functions
-    tree element dbl click doesn't store view history
+--------------------------MTRG BASE---------------------------
+universal handler behviour for users od and mrtg od (Alt+f12, DBLCLICK, F2, KEYPRESS) for mrtg.pxp, setki-chat.php and makedb.php
+point to point tree
+setki for all ip
+setki:
+  view list, all ipm search ip
+  history
+  search in
+  search by one ip
+megacom tree via links in mrtg.php (mpls links are apparent)
+
+Elements
+1-100 ports
+101 hostname
+102 hardware
+103 location
+104 ip
+105 mac
+106 Model name
+107 Up/down (alive statistic)
+108 User to check the object
+
+On every element:
+
+History - Alt+F12
+Tree up - Shift+F12
+Tree down - Ctrl+F12
+Alt+Shift+F12 - Map tree up from current object
+Alt+Ctrl+F12 - Map tree down from current object
+F12 port diagnostic (client) - grafic in realtime, and grafics and F12 non port diagnosti (switch)
+
+INS - for ports (general: hint, snmpindex, link, style; description: type [free, client, service, link], zayavka-ip-speed-licevoi-name-address),
+      for hardware (hint, style, type, subtype),
+      location (tehuchet info contacts, names, loaction..)
+
+DBLCLICK with ctrl alt del (upload, download, unload) only for location with ctrl+alt+dblclick for GALLERY
+DBLCLICK, F2, KEYPRESS - edit for L2 only
+DEL - delete content via confirmation
+
+Scheduler:
+one time in 5 minutes for ports - link (set backgr color in case of no link), mrtg
+one time in 1 minute for every host up and down with action specified 
+
 -----------------------------------------------------------------
 - Application:
-  Automatic change view notification (analyze new object version match for every view of database and view element match element changed
-  Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
-  User should have capability to log/see the command line the controller generates at any element to debug errors
-  handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
-  To allow html table in cells add tr, td, tbody and table tags to allowed tags?
+   Operation for megcom realization to allow users write their nedodelki
++  Automatic change view notification (analyze new object version match for every view of database and view element match element changed
++  Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
++  Element types:
+    User should have capability to log/see the command line the controller generates at any element to debug errors
+    handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
+    debug (all handler output plus handler commandline are displayed at dialog box)
+    non json value set
+    log element errors
+    cancel client side default key/mouse default combination behaviour
++  To allow html table in cells add tr, td, tbody and table tags to allowed tags?
++  links instead of real jpegs
   regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
@@ -23,7 +66,7 @@ MRTG BASE
   Export OV data to xls/txt file
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list.
   what about edit after edit command, for a example wrong text to confirm and edit command called once again?
-  Object view MAP.
++  Object view MAP.
   GALLERY shows all foto for default, otherwise - specified foto
     Show image properties (like resolution) in GALLERY mode
   not only regexp search but search on mask with only one asterisk as a special char
@@ -31,7 +74,7 @@ MRTG BASE
   virt cell depends on oid,eid
   Context menu Graph
   System call 'NEWOBJECT' (to create object by user handlers)
-  TREE:
++ TREE:
     Tree element layout: style (for example to see what nodes are down by seeing them via red background)
     Tree wire name (arrow name) to mark fiber cooper radio..
     element link hint to show full element value
@@ -44,7 +87,7 @@ MRTG BASE
   <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
     in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
-  Execute scheduler apparently for every OD
++  Execute scheduler apparently for every OD/OV and optionally exec handlers simultaneously
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
@@ -65,7 +108,8 @@ MRTG BASE
   Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE,
     so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
   All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
-  Table build and <tr> adding via timeout
+  Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
+  nohup server and scheduler execution
 
 - Front:
   non table area selecting - comare event mouse coordinate from drag x1,y1 and increase/decrease drag x2,y2 coordinate so
@@ -100,7 +144,8 @@ MRTG BASE
   If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
-  Add events with ctrl, shift and alt keys combinations pushed to DBLCLICK, INS DEL F2 F12 KEYPRESS (may be even for a apparent key with ctrl|alt|shift press)
++  Add events with ctrl, shift and alt keys combinations pushed to DBLCLICK, INS DEL F2 F12 KEYPRESS (may be even for a apparent key with ctrl|alt|shift press)
+	add F4, F9
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
     (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
@@ -139,12 +184,12 @@ MRTG BASE
     Second stage: zabbix, CRM, corp chat, wiki
 
 - Questionable features:
+  Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
   Autonavigate command for OV, for a example single mouse click on a cell edit the element. Mouse single click command: NONE|DBLCLICK|KEYPRESS. Usefull for chats
   Fool protection by not allowing to block all users from changing DB props, so none can add/delete/change views, elements and rules.
   Pagination. Should i use it or app concept is to out whole selection and manage object number by its object selection?
     should i use page output when next portion of objects are displayed by reaching screen bottom at scrolling? So implemet object-per-page (and other features around) in user customization misc configuration
-  Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
-  Predefined system messages can be displayed on other languages
+  Predefined system messages and help section can be displayed on other languages
   Open OV in new tab in a read-only mode just by coping inner html of main div
   Max object version stored in DB, possible options: no property at all, cut older version to fit the max versions, do not allow new versions at max versions exceeded
     (Max object versions in range 0-65535. Emtpy or undefined string - zero value)
@@ -684,9 +729,12 @@ WHERE lastversion=1 AND version!=0 and JSON_EXTRACT(eid1, '$.value')=':Input_use
 
 4Slava:
 
-razryv mezhdu predstavleniem i BD (event db table names are specified)
+data native - razryv mezhdu predstavleniem i BD (even db table names are specified)
 for market enter your app should be much taller
 primer paragi and hos friend
+server side program from roav
+cell - text, image, video golos, potok?
+ronkurentnie preimushestva - Minimalizm and prozrachnost i documentirovaonst
 
 All users: WHERE lastversion=1 AND version!=0 LIMIT 100
 Postprocessing rule: JSON_EXTRACT(eid1, '$.value')='pid'
@@ -809,3 +857,5 @@ right mrtg layout:
 
 {"oid":"", "style":"padding: 20px; border: none;"}
 {"style":"width: 99%;table-layout: fixed;"}
+
+

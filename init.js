@@ -130,9 +130,9 @@ const help = { title: 'Help', dialog: {
 is a set of custom data tables, each table consists of identical objects, which, in turn, are set of service and user
 defined elements.
 
-Data tables of itself is called Object Database (OD) and can be changed or created by appropriate sidebar context menu.
-OD contains Object Views (OV). Views define what objects (via 'object selection') and elements (via 'element layout')
-should be displayed and how. See appropriate help sections.
+Data tables of itself is called Object Database (OD) and its structure can be changed or created by appropriate sidebar
+context menu. OD contains Object Views (OV). Views define what objects (via 'object selection') and elements
+(via 'element layout') should be displayed and how. See appropriate help sections.
 
 As it was mentioned above - each object is a set of service and user-defined elements. Five built-in service elements
 (id, owner, datetime, version, lastversion) represent service data, which is set automatically while object is changed
@@ -196,7 +196,7 @@ their projects with custom data behaviour and layout.
 
 Go on. Application authentication is password based. Usernames and their passwords are stored in 'Users' OD.
 Initial username/password: root/root. Only one user instance can be logged in, so logged in instance automatically logs out
-another instance via other host/browser. Session lifetime is 10 hours (36000 sec).
+another client instance from other host or browser. Session lifetime is 10 hours (36000 sec).
 To add new user click context menu 'Add Object' on any 'Users' view (on default view 'All users' for example), then double 
 click just-added 'user' element to call user properties (such as password, OD add permission, group membership..) dialog box.
 User 'name' cannot be changed after creation, user password password must be min 8 chars length and contain at least one digit,
@@ -640,9 +640,10 @@ arguments are parsed to be replaced by the next values:
     Last two "element" and "prop" identify element (of the selected objects above) to retrieve the value from. This value
     replaces <JSON> arg in a result handler command line. Omitted "element" current element (the event was initiated on) is
     used. Omitted "prop" - property "value" of element JSON data is used. Property "element" may be treated as an exact element
-    id (user element id number or service element name - id,owner,datetime..) or as a regular expression (with '/' as a leading
-    and trailing character). Regular expression searches first matched element among all elements specified in the database
-    view 'Element layout'. Don't forget to escape backslash '\\' characters in a regular expression string.
+    id (user element id number or service element name - id,owner,datetime..) or as a regular expression ('/regexp/flags')
+    to search on. For every object first matched element among all elements specified in the database view 'Element layout'
+    is taken. Don't forget to escape backslash '\\' to use special characters in a regular expression string and beaware of
+    too long regexp search result strings as they inserted as a handler arguments in a command line executed.
     Also <JSON> may consist of some additional (nested) JSONs (with property names starting from ':'), which values are
     retrieved the same way. These retrieved values then are used as a replacements in current JSON regexp "element" and
     "object" properties, here is an example:
@@ -907,7 +908,7 @@ to one string. As it was mentioned in a 'Handler' help section - every angle bra
 strings such as <user> (our case), <datetime>, <data>  and others. String <user> is replaced by the username the handler is called
 from, in our chat context - the user the message is posted by. Next arg is user first (last) name as it is in OD 'Users' (ODid=1)
 and OV 'All users' (OVid=1). This arg is retrieved via JSON that searches user object ("object" property) and takes its second 
-element ("element" property) - first/last name. Retrieved construction (user@firstname) is styled by <span> tag: deep blue color
+element ("element" property) - first/last name. Retrieved construction (user@firstname) is styled by <span>tag: deep blue color
 (RGB(44,72,131) and bold font. After user@firstname - single space (' ') and light grey color styled datetime (<datetime>).
 Then - user chat message text of itself (<data>) on the next line (<br>).
 
@@ -1066,7 +1067,7 @@ Line 50. Pass dialog to the controller.`
     cusomization 'application' property. New-object input content 'apply' creates new object
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">ScrollLock on</span> scrolls the entire table instead of cursor navigating cells
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Alt + ^|v</span>: previous|next object cursor navigation
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + <|></span> previous|next view navigation
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + <|></span> previous|next view navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + c|INS</span> copies element formatted text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift+c|Shift+INS</span> copies element clear text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search, see search dialog hint for the brief regexp syntax
