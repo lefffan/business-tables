@@ -610,7 +610,6 @@ Note, that 'INIT' client event (new object creation) is passed to all elements o
 initiated element only. Handler command line is executed as it is specified, but with one moment - angle brackets quoted
 arguments are parsed to be replaced by the next values:
  - <user> is replaced by user name the specified event was initiated by. 'SCHEDULER' event is initiated by built-in 'system' user.
- - <oid> is replaced by the object id the event was initiated on.
  - <event> is replaced by event name (DBLCLICK, KEYPRESS, CHANGE..) the handler is called on.
  - <title> is replaced by element title (element name in Database configuration) the event was initiated on.
  - <datetime> is replaced by date and time in format 'Y-m-d H:i:s'.
@@ -627,36 +626,43 @@ arguments are parsed to be replaced by the next values:
     For CONFIRMDIALOG after dialog box apply - <data> argument is a JSON that represents dialog structure*
     For CHANGE and SCHEDULE events <data> argument is undefined.
  - <JSON> is a special argument that is replaced by retrieved element data. JSON format:
-    {"ODid": .., "OD": .., "OVid": .., "OV": .., "object": .., "element": .., "prop": .., "limit": .., ":..": ..}
-    Data is retrieved from element(s) "element" property "prop" of object(s) "object" of the database "ODid"/"OD" view
-    "OVid"/"OV". First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted
+    { "ODid":, "OD":, "OVid":, "OV":, "object":, "element":, "prop":, "regex":, "regexp":, "limit":, ":..": }
+    Data is retrieved from element(s) "element" property "prop" of object(s) "object" of the database "ODid"/"OD" and view
+    "OVid"/"OV" and then tested on "regex"/"regexp" regular expressions. Successful cases are saved (each on a new line) to the
+    result string that replaces the <JSON> arg in a result handler command line.
+    -----
+    First four properties identify database view. In case of database/view identificators ("ODid"/"OVid") omitted -
     database/view names ("OD"/"OV") are used. Both identificator and name omitted - current database/view are used.
-    Property "object" (together with "limit") identifies database objects via SQL query, that selects only necessary objects
-    (among all view objects) the element data to retrieve from. Query fromat:
-    SELECT .. FROM .. WHERE "object" LIMIT "limit".
-    Omitted "object" property in case of the current database view specified - current object (to retrieve element data) is
-    used, in case of another database view specified - all view objects are used (so as for empty "object" string). Omitted or
-    incorrect "limit" - number is set to 1, max number is 256.
-    Last two "element" and "prop" identify element (of the selected objects above) to retrieve the value from. This value
-    replaces <JSON> arg in a result handler command line. Omitted "element" current element (the event was initiated on) is
-    used. Omitted "prop" - property "value" of element JSON data is used. Property "element" may be treated as an exact element
-    id (user element id number or service element name - id,owner,datetime..) or as a regular expression ('/regexp/flags')
-    to search on. For every object first matched element among all elements specified in the database view 'Element layout'
-    is taken. Don't forget to escape backslash '\\' to use special characters in a regular expression string and beaware of
-    too long regexp search result strings as they inserted as a handler arguments in a command line executed.
+    -----
+    Property "object" identifies database objects via SQL query, that selects only necessary objects (among all view objects)
+    the element data to retrieve/search from. Result query fromat:
+    SELECT .. FROM (SELECT * FROM <ODid> <vew object selection>) _ WHERE <property "object" selection>
+    Omitted "object" property in case of the current database view specified - current object (to retrieve/search element data)
+    is used, in case of another database view specified - all view objects are used. Empty "object" property - all view objects
+    are used too.
+    -----
+    Properties "element" and "prop" identify element (of the selected objects above) and its JSON property name ("prop") to be
+    retrieved/searched. Omitted "element" - current element (the event was initiated on) is used. Empty "element" - all elements
+    (excluding service ones) are used, otherwise "element" is an element (user element id number [1,2..] or service element name
+    [id,owner,datetime..]) list separated by comma. Omitted "prop" - property "value" of element JSON data is used.
+    -----
+    Properties "regex" and "regexp" identifies regular expression strings (in format '/regexp/flags') to search on. Specified
+    object element data is tested on "regex" and then matched pattern is tested on "regexp" (if exist). Omitted "regex" - search
+    process is considered to be successful. Don't forget to escape backslash '\\' to use special characters in a regular
+    expression strings and beaware of too long search result strings as they inserted as a handler arguments in a command line
+    executed. Max result strings number is specified in a "limit" property. Omitted or incorrect "limit" - number is set to 1
+    (min value), max allowed number is 256.
+    -----
     Also <JSON> may consist of some additional (nested) JSONs (with property names starting from ':'), which values are
-    retrieved the same way. These retrieved values then are used as a replacements in current JSON regexp "element" and
-    "object" properties, here is an example:
-    <{ .. "element": "/:arg/", ":arg": {..} }>
+    retrieved the same way. These retrieved values then are used as a replacements in current JSON "object" and "regex/regexp"
+    properties, here is an example:
+    <{ "object": ":arg1",  "regex/regexp": ":arg2", ":arg1": {..}, ":arg2": {..} }>
     Max 'nesting' levels number is 3, see 'Examples' help section for extra info.
-    In case of multiple objects as a selection result - <JSON> argument will be replaced by property of specified element
-    or found (via regular expression) elements of all selected objects (max 256, each in a new line).
-    Therefore, <JSON> argument selects objects of the view (based on "object" and "limit", max is 256), takes element(s)
-    and optionally its property (based on "element" and "prop") and then replaces <JSON argument> with the retrieved value.
+    -----
     All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated as a correct one. Thus, empty
     (or with unknown properties) JSON will be replaced by the current object element value.
 
-Not listed above argument cases (<user>, <oid>, <event>..) remain untouched and qouted to be treated as a single command
+Not listed above argument cases (<user>, <event>, <title>..) remain untouched and qouted to be treated as a single command
 line argument. Non-paired angle brackets are truncated in a result command line to avoid stdin/stdout redirections.
 
 					    <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">HANDLER COMMAND</span>

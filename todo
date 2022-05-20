@@ -1,3 +1,5 @@
+style padding: 15px; null
+
 --------------------------MTRG BASE---------------------------
 universal handler behviour for users od and mrtg od (Alt+f12, DBLCLICK, F2, KEYPRESS) for mrtg.pxp, setki-chat.php and makedb.php
 point to point tree
@@ -48,11 +50,29 @@ one time in 1 minute for every host up and down with action specified
 +  Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
 +  Element types:
     User should have capability to log/see the command line the controller generates at any element to debug errors
-    handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. So make button 'Treat handler non-JSON output as an element value set'.
+    handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. 
+	So make button 'Treat handler non-JSON output as an element value set'.
     debug (all handler output plus handler commandline are displayed at dialog box)
     non json value set
     log element errors
     cancel client side default key/mouse default combination behaviour
+
+Handler  output
+Standart|Dialog|Debug (empty value, non - json value, result cmdline)
+
+Ctrl Alt Shift Meta
++
+Double click
+KEYPRESS
+a-z
+INS
+DEL
+F1-F12
+0-9
++
+cmdline
+
+
 +  To allow html table in cells add tr, td, tbody and table tags to allowed tags?
 +  links instead of real jpegs
   regexp search - range js instead of span highlighting
@@ -144,8 +164,6 @@ one time in 1 minute for every host up and down with action specified
   If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
-+  Add events with ctrl, shift and alt keys combinations pushed to DBLCLICK, INS DEL F2 F12 KEYPRESS (may be even for a apparent key with ctrl|alt|shift press)
-	add F4, F9
   As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
     (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
@@ -857,5 +875,7 @@ right mrtg layout:
 
 {"oid":"", "style":"padding: 20px; border: none;"}
 {"style":"width: 99%;table-layout: fixed;"}
+
+
 
 
