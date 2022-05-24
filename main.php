@@ -168,11 +168,7 @@ while (true)
 		  case 'DELETEOBJECT':
 		       Check($db, CHECK_EID, $client, $output);
 		  case 'DBLCLICK':
-		  case 'KEYPRESS':
-		  case 'INS':
-		  case 'DEL':
-		  case 'F2':
-		  case 'F12':
+		  case 'PASTE':
 		  case 'CONFIRM':
 		  case 'CONFIRMDIALOG':
 		       // wrapper <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
@@ -182,7 +178,10 @@ while (true)
 		       exec(PHPBINARY." taskmanager.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
 		  default:
-		       $output['log'] = $output['alert'] = "Controller report: unknown event '$client[cmd]' from client $client[ip] and user '$client[auth]'!";
+		       if (ctype_digit($client['cmd']))
+			  exec(WRAPPERBINARY." '$client[uid]' ".strval($now)." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' 'KEYPRESS' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+			else
+			  $output['log'] = $output['alert'] = "Controller report: unknown event '$client[cmd]' from client $client[ip] and user '$client[auth]'!";
 		 }
 	     }
 	 catch (PDOException $e)

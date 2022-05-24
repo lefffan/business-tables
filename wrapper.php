@@ -5,6 +5,9 @@ require_once 'core.php';
 const ARGVCLIENTINDEX = 9;
 const GROUPEVENTS = ['CHANGE', 'INIT', 'SCHEDULE'];
 const HANDLEREVENTS = ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', 'UPLOADDIALOG', 'DOWNLOADDIALOG', 'UNLOADDIALOG', 'GALLERY', ''];
+// 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46
+const USEREVENTKEYCODES = [65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,48,49,50,51,52,53,54,55,56,57,112,113,114,115,116,117,118,119,120,121,122,123,32,45,46,219,221];
+const KEYCODESYMBOLRANGES = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 
 function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 {
@@ -279,6 +282,87 @@ function CalcRegex($regex, &$output, $auth)
 
 function GetCMD($db, &$client, $cmdline = false)
 {
+ // Caclulate incoming client event modificator keys
+ if ($client['cmd'] === 'DBLCLICK')
+    {
+     $event = 'DBLCLICK';
+     $modificators = intval($client['data']);
+    }
+  else if (ctype_digit($client['cmd']))
+    {
+     $event = intval($client['cmd']) & 255;
+     $modificators = (intval($client['cmd']) & 65280) / 256;
+    }
+  else
+    {
+     $event = $client['cmd'];
+    }
+
+ // Search specified event above (excluding 'SCHEDULE' event in case of $cmdline exist)
+ if (!$cmdline)
+ foreach ($client['allelements'][$client['eId']] as $key => $value)
+	 {
+	  $eid = intval(substr($key, 7)); // Calculate interface element id number
+	  if ($eid < 11 || !($eid % 2) || ($pos = strpos($value['event'], '+') + 1) === false) continue; // Then check it to be more than 10 and odd. Serach for the selected event also
+	  if (!isset($modificators) || $modificators === $value['modificators']) // Check Ctrl, Alt, Shift, Meta modificators
+
+	  if ($event === ($elementevent = substr($value['event'], $pos, strpos($value['event'], '|', $pos) - $pos))) // Exact event match
+	     {
+	      $cmdline = $value['data'];
+	      break;
+	     }
+
+	  if (gettype($event) === 'integer') continue; // No key down event? Continue
+
+	  if (!(($i = array_search($event, USEREVENTKEYCODES)) === false) && USEREVENTCODES[$i] === $elementevent) // Exact key event match
+	     {
+	      $cmdline = $value['data'];
+	      break;
+	     }
+	
+	  if (RangeTest($event, KEYCODESYMBOLRANGES)) $cmdline = $value['data']; // May be symbol key to match KEYPRESS
+	 }
+
+ // Check result command line
+ if (!($len = strlen($cmdline))) return '';
+ $i = -1;
+ $newcmdline = '';
+
+ // Parse command line args to replace
+ while (++$i < $len)
+       {
+	if (($add = $cmdline[$i]) === "'" && ($j = strpos($cmdline, "'", $i + 1)) !== false)
+	   {
+	    $newcmdline .= "'".substr($cmdline, $i + 1, $j - $i - 1)."'";
+	    $i = $j;
+	    continue;
+	   }
+        if ($add === '>') continue;
+	if ($add === '<')
+	   {
+	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
+	    switch ($match = substr($cmdline, $i + 1, $j - $i - 1))
+		   {
+		    case 'data':  $add = DoubleQuote($client['data']); break;
+		    case 'user':  $add = DoubleQuote($client['auth']); break;
+		    case 'oid':   $add = DoubleQuote($client['oId']); break;
+		    case 'event': $add = DoubleQuote($client['cmd']); break;
+		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
+		    case 'datetime': $datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
+		    default: if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
+			      else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
+		   }
+	    $i = $j;
+	   }
+       $newcmdline .= $add;
+      }
+
+ // Return modified command line
+ return $newcmdline;
+}
+
+function GetCMD1($db, &$client, $cmdline = false)
+{
  if (!$cmdline) $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE'])]['data']);
  if (!($len = strlen($cmdline))) return '';
  $i = -1;
@@ -286,7 +370,7 @@ function GetCMD($db, &$client, $cmdline = false)
 
  while (++$i < $len)
        {
-    	if (($add = $cmdline[$i]) === "'" && ($j = strpos($cmdline, "'", $i + 1)) !== false)
+	if (($add = $cmdline[$i]) === "'" && ($j = strpos($cmdline, "'", $i + 1)) !== false)
 	   {
 	    $newcmdline .= "'".substr($cmdline, $i + 1, $j - $i - 1)."'";
 	    $i = $j;
@@ -300,7 +384,7 @@ function GetCMD($db, &$client, $cmdline = false)
 		   {
 		    case 'data':  $add = DoubleQuote($client['data']); break;
 		    case 'user':  $add = DoubleQuote($client['auth']); break;
-		    case 'oid':   $add = DoubleQuote($client['oId']); break;
+		    //case 'oid':   $add = DoubleQuote($client['oId']); break;
 		    case 'event': $add = DoubleQuote($client['cmd']); break;
 		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
 		    case 'datetime': $datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;

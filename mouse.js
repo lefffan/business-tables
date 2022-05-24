@@ -71,7 +71,7 @@ function dblclickEventHandler(event)
      if (target && target.contentEditable != EDITABLE && mainTable[cursor.y]?.[cursor.x]?.realobject && Number(cursor.eId) > 0)
 	{
 	 cmd = 'DBLCLICK';
-	 CallController({metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey});
+	 CallController(String(event.ctrlKey * 8 + event.altKey * 4 + event.shiftKey * 2 + event.metaKey * 1));
 	}
      return;
     }

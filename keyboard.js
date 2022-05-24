@@ -91,7 +91,7 @@ function keydownEventHandler(event)
      return;
     }
 
- // For estimated OV types (table, tree, map)
+ // For estimated OV types (table, tree, map) - Ctrl+Shift with left/right arrow keys
  if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && cursor.td?.contentEditable !== EDITABLE)
     {
      switch (event.keyCode)
@@ -119,6 +119,7 @@ function keydownEventHandler(event)
     {
      HideHint();
 
+     // Ctrl+Shift+F
      if (cursor.td?.contentEditable !== EDITABLE && event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.keyCode === 70)
 	{
 	 box = {title: REGEXSEARCHTITLE,
@@ -203,24 +204,37 @@ function keydownEventHandler(event)
 		     }
 		  CellBorderToggleSelect(null, cursor.td, 0); // Normilize cell outline off buffered dashed style cell
 	          break;
-	     case 45:  // Ins
-	     case 46:  // Del
-	     case 113: // F2
-	     case 123: // F12
-		  ProcessControllerEventKeys(event);
-		  break;
 	     case 65: // 'a'
 		  if (cursor.td.contentEditable === EDITABLE) break;
 		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
 		     {
 		      SelectTableArea(drag.x1 = 0, drag.y1 = 0, drag.x2 = mainTableWidth - 1, drag.y2 = mainTableHeight - 1);
 		      event.preventDefault();
+		      break;;
+		     }
+		  ProcessControllerEventKeys(event);
+		  break;
+	     case 45: // Ins
+		  if (cursor.td.contentEditable === EDITABLE) break;
+		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
+		     {
+		      CopyBuffer(event.shiftKey);
+		      break;;
+		     }
+		  if (!event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey)
+		     {
+		      ReadBuffer().then(PasteBuffer);
+		      break;
 		     }
 		  ProcessControllerEventKeys(event);
 		  break;
 	     case 67: // 'c'
 		  if (cursor.td.contentEditable === EDITABLE) break;
-		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey) CopyBuffer(event.shiftKey);
+		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
+		     {
+		      CopyBuffer(event.shiftKey);
+		      break;;
+		     }
 		  ProcessControllerEventKeys(event);
 		  break;
 	     case 86: // 'v'
@@ -230,9 +244,11 @@ function keydownEventHandler(event)
 		      ReadBuffer().then(PasteBuffer);
 		      break;
 		     }
-	     default: // Space, letters, digits
-		  if (rangeTest(event.keyCode, SPACELETTERSDIGITSRANGE)) ProcessControllerEventKeys(event);
-	}
+		  ProcessControllerEventKeys(event);
+		  break;
+	     default: // Space, letters, digits, func keys..
+		  if (rangeTest(event.keyCode, KEYCODEEVENTRANGES)) ProcessControllerEventKeys(event);
+	    }
      return;
     }
 }
@@ -249,63 +265,40 @@ function PasteBuffer(string)
 
  if (string && mainTable[cursor.y][cursor.x]['realobject'])
     {
-     cmd = 'KEYPRESS';
-     CallController({ metakey: false, altkey: false, shiftkey: false, ctrlkey: false, string: string });
+     cmd = 'PASTE';
+     CallController(string);
      return;
     }
 }
 
 function ProcessControllerEventKeys(event)
 {
+ // Do not pass event to the controller on content editable lements, non-existence cells or service object elements
  if (cursor.td.contentEditable === EDITABLE) return;
  if (!mainTable[cursor.y] || !mainTable[cursor.y][cursor.x] || isNaN(cursor.eId)) return;
- let newcmd, object = { metakey: event.metaKey, altkey: event.altKey, shiftkey: event.shiftKey, ctrlkey: event.ctrlKey };
 
- if (event.keyCode === 45)
-    {
-     if (!object.ctrlkey && !object.altkey && !object.metakey && object.shiftkey)
-	{
-	 ReadBuffer().then(PasteBuffer);
-	 return;
-	}
-     newcmd = 'INS';
-    }
-  else if (event.keyCode === 46) newcmd = 'DEL';
-  else if (event.keyCode === 113) newcmd = 'F2';
-  else if (event.keyCode === 123)
-    {
-     newcmd = 'F12';
-     // Prevent default action Developer Console call (via 'F12') in Firefox browser
-     event.preventDefault();
-    }
-  else
-    {
-     newcmd = 'KEYPRESS';
-     object['string'] = event.key;
-     // Prevent default action 'page down' (via space) and 'quick search bar' (via keyboard|numpad forward slash) in Firefox browser
-     if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
-    }
+ // Prevent default action 'page down' (via space) and 'quick search bar' (via keyboard|numpad forward slash) in Firefox browser
+ if (event.keyCode == 32 || event.keyCode == 111 || event.keyCode == 191) event.preventDefault();
 
- if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID)
+ // Process new object input F2, DEL and symbol keys
+ if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID) switch (event.keyCode)
     {
-     switch (newcmd)
-	    {
-	     case 'F2':
-		  if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
-		  break;
-	     case 'DEL':
-		  if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
-		  break;
-	     case 'KEYPRESS':
-		  if (!event.ctrlKey && !event.altKey && !event.metaKey) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
-		  break;
-	    }
-     return;
+     case 113: // F2
+	  if (!event.ctrlKey && !event.altKey %% !event.metaKey && !event.shiftKey) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	  return;
+     case 46: // DEL
+	  if (!event.ctrlKey && !event.altKey %% !event.metaKey && !event.shiftKey) mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
+	  return;
+     default: // Letters, space, digits and other symbol keys
+	  if (rangeTest(event.keyCode, KEYCODESYMBOLRANGES)) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	  return;
     }
 
  if (!mainTable[cursor.y][cursor.x]['realobject']) return;
- cmd = newcmd;
- CallController(object);
+
+ // Pass to the controller key event
+ cmd = String((event.ctrlKey * 8 + event.altKey * 4 + event.shiftKey * 2 + event.metaKey * 1) * 256 + event.keyCode);
+ CallController(event.key);
 }
 
 function moveCursor(x, y, event, focus = FOCUS_VERTICAL | FOCUS_HORIZONTAL)

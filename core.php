@@ -17,11 +17,41 @@ function lg($arg, $title = '', $echo = false) // Save input $arg to error.log an
  if ($echo) echo $title, $arg;
 }
 
+function AddNewHandlerInterfaceSection(&$elementprofile, &$newElement)
+{
+ // First check all handlers on empty cmd line
+ foreach ($elementprofile as $profile => $value)
+         {
+          $eid = intval(substr($profile, 7)); // Calculate interface element id number
+          if ($eid < 11 || !($eid % 2)) continue; // Then check it to be more than 10 and odd.
+	  if ($value['data']) continue;
+	  unset($elementprofile[$profile]);
+	  unset($elementprofile['element'.strval($eid - 1)]);
+	 }
+
+ // Then check new handler interface section to add
+ if ($elementprofile['element8']['data'])
+    {
+     // Add new interface section
+     $elementprofile['element'.strval($eid + 1)] = $elementprofile['element5']; 
+     $elementprofile['element'.strval($eid + 1)]['data'] = 'Output mode';
+     $elementprofile['element'.strval($eid + 2)] = $elementprofile['element8'];
+     $elementprofile['element'.strval($eid + 2)]['event'] = $elementprofile['element6']['data'];
+     $elementprofile['element'.strval($eid + 2)]['modificators'] = $elementprofile['element7']['data'];
+
+     // Flush new section
+     $elementprofile['element5'] = $newElement['element5'];
+     $elementprofile['element6'] = $newElement['element6'];
+     $elementprofile['element7'] = $newElement['element7'];
+     $elementprofile['element8'] = $newElement['element8'];
+    }
+}
+
 function adjustODProperties($db, $data, $ODid)
 {
  global $newElement, $newView, $newRule;
  initNewODDialogElements();
- 
+
  // Check some vars
  if (!isset($db, $ODid, $data['dialog']['Database']['Properties']['element1']['data'])) return NULL;
 
@@ -75,6 +105,7 @@ function adjustODProperties($db, $data, $ODid)
     	      $db->commit();
 	      $data['dialog']['Element'][$key]['element1']['id'] = $eidnew;
 	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
+	      AddNewHandlerInterfaceSection($data['dialog']['Element'][$profile], $newElement);
 	      $eidnew = strval(intval($eidnew) + 1);
 	      continue;
 	     }
@@ -83,6 +114,7 @@ function adjustODProperties($db, $data, $ODid)
 	     {
 	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
 	      unset($data['dialog']['Element'][$key]);
+	      AddNewHandlerInterfaceSection($data['dialog']['Element'][$profile], $newElement);
 	     }
 	 }
  $data['dialog']['Element']['New element'] = $newElement; // Reset 'New element' profile to default
@@ -145,12 +177,13 @@ function initNewODDialogElements()
 {
  global $newProperties, $newElement, $newView, $newRule;
 
+ $usereventcodestring = '';
+ foreach (USEREVENTCODES as $code) $usereventcodestring .= $code.'|';
+
  $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - remove all elements in 'Element' tab<br>and set database name with its description empty."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'radio', 'data' => "User/group list the database is visible for|+Hidden for user/group list (visible for others)|"],
 		    'element4' => ['type' => 'textarea', 'data' => '', 'line' => ''],
-		    //'element3' => ['type' => 'text', 'head' => 'Database size limit in MBytes. Undefined or zero value - no limit.', 'data' => ''],
-		    //'element4' => ['type' => 'text', 'head' => 'Database object count limit. Undefined or zero value - no limit.', 'data' => '', 'line' => ''],
 		    'element6' => ['type' => 'radio', 'data' => "'Database' user section|+Disallowed list (allowed for others)|"],
 		    'element7' => ['type' => 'textarea', 'data' => ''],
 		    'element8' => ['type' => 'radio', 'data' => "User/group list allowed to change 'Element' section|+Disallowed list (allowed for others)|"],
@@ -164,6 +197,11 @@ function initNewODDialogElements()
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
+		    'element5' => ['type' => 'radio', 'head' => "Add new handler:\n\nOutput mode", 'data' => '+Default|Dialog|Debug|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line<br>string as an alert text. For Keyboard/Mouse events only. For all other events (INIT, CONFIRM..)<br>handler output in debug mode is saved to Logs Database.'],
+		    'element6' => ['type' => 'select-one', 'head' => 'User event', 'data' => '+INIT|CONFIRM|CONFIRMDIALOG|CHANGE|PASTE|DoubleClick|KeyPress|'.$usereventcodestring, 'help' => 'Choose event the handler is called on (via command line below).<br>For the mouse and keyboards events select Ctrl|Alt|Shift|Meta as an additional event occur options.<br>Note that some events (Ctrl+KeyA, Ctrl+KeyC and others) are reserved for the service purposes<br>and will never occur. Also handler call does not cancel defa'],
+		    'element7' => ['type' => 'checkbox', 'hea' => '', 'data' => 'Ctrl|Alt|Shift|Meta'],
+		    'element8' => ['type' => 'textarea', 'head' => 'Handler command line', 'data' => '', 'hel' => 'hui', 'line' => ''],
+/*
 		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "'INIT' event:", 'data' => ''],
 		    'element5' => ['type' => 'text', 'label' => "'DBLCLICK' event:", 'data' => ''],
 		    'element6' => ['type' => 'text', 'label' => "'KEYPRESS' event:", 'data' => ''],
@@ -174,6 +212,7 @@ function initNewODDialogElements()
 		    'element11' => ['type' => 'text', 'label' => "'CONFIRM' event:", 'data' => ''],
 		    'element12' => ['type' => 'text', 'label' => "'CONFIRMDIALOG' event:", 'data' => ''],
 		    'element13' => ['type' => 'text', 'label' => "'CHANGE' event:", 'data' => '', 'line' => '']
+*/
 		   ];
 
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'View name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
@@ -1396,6 +1435,14 @@ function GetElementTitle($eid, &$allelements)
 function IsDirEmpty($dir)
 {
  if (is_dir($dir)) foreach (scandir($dir) as $name) if ($name !== '.' && $name !== '..') return true;
+ return false;
+}
+
+function RangeTest($a, $b)
+{
+ $c = count($b);
+ for ($i = 0; $i < $c; $i += 2)
+     if ($a >= $b[$i] && $a <= $b[$i+1]) return true;
  return false;
 }
 

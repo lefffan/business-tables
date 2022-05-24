@@ -1060,32 +1060,37 @@ function CallController(data)
 	 case 'CONFIRM':
 	 case 'CONFIRMDIALOG':
 	 case 'DBLCLICK':
-	 case 'KEYPRESS':
-	 case 'INS':
-	 case 'DEL':
-	 case 'F2':
-	 case 'F12':
-	      object = { cmd: cmd };
+	 case 'PASTE':
+	      object = { cmd: cmd, data: data };
 	      if (cursor.td && mainTable[cursor.y]?.[cursor.x])
 	         {
 	          object.oId = mainTable[cursor.y][cursor.x].oId;
 		  object.eId = mainTable[cursor.y][cursor.x].eId;
 		 }
-	      if (data != undefined) object.data = data;
 	      break;
 	 case '':
 	      break;
 	 default:
-	      if (cmd.substr(0, 7) != 'Logout ')
+	      if (!(/[^0-9]/.test(cmd))) // KEYPRESS
 		 {
-		  warning("Undefined application message: '" + cmd + "'!");
-		  return;
+	         object = { cmd: cmd, data: data };
+		 if (cursor.td && mainTable[cursor.y]?.[cursor.x])
+	            {
+		     object.oId = mainTable[cursor.y][cursor.x].oId;
+		     object.eId = mainTable[cursor.y][cursor.x].eId;
+		    }
+		  break;
 		 }
-	      user = OD = OV = ODid = OVid = OVtype = '';
-	      viewindex = -1;
-	      viewhistory = [];
-	      cursor = {};
-	      object = { cmd: 'LOGOUT' };
+	      if (cmd.substr(0, 6) === 'Logout') // Logout context menu item
+		 {
+		  user = OD = OV = ODid = OVid = OVtype = '';
+		  viewindex = -1;
+		  viewhistory = [];
+		  cursor = {};
+		  object = { cmd: 'LOGOUT' };
+		  break;
+		 }
+	      warning("Undefined application message: '" + cmd + "'!");
 	}
 
  if (object)

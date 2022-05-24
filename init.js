@@ -13,7 +13,6 @@ const CONTEXTITEMUSERNAMEMAXCHAR = 12;
 const SOCKETADDR = 'wss://tabels.app:7889';
 const EFFECTHELP = "effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Undefined or empty value - 'none' effect is used (no effect)."
 const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
-const SPACELETTERSDIGITSRANGE = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const HTMLSPECIALCHARS = ['&amp;', '&lt;', '&gt;', '<br>', '&nbsp;'];
 const HTMLUSUALCHARS = ['&', '<', '>', '\n', ' '];
 const SERVICEELEMENTS = ['id', 'version', 'owner', 'datetime', 'lastversion'];
@@ -27,6 +26,9 @@ const ALLOWEDTAGS = ['b', 'a', 'font', 'span'];
 const ALLOWEDTAGNAMES = ['B', 'A', 'FONT', 'SPAN'];
 const SPANHIGHLIGHT = '<span class="matchb">';
 const REGEXSEARCHTITLE = 'Search';
+// 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46
+const KEYCODESYMBOLRANGES = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
+const KEYCODEEVENTRANGES = [65,90,48,57,96,107,109,123,186,192,219,222,32,32,59,59,61,61,173,173,226,226,45,46];
 
 let allowedtagsregexp, allowedtagsregexpg, allowedtagsregexpstring = '';
 let viewindex = -1, viewhistory = [], perfomance;

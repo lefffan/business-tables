@@ -1,92 +1,120 @@
-style padding: 15px; null
+New handler conception:
+1. Start event for keypres and dblclick
+2. Doc-help
+3. Search in every js php keypress ins del f2 f12 dblclick
+4. test task manager on key press event
+5. handlers on new events
+6. make db make setki make mrtg
+7. pasre handler output
+	As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise  (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data. At Final: warning about this situation only in DEBUG handler output mode!
+8. remove getCMD1, and new element for f2 f12 (all old handler cmd lines)
 
---------------------------MTRG BASE---------------------------
-universal handler behviour for users od and mrtg od (Alt+f12, DBLCLICK, F2, KEYPRESS) for mrtg.pxp, setki-chat.php and makedb.php
-point to point tree
-setki for all ip
-setki:
-  view list, all ipm search ip
-  history
-  search in
-  search by one ip
-megacom tree via links in mrtg.php (mpls links are apparent)
+Errors:
+1. style padding: 15px; null
 
-Elements
-1-100 ports
-101 hostname
-102 hardware
-103 location
-104 ip
-105 mac
-106 Model name
-107 Up/down (alive statistic)
-108 User to check the object
+Megacom implementation:
+1. new element mac to setki view
+2. new view nedodelki
+3. new element 'viewid' to make chats between two users
+4. add 10.5.. fake ip to setki vew
+5. point to point tree
+6. OD setki new view: search by one ip, history
+7. correct all mrtg host files to make correct megacom tree via links in mrtg.php (mpls links are apparent)
 
-On every element:
+Megacom MRTG OD:
+1. Elements
+	1-100 ports
+	101 hostname
+	102 hardware
+	103 location
+	104 ip
+	105 mac
+	106 Model name
+	107 Up/down (alive statistic)
+	108 User to check the object
+2. On every element
+	History - Alt+F12
+	Tree up - Shift+F12
+	Tree down - Ctrl+F12
+	Alt+Shift+F12 - Map tree up from current object
+	Alt+Ctrl+F12 - Map tree down from current object
+	F12 port diagnostic (client) - grafic in realtime, and grafics and F12 non port diagnosti (switch)
+	INS - for ports (general: hint, snmpindex, link, style; description: type [free, client, service, link], zayavka-ip-speed-licevoi-name-address),
+	    for hardware (hint, style, type, subtype),
+	    location (tehuchet info contacts, names, loaction..)
+	DBLCLICK with ctrl alt del (upload, download, unload) only for location with ctrl+alt+dblclick for GALLERY
+	DBLCLICK, F2, KEYPRESS - edit for L2 only
+	DEL - delete content via confirmation
+3. Scheduler
+	one time in 5 minutes for ports - link (set backgr color in case of no link), mrtg
+	one time in 1 minute for every host up and down with action specified 
 
-History - Alt+F12
-Tree up - Shift+F12
-Tree down - Ctrl+F12
-Alt+Shift+F12 - Map tree up from current object
-Alt+Ctrl+F12 - Map tree down from current object
-F12 port diagnostic (client) - grafic in realtime, and grafics and F12 non port diagnosti (switch)
+New app features for Megacom:
+1. Automatic change view notification (analyze new object version match for every view of database and view element match element changed
+2. Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
+3. To allow html table in cells add tr, td, tbody and table tags to allowed tags?
+4. Links instead of real jpegs
+5. Object view MAP.
+6. TREE:
+    Tree element layout: style (for example to see what nodes are down by seeing them via red background)
+    Tree wire name (arrow name) to mark fiber cooper radio..
+    element link hint to show full element value
+    regexp search
+    context menu expand/hide uplink and downlink subtree
+7. Execute scheduler apparently for every OD/OV and optionally exec handlers simultaneously
+8. Handler cmd line replacements - <oid> (plus point that oid can be retreived also <{"element":"id"}>) <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
+9. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
+10. Change favicon -> tabels
+11. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
+12. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
+13. nohup server and scheduler execution
 
-INS - for ports (general: hint, snmpindex, link, style; description: type [free, client, service, link], zayavka-ip-speed-licevoi-name-address),
-      for hardware (hint, style, type, subtype),
-      location (tehuchet info contacts, names, loaction..)
+Some systems emulation:
+1. Corp chat
+2. Corp adrbook
+3. Any request app (Helpdesk, Jira)
+4. MRTG
+5. Zabbix (See how zabbix is install to have point of view of that kind of applications)
+6. CRM
+7. ACS
+8. Any accounting system (may be billing)
+9. Some excel functions
+10. Voting
+11. Any statistic/analitycs
+------------edit later
+21. Setki.xls
+  tech uchet
+  wiki
+  Operations:
+    Switch ip, switch description, switch location,
+    60 ports (description), for every port: type (uplink,downlink,free,service,client),
+    diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
+    In INFO scheme find mac on every switch in OV
+    In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
+    Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
+    see client mac, cable length, errors and all other data the switch allows to monitor
+    ping <switch ip>, on port ping <client ip>
+  Paraga mail functional
+  Ask Hramcova analitiku po helpdesku
+  See functions on Slava's management system
+----------- edit later
 
-DBLCLICK with ctrl alt del (upload, download, unload) only for location with ctrl+alt+dblclick for GALLERY
-DBLCLICK, F2, KEYPRESS - edit for L2 only
-DEL - delete content via confirmation
+Stages:
+1. First stage: oper+slavina, setki, tech uchet, HD, adrbook
+2. Second stage: zabbix, CRM, corp chat, wiki
 
-Scheduler:
-one time in 5 minutes for ports - link (set backgr color in case of no link), mrtg
-one time in 1 minute for every host up and down with action specified 
 
 -----------------------------------------------------------------
 - Application:
-   Operation for megcom realization to allow users write their nedodelki
-+  Automatic change view notification (analyze new object version match for every view of database and view element match element changed
-+  Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
-+  Element types:
-    User should have capability to log/see the command line the controller generates at any element to debug errors
-    handler non-JSON output should be treated (optionally) as not value set, but simple dialog output. 
-	So make button 'Treat handler non-JSON output as an element value set'.
-    debug (all handler output plus handler commandline are displayed at dialog box)
-    non json value set
-    log element errors
-    cancel client side default key/mouse default combination behaviour
-
-Handler  output
-Standart|Dialog|Debug (empty value, non - json value, result cmdline)
-
-Ctrl Alt Shift Meta
-+
-Double click
-KEYPRESS
-a-z
-INS
-DEL
-F1-F12
-0-9
-+
-cmdline
-
-
-+  To allow html table in cells add tr, td, tbody and table tags to allowed tags?
-+  links instead of real jpegs
   regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
-  optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
-  Change favicon -> tabels
   Downloading big files don't show progress bar downloading process, so how to show it?
   Fetch progress for uploading files https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/upload
   Application version in System description, tel number for additional help tab 'Contacts' and mail functional - please contact us support@tabels.app
   Export OV data to xls/txt file
   autocomplete feature after handler edit command. Autocomplete data may be retrieved from other OD, for example, client list or street list.
   what about edit after edit command, for a example wrong text to confirm and edit command called once again?
-+  Object view MAP.
   GALLERY shows all foto for default, otherwise - specified foto
     Show image properties (like resolution) in GALLERY mode
   not only regexp search but search on mask with only one asterisk as a special char
@@ -94,20 +122,11 @@ cmdline
   virt cell depends on oid,eid
   Context menu Graph
   System call 'NEWOBJECT' (to create object by user handlers)
-+ TREE:
-    Tree element layout: style (for example to see what nodes are down by seeing them via red background)
-    Tree wire name (arrow name) to mark fiber cooper radio..
-    element link hint to show full element value
-    regexp search
-    context menu expand/hide uplink and downlink subtree
   Crontab element execution once immediately
   Task manager: restrict call (and call with no task delete option) of task manager for some users in user props
-  How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
   At the end of app stable version make new customization
-  <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
     in cell: text, image (in case of 'image' prop set - image is displayed on the table insted of text value prop;), stream, table?
-+  Execute scheduler apparently for every OD/OV and optionally exec handlers simultaneously
 
 - JS, PHP, SQL, Highload:
   Optimize mysql to highload app:
@@ -128,11 +147,9 @@ cmdline
   Big amount of users generates apparent DB records in queueviewcall function while user INIT or DELETE,
     so add/delete objects in a view with 10000 users attached will generate 10000 records (record pre user) to call the view to be refreshed, its too slowly
   All db operations (except handlers in wrapper.php, db config) should use the connection via user with read-only permissions to OE9. Or use rollBack at the end of read-only operation?
-  Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
-  nohup server and scheduler execution
 
 - Front:
-  non table area selecting - comare event mouse coordinate from drag x1,y1 and increase/decrease drag x2,y2 coordinate so
+  non table area selecting - compare event mouse coordinate from drag x1,y1 and increase/decrease drag x2,y2 coordinate so
   smooth scrolling for rows more than 500 - event preventdefault on scroll event plus settimeout (dispatch scrolling event, 100);
   effects at navigating images in GALLERY just like in drive.ru
   dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
@@ -164,42 +181,8 @@ cmdline
   If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
-  As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise
-    (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data.
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
   Non local server (cloud) implemented handlers
-
-- Some systems emulation:
-  Corp chat
-  Corp adrbook
-  Any request app (Helpdesk, Jira)
-  MRTG
-  Zabbix (See how zabbix is install to have point of view of that kind of applications)
-  CRM
-  ACS
-  Any accounting system (may be billing)
-  Some excel functions
-  Voting
-  Any statistic/analitycs
-  Setki.xls
-  tech uchet
-  wiki
-  Operations:
-    Switch ip, switch description, switch location,
-    60 ports (description), for every port: type (uplink,downlink,free,service,client),
-    diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
-    In INFO scheme find mac on every switch in OV
-    In setki - ip, name from TABELS, name from BILLING, mac (for buhgalters and FSB)
-    Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
-    see client mac, cable length, errors and all other data the switch allows to monitor
-    ping <switch ip>, on port ping <client ip>
-  Paraga mail functional
-  Ask Hramcova analitiku po helpdesku
-  See functions on Slava's management system
-
-- Stages:
-    First stage: oper+slavina, setki, tech uchet, HD, adrbook
-    Second stage: zabbix, CRM, corp chat, wiki
 
 - Questionable features:
   Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
@@ -214,668 +197,3 @@ cmdline
   helpdesk/jira/CRM example in Help context menu
   Create system user read-only customization like github interface, for a example, so users can use it via 'force' option in user-customization dialog
 ------------------------------------------------------------------------------------------
-
-
-
-
-
-
-Client, controller and element-handler interaction:
-------Client (browser) input event------	-------Controller------							------Element handler------
-
-REFRESHMAIN					data..
-{cmd,OD,OV,sId}					<=
------------------------------------------------------------------------------------------------------------
-REFRESHMENU					data..
-{cmd,OD,OV,sId}					<=
------------------------------------------------------------------------------------------------------------
-NEWOBJECT					=>									{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert" }
-{cmd,["data": array[id]=element],OD,OV,sId}	{ "cmd": "INFO", "log", "error", "alert" }				<=
-						{ "cmd": "REFRESH", "OD", "OV" }
------------------------------------------------------------------------------------------------------------
-DELETEOBJECT					=>
-{cmd,OD,OV,oId,sId}				{ "cmd": "INFO", "log", "error", "alert" }				<=
-						{ "cmd": "REFRESH", "OD", "OV" }
------------------------------------------------------------------------------------------------------------
-DBLCLICK,F2,F12,INS,DEL				=>									{ "cmd": "EDIT", "oId", "eId", "data", "lines" }
-{cmd,OD,OV,oId,eId,sId}													{ "cmd": "SET", "data[]={"oId", "eId", "element"}", "refreshMenu", "alert", "log" }
-															{ "cmd": "NEWOD|NEWOV|NEWELEMENT", "data" }
-CONFIRM,KEYPRESS,OBJCHANGE			{ "cmd": "INFO", "log", "error", "alert" }				<=
-{cmd,data,OD,OV,oId,eId,sId}			{ "cmd": "REFRESH", "OD", "OV" }					
----------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-Browser commands to the controller (fixed):
-    { "cmd":	"GETMENU|GETMAIN|GETUI|INIT|DELETEOBJECT|DBLCLICK|KEYPRESS|CONFIRM"
-      "OD":	"<OD name>"
-      "OV":	"<OV name>"
-      "data":	"[eId=>data, eId=>data..] for INIT|<key code> for KEYPRESS|<cell data> or <dialog json data> for CONFIRM"
-      "oId":	"<object id>"
-      "eId":	"<element id>"
-      "sId":	"<session id>" }
-
-
-Controller commands to the browser:
-    { "cmd":		"REFRESH|REFRESHMAIN|REFRESHMENU|EDIT<LINES_NUM>|DIALOG|SET|RESET"
-      "OD":		"<OD name>"
-      "OV":		"<OV name>"
-      "data":		"<json>|<text>"
-      "oId":		"<object id>"
-      "eId":		"<element id>"
-      "alert":		"<alert message>"
-      "log":		"<browser console log message>"
-      "error":		"<main view error message>"
-      "callbackcmd":	"REFRESHMENU" }
-
-Element handler commands to the controller:
-    { "cmd":		"EDIT[<LINES_NUM>]|DIALOG|ALERT"
-      "data":		"<text data for EDIT|ALERT>|<json data for DIALOG>" }
-    { "cmd":		"SET|RESET"
-      "alert":		"<alert message>"
-      "value":		"view cell data" 
-      "image":		"image to display instead of value text"
-      "link":		"" 
-      "location":	"" 
-      "hint":		"" 
-      "style":		"" 
-      "<any property>":	"<any value>" }
-
-Controller to the element handler:
-    { "cmd":		"INIT|DBLCLICK|KEYPRESS|CONFIRM|ONCHANGE"
-      "user":		"<username initiated the process>"
-      "title":		"element title"
-      "data":		"<key code for KEYPRESS>|<element value for CONFIRM or NEWOBJECT>|<dialog json data for CONFIRM>"
-      "<any property>":	'<json {"OD": "", "oId": "", "eId": "", "property": ""}|<string>' }
-
-
-
-
----------------------Source code requirement-------------------------------------------------------
-- formatting                                                   
-- error behaviour (no object, no elements, no items, etc..)    
-- php files change double qoutes to single quotes                                      
-- all comments should be here in system features
-- comment all code                                             
-- all error message should be more detailed (by now alert used only)
-- jslint.com                                                   
-- single char variable exclude
-- array to []
-- sql commands with big letters
-- remove useless loog
------------------------------------WIKI-----------------------------------------------------
-interface examples:
-- https://qna.habr.com/q/281940
-- https://htmlacademy.ru/blog/video/shorts/short-4
-- table column resize https://codepen.io/barring/pen/ZNObZg
-Search JSON values:
-- https://dev.mysql.com/doc/refman/8.0/en/json-search-functions.html
-- https://proselyte.net/tutorials/sql/nested-queries/
-- https://codetown.ru/sql/vlozhennye-zaprosy/
-- https://site-do.ru/db/sql4.php
-Secure:
-- Meta tags to block request to other sites   https://www.searchengines.ru/meta_teg_referr_s.html   https://www.sitepoint.com/8-practices-to-secure-your-web-app/ https://www.smashingmagazine.com/2012/11/writing-fast-memory-efficient-javascript/
-WSS and Nginx wss proxy
-- https://taras.kramarets.net/php-websocket-сервер-обычный-и-для-ssl-работающие-об/
-- https://stackoverflow.com/questions/12102110/nginx-to-reverse-proxy-websockets-and-enable-ssl-wss
-- https://github.com/nicokaiser/nginx-websocket-proxy/blob/df67cd92f71bfcb513b343beaa89cb33ab09fb05/simple-wss.conf
-- https://taras.kramarets.net/php-websocket-сервер-обычный-и-для-ssl-работающие-об/
-  https access only, certificate, set cookie parameter: 'secure' = false --> 'secure' = true
-  renew php and add samesite session attr: https://www.php.net/manual/ru/function.session-set-cookie-params.php
-  ws -> wss https://petukhovsky.com/simple-web-socket-php-ssl/
-
-Self-singed cert
-- https://qastack.ru/ubuntu/49196/how-do-i-create-a-self-signed-ssl-certificate
--------------------------Set cursor at the end of the text. Decided not to use it cause fuckin FF inserting new line in that case-----------
-const range = document.createRange();   
-const selection = window.getSelection();
-
-range.selectNodeContents(focusElement.td);
-range.collapse(false);
-selection.removeAllRanges();                                                                                
-selection.addRange(range);
---------------------------2021:--------------------
-- React/Redux, Node js/NPM, Webpack https://ru.react.js.org/docs/getting-started.html https://ru.react.js.org/docs/cdn-links.html https://medium.com/@badiullin.nail/-[---4bcfd8e74c78
-- Git https://habr.com/ru/post/174467/    https://proglib.io/p/git-for-half-an-hour/   https://git-scm.com/book/en/v2 https://proglib.io/p/git-github-gitflow
---------------------------SVG:--------------------------
-- https://habr.com/ru/sandbox/122675/
-- https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
-- https://css-tricks.com/lodge/svg/09-svg-data-uris/
-- https://observablehq.com/@d3/mobile-patent-suits
------------------------NEW SVG:-----------------------
-https://yoksel.github.io/url-encoder/
-https://webformyself.com/milliard-sposobov-togo-kak-ispolzovat-svg/
-https://coderoad.ru/56426722/CSS-фон-для-элемента-SVG
-https://html5css.ru/tags/tag_svg.php
-https://developer.mozilla.org/ru/docs/Web/SVG/Element/rect
-https://developer.mozilla.org/ru/docs/Web/SVG/Tutorial/Gradients
---------------------------Input style:--------------------------
-- http://jsfiddle.net/js5x06nL/
---------------------------JWT:--------------------------
-- https://gist.github.com/zmts/802dc9c3510d79fd40f9dc38a12bccfc https://habr.com/ru/post/340146/
---------------------------Git:--------------------------
-- #git commit -a -m "INIT command ver4"
-- git commit -a -m "CreateNewObjectVersion function ver2"
-- git push -u origin master
-- lefffan
-- git pull origin # Nakatit v local repositary last code version before work
-- 7 advices for git: http://rus-linux.net/MyLDP/algol/git/7-Git-Tips-for-Beginners.html
-- Shpora for git: https://eax.me/git-commands/
-- Git bases: https://git-scm.com/book/ru/v2/
---------------------------DB SQL manage:--------------------------
-- drop database OE8; create database OE8; use OE8; show tables;
-- drop database OE6; create database OE6; use OE6; show tables;
-- create table `uniq_2` (id MEDIUMINT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
---------------------------------------flex----------------------
-- https://wp-kama.ru/id_8045/flex-v-css.html#flex-wrap
------------------arrows-----------------------------------
-- https://css-tricks.com/snippets/css/css-triangle/
-- http://css.yoksel.ru/strelki-s-pomoshh-yu-svojstva-border/
-------------------------websocket----------------------
-- https://tokmakov.msk.ru/blog/item/202
-- https://hpbn.co/websocket/#wsmsg
---------------------------php demon-------------------------------
-- http://mithrandir.ru/professional/php/php-daemons.html
------------------Lets encrypt--------------------------
-https://certbot.eff.org/lets-encrypt/debianbuster-nginx
-https://codex.so/ssl
-https://letsencrypt.org/ru/getting-started/
-Renew certificate:
-certbot renew --dry-run
-upd 29/08/2021: just run certbot, then sysmetctl restart nginx
-------------------------
-sql regexp https://dev.mysql.com/doc/refman/8.0/en/regexp.html
------------------------
-razbiralso s socket fragmentation gluk, full doc:
-https://datatracker.ietf.org/doc/html/rfc6455
-https://tools.ietf.org/id/draft-ietf-hybi-thewebsocketprotocol-09.html
-https://noio-ws.readthedocs.io/en/latest/overview_of_websockets.html
---------Clipboard JS------------------
-https://web-standards.ru/articles/clipboard-api/
---------------------------
-upload files:
-; Whether to allow HTTP file uploads.
-file_uploads = On
- 
-; Temporary directory for HTTP uploaded files.
-; Will use system default if not set.
-;upload_tmp_dir = 
- 
-; Maximum allowed size for uploaded files.
-upload_max_filesize = 16M
- 
-; Maximum number of files that can be uploaded via a single request
-max_file_uploads = 20
- 
-; Maximum size of POST data that PHP will accept.
-post_max_size = 20M
- 
-max_input_time = 60
-memory_limit = 128M
-max_execution_time = 30
---------------------------------------------------------------------------------
-FILE MANAGMENT
-https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#example_using_object_urls_to_display_images
-https://developer.mozilla.org/ru/docs/Web/HTML/Element/img
-https://code.tutsplus.com/ru/tutorials/how-to-upload-a-file-in-php-with-example--cms-31763
-https://metanit.com/php/tutorial/5.4.php
-
--------------------------------------------------
-Perebor svoistv obekta
-https://coderoad.ru/1573593/Каков-самый-быстрый-способ-перебора-свойств-объекта-в-Javascript
-https://gists.cwidanage.com/2019/11/how-to-iterate-over-javascript-arrays.html
-
--------------------------------------------------------
-virtual cells and their sql requests
-https://docs.microsoft.com/ru-ru/sql/t-sql/functions/sum-transact-sql?view=sql-server-ver15
--------------------------------------------------------
-
-user.php
-{"event":"INIT"}
-{ "event": "DBLCLICK", "account": {"prop": "value"}, "odaddperm": {"prop": "odaddperm"}, "groups": {"prop": "groups"} }
-
-
-{"eid": "1", "oid": "0", "x":"o", "y":"n", "startevent":"KEYPRESSjl;k\njjj "}
-{"eid": "2", "oid": "0", "x":"0", "y":"n"}
-
-
-On password change - all sessions should be dropped
-Other place auth - all sessions should be dropped
-
-user-id IP user-agent hash(ip,user-agent,pass-hash)
-
-
-What to check in relibe auth
-1. User absence or password changed
-2. Cookie absence
-3. Browser and server time doesn't match
-4. Relogin after SESSIONLIFETIME even browser hasn't ever closed
-------------------------------------------------------------
-
-
-
-
-web components
-js
-1 framework
-youtube sobes voprosy
-git
-form html tag
-VS Code on youtube
-roadmap also on youtube
-C:\!\sobes
-see zametki v telefone
-CORS
-get and POST differentional
-
-
-
-
-
-
-$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid` WHERE lastversion=1 AND version!=0");
-$query = $db->prepare("SELECT id,version,owner,datetime,lastversion$elementQueryString FROM `data_$odid`");                                   
-WHERE (select datetime from data_1 WHERE owner='system')>0;
-IAM: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'=':user'
-e: *
-test obj sel: WHERE lastversion=1 AND version!=0 and eid1->>'$.value'!=':input_user'
-test el sel:
-
-{"event":"INIT"}
-{"event": "DBLCLICK"}
-{"event": "KEYPRESS"}
-
-
-{"ollapse":""}
-{"eid":"1", "oid":"2", "x":"0", "y":"0", "style":"color: white;"}
-{"eid":"1", "oid":"1", "x":"0", "y":"1", "style":"color: red;"}
-{"eid":"1", "x":"0", "y":"n+3"}
-
-{"eid":"2", "oid":"1", "x":"1", "y":"1", "tartevent":"DBLCLICK"}
-{"eid":"2", "oid":"2", "x":"1", "y":"0"}
-{"eid":"2", "x":"1", "y":"n+3"}
-
-{"eid":"3", "oid":"1", "x":"2", "y":"1"}
-{"eid":"3", "oid":"2", "x":"2", "y":"0"}
-{"eid":"3", "x":"2", "y":"n+3", "collaps":""}
-
-{"eid":"datetime", "oid":"1", "x":"3", "y":"1"}
-{"eid":"datetime", "oid":"2", "x":"3", "y":"0"}
-{"eid":"datetime", "x":"3", "y":"n+3"}
-
-{"eid":"owner", "oid":"1", "x":"4", "y":"1"}
-{"eid":"owner", "oid":"2", "x":"4", "y":"0"}
-{"eid":"owner", "x":"4", "y":"n+3"}
-
-{"eid":"version", "oid":"1", "x":"5", "y":"1"}
-{"eid":"version", "oid":"2", "x":"5", "y":"0"}
-{"eid":"version", "x":"5", "y":"n+3"}
-
-
-
-
-
-
-
-
-
-const mainObjectContext = '                                               
-<div class="contextmenuItems">New Object</div>                            
-<div class="contextmenuItems">Delete Object</div>                         
-<div class="contextmenuItems">Description</div>                           
-<div class="contextmenuItems">Help</div>';                                
-const mainTitleObjectContext = '                                          
-<div class="contextmenuItems">New Object</div>                            
-<div class="contextmenuItems greyContextMenuItem">Delete Object</div>     
-<div class="contextmenuItems">Description</div>                           
-<div class="contextmenuItems">Help</div>';                                
-const mainDefaultContext = '                                              
-<div class="contextmenuItems">New Object</div>                            
-<div class="contextmenuItems greyContextMenuItem">Delete Object</div>     
-<div class="contextmenuItems greyContextMenuItem">Description</div>       
-<div class="contextmenuItems">Help</div>';                                
-
-
-
-REFRESH cmd from the controller also sends current page and page number that is corrected as an answer on client GETMAIN message
--Also page and pageNum should be reset in DisplaymainError function - what is it for?
-
-objectsOnThePage is set in DrawMain and output objectsOnThePage in the description
-
-- objectsPerPage and other props (like next page bottom reach and etc..) are set in uiProfileSet function as an answer to the cutomization and should be added some info in uiProfile array
-objectsPerPage should be output in description
--objectsPerPage should be transfered to the controller
-
-
-at start:
-- client call login dialog
-
-at end login dialog:
-- create new websocket connection
-- wait for an answer: success (user logged in), fail (wrong pass or socket connection refused)
-
-at any action:
-- ping/pong: websocket alive - everything's good, not alive - login dialog
-
-php threads: https://phpprofi.ru/blogs/post/55
-
-echo '\'{"a":"b"}\'' | php ./wrapper.php
-
-
-
-
-Client(Browser) <-> Server(Controller) -> Handler(wrapper.php)
-
-handler_queue ($$.sql) view_queue ($$$.sql)
-
-
-
-
-Application on Macbook:
-192.168.9.39 -> 127.0.0.1 on main.js and main.php
-const PHPBINARY				= '/usr/bin/php';
-const HANDLERDIR			= '/Library/WebServer/Documents/handlers/';
-php ./makedb.php
-php ./main.php
-
-
-
-WHERE lastversion=1 AND version!=0 and eid2->>'$.value'!=':Input_user'
-
-
-
-OD chat:
-- 1 element with init handler: /usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php INIT <data>
-- object selection: WHERE lastversion=1 AND version!=0 ORDER BY id DESC
-- element selection: 
-{"eid":"datetime", "x":"0", "y":"q-n-1", "style": "border: none;"}
-{"eid":"owner", "x":"1", "y":"q-n-1", "style": "border: none;"}
-{"eid":"1", "x":"2", "y":"q-n-1", "style": "border: none;"}
-{"eid":"1", "oid":"1", "x":"2", "y":"q", "event":"", "style": "border: 1px solid;"}
-
-
-
-{"eid":"datetime", "x":"0", "y":"q-n-1", "tyle": "border: none;"}
-{"eid":"owner", "x":"1", "y":"q-n-1", "tyle": "border: none;"}
-{"eid":"1", "x":"2", "y":"q-n-1", "tyle": "border: none;"}
-{"eid":"1", "oid":"1", "x":"2", "y":"q", "event":"", "tyle": "border: 1px solid;"}
-
-
-
-- 'not empty msgs' reject post rule (for add oper): eid1->>'$.value'=''
-- 'not delete msgs' reject rule (for delete oper): both pre and post rules are empty
-
-version 1:
-wrapper <start_time> <eid> <cid> <ODid> <OVid> <user>
-Initiator User Exe_time OD OV oid eid PID Process_name
-sort on title, select lines and kill them option
-
-version 2:
-wrapper <uid> <start_time> <ODid> <OVid> <oid> <eid>
-Initiator
-PID
-Process name
-Exe time
-Database
-View 
-Object id
-Element id
-Kill
-
-
-
-link type = up|down
-link object - selection rule
-link element id (link element title) - 
-
-/usr/local/bin/php /usr/local/apache2/htdocs/handlers/text.php <event> '{"prop": "link"}' '{"prop": "linkoid"}' '{"prop": "linkeid"}'
-
-
-/*
-link area:
-- element title on the left
-- element value on the right
-- hint: full title and value
-content area (+error content):
-- lines of element titles and values based on element selection {'title3': '', 'value4': '', 'valueowner': ''..}
-- hint: lines of full element titles and values 
-- click: { 'OD': '', 'ODid': '', 'OV': '', 'OVid': '', 'params': {'Input_object_id': '', 'value4': '', } }
-content limit one line and max char
-unknown element by red color
-up or down direction table
-*/
-
-+build buttons html:
-- Dialog buttons = {"value": "", "style": "", "call": "", "interactive": "", "enterkey": "", "timer": "", "showtimer": "", "error": "", "warning": ""}
-- Table cells = {"value": "", "style": "", "call": ""}
-+Make handlers: Buttons handler = mouse, esc, enter
-+Remake all existed system dialogs
-+uiProfile to customization
-+remake warning() function
-
-+controller check for call prop - for user handlers should be CONFIRMDIALOG, for system hsandlers - untouchable
-+set button['enterkey'] only for for OK (with existing call prop) buttons
-+always set prop box.flags with esc=""
-
-View Tree: link type = down
-View TreeUP: link type = down, element selection = {"id":"", "3":"", "direction":"up"}
-object=3, eid=2: link type=down, id=4, 2t
-object=3, eid=3: link type=down, id=4, hui
-
-
-context menu (cmd TASKMANAGER) -> DIALOG cmd from controller
-REFRESH on timer (CONFIRMDIALOG) -> DIALOG cmd from controller 1
-
-apt-get update
-apt-get dist-upgrade
-apt-cache search nginx
-
-apt install nginx
-apt-get install mariadb-server
-db root pass 17...#: mysql_secure_installation                              	
-https://oblako.kz/help/linux/unstanovka-mysql-na-debian-9
-https://195.208.152.8
-
-apt install git
-git clone https://github.com/lefffan/business-tables .
-
-apt install net-tools
-
-
-
-
-
-
-Operation OD:
-ip, hostname, Location, Hardware, Comment, mac/vendor (auto definition) 
-
-Ports (52) + Full diagnostic on F12 event + Any props (client name/id, tarif, ip, fiz addres..) on F2 event
-for every port: port (number/id), type(client, link, service, free), link(3 props), name/id, tarif, ip, fiz addres, comment
-for razbor - загасить порт снять влан и PB и сделать порт тайп как free
-
-HD OD:
-Id
-Date (creation date, execution time, order last change time) Отправка почты по крону если время выполнения превышает лимит
-Решение
-Категория
-Клиент (название, адрес), контакт
-Выезд СКС/ВОЛС
-Назначено L1/L2
-Тип неполадки (возможно установка автоматом при изменении статуса на Closed) выбор из списка
-Родительская заявка (пробегать кроном и если установлено поле род заявка, то автоматом выставлять статус Closed)
-Провайдер (выбор из списка)
-Соответствие регламенту
-
-
-Разбор дескрипшена (все что после disabled удаляем)
-
-тип среды:
-Первое вхождение UTP/ВОЛС/SFP-1g SFP-100(кроме sfp-only)/RADIO
-
-тип порта:
-сервисный порт? (конвертора лакмусы упсы сервера) UPS marshal
-ищем ip из диапазон свитчей (если есть uplink иначе downlink)
-free или пустое (trim) - порт пустой или только английские буквы
-
-
-
-php /usr/local/src/tabels/handlers/text.php SET '{"version":"1", "eId": "datetime"}' <data>
-php /usr/local/src/tabels/handlers/text.php SEARCH
-php /usr/local/src/tabels/handlers/text.php SELECT 'хуй|пезда|жопа|срака'
-
-
-
-
-
-
-WHERE lastversion=1 AND version!=0 and JSON_EXTRACT(eid1, '$.value')=':Input_user'
-{"eid":"1", "x":"0", "y":"n"}
-{"eid":"id", "oid":"2", "x":"0", "y":"0"}
-{"eid":"id", "x":"0", "y":"n+1"}
-{"eid":"datetime", "oid":"2", "x":"1", "y":"0"}
-{"eid":"datetime", "x":"1", "y":"n+1"}
-{"eid":"1", "oid":"2", "x":"2", "y":"0"}
-{"eid":"1", "x":"2", "y":"n+1"}
-{"eid":"2", "oid":"2", "x":"3", "y":"0"}
-{"eid":"2", "x":"3", "y":"n+1"}
-{"eid":"3", "oid":"2", "x":"4", "y":"0", "_event":"4", "hint":"color:red;"}
-{"eid":"3", "x":"4", "y":"n+1"}
-{"eid":"3", "oid":"3", "x":"0", "y":"q+10",  "style":"color:red;", "event":"4"}
-{"style":"background-color: green;"}
-
-
-4Slava:
-
-data native - razryv mezhdu predstavleniem i BD (even db table names are specified)
-for market enter your app should be much taller
-primer paragi and hos friend
-server side program from roav
-cell - text, image, video golos, potok?
-ronkurentnie preimushestva - Minimalizm and prozrachnost i documentirovaonst
-
-All users: WHERE lastversion=1 AND version!=0 LIMIT 100
-Postprocessing rule: JSON_EXTRACT(eid1, '$.value')='pid'
-MRTG view: WHERE lastversion=1 AND version!=0 LIMIT 9
-Element layout: *
-competitive advantages:
-    nice, friendly and minimalistic interface and full (!) cutomiztion
-    Web access
-    SUBD based
-    Scheduler
-    Firewall
-    Base platform for corp portal
-    Objects Map
-    scalability for corp needs with unnecessary programming knowing (unlike CRM 1C example) - any system like chat billing crm hd techuchet may be implemented
-
-Tell about stages:
-    First stage: oper+slavina, setki, tech uchet, HD, adrbook
-    Second stage: zabbix, CRM, corp chat, wiki
-
-System are moduled - apparent controller and apparent handler part
-
-da poroi it is complicated to make object selection but nothing is thinked about - it is the native and direct way to access and manage db data
-
-the system is made to emulate any information system  such as zubbix crm, etc..
-
-big vozmozhnoti
-we can control db size, db object count, and db oper, for a example soa column change from check to uncheck is allowed but change from uncheck to check is allowed by soa and am only
-on the map: we can draw the net scheme so
-----------------------------------------------
-Diagnostika ports
-mac vendor
-arp search
-wiki search
-regexp search
-file attach - images and other files with node info
-selection downlink - client list and preduprezhdenie
-
-
-Last OE9 DB:
-user per group search:
-php /usr/local/src/tabels/handlers/text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
-
-setki:
-* * * * * 4 ping -c 1 <{"element":"1"}> | grep loss
-on F12: php /usr/local/src/tabels/handlers/text.php SET <{"ODid":"1", "OVid":"1","selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '^:group\\n' OR JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.groups')) regexp '\\n:group\\n')", "limit": "100","element":"1",":group": {}}>
-
-setki real:
-SET <{"ODid":"3", "OVid":"2", "selection":"lastversion=1 and version!=0 and (JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) regexp ':ip'", "limit": "100","element":"1",":ip": {"element":"1"}}>
-SET <{"ODid":"3", "OVid":"2", "limit": "100","element":"/:ip/",":ip": {"element":"1"}}>hui
-
-chat layout: 
-{"style":"width: 96%; margin: 10px; border-collapse: separate;", "cellspacing":"15"}
-{"eid":"1", "oid":"*", "x":"0", "y":"n", "style":"text-align: left; border: none; border-radius: 5px; background-color: #DDD;"}
-{"eid":"1", "oid":"1", "x":"0", "y":"q", "event":"", "style":"width: 1400px; text-align: left; border-radius: 7px;"}
-
-
-
-1. search по innerText -> element, start, end
-2. if found - inserting another span tag - 
-
-
-
-Brief RegEx syntax
-
-\ Marks the next character as either a special character or a literal.
-  For example: "\n" matches a newline character.The sequence \\ matches \ and \( matches (.
-^ Matches the beginning of input.
-$ Matches the end of input.
-* Matches the preceding character zero or more times. For example, "zo*" matches either z or zoo.
-+ Matches the preceding character one or more times. For example, "zo+" matches zoo but not z.
-? Matches the preceding character zero or one time. For example, a?ve? matches the ve in never.
-. Matches any single character except a newline character.
-(subexpression) Matches subexpression and remembers the match. If a part of a regular expression is
-  enclosed in parentheses, that part of the regular expression is grouped together.
-  Thus a regex operator can be applied to the entire group.
-x|y Matches either x or y. For example, z|wood matches z or wood. (z|w)oo matches zoo or wood.
-{n} n is a non negative integer. Matches exactly n times.
-  For example, o{2} does not match the o in Bob, but matches the first two o's in foooood.
-{n,} n is a non negative integer. Matches at least n times.
-  For example, o{2,} does not match the o in Bob and matches all the o's in "foooood."
-o{1,} is equivalent to o+. o{0,} is equivalent to o*.
-{n,m} m and n are nonnegative integers. Matches at leastn and at mostm times.
-  For example, o{1,3} matches the first three o's in "fooooood." o{0,1} is equivalent to o?.
-[xyz] A character set. Matches any one of the enclosed characters. For example, [abc] matches the a in plain.
-[^xyz] A negative character set. Matches any character not enclosed. For example, [^abc] matches the p in plain.
-[a-z] A range of characters. Matches any character in the specified range.
-  For example, "[a-z]" matches any lowercase alphabetic character in the range a through z.
-[^m-z] A negative range characters. Matches any character not in the specified range.
-  For example, [^m-z] matches any character not in the range m through z.
-\b Matches a word boundary, that is, the position between a word and a space.
-  For example, er\b matches the er in never but not the er in verb.
-\B Matches a non-word boundary. ea*r\B matches the ear in never early.
-\d Matches a digit character. Equivalent to [0-9].
-\D Matches a non-digit character. Equivalent to [^0-9].
-\r Matches a carriage return character.
-\s Matches any white space including space, tab, form-feed, and so on. Equivalent to [ \f\n\r\t\v].
-\S Matches any nonwhite space character. Equivalent to [^ \f\n\r\t\v].
-\t Matches a tab character.
-\v Matches a vertical tab character.
-\w Matches any word character including underscore. Equivalent to [A-Za-z0 -9_]. Use it in the search field.
-\W Matches any non-word character. Equivalent to [^A-Za-z0-9_].
-\num Matches num, where num is a positive integer, denoting a reference back to remembered matches.
-  For example, (.)\1 matches two consecutive identical characters.
-\xn Matches hexadecimal n escape value - \x41 matches A. Allows ASCII codes to be used in regular expressions.
-
-
-
-
-
-right mrtg layout:
-{"eid":"id", "oid":"1", "x":"0", "y":"106*n", "style":"width: 10%;"}
-{"eid":"id", "oid":"*", "x":"1", "y":"106*n", "style": "padding: 3px; text-align: left; width: 90%;"}
-
-{"eid":"101", "oid":"1"}
-{"eid":"102", "oid":"1"}
-{"eid":"103", "oid":"1"}
-{"eid":"104", "oid":"1"}
-{"eid":"*", "oid":"1", "x":"0", "y":"106*n+e"}
-{"eid":"*", "oid":"*", "x":"1", "y":"106*n+e", "style": "padding: 3px; text-align: left; word-wrap: break-word;", "hiderow":""}
-
-{"oid":"", "style":"padding: 20px; border: none;"}
-{"style":"width: 99%;table-layout: fixed;"}
-
-
-
-
