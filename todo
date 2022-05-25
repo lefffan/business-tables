@@ -1,3 +1,6 @@
+dodelat user.php
+and event KEYPRESS with 'CTRL+Alt+Meta'
+
 New handler conception:
 1. Start event for keypres and dblclick
 2. Doc-help
