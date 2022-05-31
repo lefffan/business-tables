@@ -167,7 +167,7 @@ while (true)
 		       Check($db, CHECK_OID, $client, $output);
 		  case 'DELETEOBJECT':
 		       Check($db, CHECK_EID, $client, $output);
-		  case 'DBLCLICK':
+		  case 'DOUBLECLICK':
 		  case 'PASTE':
 		  case 'CONFIRM':
 		  case 'CONFIRMDIALOG':

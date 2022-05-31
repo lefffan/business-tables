@@ -57,4 +57,13 @@ const MAXBUTTONTIMERMSEC		= 36000000;
 const DEFAULTELEMENTPROPS		= ['value' => '', 'hint' => '', 'link' => '', 'style' => ''];
 const ARGRECURSIONNUM			= 3;
 const ARGRESULTLIMITNUM			= 256;
-const USEREVENTCODES			= ['KeyA','KeyB','KeyC','KeyD','KeyE','KeyF','KeyG','KeyH','KeyI','KeyJ','KeyK','KeyL','KeyM','KeyN','KeyO','KeyP','KeyQ','KeyR','KeyS','KeyT','KeyU','KeyV','KeyW','KeyX','KeyY','KeyZ','Digit0','Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7','Digit8','Digit9','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','Space','Insert','Delete','BracketLeft','BracketRight'];
+const ARGVCLIENTINDEX			= 9;
+// 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46
+const USEREVENTKEYCODES			= [65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,48,49,50,51,52,53,54,55,56,57,112,113,114,115,116,117,118,119,120,121,122,123,32,45,46,219,221];
+const KEYCODESYMBOLRANGES		= [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
+const GROUPEVENTS			= ['CHANGE', 'INIT', 'SCHEDULE'];
+const USEREVENTCODES			= ['KeyA','KeyB','KeyC','KeyD','KeyE','KeyF','KeyG','KeyH','KeyI','KeyJ','KeyK','KeyL','KeyM','KeyN','KeyO','KeyP','KeyQ','KeyR','KeyS','KeyT','KeyU','KeyV','KeyW','KeyX','KeyY','KeyZ','Key0','Key1','Key2','Key3','Key4','Key5','Key6','Key7','Key8','Key9','KeyF1','KeyF2','KeyF3','KeyF4','KeyF5','KeyF6','KeyF7','KeyF8','KeyF9','KeyF10','KeyF11','KeyF12','KeySpace','KeyInsert','KeyDelete','KeyBracketLeft','KeyBracketRight'];
+const MOUSEKEYBOARDEVENTS		= ['DOUBLECLICK','KEYPRESS','KeyA','KeyB','KeyC','KeyD','KeyE','KeyF','KeyG','KeyH','KeyI','KeyJ','KeyK','KeyL','KeyM','KeyN','KeyO','KeyP','KeyQ','KeyR','KeyS','KeyT','KeyU','KeyV','KeyW','KeyX','KeyY','KeyZ','Key0','Key1','Key2','Key3','Key4','Key5','Key6','Key7','Key8','Key9','KeyF1','KeyF2','KeyF3','KeyF4','KeyF5','KeyF6','KeyF7','KeyF8','KeyF9','KeyF10','KeyF11','KeyF12','KeySpace','KeyInsert','KeyDelete','KeyBracketLeft','KeyBracketRight'];
+const NOMOUSEKEYBOARDEVENTS		= ['INIT','CONFIRM','CONFIRMDIALOG','CHANGE','PASTE','SCHEDULE'];
+const ALLOBJECTEVENTS			= ['INIT','CONFIRM','CONFIRMDIALOG','CHANGE','PASTE','SCHEDULE','DOUBLECLICK','KEYPRESS','KeyA','KeyB','KeyC','KeyD','KeyE','KeyF','KeyG','KeyH','KeyI','KeyJ','KeyK','KeyL','KeyM','KeyN','KeyO','KeyP','KeyQ','KeyR','KeyS','KeyT','KeyU','KeyV','KeyW','KeyX','KeyY','KeyZ','Key0','Key1','Key2','Key3','Key4','Key5','Key6','Key7','Key8','Key9','KeyF1','KeyF2','KeyF3','KeyF4','KeyF5','KeyF6','KeyF7','KeyF8','KeyF9','KeyF10','KeyF11','KeyF12','KeySpace','KeyInsert','KeyDelete','KeyBracketLeft','KeyBracketRight'];
+const HANDLEREVENTS			= ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', 'UPLOADDIALOG', 'DOWNLOADDIALOG', 'UNLOADDIALOG', 'GALLERY', ''];

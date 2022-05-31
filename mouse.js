@@ -70,7 +70,7 @@ function dblclickEventHandler(event)
      const target = IsTableTemplateCell(event.target);
      if (target && target.contentEditable != EDITABLE && mainTable[cursor.y]?.[cursor.x]?.realobject && Number(cursor.eId) > 0)
 	{
-	 cmd = 'DBLCLICK';
+	 cmd = 'DOUBLECLICK';
 	 CallController(String(event.ctrlKey * 8 + event.altKey * 4 + event.shiftKey * 2 + event.metaKey * 1));
 	}
      return;

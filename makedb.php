@@ -4,11 +4,38 @@
 require_once 'core.php';
 require_once HANDLERDIR.'customizationjson.php';
 
+function CreateHandlerSection($i, $event, $modificatortext, $cmd)
+{
+ global $newElement;
+
+ $newElement['element'.strval($i)] = $newElement['element5'];
+ $newElement['element'.strval($i)]['head'] = $modificatortext ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatortext" : "Handler command line for event <b>'$event'</b>";
+ unset($newElement['element'.strval($i)]['help']);
+
+ $newElement['element'.strval($i+1)] = $newElement['element8'];
+ unset($newElement['element'.strval($i+1)]['head']);
+ $newElement['element'.strval($i+1)]['data'] = $cmd;
+ $newElement['element'.strval($i+1)]['event'] = $event;
+ $newElement['element'.strval($i+1)]['modificators'] = '';
+
+ if (!$modificatortext) return;
+
+ $modificators = 0;
+ if (strpos($modificatortext, 'CTRL') !== false) $modificators += 8;
+ if (strpos($modificatortext, 'ALT') !== false) $modificators += 4;
+ if (strpos($modificatortext, 'SHIFT') !== false) $modificators += 2;
+ if (strpos($modificatortext, 'META') !== false) $modificators += 1;
+ $newElement['element'.strval($i+1)]['modificators'] = strval($modificators);
+}
+
 try {
-     // Old shit should be dropped
+     //------------------------------------------Dropping old shit------------------------------------------
      $query = $db->prepare("drop database ".DATABASENAME."; create database ".DATABASENAME."; use ".DATABASENAME);
      $query->execute();
 
+
+
+     //------------------------------------------Create initial DBs------------------------------------------
      // Create OV request list sql table with next fields: id,time,ODid,OV
      $query = $db->prepare("CREATE TABLE `$$$` (id CHAR(".USERPASSMINLENGTH.") NOT NULL, time DATETIME DEFAULT NOW(), client MEDIUMTEXT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
      $query->execute();
@@ -16,18 +43,21 @@ try {
      // Create queue sql table with next fields: id,cid,ODid,OV,oid,eid,event
      $query = $db->prepare("CREATE TABLE `$$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, client MEDIUMTEXT, PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
      $query->execute();
- 
+
      // Create OD list data sql table
      $query = $db->prepare("CREATE TABLE `$` (id MEDIUMINT NOT NULL AUTO_INCREMENT, odname CHAR(".strval(ODSTRINGMAXCHAR).") NOT NULL, odprops JSON, UNIQUE(odname), PRIMARY KEY (id)) ENGINE InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
      $query->execute();
- 
+
+
+
      //------------------------------------------Create default OD 'Users'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Users';
      $newProperties['element2']['data'] = 'Application users database';
-     $newProperties['element6']['data'] = $newProperties['element8']['data'] = "+User/groups allowed list to change 'Database' section|Disallowed list (allowed for others)|";
+     $newProperties['element6']['data'] = "+User/group list allowed to change 'Database' section|Disallowed list (allowed for others)|";
+     $newProperties['element8']['data'] = "+User/group list allowed to change 'Element' section|Disallowed list (allowed for others)|";
      $newProperties['element7']['data'] = $newProperties['element9']['data'] = 'root';
-     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog' => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
+     $userOD = ['title'  => 'Edit Object Database Structure', 'dialog' => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 860px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $userOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
      $userOD['dialog']['View']['New view']['element1']['id'] = '2';
@@ -43,11 +73,11 @@ try {
      $newElement['element2']['data'] = "Double click the username to change the password and other user properties";
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user> <{"prop":"odvisible"}> <{"prop":"odvisiblelist"}> <{"prop":"odwrite"}> <{"prop":"odwritelist"}>';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user> <{"prop":"odvisible"}> <{"prop":"odvisiblelist"}> <{"prop":"odwrite"}> <{"prop":"odwritelist"}>';
-     //$newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>';
+     // INIT, F2, CONFIRMDIALOG..
+     CreateHandlerSection(10, 'INIT', '', PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>');
+     CreateHandlerSection(12, 'DOUBLECLICK', 'NONE', PHPBINARY.' '.HANDLERDIR.'user.php EDIT <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user> <{"prop":"odvisible"}> <{"prop":"odvisiblelist"}> <{"prop":"odwrite"}> <{"prop":"odwritelist"}>');
+     CreateHandlerSection(14, 'F2', 'NONE', PHPBINARY.' '.HANDLERDIR.'user.php EDIT <{}> <{"prop":"odaddperm"}> <{"prop":"groups"}> <user> <{"prop":"odvisible"}> <{"prop":"odvisiblelist"}> <{"prop":"odwrite"}> <{"prop":"odwritelist"}>');
+     CreateHandlerSection(16, 'CONFIRMDIALOG', '', PHPBINARY.' '.HANDLERDIR.'user.php <event> <data>');
      $userOD['dialog']['Element']['User (id1)'] = $newElement;
 
      initNewODDialogElements();
@@ -56,15 +86,22 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
-     $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     // INIT, F2, CONFIRMDIALOG..
+     CreateHandlerSection(10, 'INIT', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
+     CreateHandlerSection(12, 'KeyF2', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(14, 'KeyDelete', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SET');
+     CreateHandlerSection(16, 'KeyInsert', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>');
+     CreateHandlerSection(18, 'KEYPRESS', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(20, 'KEYPRESS', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(22, 'PASTE', '', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(24, 'KeyF12', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php CALL _history <oid>');
+     CreateHandlerSection(26, 'DOUBLECLICK', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(28, 'DOUBLECLICK', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php UPLOADDIALOG');
+     CreateHandlerSection(30, 'DOUBLECLICK', 'CTRL', PHPBINARY.' '.HANDLERDIR.'_.php DOWNLOADDIALOG');
+     CreateHandlerSection(32, 'DOUBLECLICK', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php UNLOADDIALOG');
+     CreateHandlerSection(34, 'DOUBLECLICK', 'CTRL+ALT', PHPBINARY.' '.HANDLERDIR.'_.php GALLERY');
+     CreateHandlerSection(36, 'CONFIRMDIALOG', '', PHPBINARY.' '.HANDLERDIR.'_.php <event> <data>');
+     CreateHandlerSection(38, 'CONFIRM', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
      $userOD['dialog']['Element']['Name (id2)'] = $newElement;
 
      initNewODDialogElements();
@@ -73,15 +110,22 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
-     $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     // INIT, F2, CONFIRMDIALOG..
+     CreateHandlerSection(10, 'INIT', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
+     CreateHandlerSection(12, 'KeyF2', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(14, 'KeyDelete', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SET');
+     CreateHandlerSection(16, 'KeyInsert', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>');
+     CreateHandlerSection(18, 'KEYPRESS', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(20, 'KEYPRESS', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(22, 'PASTE', '', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(24, 'KeyF12', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php CALL _history <oid>');
+     CreateHandlerSection(26, 'DOUBLECLICK', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(28, 'DOUBLECLICK', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php UPLOADDIALOG');
+     CreateHandlerSection(30, 'DOUBLECLICK', 'CTRL', PHPBINARY.' '.HANDLERDIR.'_.php DOWNLOADDIALOG');
+     CreateHandlerSection(32, 'DOUBLECLICK', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php UNLOADDIALOG');
+     CreateHandlerSection(34, 'DOUBLECLICK', 'CTRL+ALT', PHPBINARY.' '.HANDLERDIR.'_.php GALLERY');
+     CreateHandlerSection(36, 'CONFIRMDIALOG', '', PHPBINARY.' '.HANDLERDIR.'_.php <event> <data>');
+     CreateHandlerSection(38, 'CONFIRM', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
      $userOD['dialog']['Element']['Contact (id3)'] = $newElement;
 
      initNewODDialogElements();
@@ -90,15 +134,22 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
-     $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     // INIT, F2, CONFIRMDIALOG..
+     CreateHandlerSection(10, 'INIT', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
+     CreateHandlerSection(12, 'KeyF2', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(14, 'KeyDelete', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SET');
+     CreateHandlerSection(16, 'KeyInsert', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>');
+     CreateHandlerSection(18, 'KEYPRESS', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(20, 'KEYPRESS', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(22, 'PASTE', '', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(24, 'KeyF12', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php CALL _history <oid>');
+     CreateHandlerSection(26, 'DOUBLECLICK', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(28, 'DOUBLECLICK', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php UPLOADDIALOG');
+     CreateHandlerSection(30, 'DOUBLECLICK', 'CTRL', PHPBINARY.' '.HANDLERDIR.'_.php DOWNLOADDIALOG');
+     CreateHandlerSection(32, 'DOUBLECLICK', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php UNLOADDIALOG');
+     CreateHandlerSection(34, 'DOUBLECLICK', 'CTRL+ALT', PHPBINARY.' '.HANDLERDIR.'_.php GALLERY');
+     CreateHandlerSection(36, 'CONFIRMDIALOG', '', PHPBINARY.' '.HANDLERDIR.'_.php <event> <data>');
+     CreateHandlerSection(38, 'CONFIRM', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
      $userOD['dialog']['Element']['Email (id4)'] = $newElement;
 
      initNewODDialogElements();
@@ -107,15 +158,22 @@ try {
      $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
-     $newElement['element6']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT <data>';
-     $newElement['element7']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>';
-     $newElement['element8']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET';
-     $newElement['element9']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php EDIT';
-     $newElement['element10']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php GALLERY';
-     $newElement['element11']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php SET <data>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'text.php <event> <data>';
+     // INIT, F2, CONFIRMDIALOG..
+     CreateHandlerSection(10, 'INIT', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
+     CreateHandlerSection(12, 'KeyF2', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(14, 'KeyDelete', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SET');
+     CreateHandlerSection(16, 'KeyInsert', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php SETPROP link <{"prop":"link"}> hint <{"prop":"hint"}> style <{"prop":"style"}>');
+     CreateHandlerSection(18, 'KEYPRESS', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(20, 'KEYPRESS', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(22, 'PASTE', '', PHPBINARY.' '.HANDLERDIR.'_.php EDIT <data>');
+     CreateHandlerSection(24, 'KeyF12', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php CALL _history <oid>');
+     CreateHandlerSection(26, 'DOUBLECLICK', 'NONE', PHPBINARY.' '.HANDLERDIR.'_.php EDIT');
+     CreateHandlerSection(28, 'DOUBLECLICK', 'SHIFT', PHPBINARY.' '.HANDLERDIR.'_.php UPLOADDIALOG');
+     CreateHandlerSection(30, 'DOUBLECLICK', 'CTRL', PHPBINARY.' '.HANDLERDIR.'_.php DOWNLOADDIALOG');
+     CreateHandlerSection(32, 'DOUBLECLICK', 'ALT', PHPBINARY.' '.HANDLERDIR.'_.php UNLOADDIALOG');
+     CreateHandlerSection(34, 'DOUBLECLICK', 'CTRL+ALT', PHPBINARY.' '.HANDLERDIR.'_.php GALLERY');
+     CreateHandlerSection(36, 'CONFIRMDIALOG', '', PHPBINARY.' '.HANDLERDIR.'_.php <event> <data>');
+     CreateHandlerSection(38, 'CONFIRM', '', PHPBINARY.' '.HANDLERDIR.'_.php SET <data>');
      $userOD['dialog']['Element']['Comment (id5)'] = $newElement;
 
      initNewODDialogElements();
@@ -124,9 +182,10 @@ try {
      $newElement['element2']['data'] = "Double click appropriate cell to change color, font, background and other properties for the specified user";
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
-     $newElement['element4']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event>';
-     $newElement['element5']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event> <{"prop": "dialog"}>';
-     $newElement['element12']['data'] = PHPBINARY.' '.HANDLERDIR.'customization.php <event> <data>';
+     // INIT, CONFIRMDIALOG..
+     CreateHandlerSection(10, 'INIT', '', PHPBINARY.' '.HANDLERDIR.'customization.php <event>');
+     CreateHandlerSection(12, 'DOUBLECLICK', 'NONE', PHPBINARY.' '.HANDLERDIR.'customization.php CUSTOMIZE <{"prop": "dialog"}>');
+     CreateHandlerSection(14, 'CONFIRMDIALOG', '', PHPBINARY.' '.HANDLERDIR.'customization.php <event> <data>');
      $userOD['dialog']['Element']['Customization (id6)'] = $newElement;
 
      $query = $db->prepare("INSERT INTO `$` (odname,odprops) VALUES ('Users',:odprops)");
@@ -165,10 +224,15 @@ try {
 		'6' => ['cmd' => 'RESET', 'value' => 'Customize', 'dialog' => defaultCustomizationDialogJSON()] + DEFAULTELEMENTPROPS];
      AddObject($db, $client, $output);
 
+
+
      //------------------------------------------Create default OD 'Logs'------------------------------------------
      initNewODDialogElements();
      $newProperties['element1']['data'] = 'Logs';
-     $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
+     $newProperties['element6']['data'] = "+User/group list allowed to change 'Database' section|Disallowed list (allowed for others)|";
+     $newProperties['element8']['data'] = "+User/group list allowed to change 'Element' section|Disallowed list (allowed for others)|";
+     $newProperties['element7']['data'] = $newProperties['element9']['data'] = 'root';
+     $logOD = ['title'  => 'Edit Object Database Structure', 'dialog'  => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 860px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $logOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $logOD['dialog']['Element']['New element']['element1']['id'] = '2';
      $logOD['dialog']['View']['New view']['element1']['id'] = '2';

@@ -17,7 +17,7 @@ switch ($_SERVER['argv'][1])
 	     echo json_encode(['cmd' => 'RESET', 'value' => 'Customize', 'dialog' => defaultCustomizationDialogJSON()]);
 	     break;
 
-	case 'DBLCLICK':
+	case 'CUSTOMIZE':
 	     if (!isset($_SERVER['argv'][2]) || !($data = json_decode($_SERVER['argv'][2], true)))
 		{
 		 echo json_encode(['cmd' => 'ALERT', 'data' => "You can't change system account customization!"]);

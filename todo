@@ -1,19 +1,16 @@
-dodelat user.php
-and event KEYPRESS with 'CTRL+Alt+Meta'
-
 New handler conception:
-1. Start event for keypres and dblclick
-2. Doc-help
-3. Search in every js php keypress ins del f2 f12 dblclick
+1. New events conception for scheduler
+2. New events conception for rules
+3. Start event for keypres and dblclick
 4. test task manager on key press event
-5. handlers on new events
-6. make db make setki make mrtg
-7. pasre handler output
-	As a result of EDIT command client generates CONFIRM event. Handler should answer to 'CONFIRM' by SET/RESET otherwise  (no answer at all or nonSET event like DIALOG,EDIT,ALERT,CALL) it is a handler return data error couse editing cell still contains unactual data. At Final: warning about this situation only in DEBUG handler output mode!
-8. remove getCMD1, and new element for f2 f12 (all old handler cmd lines)
+5. New handler interface section hint
+6. go through all doc and search in every js php keypress ins del f2 f12 dblclick after
+7. make db make setki make mrtg
 
 Errors:
 1. style padding: 15px; null
+2. gallery vyvodit bolshuyu kartinku
+3. expanded list in OD edit structure is binded to lower textarea
 
 Megacom implementation:
 1. new element mac to setki view
@@ -23,6 +20,7 @@ Megacom implementation:
 5. point to point tree
 6. OD setki new view: search by one ip, history
 7. correct all mrtg host files to make correct megacom tree via links in mrtg.php (mpls links are apparent)
+8. switch models piechart
 
 Megacom MRTG OD:
 1. Elements

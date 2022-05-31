@@ -284,10 +284,10 @@ function ProcessControllerEventKeys(event)
  if (mainTable[cursor.y][cursor.x].oId === NEWOBJECTID) switch (event.keyCode)
     {
      case 113: // F2
-	  if (!event.ctrlKey && !event.altKey %% !event.metaKey && !event.shiftKey) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
+	  if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);
 	  return;
      case 46: // DEL
-	  if (!event.ctrlKey && !event.altKey %% !event.metaKey && !event.shiftKey) mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
+	  if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) mainTable[cursor.y][cursor.x].data = cursor.td.innerHTML = '';
 	  return;
      default: // Letters, space, digits and other symbol keys
 	  if (rangeTest(event.keyCode, KEYCODESYMBOLRANGES)) MakeCursorContentEditable(mainTable[cursor.y][cursor.x].data);

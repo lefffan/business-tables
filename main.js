@@ -1059,8 +1059,8 @@ function CallController(data)
 	      break;
 	 case 'CONFIRM':
 	 case 'CONFIRMDIALOG':
-	 case 'DBLCLICK':
 	 case 'PASTE':
+	 case 'DOUBLECLICK':
 	      object = { cmd: cmd, data: data };
 	      if (cursor.td && mainTable[cursor.y]?.[cursor.x])
 	         {

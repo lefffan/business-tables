@@ -28,14 +28,14 @@ switch ($_SERVER['argv'][1])
 	     break;
 
 	case 'CALL': // Call current database view in 2nd arg ($_SERVER['argv'][2]) with 3rd arg ($_SERVER['argv'][3]) as id parameter for the object selection string. Example views: 'Tree Up', 'Tree Down', 'Map Tree Up', 'Map Tree Down', '_History'
-	     if (!isset($_SERVER['argv'][2]) || !isset($_SERVER['argv'][3])) echo json_encode(['cmd' => '');
+	     if (!isset($_SERVER['argv'][2]) || !isset($_SERVER['argv'][3])) echo json_encode(['cmd' => '']);
 	      else echo json_encode(['cmd' => 'CALL', 'OV' => $_SERVER['argv'][2], 'params' => [':id'=>$_SERVER['argv'][3]]]);
 	     break;
 
 	case 'SETPROP': // Set element properties with property name as a 2nd arg, property initial value as 3rd arg and so on..
 	     if (($len = count($_SERVER['argv'])) < 3)
 		{
-		 echo json_encode(['cmd' => '');
+		 echo json_encode(['cmd' => '']);
 		 break;
 		}
 	     $profile = [];
@@ -58,7 +58,7 @@ switch ($_SERVER['argv'][1])
 	case 'SELECT': // Set one of predefined element values divided via '|', see json dialog box format
 	     if (!isset($_SERVER['argv'][2]))
 		{
-		 echo json_encode(['cmd' => '');
+		 echo json_encode(['cmd' => '']);
 		 break;
 		}
 	     echo json_encode(['cmd' => 'DIALOG',
@@ -72,7 +72,7 @@ switch ($_SERVER['argv'][1])
 	case 'CONFIRMDIALOG': // Confirm callback dialog data from element props set and element predefined values selection
 	     if (!isset($_SERVER['argv'][2]) || gettype($arr = json_decode($_SERVER['argv'][2], true)) != 'array')
 		{
-		 echo json_encode(['cmd' => '');
+		 echo json_encode(['cmd' => '']);
 		 break;
 		}
 	     if (isset($arr['title']) && $arr['title'] === 'Element value') 
@@ -89,9 +89,9 @@ switch ($_SERVER['argv'][1])
 		 echo json_encode(['cmd' => 'SET'] + $data);
 		 break;
 		}
-	     echo json_encode(['cmd' => '');
+	     echo json_encode(['cmd' => '']);
 	     break;
 
 	default:
-	     echo json_encode(['cmd' => '');
+	     echo json_encode(['cmd' => '']);
        }

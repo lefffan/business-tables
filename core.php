@@ -32,13 +32,33 @@ function AddNewHandlerInterfaceSection(&$elementprofile, &$newElement)
  // Then check new handler interface section to add
  if ($elementprofile['element8']['data'])
     {
-     // Add new interface section
+     // Add new interface section, first - hanlder output mode
      $elementprofile['element'.strval($eid + 1)] = $elementprofile['element5']; 
-     $elementprofile['element'.strval($eid + 1)]['data'] = 'Output mode';
+     // Second - handler command line
      $elementprofile['element'.strval($eid + 2)] = $elementprofile['element8'];
-     $elementprofile['element'.strval($eid + 2)]['event'] = $elementprofile['element6']['data'];
-     $elementprofile['element'.strval($eid + 2)]['modificators'] = $elementprofile['element7']['data'];
+     // Third - event
+     $pos = strpos($event = $elementprofile['element6']['data'], '+') + 1;
+     $event = substr($event, $pos, strpos($event, '|', $pos) - $pos);
+     $elementprofile['element'.strval($eid + 2)]['event'] = $event;
+     // Last - modificator keys and handler cmd header
+     $elementprofile['element'.strval($eid + 2)]['modificators'] = '';
+     if (array_search($event, NOMOUSEKEYBOARDEVENTS) === false)
+        {
+         $modificatorstext = '';
+	 $elementprofile['element'.strval($eid + 2)]['modificators'] = 0;
+	 foreach (preg_split("/\|/", $elementprofile['element7']['data']) as $index => $key)
+		 if (strpos($key, '+') === 0)
+		    {
+		     $modificatorstext .= '+'.strtoupper(substr($key, 1));
+		     $elementprofile['element'.strval($eid + 2)]['modificators'] += pow(2, array_search($key, ['+Meta', '+Shift', '+Alt', '+Ctrl']));
+		    }
+	 $modificatorstext = $modificatorstext ? substr($modificatorstext, 1) : 'NONE';
+	 $elementprofile['element'.strval($eid + 2)]['modificators'] = strval($elementprofile['element'.strval($eid + 2)]['modificators']);
+	}
+     $elementprofile['element'.strval($eid + 1)]['head'] = isset($modificatorstext) ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatorstext" : "Set handler output mode and command line below for event <b>'$event'</b>";
 
+     unset($elementprofile['element'.strval($eid + 1)]['help']);
+     unset($elementprofile['element'.strval($eid + 2)]['head']);
      // Flush new section
      $elementprofile['element5'] = $newElement['element5'];
      $elementprofile['element6'] = $newElement['element6'];
@@ -63,7 +83,7 @@ function adjustODProperties($db, $data, $ODid)
 	  // Fetching element id
 	  $eid = strval($value['element1']['id']);
 	  // Remove element from db and dialog props in case of empty name, description and all hanlders
-	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && $value['element4']['data'] === '' && $value['element5']['data'] === '' && $value['element6']['data'] === '' && $value['element7']['data'] === '' && $value['element8']['data'] === '' && $value['element9']['data'] === '' && $value['element10']['data'] === '' && $value['element11']['data'] === '' && $value['element12']['data'] === '' && $value['element13']['data'] === '')
+	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && count($value) < 8)
 	     {
 	      if ($key === 'New element')
 	         {
@@ -105,17 +125,15 @@ function adjustODProperties($db, $data, $ODid)
     	      $db->commit();
 	      $data['dialog']['Element'][$key]['element1']['id'] = $eidnew;
 	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
-	      AddNewHandlerInterfaceSection($data['dialog']['Element'][$profile], $newElement);
 	      $eidnew = strval(intval($eidnew) + 1);
-	      continue;
 	     }
 	  // Process element new profile after 'element name' rename
-	  if ($profile != $key)
+	   else if ($profile != $key)
 	     {
 	      $data['dialog']['Element'][$profile] = $data['dialog']['Element'][$key];
 	      unset($data['dialog']['Element'][$key]);
-	      AddNewHandlerInterfaceSection($data['dialog']['Element'][$profile], $newElement);
 	     }
+	  AddNewHandlerInterfaceSection($data['dialog']['Element'][$profile], $newElement);
 	 }
  $data['dialog']['Element']['New element'] = $newElement; // Reset 'New element' profile to default
  $data['dialog']['Element']['New element']['element1']['id'] = $eidnew; // and set its possible id
@@ -177,14 +195,14 @@ function initNewODDialogElements()
 {
  global $newProperties, $newElement, $newView, $newRule;
 
- $usereventcodestring = '';
- foreach (USEREVENTCODES as $code) $usereventcodestring .= $code.'|';
+ $eventstring = '';
+ foreach (ALLOBJECTEVENTS as $value) $eventstring .= $value.'|';
 
  $newProperties  = ['element1' => ['type' => 'text', 'head' => 'Database name', 'data' => '', 'help' => "To remove database without recovery - remove all elements in 'Element' tab<br>and set database name with its description empty."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Database description', 'data' => '', 'line' => ''],
 		    'element3' => ['type' => 'radio', 'data' => "User/group list the database is visible for|+Hidden for user/group list (visible for others)|"],
 		    'element4' => ['type' => 'textarea', 'data' => '', 'line' => ''],
-		    'element6' => ['type' => 'radio', 'data' => "'Database' user section|+Disallowed list (allowed for others)|"],
+		    'element6' => ['type' => 'radio', 'data' => "User/group list allowed to change 'Database' section|+Disallowed list (allowed for others)|"],
 		    'element7' => ['type' => 'textarea', 'data' => ''],
 		    'element8' => ['type' => 'radio', 'data' => "User/group list allowed to change 'Element' section|+Disallowed list (allowed for others)|"],
 		    'element9' => ['type' => 'textarea', 'data' => ''],
@@ -197,22 +215,10 @@ function initNewODDialogElements()
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element5' => ['type' => 'radio', 'head' => "Add new handler:\n\nOutput mode", 'data' => '+Default|Dialog|Debug|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line<br>string as an alert text. For Keyboard/Mouse events only. For all other events (INIT, CONFIRM..)<br>handler output in debug mode is saved to Logs Database.'],
-		    'element6' => ['type' => 'select-one', 'head' => 'User event', 'data' => '+INIT|CONFIRM|CONFIRMDIALOG|CHANGE|PASTE|DoubleClick|KeyPress|'.$usereventcodestring, 'help' => 'Choose event the handler is called on (via command line below).<br>For the mouse and keyboards events select Ctrl|Alt|Shift|Meta as an additional event occur options.<br>Note that some events (Ctrl+KeyA, Ctrl+KeyC and others) are reserved for the service purposes<br>and will never occur. Also handler call does not cancel defa'],
+		    'element5' => ['type' => 'radio', 'head' => "<b>Add new handler:</b>\n\nOutput mode", 'data' => '+Default|Dialog|Debug|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line<br>string as an alert text. For Keyboard/Mouse events only. For all other events (INIT, CONFIRM..)<br>handler output in debug mode is saved to Logs Database.'],
+		    'element6' => ['type' => 'select-one', 'head' => 'Client event', 'data' => '+'.$eventstring, 'help' => 'Choose event the handler is called on (via command line below).<br>For the mouse and keyboards events select Ctrl|Alt|Shift|Meta as an additional event occur options.<br>Note that some events (Ctrl+KeyA, Ctrl+KeyC and others) are reserved for the service purposes<br>and will never occur. Also handler call does not cancel defa'],
 		    'element7' => ['type' => 'checkbox', 'hea' => '', 'data' => 'Ctrl|Alt|Shift|Meta'],
 		    'element8' => ['type' => 'textarea', 'head' => 'Handler command line', 'data' => '', 'hel' => 'hui', 'line' => ''],
-/*
-		    'element4' => ['type' => 'text', 'head' => "Handler command lines to process application events below", 'label' => "'INIT' event:", 'data' => ''],
-		    'element5' => ['type' => 'text', 'label' => "'DBLCLICK' event:", 'data' => ''],
-		    'element6' => ['type' => 'text', 'label' => "'KEYPRESS' event:", 'data' => ''],
-		    'element7' => ['type' => 'text', 'label' => "'INS' event:", 'data' => ''],
-		    'element8' => ['type' => 'text', 'label' => "'DEL' event:", 'data' => ''],
-		    'element9' => ['type' => 'text', 'label' => "'F2' event:", 'data' => ''],
-		    'element10' => ['type' => 'text', 'label' => "'F12' event:", 'data' => ''],
-		    'element11' => ['type' => 'text', 'label' => "'CONFIRM' event:", 'data' => ''],
-		    'element12' => ['type' => 'text', 'label' => "'CONFIRMDIALOG' event:", 'data' => ''],
-		    'element13' => ['type' => 'text', 'label' => "'CHANGE' event:", 'data' => '', 'line' => '']
-*/
 		   ];
 
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'View name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
@@ -1083,7 +1089,7 @@ function Check($db, $flags, &$client, &$output)
      if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|' && ($output['alert'] = "New OD add operation is not allowed!"))
 	return;
     }
-  else if (array_search($client['cmd'], ['CALL', 'DELETEOBJECT', 'INIT', 'DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'SCHEDULE']) !== false)
+  else if (array_search($client['cmd'], array_merge(['CALL', 'DELETEOBJECT'], ALLOBJECTEVENTS)) !== false || ctype_digit($client['cmd']))
     {
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
@@ -1107,6 +1113,7 @@ function Check($db, $flags, &$client, &$output)
 	 if (UserRestrictionMatch($groups, $View['element11']['data'], $View['element10']['data']) && ($output['alert'] = "OV write operation are not allowed!")) return;
 	}
 
+/*
      // Check rules
      if (array_search($client['cmd'], ['DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12']) !== false)
 	{
@@ -1123,6 +1130,7 @@ function Check($db, $flags, &$client, &$output)
 	     return;
 	    }
 	}
+*/
     }
   else
     {

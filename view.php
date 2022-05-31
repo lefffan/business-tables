@@ -244,7 +244,7 @@ try {
 					      'View' => ['New view' => $newView],
 					      'Rule' => ['New rule' => $newRule]],
 				 'buttons' => CREATECANCEL,
-				 'flags'  => ['style' => 'width: 760px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]]];
+				 'flags'  => ['style' => 'width: 860px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]]];
 		      $output['data']['buttons']['CREATE']['call'] = 'New Database';
 		      break;
 		     }

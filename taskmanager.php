@@ -60,7 +60,7 @@ foreach ($output as $value)
 	{
 	 $process = explode(' ', trim($value));
 	 if (($start = array_search('wrapper.php', $process)) === false) continue;
-	 if (!isset($process[$start + 7]) || ($eventid = array_search($process[$start + 7], ['INIT', 'DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'CHANGE', 'SCHEDULE'])) === false) continue;
+	 if (!isset($process[$start + 7]) || ($eventid = array_search($process[$start + 7], ['INIT', 'DOUBLECLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'CHANGE', 'SCHEDULE'])) === false) continue;
 	 $i++;
 	 try {
 	      // Calc user name

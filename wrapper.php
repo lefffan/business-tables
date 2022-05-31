@@ -2,13 +2,6 @@
 
 require_once 'core.php';
 
-const ARGVCLIENTINDEX = 9;
-const GROUPEVENTS = ['CHANGE', 'INIT', 'SCHEDULE'];
-const HANDLEREVENTS = ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', 'UPLOADDIALOG', 'DOWNLOADDIALOG', 'UNLOADDIALOG', 'GALLERY', ''];
-// 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46
-const USEREVENTKEYCODES = [65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,48,49,50,51,52,53,54,55,56,57,112,113,114,115,116,117,118,119,120,121,122,123,32,45,46,219,221];
-const KEYCODESYMBOLRANGES = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
-
 function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 {
  // Function goes through all elements except current (element initiated object data change) and calls its 'CHANGE' event handlers
@@ -17,8 +10,8 @@ function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
  foreach ($client['allelements'] as $eid => $profile) if ($eid != $currenteid)
 	 {
 	  $client['eId'] = $eid;
-	  if (($cmdline = GetCMD($db, $client)) === '') continue; // No handler
-	  exec($cmdline, $output[$eid]);
+	  if (!GetCMD($db, $client)) continue; // No handler
+	  exec($client['handlercmdlineeffective'], $output[$eid]);
 	  // Parse handler result data, if failed - unset output
 	  if (!ParseHandlerResult($db, $output[$eid], $client)) unset($output[$eid]);
 	 }
@@ -27,31 +20,51 @@ function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 function ParseHandlerResult($db, &$output, &$client)
 {
  if (!isset($output[0])) return;
- $output = gettype($result = json_decode($output[0], true)) === 'array' ? $result : ['cmd' => 'SET', 'value' => implode("\n", $output)];
  $logmsg = "Element id$client[eId] handler for object id$client[oId] ";
+ $result = json_decode($output[0], true);
+
+ if (strpos($client['handlermode'], '+Debug') !== false)
+    {
+     $alert = 'Handler output debug mode is on.';
+     $alert .= "\n\n<b>1. Defined command line:</b>\n".$client['handlercmdline'];
+     $alert .= "\n\n<b>2. Effective command line:</b>\n".$client['handlercmdlineeffective'];
+     $alert .= "\n\n<b>3. Output is in ".(gettype($result) === 'array' ? '' : 'non-')."JSON format:</b>\n";
+     $alert .= gettype($result) === 'array' ? substr($output[0], 0, ELEMENTDATAVALUEMAXCHAR) : substr(implode("\n", $output), 0, ELEMENTDATAVALUEMAXCHAR);
+     if (gettype($result) === 'array' && ($client['cmd'] === 'CONFIRM' || array_search($client['cmd'], GROUPEVENTS)) && $result['cmd'] !== 'SET' && $result['cmd'] !== 'RESET')
+	$alert .= "\n\n<span style=".'"'."color: red".'"'.">Note that handler should return only 'SET/RESET' commands in response to client 'CONFIRM' event..</span>";
+     $output = ['cmd' => 'ALERT', 'data' => $alert];
+     if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $alert)) return;
+    }
+  else if (strpos($client['handlermode'], '+Dialog') !== false)
+    {
+     $output = gettype($result) === 'array' ? $result : ['cmd' => 'ALERT', 'data' => implode("\n", $output)];
+    }
+  else
+    {
+     $output = gettype($result) === 'array' ? $result : ['cmd' => 'SET', 'value' => implode("\n", $output)];
+    }
 
  // Incorrect handler response JSON
  if ((!isset($output['cmd']) || array_search($output['cmd'], HANDLEREVENTS) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
+
+ // Non SET handler command on client group event such as INIT, CHANGE..
+ if ($output['cmd'] !== 'SET' && $output['cmd'] !== 'RESET')
+ if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return '$output[cmd]' command on '$client[cmd]' event!")) return;
+
  // Parse handler output array
  switch ($output['cmd'])
 	{
 	 case 'EDIT':
-	      // Unsupported command
-	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'EDIT' command on '$client[cmd]' event!")) return;
 	      ConvertToString($output, ['data']);
 	      if (!isset($output['data'])) $output['data'] = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], 'value');
 	      cutKeys($output, ['cmd', 'data']);
 	      break;
 	 case 'ALERT':
-	      // Unsupported command
-	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'ALERT' command on '$client[cmd]' event!")) return;
 	      // Undefined alert
 	      if ((!isset($output['data']) || !ConvertToString($output, ['data'])) && !LogMessage($db, $client, $logmsg."returned undefined 'ALERT' message!")) return;
 	      $output = ['cmd' => '', 'alert' => $output['data']];
 	      break;
 	 case 'DIALOG':
-	      // Unsupported command
-	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'DIALOG' command on '$client[cmd]' event!")) return;
 	      // Undefined dialog
 	      if ((!isset($output['data']) || gettype($output['data']) != 'array') && !LogMessage($db, $client, $logmsg."returned incorrect 'DIALOG' command data!")) return;
 	      cutKeys($output, ['cmd', 'data']);
@@ -77,8 +90,6 @@ function ParseHandlerResult($db, &$output, &$client)
 		      }
 	      break;
 	 case 'CALL':
-	      // Unsupported command
-	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return 'CALL' command on '$client[cmd]' event!")) return;
 	      cutKeys($output, ['cmd', 'ODid', 'OVid', 'OD', 'OV', 'params']);
 	      if (!isset($output['OD']) && !isset($output['ODid'])) $output['ODid'] = $client['ODid'];
 	      if (!isset($output['OV']) && !isset($output['OVid'])) $output['OVid'] = $client['OVid'];
@@ -93,7 +104,6 @@ function ParseHandlerResult($db, &$output, &$client)
 	 case 'DOWNLOADDIALOG':
 	 case 'UNLOADDIALOG':
 	 case 'GALLERY':
-	      if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return '$output[cmd]' command on '$client[cmd]' event!")) return;
 	      cutKeys($output, ['cmd']);
 	      break;
 	 case '':
@@ -280,51 +290,55 @@ function CalcRegex($regex, &$output, $auth)
  return '/'.$regex.'/'.$flags;
 }
 
-function GetCMD($db, &$client, $cmdline = false)
+function GetCMD($db, &$client)
 {
  // Caclulate incoming client event modificator keys
- if ($client['cmd'] === 'DBLCLICK')
+ if ($client['cmd'] === 'DOUBLECLICK')
     {
-     $event = 'DBLCLICK';
-     $modificators = intval($client['data']);
+     $event = 'DOUBLECLICK';
+     $modificators = $client['data'];
     }
   else if (ctype_digit($client['cmd']))
     {
      $event = intval($client['cmd']) & 255;
-     $modificators = (intval($client['cmd']) & 65280) / 256;
+     $modificators = strval((intval($client['cmd']) & 65280) / 256);
     }
   else
     {
      $event = $client['cmd'];
     }
 
- // Search specified event above (excluding 'SCHEDULE' event in case of $cmdline exist)
- if (!$cmdline)
  foreach ($client['allelements'][$client['eId']] as $key => $value)
 	 {
 	  $eid = intval(substr($key, 7)); // Calculate interface element id number
-	  if ($eid < 11 || !($eid % 2) || ($pos = strpos($value['event'], '+') + 1) === false) continue; // Then check it to be more than 10 and odd. Serach for the selected event also
-	  if (!isset($modificators) || $modificators === $value['modificators']) // Check Ctrl, Alt, Shift, Meta modificators
+	  if ($eid < 11 || !($eid % 2)) continue; // Then check it to be more than 10 and odd
+	  if (isset($modificators) && $modificators !== $value['modificators']) continue; // Check Ctrl, Alt, Shift, Meta modificators match if exist
 
-	  if ($event === ($elementevent = substr($value['event'], $pos, strpos($value['event'], '|', $pos) - $pos))) // Exact event match
+	  if ($event === ($elementevent = $value['event'])) // Exact event match
 	     {
-	      $cmdline = $value['data'];
+	      $client['handlercmdline'] = $cmdline = $value['data'];
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data'];
 	      break;
 	     }
 
-	  if (gettype($event) === 'integer') continue; // No key down event? Continue
+	  if (gettype($event) !== 'integer') continue; // No key down event? Continue
 
 	  if (!(($i = array_search($event, USEREVENTKEYCODES)) === false) && USEREVENTCODES[$i] === $elementevent) // Exact key event match
 	     {
-	      $cmdline = $value['data'];
+	      $client['handlercmdline'] = $cmdline = $value['data'];
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data'];
 	      break;
 	     }
 	
-	  if (RangeTest($event, KEYCODESYMBOLRANGES)) $cmdline = $value['data']; // May be symbol key to match KEYPRESS
+	  if ($elementevent === 'KEYPRESS' && RangeTest($event, KEYCODESYMBOLRANGES))
+	     {
+	      $client['handlercmdline'] = $cmdline = $value['data']; // May be symbol key to match KEYPRESS
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data'];
+	     }
 	 }
 
  // Check result command line
- if (!($len = strlen($cmdline))) return '';
+ if (!isset($cmdline) || !($len = strlen($cmdline))) return;
  $i = -1;
  $newcmdline = '';
 
@@ -357,46 +371,9 @@ function GetCMD($db, &$client, $cmdline = false)
        $newcmdline .= $add;
       }
 
- // Return modified command line
- return $newcmdline;
-}
-
-function GetCMD1($db, &$client, $cmdline = false)
-{
- if (!$cmdline) $cmdline = trim($client['allelements'][$client['eId']]['element'.array_search($client['cmd'], ['4'=>'INIT', '5'=>'DBLCLICK', '6'=>'KEYPRESS', '7'=>'INS', '8'=>'DEL', '9'=>'F2', '10'=>'F12', '11'=>'CONFIRM', '12'=>'CONFIRMDIALOG', '13'=>'CHANGE'])]['data']);
- if (!($len = strlen($cmdline))) return '';
- $i = -1;
- $newcmdline = '';
-
- while (++$i < $len)
-       {
-	if (($add = $cmdline[$i]) === "'" && ($j = strpos($cmdline, "'", $i + 1)) !== false)
-	   {
-	    $newcmdline .= "'".substr($cmdline, $i + 1, $j - $i - 1)."'";
-	    $i = $j;
-	    continue;
-	   }
-        if ($add === '>') continue;
-    	if ($add === '<')
-	   {
-	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
-	    switch ($match = substr($cmdline, $i + 1, $j - $i - 1))
-		   {
-		    case 'data':  $add = DoubleQuote($client['data']); break;
-		    case 'user':  $add = DoubleQuote($client['auth']); break;
-		    //case 'oid':   $add = DoubleQuote($client['oId']); break;
-		    case 'event': $add = DoubleQuote($client['cmd']); break;
-		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
-		    case 'datetime': $datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
-		    default: if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
-			      else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
-		   }
-	    $i = $j;
-	   }
-       $newcmdline .= $add;
-      }
-
- return $newcmdline;
+ // Fix modified command line and return true
+ $client['handlercmdlineeffective'] = $newcmdline;
+ return true;
 }
 
 function DoubleQuote($string)
@@ -425,9 +402,9 @@ else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
      else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
 
     // CMD line already defined (for 'SCHEDULE' event)? Pass it to GetCMD
-    if (($cmdline = GetCMD($db, $client, isset($client['cmdline']) ? $client['cmdline'] : false)) === '') exit;
+    if (!GetCMD($db, $client)) exit;
     $output[$client['eId']] = [];
-    exec($cmdline, $output[$client['eId']]);
+    exec($client['handlercmdlineeffective'], $output[$client['eId']]);
     if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
    }
 
@@ -557,8 +534,8 @@ switch ($output[$currenteid]['cmd'])
 		      $client['eId'] = $eid;
 		      $client['data'] = isset($data[$eid]) ? $data[$eid] : '';
 		      $output[$eid] = [];
-		      if (($cmdline = GetCMD($db, $client)) === '') continue;
-		      exec($cmdline, $output[$eid]);
+		      if (!GetCMD($db, $client)) continue; // No handler
+		      exec($client['handlercmdlineeffective'], $output[$eid]);
 		      ParseHandlerResult($db, $output[$eid], $client);
 		      $output[$eid] += DEFAULTELEMENTPROPS;
 		     }
