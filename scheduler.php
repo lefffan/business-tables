@@ -41,90 +41,54 @@ function CompareCronField($cronfield, $nowvalue)
  return false; // No any match? Return false
 }
 
-function SplitCronLine($cronline, $len)
+function SplitCronLine($cronline)
 {
- if (($cronline = trim($cronline)) === '') return false;	// Cron line is empty? return
- $cronline = explode(' ', $cronline);				// Split cron line via spaces
+ if (($cronline = trim($cronline)) === '') return false; // Cron line is empty? Return empty array
+ $cronline = explode(' ', $cronline); // Split cron line fields
  $cron = [];
- 
+
  foreach ($cronline as $key => $value)
-	 {
-	  if (count($cron) === $len + 1) $cron[$len] .= ' '.$value;	// Handler command line part
-	   else if (count($cron) === $len) $cron[] = $value;		// Handler part starts
-	   else if (trim($value) !== '') $cron[] = trim($value);	// Datetime or element id entries
+      if (count($cron) < count(CRONLINEFIELDS))
+         {
+	  if (trim($value)) $cron[] = trim($value);	// Datetime and vid fields
 	 }
- if (count($cron) <= $len) return false;				// Not all entries? Return false, otherwise return cron entries array
+       else
+         {
+	  isset($cron[count(CRONLINEFIELDS) - 1]) ? $cron[count(CRONLINEFIELDS) - 1] = $value : $cron[count(CRONLINEFIELDS) - 1] .= ' '.$value; // Command line field
+	 }
+
+ if (!isset($cron[count(CRONLINEFIELDS) - 1]) || !$cron[count(CRONLINEFIELDS) - 1]) return false;
  return $cron;
 }
-
-function FetchElementIds($string)
-{
- $elementsarray = json_decode($string, true);
- if (!$elementsarray || $elementsarray === true) return false;
-
- $elements = [];
- foreach ($elementsarray as $key => $element) if ($key != 'New element') $elements[$element['element1']['id']] = '';
-
- if ($elements === []) return false;
- return $elements;
-}
-
-$nowfields = ['minutes', 'hours', 'mday', 'mon', 'wday'];
-$nowfieldscount = count($nowfields);
 
 while (true)
 {
  $now = getdate(); // [ 'seconds' => 16, 'minutes' => 30, 'hours' => 2, 'mday' => 11, 'wday' => 0, 'mon' => 4, 'year' => 2021, 'yday' => 100, 'weekday' => 'Sunday', 'month' => 'April', 0 => 1618108216 ]
- $query = $db->prepare("SELECT id,JSON_EXTRACT(odprops, '$.dialog.View'),odname,JSON_EXTRACT(odprops, '$.dialog.Element') FROM $");
+ $query = $db->prepare("SELECT id,JSON_EXTRACT(odprops, '$.dialog.View') as views,odname,JSON_EXTRACT(odprops, '$.dialog.Element') as elements FROM $");
  $query->execute();
 
- foreach ($query->fetchAll(PDO::FETCH_NUM) as $od)
- if (($elements = FetchElementIds($od[3])))
- foreach (json_decode($od[1], true) as $key => $view) if ($key != 'New view')
- foreach (preg_split("/\n/", $view['element7']['data']) as $cronline) 
+ foreach ($query->fetchAll(PDO::FETCH_NUM) as $od) // Go through all OD structures
 	 {
-	  if (($cron = SplitCronLine($cronline, $nowfieldscount + 1)) === false) continue; // Check cronline correctness
-	  $eid = $cron[$nowfieldscount];
-	  if (!isset($elements[$eid])) continue; // Check element id existence
-	  foreach ($nowfields as $key => $value)
-		  if (!($success = CompareCronField($cron[$key], $now[$value]))) break; // Check datetime parameters match
-	  if (!$success) continue;
-
-	  // Init client array properties
-	  $client = ['auth' => 'system',
-		     'uid' => getUserId($db, 'system'),
-		     'ODid' => $od[0],
-		     'OVid' => $view['element1']['id'],
-		     'OD' => $od[2],
-		     'OV' => $view['element1']['data'],
-		     'eId' => $eid,
-		     'cmd' => 'SCHEDULE',
-		     'params' => [],
-		     'cmdline' => $cron[$nowfieldscount + 1],
-		     'ip' => IP];
-
-	  // Object selection consists of incomplete params? Continue, otherwise execute a query to fetch view all object ids
-	  if (gettype($client['objectselection'] = GetObjectSelection(trim($view['element4']['data']), $client['params'], $client['auth'])) === 'array') continue;
-
-	  // Execute wrapper for every object in a selection and cron line element specified:
-	  // wrapper.php <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
-	  // and/or log it:
-	  // lg("Executing handler '$client[cmdline]' (OD id $client[ODid], object id $client[oId], element id $client[eId]) at $now[hours]:$now[minutes]");
-	  if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data']))) === [])
-	     {
-	      $query = $db->prepare("SELECT id,version,lastversion FROM `data_$od[0]` $client[objectselection]");
-	      $query->execute();
-	      foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row)
-		      if ($row['version'] !== '0' && $row['lastversion'] === '1' && ($client['oId'] = $row['id'])) exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
-	     }
-	   else
-	     {
-	      $output = $tree = [];
-	      if (!Check($db, GET_ELEMENTS, $client, $output)) continue;
-	      CreateTree($db, $client, 0, $tree, '');
-	      foreach ($client['objects'] as $id => $nothing)
-		      if ($client['oId'] = $id) exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
-	     }
+	  $elements = json_decode($od['elements'], true); // Decode current OD structure Element section
+	  if (gettype($elements) !== 'array') continue; // Continue if error
+	  foreach ($elements as $key => $element) if ($key != 'New element') // Go trough all element profiles except 'New element'
+	  foreach ($element as $interface) if (isset($interface['event']) && $interface['event'] === 'SCHEDULE') // Go through all dialog interface elements for the SCHEDULE event
+	  foreach (preg_split("/\n/", $interface['data']) as $line => $cronline) // Go through all text lines of SCHEDULE event text area data
+		  {
+		   // Incorrect cron line? Continue, otherwise exec 'schedulerwrapper code ODid OVid eid': <uniq code> <$od['id']> <$cron[count(CRONLINEFIELDS) - 2]> <$element['element1']['id'] = ''>;
+		   if (!($cron = SplitCronLine($cronline))) continue;
+		   // Check datetime parameters match
+		   for ($i = 0; i < count(CRONLINEFIELDS) - 3; $i++) if (!CompareCronField($cron[$i], $now[CRONLINEFIELDS[$i]])) break 2;
+		   // Check correctness of queue and view id cron fields
+		   if (!ctype_digit($cron[count(CRONLINEFIELDS) - 2]) || !ctype_digit($cron[count(CRONLINEFIELDS) - 3])) continue;
+		   // Current scheduler id loader already does already exist? Continue
+		   $output = [];
+		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'];
+		   exex(SEARCHPROCESSCMD.$schedulerwrapperargs, $output);
+		   if (count($output)) continue;
+		   // Execute current scheduler id loader
+		   exec(SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &');
+		  }
 	 }
 
  $finish = getdate();

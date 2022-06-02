@@ -29,6 +29,8 @@ const REGEXSEARCHTITLE = 'Search';
 // 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46
 const KEYCODESYMBOLRANGES = [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];
 const KEYCODEEVENTRANGES = [65,90,48,57,96,107,109,123,186,192,219,222,32,32,59,59,61,61,173,173,226,226,45,46];
+const STARTEVENTS = ['KeyF1','KeyF2','KeyF3','KeyF4','KeyF5','KeyF6','KeyF7','KeyF8','KeyF9','KeyF10','KeyF11','KeyF12','KeyInsert','KeyDelete','PASTE','DOUBLECLICK'];
+const STARTEVENTCODES = ['112', '113', '114', '115', '116', '117', '118', '119', '120', '121', '122', '123', '45', '46'];
 
 let allowedtagsregexp, allowedtagsregexpg, allowedtagsregexpstring = '';
 let viewindex = -1, viewhistory = [], perfomance;

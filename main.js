@@ -466,18 +466,41 @@ function drawMain(data, layout, attached)
 
  // Start event does exist? Process it
  if (cursor.cmd !== undefined)
+ if (cursor.cmd.match(/^CHART\(\d*,\d*,\d*,\d*\)/) || (cursor.cmd.trim() === 'CHART' && (cursor.cmd = `CHART(0,0,${mainTableWidth - 1},${mainTableHeight - 1})`)))
     {
-     if (['DBLCLICK', 'INS', 'DEL', 'F2', 'F12'].indexOf(cursor.cmd.trim()) !== -1)
+     cursor.cmd = cursor.cmd.split('(')[1].split(')')[0].split(',');
+    }
+  else if (cursor.oId >= STARTOBJECTID && !isNaN(cursor.eId))
+    {
+     cmd = '';
+     let i, ctrl = 0, alt = 0, shift = 0, meta = 0;
+     for (let event of cursor.cmd.split(' '))
+	 {
+	  if (!(event = event.trim())) continue;
+	  if ((i = STARTEVENTS.indexOf(event)) !== -1 && (cmd = event) === 'PASTE')
+	     {
+	      cursor.cmd = cursor.cmd.substr(cursor.cmd.indexOf(' ') + 1);
+	      break;
+	     }
+	  if (STARTEVENTCODES[i]) cmd = STARTEVENTCODES[i];
+	  if ((/ctrl/i.test(event)) ctrl = 1;
+	  if ((/alt/i.test(event)) alt = 1;
+	  if ((/shift/i.test(event)) shift = 1;
+	  if ((/meta/i.test(event)) meta = 1;
+	 }
+     i = ctrl * 8 + alt * 4 + shift * 2 + meta;
+     if (cmd === 'PASTE')
 	{
-	 if (cursor.oId >= STARTOBJECTID && !isNaN(cursor.eId) && (cmd = cursor.cmd.trim())) CallController();
+	 CallController(cursor.cmd);
 	}
-      else if (cursor.cmd.match(/^KEYPRESS/))
+      else if (cmd === 'DOUBLECLICK')
 	{
-	 if (cursor.oId >= STARTOBJECTID && !isNaN(cursor.eId) && (cmd = 'KEYPRESS')) CallController(cursor.cmd.substr(8));
+	 CallController(String(i));
 	}
-      else if (cursor.cmd.match(/^CHART\(\d*,\d*,\d*,\d*\)/) || (cursor.cmd.trim() === 'CHART' && (cursor.cmd = `CHART(0,0,${mainTableWidth - 1},${mainTableHeight - 1})`)))
+      else if (cmd)
 	{
-	 cursor.cmd = cursor.cmd.split('(')[1].split(')')[0].split(',');
+	 cmd = String(Number(cmd) && (256 * i));
+	 CallController();
 	}
     }
 

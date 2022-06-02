@@ -9,7 +9,7 @@ function CreateHandlerSection($i, $event, $modificatortext, $cmd)
  global $newElement;
 
  $newElement['element'.strval($i)] = $newElement['element5'];
- $newElement['element'.strval($i)]['head'] = $modificatortext ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatortext" : "Handler command line for event <b>'$event'</b>";
+ $newElement['element'.strval($i)]['head'] = $modificatortext ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatortext" : "Set handler output mode and command line below for event <b>'$event'</b>";
  unset($newElement['element'.strval($i)]['help']);
 
  $newElement['element'.strval($i+1)] = $newElement['element8'];

@@ -4,14 +4,17 @@
 const DATABASENAME			= 'OE9';
 const DATABASEUSER			= 'tabel';
 const DATABASEPASS			= '17MAy2001#';
+const SCHEDULERID			= 'kGk4Jghyg6';
+const APPDIR				= '/usr/local/src/tabels/';
 const PHPBINARY				= 'php';
 const WRAPPERBINARY			= PHPBINARY.' wrapper.php';
-const SCHEDULERBINARY			= 'scheduler.php';
+const SCHEDULERCMD			= PHPBINARY.' '.APPDIR.'scheduler.php';
+const SCHEDULERWRAPPERCMD		= PHPBINARY.' '.APPDIR.'schedulerwrapper.php';
 const HANDLERDIR			= '/usr/local/src/tabels/handlers/';
-const APPDIR				= '/usr/local/src/tabels/';
 const IP				= '195.208.152.8';
 const PORT				= 7889;
 const WRAPPERPROCESSESCMD		= "ps axww | grep wrapper.php";
+const SEARCHPROCESSESCMD		= 'ps axww | grep ';
 const KILLWRAPPERPROCESSESCMD		= "kill -9";
 const UPLOADDIR				= '/usr/local/lib/tabels/';
 const MAXFILESIZE			= 157286400;
@@ -58,6 +61,7 @@ const DEFAULTELEMENTPROPS		= ['value' => '', 'hint' => '', 'link' => '', 'style'
 const ARGRECURSIONNUM			= 3;
 const ARGRESULTLIMITNUM			= 256;
 const ARGVCLIENTINDEX			= 9;
+const CRONLINEFIELDS			= ['minutes', 'hours', 'mday', 'mon', 'wday', 'queue', 'vid', 'cmd'];
 // 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46
 const USEREVENTKEYCODES			= [65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,48,49,50,51,52,53,54,55,56,57,112,113,114,115,116,117,118,119,120,121,122,123,32,45,46,219,221];
 const KEYCODESYMBOLRANGES		= [65,90,48,57,96,107,109,111,186,192,219,222,32,32,59,59,61,61,173,173,226,226];

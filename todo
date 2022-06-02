@@ -3,9 +3,8 @@ New handler conception:
 2. New events conception for rules
 3. Start event for keypres and dblclick
 4. test task manager on key press event
-5. New handler interface section hint
-6. go through all doc and search in every js php keypress ins del f2 f12 dblclick after
-7. make db make setki make mrtg
+5. go through all doc and search in every js php keypress ins del f2 f12 dblclick after
+6. make db make setki make mrtg
 
 Errors:
 1. style padding: 15px; null
@@ -62,7 +61,7 @@ New app features for Megacom:
     element link hint to show full element value
     regexp search
     context menu expand/hide uplink and downlink subtree
-7. Execute scheduler apparently for every OD/OV and optionally exec handlers simultaneously
+7. Execute scheduler apparently for every OD/OV and optionally exec handlers simultaneously, simulation handlers count (1= handlers are executed one by one, 2= )
 8. Handler cmd line replacements - <oid> (plus point that oid can be retreived also <{"element":"id"}>) <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
 9. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 10. Change favicon -> tabels
