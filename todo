@@ -58,16 +58,17 @@ New app features for Megacom:
 6. TREE:
     Tree element layout: style (for example to see what nodes are down by seeing them via red background)
     Tree wire name (arrow name) to mark fiber cooper radio..
-    element link hint to show full element value
+    element link hint (per element text line) to show full element value
     regexp search
     context menu expand/hide uplink and downlink subtree
-7. Execute scheduler apparently for every OD/OV and optionally exec handlers simultaneously, simulation handlers count (1= handlers are executed one by one, 2= )
-8. Handler cmd line replacements - <oid> (plus point that oid can be retreived also <{"element":"id"}>) <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
-9. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
-10. Change favicon -> tabels
-11. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
-12. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
-13. nohup server and scheduler execution
+7. Handler cmd line replacements - <oid> (plus point that oid can be retreived also <{"element":"id"}>) <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
+8. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
+9. Change favicon -> tabels
+10. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
+11. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
+12. nohup server and scheduler execution
+13. Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
+14. multi cell selecting - copy (excel table), delete (removes all selected objects) with new user event 'DELETE' for every removing object
 
 Some systems emulation:
 1. Corp chat
@@ -81,11 +82,10 @@ Some systems emulation:
 9. Some excel functions
 10. Voting
 11. Any statistic/analitycs
-------------edit later
-21. Setki.xls
-  tech uchet
-  wiki
-  Operations:
+12. Setki.xls
+13. Tech uchet
+14. Wiki
+15. Operation Journal:
     Switch ip, switch description, switch location,
     60 ports (description), for every port: type (uplink,downlink,free,service,client),
     diagnostic (pings, grafiki, port config, port errors, asr speed, mac, mac-vendor, checkhost, name from billing) and convert all this info to pdf in a new tab, if port type is 'client', then display client name from billing
@@ -94,10 +94,9 @@ Some systems emulation:
     Button to destruct client conf,int et 1/0/2,shut, no fl c, no band c,  sw mode acc,  sw acc vl 666,  speed aut, end,wr
     see client mac, cable length, errors and all other data the switch allows to monitor
     ping <switch ip>, on port ping <client ip>
-  Paraga mail functional
-  Ask Hramcova analitiku po helpdesku
-  See functions on Slava's management system
------------ edit later
+16. Paraga mail functional
+17. Ask Hramcova analitiku po helpdesku
+18. See functions on Slava's management system
 
 Stages:
 1. First stage: oper+slavina, setki, tech uchet, HD, adrbook
@@ -152,15 +151,10 @@ Stages:
   non table area selecting - compare event mouse coordinate from drag x1,y1 and increase/decrease drag x2,y2 coordinate so
   smooth scrolling for rows more than 500 - event preventdefault on scroll event plus settimeout (dispatch scrolling event, 100);
   effects at navigating images in GALLERY just like in drive.ru
-  dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
-  multi cell selecting - copy (excel table), delete (removes all selected objects).
-    User can select and copy whole object, then paste it by cloning it (should INIT event be inited?)
-    single cell copying and then pasting (by Ctrl+V) - it will be plain text like in whatsapp (without html tags);
-    handler command to copy data to the buffer
-    One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
-    delete selected objects
+  One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
   Dialog boxes:
+    dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
     when pushed button is pushed and mouse cursir is out of button - make button released
     at dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
     show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
@@ -173,8 +167,6 @@ Stages:
 	      pad.profile.element style prop - not only for header and for interface element of itself!
 	      OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
-  Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
-  background for html body
 
 - Controller:
   prevent multiple call controller on one element from one user, example: multiple key press while server didn't respond the previous event
@@ -183,6 +175,7 @@ Stages:
 - Handlers:
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
   Non local server (cloud) implemented handlers
+  handler command to copy data to the buffer
 
 - Questionable features:
   Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)
@@ -196,4 +189,5 @@ Stages:
     (Max object versions in range 0-65535. Emtpy or undefined string - zero value)
   helpdesk/jira/CRM example in Help context menu
   Create system user read-only customization like github interface, for a example, so users can use it via 'force' option in user-customization dialog
+  No Emodzi symbols as an element text allowed - in this case db sql error occurs. Should i fix it?
 ------------------------------------------------------------------------------------------

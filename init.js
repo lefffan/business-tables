@@ -1076,17 +1076,18 @@ Line 50. Pass dialog to the controller.`
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Enter + [Shift|Ctrl|Alt]</span> applies content changes in content-editable mode. Key combination depends on user
     cusomization 'application' property. New-object input content 'apply' creates new object
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">ScrollLock on</span> scrolls the entire table instead of cursor navigating cells
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Alt + ^|v</span>: previous|next object cursor navigation
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Alt + ^|v</span> previous|next object cursor navigation
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + <|></span> previous|next view navigation
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + c|INS</span> copies element formatted text to the clipboard
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift+c|Shift+INS</span> copies element clear text to the clipboard
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + f</span>: regular expression search, see search dialog hint for the brief regexp syntax
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + C|INS</span> copies element formatted text to the clipboard
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + V or Shift + INS</span> generates 'PASTE' event on table cell element, see 'Handlers' help section for details
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + Shift + F</span> regular expression search, see search dialog hint for the brief regexp syntax
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + right button single click</span> on any http page DOM element opens new browser tab with element inner text as an url
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + a</span> selects entire table area
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Ctrl + A</span> selects entire table area
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Shift + <|>|^|v|Home|End|PageUp|PageDown</span> selects appropriate table area
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">ESC</span> cancels all changes and exits content editable mode or dialog box with no changes
-  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">INS, DEL, F2, F12, letters, digits, space or left button mouse double click</span>: cursor element handler call
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">INS, DEL, F2, F12, letters, digits, space or left button mouse double click</span> cursor element handler call
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Mouse right button click</span> calls sidebar, main field or table area appropriate context menu
+  - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Mouse 'Copy' context menu</span> copies element clear text to the clipboard
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Mouse over</span> event on any element for some time (default 1 sec) displays appropriate hint message if exist
   - <span style="color: RGB(44,72,131); font-weight: bolder; font-size: larger;">Mouse drag</span> operation on table cell selects and highlight table area. Selected area then can be processed to draw
     the chart via appropriate context menu. Two or more columns width area draws a piechart with an area top row as a

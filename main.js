@@ -483,10 +483,10 @@ function drawMain(data, layout, attached)
 	      break;
 	     }
 	  if (STARTEVENTCODES[i]) cmd = STARTEVENTCODES[i];
-	  if ((/ctrl/i.test(event)) ctrl = 1;
-	  if ((/alt/i.test(event)) alt = 1;
-	  if ((/shift/i.test(event)) shift = 1;
-	  if ((/meta/i.test(event)) meta = 1;
+	  if (/ctrl/i.test(event)) ctrl = 1;
+	  if (/alt/i.test(event)) alt = 1;
+	  if (/shift/i.test(event)) shift = 1;
+	  if (/meta/i.test(event)) meta = 1;
 	 }
      i = ctrl * 8 + alt * 4 + shift * 2 + meta;
      if (cmd === 'PASTE')
@@ -1002,7 +1002,7 @@ function CallController(data)
 	      if (data != undefined) object.data = data;
 	      break;
 	 case 'Copy':
-	      CopyBuffer();
+	      CopyBuffer(true);
 	      break;
 	 case 'Chart':
 	      DrawChart(drag.x1, drag.y1, drag.x2, drag.y2);

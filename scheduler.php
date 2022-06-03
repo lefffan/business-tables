@@ -64,10 +64,10 @@ function SplitCronLine($cronline)
 while (true)
 {
  $now = getdate(); // [ 'seconds' => 16, 'minutes' => 30, 'hours' => 2, 'mday' => 11, 'wday' => 0, 'mon' => 4, 'year' => 2021, 'yday' => 100, 'weekday' => 'Sunday', 'month' => 'April', 0 => 1618108216 ]
- $query = $db->prepare("SELECT id,JSON_EXTRACT(odprops, '$.dialog.View') as views,odname,JSON_EXTRACT(odprops, '$.dialog.Element') as elements FROM $");
+ $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') as views,odname,JSON_EXTRACT(odprops, '$.dialog.Element') as elements,id FROM $");
  $query->execute();
 
- foreach ($query->fetchAll(PDO::FETCH_NUM) as $od) // Go through all OD structures
+ foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $od) // Go through all OD structures
 	 {
 	  $elements = json_decode($od['elements'], true); // Decode current OD structure Element section
 	  if (gettype($elements) !== 'array') continue; // Continue if error
@@ -81,13 +81,14 @@ while (true)
 		   for ($i = 0; i < count(CRONLINEFIELDS) - 3; $i++) if (!CompareCronField($cron[$i], $now[CRONLINEFIELDS[$i]])) break 2;
 		   // Check correctness of queue and view id cron fields
 		   if (!ctype_digit($cron[count(CRONLINEFIELDS) - 2]) || !ctype_digit($cron[count(CRONLINEFIELDS) - 3])) continue;
-		   // Current scheduler id loader already does already exist? Continue
+		   // Current scheduler id loader does already exist? Continue
 		   $output = [];
 		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'];
 		   exex(SEARCHPROCESSCMD.$schedulerwrapperargs, $output);
 		   if (count($output)) continue;
 		   // Execute current scheduler id loader
-		   exec(SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &');
+		   //exec(SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &');
+		    lg(SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &', 'scheduler wrapper');
 		  }
 	 }
 

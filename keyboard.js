@@ -218,8 +218,8 @@ function keydownEventHandler(event)
 		  if (cursor.td.contentEditable === EDITABLE) break;
 		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
 		     {
-		      CopyBuffer(event.shiftKey);
-		      break;;
+		      CopyBuffer();
+		      break;
 		     }
 		  if (!event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey)
 		     {
@@ -232,7 +232,7 @@ function keydownEventHandler(event)
 		  if (cursor.td.contentEditable === EDITABLE) break;
 		  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey)
 		     {
-		      CopyBuffer(event.shiftKey);
+		      CopyBuffer();
 		      break;;
 		     }
 		  ProcessControllerEventKeys(event);
