@@ -41,26 +41,6 @@ function CompareCronField($cronfield, $nowvalue)
  return false; // No any match? Return false
 }
 
-function SplitCronLine($cronline)
-{
- if (($cronline = trim($cronline)) === '') return false; // Cron line is empty? Return empty array
- $cronline = explode(' ', $cronline); // Split cron line fields
- $cron = [];
-
- foreach ($cronline as $key => $value)
-      if (count($cron) < count(CRONLINEFIELDS))
-         {
-	  if (trim($value)) $cron[] = trim($value);	// Datetime and vid fields
-	 }
-       else
-         {
-	  isset($cron[count(CRONLINEFIELDS) - 1]) ? $cron[count(CRONLINEFIELDS) - 1] = $value : $cron[count(CRONLINEFIELDS) - 1] .= ' '.$value; // Command line field
-	 }
-
- if (!isset($cron[count(CRONLINEFIELDS) - 1]) || !$cron[count(CRONLINEFIELDS) - 1]) return false;
- return $cron;
-}
-
 while (true)
 {
  $now = getdate(); // [ 'seconds' => 16, 'minutes' => 30, 'hours' => 2, 'mday' => 11, 'wday' => 0, 'mon' => 4, 'year' => 2021, 'yday' => 100, 'weekday' => 'Sunday', 'month' => 'April', 0 => 1618108216 ]
@@ -78,17 +58,16 @@ while (true)
 		   // Incorrect cron line? Continue, otherwise exec 'schedulerwrapper code ODid OVid eid': <uniq code> <$od['id']> <$cron[count(CRONLINEFIELDS) - 2]> <$element['element1']['id'] = ''>;
 		   if (!($cron = SplitCronLine($cronline))) continue;
 		   // Check datetime parameters match
-		   for ($i = 0; i < count(CRONLINEFIELDS) - 3; $i++) if (!CompareCronField($cron[$i], $now[CRONLINEFIELDS[$i]])) break 2;
+		   for ($i = 0; $i < count(CRONLINEFIELDS) - 3; $i++) if (!CompareCronField($cron[$i], $now[CRONLINEFIELDS[$i]])) break 2;
 		   // Check correctness of queue and view id cron fields
 		   if (!ctype_digit($cron[count(CRONLINEFIELDS) - 2]) || !ctype_digit($cron[count(CRONLINEFIELDS) - 3])) continue;
 		   // Current scheduler id loader does already exist? Continue
 		   $output = [];
-		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'];
-		   exex(SEARCHPROCESSCMD.$schedulerwrapperargs, $output);
+		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'].' '.$line.' '.$cron[count(CRONLINEFIELDS) - 3];
+		   exec(SEARCHPROCESSCMD." '".$schedulerwrapperargs."'", $output);
 		   if (count($output)) continue;
-		   // Execute current scheduler id loader
-		   //exec(SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &');
-		    lg(SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &', 'scheduler wrapper');
+		   // Execute current scheduler id loader with next args: <scheduler id> <OD id> <OV id> <eid> <crontab line>
+		   exec(PHPBINARY.' '.APPDIR.SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &');
 		  }
 	 }
 

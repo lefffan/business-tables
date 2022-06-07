@@ -1246,8 +1246,11 @@ function ShowBox(scrollLeft, scrollTop)
  if (!box.cmd) box.cmd = 'CONFIRMDIALOG';
  boxDiv.innerHTML = inner + '</div>'; // Finish 'footer' div
 
- boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%"; // Calculate left box position
- boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%"; // Calculate top box position
+ if (!box.flags || box.flags.updateonly === undefined)
+    {
+     boxDiv.style.left = Math.trunc((document.body.clientWidth - boxDiv.offsetWidth)*100/(2*document.body.clientWidth)) + "%"; // Calculate left box position
+     boxDiv.style.top = Math.trunc((document.body.offsetHeight - boxDiv.offsetHeight)*100/(2*document.body.offsetHeight)) + "%"; // Calculate top box position
+    }
  boxDiv.className = 'box ' + uiProfile["dialog box"]["effect"] + 'show'; // Show box div
 
  if (uiProfile["dialog box"]["filter"] && box.flags.nofilter === undefined)
@@ -1257,6 +1260,8 @@ function ShowBox(scrollLeft, scrollTop)
  box.contentDiv = boxDiv.querySelector('.boxcontentwrapper');
  if (scrollLeft) box.contentDiv.scrollLeft = scrollLeft;
  if (scrollTop) box.contentDiv.scrollTop = scrollTop;
+
+ box.flags.updateonly = '';
 }
 
 function getInnerDialog()

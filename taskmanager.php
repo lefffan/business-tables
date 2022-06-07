@@ -27,7 +27,7 @@ $table['line0']   = [
 $client  = json_decode($_SERVER['argv'][1], true);
 
 // Parse pid number to kill appropriate process id
-if (isset($client['data']['flags']['event']) && intval($pid = $client['data']['flags']['event']) > 0) exec(KILLWRAPPERPROCESSESCMD.' '.strval($pid));
+if (isset($client['data']['flags']['event']) && intval($pid = $client['data']['flags']['event']) > 0) exec(KILLPROCESSCMD.' '.strval($pid));
 
 // Get current sort column from dialog data, otherwise use deault value
 $sort = 'PID*'; // Default
@@ -52,58 +52,71 @@ $table['line0'][str_replace('*', '', $sort)]['value'] = $sort;
 $sort[0] === '*' ? $desc = true : $desc = false;
 $sort = str_replace('*', '', $sort);
 
-// Get wrapper proceesses with next args: <PID> <wrapper> <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
-exec(WRAPPERPROCESSESCMD, $output);
+// Get wrapper proceesses with next args: <PID> <wrapper> <ODid> <OVid> <eid> <cmdline> <oid> <event> <uid> <ip> <start time> <client json>
+exec(SEARCHPROCESSCMD.' '.WRAPPERCMD, $output);
 
 $i = 0;
 foreach ($output as $value)
 	{
+	 // Split process line retrived by ps
 	 $process = explode(' ', trim($value));
-	 if (($start = array_search('wrapper.php', $process)) === false) continue;
-	 if (!isset($process[$start + 7]) || ($eventid = array_search($process[$start + 7], ['INIT', 'DOUBLECLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12', 'CONFIRM', 'CONFIRMDIALOG', 'CHANGE', 'SCHEDULE'])) === false) continue;
+
+	 // and find wrapper process
+	 if (($start = array_search(APPDIR.WRAPPERCMD, $process)) === false) continue;
 	 $i++;
+
+	 // Split process line retrived by ps with json arg as an array last index
+	 $process = explode(' ', trim($value), $start + 11);
+
 	 try {
-	      // Calc user name
-	      $user = getUserName($db, $process[$start + 1]);
-	      // Get OD props to calc view/handler name
-	      $view = $handler = '';
-	      $query = $db->prepare("SELECT odname,JSON_EXTRACT(odprops, '$.dialog.View'),JSON_EXTRACT(odprops, '$.dialog.Element') FROM $ WHERE id=:id");
-	      $query->execute(['id' => $process[$start + 3]]);
-	      if (count($arr = $query->fetchAll(PDO::FETCH_NUM)) == 0) throw new Exception("Task manager: incorrect OD (id".$process[$start + 3].") props!");;
-	      // Calc view name 
-	      foreach (json_decode($arr[0][1], true) as $valeu)
-	           if ($valeu['element1']['id'] === $process[$start + 4])
-		      {
-		       $view = $valeu['element1']['data'];
-		       break;
-		      }
-	      // Calc handler name 
-	      if ($process[$start + 7] === 'SCHEDULE') $handler = '_SCHEDULER_'; else
-	      foreach (json_decode($arr[0][2], true) as $valeu)
-	           if ($valeu['element1']['id'] === $process[$start + 6])
-		      {
-		       $handler = $valeu['element'.strval($eventid + 4)]['data'];
-		       break;
-		      }
+	      // Get OD props to calc OD/OV name and handler cmd
+	      $query = $db->prepare("SELECT odname as name, JSON_EXTRACT(odprops, '$.dialog.View') as views, JSON_EXTRACT(odprops, '$.dialog.Element') as elements FROM $ WHERE id=:id");
+	      $query->execute(['id' => $process[$start + 1]]);
+	      if (count($od = $query->fetchAll(PDO::FETCH_ASSOC)) == 0)
+		 throw new Exception("Task manager: incorrect OD id ".$process[$start + 1]."!");
+
+	      // Decode retrieved views and elements
+	      $od = $od[0];
+	      if (gettype($od['views'] = json_decode($od['views'], true)) !== 'array' || gettype($od['elements'] = json_decode($od['elements'], true)) !== 'array')
+		 throw new Exception("Task manager: incorrect OD id ".$process[$start + 1]." structure!");
+
+	      // Calc OV
+	      foreach ($od['views'] as $view)
+	           if ($view['element1']['id'] === $process[$start + 2] && ($od['view'] = $view['element1']['data'])) break;
+
+	      // Calc handler cmd line and matched event
+	      if (isset($process[$start + 10]) && gettype($_client = json_decode($process[$start + 10], true)) === 'array' && isset($_client['eId']))
+		 {
+		  foreach ($od['elements'] as $element)
+			  if ($element['element1']['id'] === $process[$start + 3] && ($_client['allelements'][$_client['eId']] = $element)) break;
+		  if (isset($_client['allelements'][$_client['eId']])) GetCMD(NULL, $_client);
+		 }
+
+	      // Set them unknown in case of incorrect json in a wrapper process arg
+	      if (!isset($_client['handlerevent'], $_client['handlercmdline'])) $_client['handlerevent'] = $_client['handlercmdline'] = 'unknown';
 	     }
+
 	 catch (PDOException $e)
 	     {
 	      lg($e->getMessage());
-	      exit;
+	      $od['name'] = $od['view'] = 'unknown';
 	     }
+
 	 $table["line$i"]  = [
 	      		      "PID" => ['value' => $process[0]],
-	      		      "Handler" => ['value' => $handler],		// Calc by event and eid
-	      		      "Exe time" => ['value' => strval($now - intval($process[$start + 2]))],
-	      		      "Initiator" => ['value' => $user],		// Calc by uid
+	      		      "Handler" => ['value' => $_client['handlercmdline']],
+	      		      "Exe time" => ['value' => strval($now - intval($process[$start + 9]))],
+	      		      "Initiator" => ['value' => getUserName($db, $process[$start + 7])],
 	      		      "Ip" => ['value' => $process[$start + 8]],
-	      		      "Event" => ['value' => $process[$start + 7]],
-	      		      "Database" => ['value' => $arr[0][0]],		// Calc by ODid
-	      		      "View" => ['value' => $view],			// Calc by OVid
+	      		      "Event" => ['value' => $_client['handlerevent']],
+	      		      "Database" => ['value' => $od['name']],
+	      		      "View" => ['value' => $od['view']],
 	      		      "OId" => ['value' => $process[$start + 5]],
-	      		      "EId" => ['value' => $process[$start + 6]],
+	      		      "EId" => ['value' => $process[$start + 3]],
 			      " $process[0]" => ['value' => 'X', 'call' => ''], //"Kill$i" => ['value' => 'X'],
 			     ];
+	 foreach ($table["line$i"] as $key => $header) if (strlen($header['value']) > OVSTRINGMAXCHAR) $table["line$i"][$key]['value'] = substr($header['value'], 0, OVSTRINGMAXCHAR).'..';
+
 	 // Sort table by putting new line to the previous position if needed
 	 for($key = $i; $key > 1; $key --)
 	    if (($table["line".strval($key)][$sort]['value'] > $table["line".strval($key - 1)][$sort]['value'] && $desc) ||
@@ -112,18 +125,28 @@ foreach ($output as $value)
 	     else break;
 	}
 
-$dialog  = ['title'  => 'Task Manager',
+$datetime = new DateTime(); 
+//$title = 'Task Manager               Server date time: '.$datetime->format('Y-m-d H:i:s');
+$title = 'Task Manager               Server date time: <span style="color: RGB(114,132,201);">'.$datetime->format('Y-m-d H:i:s').'</span>';
+$output = [];
+exec(AVERAGELOADCMD, $output);
+$output = trim($output[0]);
+if (($start = array_search('average:', explode(' ', $output))) !== false) $title .= '               Server load average: <span style="color: RGB(114,132,201);">'.explode(' ', $output, $start + 2)[$start + 1].'</span>';
+
+$dialog  = ['title'  => $title,
 	    'dialog' => ['pad' => ['profile' =>
 			['element1' => ['head'=>' '],
 			 'element2' => ['type' => 'table', 'head' => '', 'data' => $table]]]],
 	    'buttons'=> ['REFRESH' => ['value' => '', 'call' => 'Task Manager', 'interactive' => '', 'timer' => '1000'], 'EXIT' => ['value' => 'EXIT', 'style' => 'background-color: red;']],
-	    'flags'  => ['style' => 'width: 1000px; height: 500px;', 'esc' => '']];
+	    'flags'  => ['style' => 'width: 1200px; height: 500px; padding: 5px;', 'esc' => '']];
 
 // No active tasks
 if (count($table) < 2) $dialog['dialog']['pad']['profile']['element3'] = ['head' => '                                                                                   No active tasks found..'];
+
 // Incoming dialog data does exist (non first task manager call)?
 if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) $dialog['flags']['updateonly'] = '';
 
+// Put dialog data to the `$$` table to display task manager dialog box at client side
 try {
      $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
      $query->execute([':client' => json_encode(['cmd' => $cmd, 'data' => $dialog] + CopyKeys($client, ['cid', 'uid', 'ODid', 'OVid', 'params']), JSON_HEX_APOS | JSON_HEX_QUOT)]);
@@ -132,3 +155,7 @@ catch (PDOException $e)
     {
      lg($e->getMessage());
     }
+
+// server top red with load more than 1
+// INIT in task manager
+// queue

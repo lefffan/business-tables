@@ -109,11 +109,10 @@ while (true)
 	 $client = &$clientsarray[$cid];
 	 $client['cid'] = $cid;
 	 $output = ['cmd' => ''];
-	 CopyArrayElements($input, $client, ['ODid', 'OVid', 'OD', 'OV', 'cmd', 'data', 'oId', 'eId']);
+	 CopyArrayElements($input, $client, ['ODid', 'OVid', 'OD', 'OV', 'cmd', 'data', 'oId', 'eId', 'cmdline']);
 	 unset($input);
 	 // Non login unauth client event or session timeout? Emulate logout event!
-	 if ($client['cmd'] != 'LOGIN' && (!isset($client['auth']) || $now - $client['authtime'] > SESSIONLIFETIME))
-	    $client['cmd'] = 'LOGOUT';
+	 if ($client['cmd'] != 'LOGIN' && (!isset($client['auth']) || $now - $client['authtime'] > SESSIONLIFETIME)) $client['cmd'] = 'LOGOUT';
 
 	 try {
 	      switch ($client['cmd'])
@@ -171,17 +170,14 @@ while (true)
 		  case 'PASTE':
 		  case 'CONFIRM':
 		  case 'CONFIRMDIALOG':
-		       // wrapper <uid> <start time> <ODid> <OVid> <object id> <element id> <event> <ip> <client json>
-		       exec(WRAPPERBINARY." '$client[uid]' ".strval($now)." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+		       ExecWrapper($client);
 		       break;
 		  case 'Task Manager':
 		       exec(PHPBINARY." taskmanager.php '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
 		       break;
 		  default:
-		       if (ctype_digit($client['cmd']))
-			  exec(WRAPPERBINARY." '$client[uid]' ".strval($now)." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' 'KEYPRESS' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
-			else
-			  $output['log'] = $output['alert'] = "Controller report: unknown event '$client[cmd]' from client $client[ip] and user '$client[auth]'!";
+		       if (ctype_digit($client['cmd'])) ExecWrapper($client);
+			else $output['log'] = $output['alert'] = "Controller report: unknown event '$client[cmd]' from client $client[ip] and user '$client[auth]'!";
 		 }
 	     }
 	 catch (PDOException $e)

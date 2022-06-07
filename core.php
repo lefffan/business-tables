@@ -1454,6 +1454,138 @@ function RangeTest($a, $b)
  return false;
 }
 
+function SplitCronLine($cronline)
+{
+ if (($cronline = trim($cronline)) === '') return false; // Cron line is empty? Return empty array
+ $cronline = explode(' ', $cronline); // Split cron line fields
+ $cron = [];
+
+ foreach ($cronline as $key => $value)
+      if (count($cron) < count(CRONLINEFIELDS))
+         {
+          if (trim($value)) $cron[] = trim($value);     // Datetime and vid fields
+         }
+       else
+         {
+          isset($cron[count(CRONLINEFIELDS) - 1]) ? $cron[count(CRONLINEFIELDS) - 1] .= ' '.$value : $cron[count(CRONLINEFIELDS) - 1] = $value ; // Command line field
+         }
+
+ if (!isset($cron[count(CRONLINEFIELDS) - 1]) || !$cron[count(CRONLINEFIELDS) - 1]) return false;
+
+ return $cron;
+}
+
+function ExecWrapper(&$client)
+{
+ $now = strval(strtotime("now"));
+ // old version: exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
+ exec(PHPBINARY.' '.APPDIR.WRAPPERCMD." '$client[ODid]' '$client[OVid]' '$client[eId]' '$client[cmdline]' '$client[oId]' '$client[cmd]' '$client[uid]' '$client[ip]' '$now' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+}
+
+function GetCMD($db, &$client)
+{
+ // Caclulate incoming client event modificator keys
+ if ($client['cmd'] === 'DOUBLECLICK')
+    {
+     $event = 'DOUBLECLICK';
+     $modificators = $client['data'];
+    }
+  else if (ctype_digit($client['cmd']))
+    {
+     $event = intval($client['cmd']) & 255;
+     $modificators = strval((intval($client['cmd']) & 65280) / 256);
+    }
+  else
+    {
+     $event = $client['cmd'];
+    }
+
+ foreach ($client['allelements'][$client['eId']] as $key => $value)
+	 {
+	  $eid = intval(substr($key, 7)); // Calculate interface element id number
+	  if ($eid < 11 || !($eid % 2)) continue; // Then check it to be more than 10 and odd
+	  if (isset($modificators) && $modificators !== $value['modificators']) continue; // Check Ctrl, Alt, Shift, Meta modificators match if exist
+
+	  if ($event === ($elementevent = $value['event'])) // Exact event match
+	  if ($event === 'SCHEDULE') // For 'SCHEDULE' event retrieve command line from specified text line of crontab text area, for others - cmd line is an dialog interface text area value
+	     {
+	      $cmdline = preg_split("/\n/", $value['data']); // Split "crontab" text area line by line first
+	      if (!isset($cmdline[$client['cmdline']])) return; //  Specified text line of crontab does not exist? Return NULL
+	      $cmdline = $cmdline[$client['cmdline']]; // Retrieve specified cron line
+	      if (!($cron = SplitCronLine($cmdline))) return; // Split cron line to retrieve effective command line
+	      $client['handlercmdline'] = $cmdline = $cron[count(CRONLINEFIELDS) - 1]; // Fix command line
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data']; // and corresponded handler mode output
+	      $client['handlerevent'] = $elementevent;
+	      break;
+	     }
+	   else
+	     {
+	      $client['handlercmdline'] = $cmdline = $value['data'];
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data'];
+	      $client['handlerevent'] = $elementevent;
+	      break;
+	     }
+
+	  if (gettype($event) !== 'integer') continue; // No key down event? Continue
+
+	  if (!(($i = array_search($event, USEREVENTKEYCODES)) === false) && USEREVENTCODES[$i] === $elementevent) // Exact key event match
+	     {
+	      $client['handlercmdline'] = $cmdline = $value['data'];
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data'];
+	      $client['handlerevent'] = $elementevent;
+	      break;
+	     }
+	
+	  if ($elementevent === 'KEYPRESS' && RangeTest($event, KEYCODESYMBOLRANGES))
+	     {
+	      $client['handlercmdline'] = $cmdline = $value['data']; // May be symbol key to match KEYPRESS
+	      $client['handlermode'] = $client['allelements'][$client['eId']]['element'.strval($eid - 1)]['data'];
+	      $client['handlerevent'] = $elementevent;
+	     }
+	 }
+
+ // Check result command line
+ if (!isset($cmdline) || !($len = strlen($cmdline))) return;
+ $i = -1;
+ $newcmdline = '';
+
+ // Return only defined command line string in case of unset db var
+ if (!$db) return true;
+
+ // Otherwise calc effective cmd line parsing its args to replace
+ while (++$i < $len)
+       {
+	if (($add = $cmdline[$i]) === "'" && ($j = strpos($cmdline, "'", $i + 1)) !== false)
+	   {
+	    $newcmdline .= "'".substr($cmdline, $i + 1, $j - $i - 1)."'";
+	    $i = $j;
+	    continue;
+	   }
+        if ($add === '>') continue;
+	if ($add === '<')
+	   {
+	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
+	    switch ($match = substr($cmdline, $i + 1, $j - $i - 1))
+		   {
+		    case 'data':  $add = DoubleQuote($client['data']); break;
+		    case 'user':  $add = DoubleQuote($client['auth']); break;
+		    case 'oid':   $add = DoubleQuote($client['oId']); break;
+		    case 'event': $add = DoubleQuote($client['cmd']); break;
+		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
+		    case 'datetime': $datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
+		    default: if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
+			      else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
+		   }
+	    $i = $j;
+	   }
+       $newcmdline .= $add;
+      }
+
+ // Fix modified command line and return true
+ $client['handlercmdlineeffective'] = $newcmdline;
+ return true;
+}
+
 function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
 {
  // Check input paramValues array and add reserved :user parameter value

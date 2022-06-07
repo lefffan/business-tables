@@ -69,6 +69,8 @@ New app features for Megacom:
 12. nohup server and scheduler execution
 13. Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
 14. multi cell selecting - copy (excel table), delete (removes all selected objects) with new user event 'DELETE' for every removing object
+15. Task Manager current time show
+16. At dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
 
 Some systems emulation:
 1. Corp chat
@@ -120,8 +122,6 @@ Stages:
   macroses like in joe
   virt cell depends on oid,eid
   Context menu Graph
-  System call 'NEWOBJECT' (to create object by user handlers)
-  Crontab element execution once immediately
   Task manager: restrict call (and call with no task delete option) of task manager for some users in user props
   At the end of app stable version make new customization
   Any cell has attached files. Cell text is displayed for default, but if image prop is set - display image, if audio prop is set display player like in whatsup, if stream prop is set - display stream fro camera (like forpost)
@@ -153,10 +153,10 @@ Stages:
   effects at navigating images in GALLERY just like in drive.ru
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
   One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
+  Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Dialog boxes:
     dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
-    when pushed button is pushed and mouse cursir is out of button - make button released
-    at dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
+    when pushed button is pushed and mouse cursor is out of button - make button released
     show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
     Features: arrow icon for select, expanded list sort on alphabet/appearance (increasing, decreasing) via arrows on right side
 	      from the select div,
@@ -166,7 +166,6 @@ Stages:
 	      content scrolling with pads stay on the top (now pad area is scrolled with the content)
 	      pad.profile.element style prop - not only for header and for interface element of itself!
 	      OD Dialog Box - OD icon, OV icon (or ov type  icons for table, tree and so on), OV shortcut key
-  Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
 
 - Controller:
   prevent multiple call controller on one element from one user, example: multiple key press while server didn't respond the previous event
@@ -176,6 +175,7 @@ Stages:
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
   Non local server (cloud) implemented handlers
   handler command to copy data to the buffer
+  System call 'NEWOBJECT' (to create object by user handlers)
 
 - Questionable features:
   Parent OD (daughter OD has only OVs that uses database of parent OD, so it is useful to divide OV betewen two or more OD)

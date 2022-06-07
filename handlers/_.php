@@ -1,7 +1,7 @@
 <?php
 
 //function lg($arg) { file_put_contents('/usr/local/src/tabels/error.log', var_export($arg, true), FILE_APPEND); }
-//sleep(5);
+sleep(234);
 
 if (!isset($_SERVER['argv'][1])) $_SERVER['argv'][1] = '';
 
