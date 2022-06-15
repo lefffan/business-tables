@@ -414,10 +414,11 @@ function ProcessRules($db, &$client, $preversion, $postversion)
 
  // Move on. Return default action in case of empty rule profiles or decoding error
  if (!isset($Rules[0][0]) || gettype($Rules = json_decode($Rules[0][0], true)) != 'array') return ['action' => 'Accept', 'message' => ''];
+//lg($Rules);
  unset($Rules['New rule']); // Exlude service 'New rule' profile
 
  // Process non empty expression rules one by one
- foreach ($Rules as $key => $rule)
+ foreach ($Rules as $rulename => $rule)
 	 {
 	  // Check event matching
 	  $eventmatch = false;
@@ -459,7 +460,7 @@ function ProcessRules($db, &$client, $preversion, $postversion)
 	  $output = ['action' => $action, 'message' => trim($rule['element2']['data'])];
 
 	  // Log rule message in case of approprate checkbox is set
-	  if (substr($rule['element6']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$output[message]'";
+	  if (substr($rule['element6']['data'], 0, 1) === '+') $output['log'] = "Database rule '$rulename' matches '$event' event with action '$action': '$output[message]'";
 	  return $output;
 	 }
 

@@ -1,22 +1,17 @@
 New handler conception:
-0. Queue tasks
++0. Queue tasks
 +1. New events conception for scheduler
-2. New events conception for rules
-    - makedb setki chat
-    - core php initial rule profile interface elements
-    - function processrules, event match check:
-	for SET event = CHANGE (handler SET cmd)
-	for INIT DELETE event = INIT DELETE (apparent functions)
-	for MOUSE KEYBOARD PASTE SCHEDULER event = the same (check(CHECK_ACCESS))
++2. New events conception for rules
 +3. Start event for keypres and dblclick
-4. test task manager on key press event
-5. go through all doc and search in every js php keypress ins del f2 f12 dblclick after
++4. test task manager on key press event
+5. go through all doc 
 6. make db make setki make mrtg
 
 Errors:
 1. style padding: 15px; null
 2. gallery vyvodit bolshuyu kartinku
 3. expanded list in OD edit structure is binded to lower textarea
+4. task manager header drag
 
 Megacom implementation:
 1. new element mac to setki view
@@ -25,8 +20,9 @@ Megacom implementation:
 4. add 10.5.. fake ip to setki vew
 5. point to point tree
 6. OD setki new view: search by one ip, history
-7. correct all mrtg host files to make correct megacom tree via links in mrtg.php (mpls links are apparent)
+7. correct all mrtg host files to make correct megacom tree via links in mrtg.php (mpls links and uplink2 links are apparent)
 8. switch models piechart
+9. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
 
 Megacom MRTG OD:
 1. Elements
@@ -71,13 +67,10 @@ New app features for Megacom:
 7. Handler cmd line replacements - <oid> (plus point that oid can be retreived also <{"element":"id"}>) <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
 8. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 9. Change favicon -> tabels
-10. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
-11. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
-12. nohup server and scheduler execution
-13. Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
-14. multi cell selecting - copy (excel table), delete (removes all selected objects) with new user event 'DELETE' for every removing object
-15. Task Manager current time show
-16. At dialog refresh don't restore initial position (example - at 'task manager' move - box jumps to initial pos)
+10. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
+11. nohup server and scheduler execution
+12. Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
+13. multi cell selecting - copy (excel table), delete (removes all selected objects) with new user event 'DELETE' for every removing object
 
 Some systems emulation:
 1. Corp chat
