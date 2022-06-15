@@ -215,10 +215,10 @@ function initNewODDialogElements()
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element5' => ['type' => 'radio', 'head' => "<b>Add new handler:</b>\n\nOutput mode", 'data' => '+Default|Dialog|Debug|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line<br>string as an alert text. For all except INIT, CONFIRM and SCHEDULE - handler output<br>in responce on these client events in debug mode is saved to "Logs" Database.'],
+		    'element5' => ['type' => 'radio', 'head' => "<b>Add new handler:</b>\n\nHandler output mode", 'data' => '+Default|Dialog|Debug|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line string<br>as a client side alert text only. For all except INIT, CONFIRM and SCHEDULE - handler output<br>in responce on these client events in debug mode is saved to "Logs" Database.<br>Note that handler output for "DELETE" event is ignored in any mode and is not logged.'],
 		    'element6' => ['type' => 'select-one', 'head' => 'Client event', 'data' => '+'.$eventstring, 'help' => 'Choose event the handler is called on (via command line below).<br>For the mouse and keyboards events select Ctrl|Alt|Shift|Meta as an additional event occur options.<br>Note that some events (Ctrl+KeyA, Ctrl+KeyC, KeyF1 and others) are reserved for the service purposes<br>and do not cancel default client side (browser) behaviour, so may never occur.'],
 		    'element7' => ['type' => 'checkbox', 'hea' => '', 'data' => 'Ctrl|Alt|Shift|Meta'],
-		    'element8' => ['type' => 'textarea', 'head' => 'Input handler command line', 'data' => '', 'help' => 'Input handler command line to add specified above event processing.<br>To remove already added event - set command line text area empty at appropriate event section.', 'line' => ''],
+		    'element8' => ['type' => 'textarea', 'head' => 'Handler command line', 'data' => '', 'help' => 'Input handler command line to add specified above event processing.<br>To remove already added event - set command line text area empty at appropriate event section.', 'line' => ''],
 		   ];
 
  $newView	 = ['element1' => ['type' => 'text', 'head' => 'View name', 'data' => '', 'id' => '1', 'help' => "View name may be changed, but if renamed view name already exists, changes are not applied.<br>So name 'New view' cannot be set as it is used as an option to create new views.<br>Empty view name removes the view.<br>In addition, symbol '_' as a first character in a view name string keeps unnecessary views<br>off sidebar, so these hidden views can be called from element handlers only."],
@@ -236,9 +236,9 @@ function initNewODDialogElements()
 
  $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'help' => "Rule profile name. It may be changed, but if renamed profile already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty profile name removes the rule."],
 		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed on the client side dialog box.'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action agrees specified event or operation, 'Reject' action cancels event or changes made by the operation."],
-		    'element4' => ['type' => 'checkbox', 'head' => 'Rule apply operation/event', 'data' => 'Add object|Delete object|Change object<br>|DBLCLICK|KEYPRESS|INS|DEL|F2|F12|', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Any mouse/keyboard client side event or object add/delete/change operation is passed to the analyzer<br>to test on all rule profiles in alphabetical order (for the specified event or/and operation) until<br>the match is found. Rule query is a list of SQL query strings (one by line). Non-empty and non-zero<br>result of all query strings - match case, any empty, error or zero char '0' result - no match.<br>When a match is found, the action corresponding to the matching rule profile is performed, otherwise<br>default action 'accept' is applied."],
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action agrees specified event action, while 'Reject' cancels it"],
+		    'element4' => ['type' => 'textarea', 'head' => 'Rule event list', 'data' => '', 'line' => ''],
+		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Any mouse/keyboard client side or object add/delete/change events are passed to the analyzer<br>to test on all rule profiles in alphabetical order until the match of both event and rule query is found. Rule query is a list of SQL query strings (one by line). Non-empty and non-zero<br>result of all query strings - match case, any empty, error or zero char '0' result - no match.<br>When a match is found, the action corresponding to the matching rule profile is performed, otherwise<br>default action 'accept' is applied."],
 		    'element6' => ['type' => 'checkbox', 'data' => 'Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
@@ -327,7 +327,7 @@ function AddObject($db, &$client, &$output)
       $query->execute($params);
 
       $client['oId'] = $newId;
-      $ruleresult = ProcessRules($db, $client, 'Add object', '1', '1');
+      $ruleresult = ProcessRules($db, $client, '1', '1');
       if ($ruleresult['action'] === 'Accept')
          {
           $db->commit();
@@ -371,12 +371,12 @@ function DeleteObject($db, &$client, &$output)
       $query = $db->prepare("DELETE FROM `uniq_$client[ODid]` WHERE id=$client[oId]");
       $query->execute();
 
-      $ruleresult = ProcessRules($db, $client, 'Delete object', $version, '0');
+      $ruleresult = ProcessRules($db, $client, $version, '0');
       if ($ruleresult['action'] === 'Accept')
          {
 	  $db->commit();
 	  if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
-	  $output = ['cmd' => 'DELETEOBJECT'];
+	  $output = ['cmd' => 'DELETE'];
 	  if (isset($ruleresult['message']) && $ruleresult['message']) $output['alert'] = $ruleresult['message'];
 	  $dir = UPLOADDIR."$client[ODid]/$client[oId]";
 	  if (is_dir($dir)) removeDir($dir);
@@ -405,7 +405,7 @@ function ParseRuleMsgElementId(&$client, $msg)
  return $msg;
 }
 
-function ProcessRules($db, &$client, $operation, $preversion, $postversion)
+function ProcessRules($db, &$client, $preversion, $postversion)
 {
  // Get rule profile json data
  $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.Rule') FROM $ WHERE id='$client[ODid]'");
@@ -419,8 +419,26 @@ function ProcessRules($db, &$client, $operation, $preversion, $postversion)
  // Process non empty expression rules one by one
  foreach ($Rules as $key => $rule)
 	 {
+	  // Check event matching
+	  $eventmatch = false;
+	  foreach (preg_split("/\n/", $rule['element4']['data']) as $value)
+		  {
+		   $event = trim($value);
+		   if (($pos = strpos($event, ' ')) === false) $pos = strlen($event);
+		   $event = substr($event, 0, $pos);
+		   if ($event !== $client['handlerevent']) continue;
+		   $modificators = 0;
+		   foreach (['Meta', 'Shift', 'Alt', 'Ctrl'] as $key => $modificator) if (stripos($value, $modificator) !== false) $modificators += pow(2, $key);
+		   if (array_search($event, NOMOUSEKEYBOARDEVENTS) === false && isset($client['handlereventmodificators']) && strval($modificators) !== $client['handlereventmodificators']) continue;
+		   $eventmatch = true;
+		   break;
+		  }
+	  if (!$eventmatch) continue;
+
+	  // Get accept/reject action
 	  $action = strpos($rule['element3']['data'], '+Accept') === false ? 'Reject' : 'Accept'; // Set accept/reject action
-	  if (strpos($rule['element4']['data'], '+'.$operation) === false) continue; // No apply operation selected? Continue
+
+	  // Go on. Parse rule query for predefined values
 	  if (($querytext = trim($rule['element5']['data'])) === '') continue; // Query is empty? Continue
 	  $querytext = str_replace(':user', $client['auth'], $querytext); // Replace with actual username inited the operation
 	  $querytext = str_replace(':preversion', $preversion, $querytext); // Replace with object version before operation
@@ -428,7 +446,8 @@ function ProcessRules($db, &$client, $operation, $preversion, $postversion)
 	  $querytext = str_replace(':oid', $client['oId'], $querytext); // Replace with object id
 	  $querytext = str_replace(':odtable', "`data_$client[ODid]`", $querytext); // Replace with sql table
 
-	  foreach (preg_split("/\n/", $querytext) as $querystring) // Perform a rule query
+	  // Perform a rule query
+	  foreach (preg_split("/\n/", $querytext) as $querystring)
 		  {
 		   try { $query = $db->prepare($querystring); $query->execute(); }
 		   catch (PDOException $e) { return ['action' => 'Accept', 'message' => 'Rule error: '.$e->getMessage()]; }
@@ -438,7 +457,9 @@ function ProcessRules($db, &$client, $operation, $preversion, $postversion)
 
 	  // Rule match occured. Return its action
 	  $output = ['action' => $action, 'message' => trim($rule['element2']['data'])];
-	  if (substr($rule['element6']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$output[message]'"; // Log rule message in case of approprate checkbox is set
+
+	  // Log rule message in case of approprate checkbox is set
+	  if (substr($rule['element6']['data'], 0, 1) === '+') $output['log'] = "Database rule '$key' match, action: '$action', message: '$output[message]'";
 	  return $output;
 	 }
 
@@ -1050,7 +1071,7 @@ function Check($db, $flags, &$client, &$output)
      // Check object identificator value existence
      if ($client['oId'] < STARTOBJECTID && ($output['alert'] = 'Incorrect object identificator value!')) return;
      // Avoid object id = STARTOBJECTID (system user from User OD) to be deleted
-     if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETEOBJECT' && ($output['alert'] = 'System account cannot be deleted!')) return;
+     if ($client['oId'] === STARTOBJECTID && intval($client['ODid']) === 1 && $client['cmd'] === 'DELETE' && ($output['alert'] = 'System account cannot be deleted!')) return;
 
      // Check for changes of object selection
      if (gettype($client['objectselection'] = GetObjectSelection($client['objectselection'], $client['params'], $client['auth'])) === 'array' && ($output['alert'] = "Object selection has been changed, please refresh Object View!")) return;
@@ -1071,7 +1092,7 @@ function Check($db, $flags, &$client, &$output)
     }
 
  if ($flags & CHECK_EID)
- if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
+ if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETE')
     {
      $client['eId'] = 0;
     }
@@ -1089,7 +1110,7 @@ function Check($db, $flags, &$client, &$output)
      if (getUserODAddPermission($db, $client['uid']) != '+Allow user to add Object Databases|' && ($output['alert'] = "New OD add operation is not allowed!"))
 	return;
     }
-  else if (array_search($client['cmd'], array_merge(['CALL', 'DELETEOBJECT'], ALLOBJECTEVENTS)) !== false || ctype_digit($client['cmd']))
+  else if ($client['cmd'] === 'CALL' || array_search($client['handlerevent'], ALLOBJECTEVENTS) !== false)
     {
      $query = $db->prepare("SELECT JSON_EXTRACT(odprops, '$.dialog.View') FROM $ WHERE id='$client[ODid]'");
      $query->execute();
@@ -1109,20 +1130,16 @@ function Check($db, $flags, &$client, &$output)
      // Check 'writable' permissions for non-CALL event
      if ($client['cmd'] !== 'CALL')
 	{
+	 // First step - check view/user restrictions
 	 if (ViewRestrictionMatch(intval($client['ODid']), intval($client['OVid']), $user['odwritelist'], $user['odwrite']) && ($output['alert'] = "OV write operation are not allowed!")) return;
 	 if (UserRestrictionMatch($groups, $View['element11']['data'], $View['element10']['data']) && ($output['alert'] = "OV write operation are not allowed!")) return;
-	}
-
-/*
-     // Check rules
-     if (array_search($client['cmd'], ['DBLCLICK', 'KEYPRESS', 'INS', 'DEL', 'F2', 'F12']) !== false)
-	{
+	 // Next - check rules, calculate object last version number first
 	 $query = $db->prepare("SELECT version FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1");
 	 $query->execute();
 	 $version = $query->fetchAll(PDO::FETCH_NUM);
 	 if (!isset($version[0][0]) && ($output['alert'] = "Please refresh, specified object (id=$client[oId]) doesn't exist in the view!")) return;
-
-	 $ruleresult = ProcessRules($db, $client, $client['cmd'], $version[0][0], $version[0][0]);
+	 // then perform a rule checking for the calculated versions
+	 $ruleresult = ProcessRules($db, $client, $version[0][0], $version[0][0]);
 	 if ($ruleresult['action'] === 'Reject')
 	    {
 	     $output['alert'] = $ruleresult['message'];
@@ -1130,7 +1147,6 @@ function Check($db, $flags, &$client, &$output)
 	     return;
 	    }
 	}
-*/
     }
   else
     {
@@ -1475,11 +1491,12 @@ function SplitCronLine($cronline)
  return $cron;
 }
 
-function ExecWrapper(&$client)
+function ExecWrapper(&$client, $wait = false)
 {
+ $wait = $wait ? '' : ' &';
  $now = strval(strtotime("now"));
  // old version: exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
- exec(PHPBINARY.' '.APPDIR.WRAPPERCMD." '$client[ODid]' '$client[OVid]' '$client[eId]' '$client[cmdline]' '$client[oId]' '$client[cmd]' '$client[uid]' '$client[ip]' '$now' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null &");
+ exec(PHPBINARY.' '.APPDIR.WRAPPERCMD." '$client[ODid]' '$client[OVid]' '$client[eId]' '$client[cmdline]' '$client[oId]' '$client[cmd]' '$client[uid]' '$client[ip]' '$now' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null$wait");
 }
 
 function GetCMD($db, &$client)
@@ -1489,6 +1506,7 @@ function GetCMD($db, &$client)
     {
      $event = 'DOUBLECLICK';
      $modificators = $client['data'];
+     $client['data'] = '';
     }
   else if (ctype_digit($client['cmd']))
     {
@@ -1505,6 +1523,7 @@ function GetCMD($db, &$client)
 	  $eid = intval(substr($key, 7)); // Calculate interface element id number
 	  if ($eid < 11 || !($eid % 2)) continue; // Then check it to be more than 10 and odd
 	  if (isset($modificators) && $modificators !== $value['modificators']) continue; // Check Ctrl, Alt, Shift, Meta modificators match if exist
+	  $client['handlereventmodificators'] = $value['modificators']; // Fix modificators value
 
 	  if ($event === ($elementevent = $value['event'])) // Exact event match
 	  if ($event === 'SCHEDULE') // For 'SCHEDULE' event retrieve command line from specified text line of crontab text area, for others - cmd line is an dialog interface text area value
@@ -1567,14 +1586,15 @@ function GetCMD($db, &$client)
 	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
 	    switch ($match = substr($cmdline, $i + 1, $j - $i - 1))
 		   {
-		    case 'data':  $add = DoubleQuote($client['data']); break;
-		    case 'user':  $add = DoubleQuote($client['auth']); break;
-		    case 'oid':   $add = DoubleQuote($client['oId']); break;
-		    case 'event': $add = DoubleQuote($client['cmd']); break;
-		    case 'title': $add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
-		    case 'datetime': $datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
-		    default: if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
-			      else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
+		    case 'data':		$add = DoubleQuote($client['data']); break;
+		    case 'user':		$add = DoubleQuote($client['auth']); break;
+		    case 'oid':			$add = DoubleQuote($client['oId']); break;
+		    case 'event':		$add = DoubleQuote($client['handlerevent']); break;
+		    case 'modificators':	$add = DoubleQuote($client['handlereventmodificators']); break;
+		    case 'title':		$add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
+		    case 'datetime':		$datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
+		    default:			if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
+						 else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
 		   }
 	    $i = $j;
 	   }

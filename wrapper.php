@@ -299,27 +299,40 @@ function DoubleQuote($string)
 $_client = $client = json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
 $output = [];
 
-if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID | CHECK_ACCESS, $client, $output))
+if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID, $client, $output))
    {
-    if ($client['cmd'] === 'SCHEDULE') // Log error result for 'SCHEDULE' event, otherwise error is displayed as a main view message
-       isset($output['error']) ? LogMessage($db, $client, $output['error']) : LogMessage($db, $client, $output['alert']);
+    // Log error result for 'SCHEDULE' event, otherwise error is displayed as a main view message
+    if ($client['cmd'] === 'SCHEDULE') isset($output['error']) ? LogMessage($db, $client, $output['error']) : LogMessage($db, $client, $output['alert']);
+    // Log message if one does exist
     if (isset($output['log'])) LogMessage($db, $client, $output['log']);
     $output = [$client['eId'] => ['cmd' => ''] + $output];
    }
-else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETEOBJECT')
+else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETE')
    {
     $output = [$client['eId'] => ['cmd' => $client['cmd']]];
    }
  else
    {
+    // Adjust client data
     if (!isset($client['data']) || (gettype($client['data']) != 'string' && gettype($client['data']) != 'array')) $client['data'] = '';
      else if (gettype($client['data']) === 'array') $client['data'] = json_encode($client['data'], JSON_HEX_APOS | JSON_HEX_QUOT);
-
-    // CMD line already defined (for 'SCHEDULE' event)? Pass it to GetCMD
+    // Get CMD line and exit if no one does exist
     if (!GetCMD($db, $client)) exit;
-    $output[$client['eId']] = [];
-    exec($client['handlercmdlineeffective'], $output[$client['eId']]);
-    if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
+    // Check read/wrte permissions
+    if (Check($db, CHECK_ACCESS, $client, $output))
+       {
+	$output[$client['eId']] = [];
+	exec($client['handlercmdlineeffective'], $output[$client['eId']]);
+	if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
+       }
+     else
+       {
+	// Log error result for 'SCHEDULE' event, otherwise error is displayed as a main view message
+	if ($client['cmd'] === 'SCHEDULE') isset($output['error']) ? LogMessage($db, $client, $output['error']) : LogMessage($db, $client, $output['alert']);
+	// Log message if one does exist
+	if (isset($output['log'])) LogMessage($db, $client, $output['log']);
+	$output = [$client['eId'] => ['cmd' => ''] + $output];
+       }
    }
 
 $currenteid = $client['eId'];
@@ -395,7 +408,9 @@ switch ($output[$currenteid]['cmd'])
 			  }
 		  $client['eId'] = $currenteid;
 		  // Check changed object on existing rules
-		  $ruleresult = ProcessRules($db, $client, 'Change object', strval($version - 1), strval($version));
+		  $client['handlerevent'] = 'CHANGE';
+		  if (isset($client['handlereventmodificators'])) unset($client['handlereventmodificators']);
+		  $ruleresult = ProcessRules($db, $client, strval($version - 1), strval($version));
 		  if ($ruleresult['action'] === 'Accept')
 		     {
 		      if ($newmask != '') // Update new object version with new element data
@@ -436,6 +451,7 @@ switch ($output[$currenteid]['cmd'])
 		 {
 		  preg_match("/Duplicate entry/", $msg = $e->getMessage()) === 1 ? $ruleresult = ['message' => 'Failed to write object data: unique elements duplicate entry!'] : $ruleresult = ['message' => "Failed to write object data: $msg"];
 		  $ruleresult['log'] = $ruleresult['message'];
+		  lg($e);
 		 }
 	     $db->rollBack();
 	     if (isset($ruleresult['log'])) LogMessage($db, $client, $ruleresult['log']);
@@ -455,7 +471,14 @@ switch ($output[$currenteid]['cmd'])
 		     }
 	     AddObject($db, $client, $output);
 	     break;
-        case 'DELETEOBJECT':
+        case 'DELETE':
+	     $client['data'] = '';
+	     foreach ($client['allelements'] as $eid => $profile)
+		     {
+		      $client['eId'] = $eid;
+		      if (!GetCMD($db, $client)) continue; // No handler
+		      exec($client['handlercmdlineeffective']);
+		     }
 	     DeleteObject($db, $client, $output);
 	     break;
         case '':

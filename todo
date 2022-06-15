@@ -1,7 +1,14 @@
 New handler conception:
-1. New events conception for scheduler
+0. Queue tasks
++1. New events conception for scheduler
 2. New events conception for rules
-3. Start event for keypres and dblclick
+    - makedb setki chat
+    - core php initial rule profile interface elements
+    - function processrules, event match check:
+	for SET event = CHANGE (handler SET cmd)
+	for INIT DELETE event = INIT DELETE (apparent functions)
+	for MOUSE KEYBOARD PASTE SCHEDULER event = the same (check(CHECK_ACCESS))
++3. Start event for keypres and dblclick
 4. test task manager on key press event
 5. go through all doc and search in every js php keypress ins del f2 f12 dblclick after
 6. make db make setki make mrtg
@@ -107,6 +114,7 @@ Stages:
 
 -----------------------------------------------------------------
 - Application:
+  Second and all next queries for non Tree view types are queries in previous query tables
   regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)
   Release 'view in a new tab' via call cmd, for example to show user object versions apparently main view in a new tab      https://question-it.com/questions/1384714/otkryt-novuju-vkladku-okno-i-napisat-v-nee-chto-nibud
@@ -154,6 +162,7 @@ Stages:
   Sort by header click for look like default element layout when header line at the top, bottom, left, right
   One or multiple cell selecting - buffer copy as text or/and as image (like excelc cells are copied into whatsup)
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
+  Smooth OD expanded to the view list
   Dialog boxes:
     dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
     when pushed button is pushed and mouse cursor is out of button - make button released
@@ -190,4 +199,5 @@ Stages:
   helpdesk/jira/CRM example in Help context menu
   Create system user read-only customization like github interface, for a example, so users can use it via 'force' option in user-customization dialog
   No Emodzi symbols as an element text allowed - in this case db sql error occurs. Should i fix it?
+  Task manager load avergage more than one or specified threshold? Mark it red color at taask manager title
 ------------------------------------------------------------------------------------------

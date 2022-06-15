@@ -702,6 +702,7 @@ function BoxApply(buttonprop)
     {
      saveDialogProfile(); // Save dialog box content and send it to the controller
      box.flags['event'] = buttonprop;
+     delete box.flags.updateonly;
      cmd = button['call'];
      CallController(box);
      if (button['interactive'] === undefined) HideBox();
@@ -761,7 +762,7 @@ function FromController(json)
 	      URL.revokeObjectURL(element.href);
 	      break;
 	 case 'DIALOG':
-	      if (cursor.td?.contentEditable === EDITABLE || (input.data.flags?.updateonly !== undefined && !box)) break;
+	      if (cursor.td?.contentEditable === EDITABLE || (input.data.flags && input.data.flags.updateonly !== undefined && !box)) break;
 	      let scrollLeft, scrollTop;
 	      if (box?.contentDiv?.scrollLeft) scrollLeft = box.contentDiv.scrollLeft;
 	      if (box?.contentDiv?.scrollTop) scrollTop = box.contentDiv.scrollTop;
@@ -1071,7 +1072,7 @@ function CallController(data)
 	      if (objectTable !== undefined && mainTable[cursor.y]?.[cursor.x]?.realobject) FillNewObjectArray(object = { "cmd": 'INIT', "data": {} }, mainTable[cursor.y][cursor.x].oId);
 	      break;
 	 case 'Delete Object':
-	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) object = { "cmd": 'DELETEOBJECT', "oId": mainTable[cursor.y][cursor.x].oId };
+	      if (mainTable[cursor.y]?.[cursor.x]?.realobject) object = { "cmd": 'DELETE', "oId": mainTable[cursor.y][cursor.x].oId };
 	      break;
 	 case 'View in a new tab':
 	      const newwindow = window.open('about:blank', '_blank');

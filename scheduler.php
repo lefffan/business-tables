@@ -55,17 +55,24 @@ while (true)
 	  foreach ($element as $interface) if (isset($interface['event']) && $interface['event'] === 'SCHEDULE') // Go through all dialog interface elements for the SCHEDULE event
 	  foreach (preg_split("/\n/", $interface['data']) as $line => $cronline) // Go through all text lines of SCHEDULE event text area data
 		  {
-		   // Incorrect cron line? Continue, otherwise exec 'schedulerwrapper code ODid OVid eid': <uniq code> <$od['id']> <$cron[count(CRONLINEFIELDS) - 2]> <$element['element1']['id'] = ''>;
+		   // Incorrect cron line? Continue, otherwise exec 'schedulerwrapper' with next args: <uniq code> <$od['id']> <$cron[count(CRONLINEFIELDS) - 2]> <$element['element1']['id'] = ''> <$cron[count(CRONLINEFIELDS) - 3]>;
 		   if (!($cron = SplitCronLine($cronline))) continue;
 		   // Check datetime parameters match
 		   for ($i = 0; $i < count(CRONLINEFIELDS) - 3; $i++) if (!CompareCronField($cron[$i], $now[CRONLINEFIELDS[$i]])) break 2;
 		   // Check correctness of queue and view id cron fields
 		   if (!ctype_digit($cron[count(CRONLINEFIELDS) - 2]) || !ctype_digit($cron[count(CRONLINEFIELDS) - 3])) continue;
+		   $queue = max(1, intval($cron[count(CRONLINEFIELDS) - 3]));
+		   $queue = min($queue, QUEUEWRAPPERSMAX);
 		   // Current scheduler id loader does already exist? Continue
 		   $output = [];
-		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'].' '.$line.' '.$cron[count(CRONLINEFIELDS) - 3];
+		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'].' '.$line.' '.$cron[count(CRONLINEFIELDS) - 3].' '.strval($queue);
 		   exec(SEARCHPROCESSCMD." '".$schedulerwrapperargs."'", $output);
-		   if (count($output)) continue;
+		   if (count($output))
+		      {
+		       $client = [];
+		       LogMessage($db, $client, "Failed to launch scheduler task (OD id $od[id], element id ".$element['element1']['id']." and cron line ".strval($line + 1)."): previous one is not completed yet!");
+		       continue;
+		      }
 		   // Execute current scheduler id loader with next args: <scheduler id> <OD id> <OV id> <eid> <crontab line>
 		   exec(PHPBINARY.' '.APPDIR.SCHEDULERWRAPPERCMD.' '.$schedulerwrapperargs.' >/dev/null &');
 		  }

@@ -3,6 +3,7 @@
 require_once 'core.php';
 
 // Init vars
+$span = '<span style="color: RGB(114,132,201);">';
 $bgcolor = 'rgb(172,189,172);';
 $bgcolorkill = 'rgb(217,174,174);';
 $font = 'bold';
@@ -84,8 +85,15 @@ foreach ($output as $value)
 	      foreach ($od['views'] as $view)
 	           if ($view['element1']['id'] === $process[$start + 2] && ($od['view'] = $view['element1']['data'])) break;
 
-	      // Calc handler cmd line and matched event
-	      if (isset($process[$start + 10]) && gettype($_client = json_decode($process[$start + 10], true)) === 'array' && isset($_client['eId']))
+	      // Calc handler cmd line and matched event, fisrt groupt events then others
+	      if ($process[$start + 6] === 'INIT' || $process[$start + 6] === 'DELETE')
+		 {
+		  $_client['handlerevent'] = $process[$start + 6];
+		  $_client['handlercmdline'] = "handler command line obtain for '$_client[handlerevent]' event is not supported";
+		  $process[$start + 3] = 'all';
+		  if ($_client['handlerevent'] === 'INIT') $process[$start + 5] = 'new object id';
+		 }
+	       else if (isset($process[$start + 10]) && gettype($_client = json_decode($process[$start + 10], true)) === 'array' && isset($_client['eId']))
 		 {
 		  foreach ($od['elements'] as $element)
 			  if ($element['element1']['id'] === $process[$start + 3] && ($_client['allelements'][$_client['eId']] = $element)) break;
@@ -125,13 +133,17 @@ foreach ($output as $value)
 	     else break;
 	}
 
-$datetime = new DateTime(); 
-//$title = 'Task Manager               Server date time: '.$datetime->format('Y-m-d H:i:s');
-$title = 'Task Manager               Server date time: <span style="color: RGB(114,132,201);">'.$datetime->format('Y-m-d H:i:s').'</span>';
+// Task manager title
+$taskcount = max(0, count($table) - 1);
+$title = "Task Manager: $span".strval($taskcount).' task'.($taskcount === 1 ? '' : 's').'</span>';
+// Datetime title
+$datetime = new DateTime();
+$title .= "               Server date time: $span".$datetime->format('Y-m-d H:i:s').'</span>';
+// Load average title
 $output = [];
 exec(AVERAGELOADCMD, $output);
 $output = trim($output[0]);
-if (($start = array_search('average:', explode(' ', $output))) !== false) $title .= '               Server load average: <span style="color: RGB(114,132,201);">'.explode(' ', $output, $start + 2)[$start + 1].'</span>';
+if (($start = array_search('average:', explode(' ', $output))) !== false) $title .= "               Server load average: $span".explode(' ', $output, $start + 2)[$start + 1].'</span>';
 
 $dialog  = ['title'  => $title,
 	    'dialog' => ['pad' => ['profile' =>
@@ -141,7 +153,7 @@ $dialog  = ['title'  => $title,
 	    'flags'  => ['style' => 'width: 1200px; height: 500px; padding: 5px;', 'esc' => '']];
 
 // No active tasks
-if (count($table) < 2) $dialog['dialog']['pad']['profile']['element3'] = ['head' => '                                                                                   No active tasks found..'];
+if (!$taskcount) $dialog['dialog']['pad']['profile']['element3'] = ['head' => 'No active tasks found..'];
 
 // Incoming dialog data does exist (non first task manager call)?
 if (isset($client['data']['dialog']['pad']['profile']['element2']['data'])) $dialog['flags']['updateonly'] = '';
@@ -155,7 +167,3 @@ catch (PDOException $e)
     {
      lg($e->getMessage());
     }
-
-// server top red with load more than 1
-// INIT in task manager
-// queue

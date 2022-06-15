@@ -164,7 +164,7 @@ while (true)
 		       break;
 		  case 'INIT':
 		       Check($db, CHECK_OID, $client, $output);
-		  case 'DELETEOBJECT':
+		  case 'DELETE':
 		       Check($db, CHECK_EID, $client, $output);
 		  case 'DOUBLECLICK':
 		  case 'PASTE':
@@ -241,11 +241,11 @@ while (true)
 				    }
 			    break;
 		       case 'INIT':
-		       case 'DELETEOBJECT':
+		       case 'DELETE':
 			    // Remember alert message if exist
 			    isset($handler['alert']) ? $alert = ['alert' => $handler['alert']] : $alert = [];
 			    unset($handler['alert']);
-			    // Cycle all sockets which client OD/OV the INIT/DELETEOBJECT commands was called for
+			    // Cycle all sockets which client OD/OV the INIT/DELETE commands was called for
 			    foreach ($socketarray as $cid => $socket) if (isset($clientsarray[$cid]['auth']))
 				 if ($clientsarray[$cid]['ODid'] === $handler['ODid'] && $clientsarray[$cid]['OVid'] === $handler['OVid'])
 				    {
