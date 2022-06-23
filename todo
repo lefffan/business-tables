@@ -1,10 +1,16 @@
+- make new handlers for mrtg.php
+- _history for all
+- _.php UPDATE
+- decrease padding from setki
+
+
 New handler conception:
 +0. Queue tasks
 +1. New events conception for scheduler
 +2. New events conception for rules
 +3. Start event for keypres and dblclick
 +4. test task manager on key press event
-5. go through all doc 
+5. go through all doc and search F12 DBLCLICK and text.php
 6. make db make setki make mrtg
 
 Errors:
@@ -18,7 +24,7 @@ Megacom implementation:
 2. new view nedodelki
 3. new element 'viewid' to make chats between two users
 4. add 10.5.. fake ip to setki vew
-5. point to point tree
+5. point to point tree, and add seconf query in object selection to the help/doc
 6. OD setki new view: search by one ip, history
 7. correct all mrtg host files to make correct megacom tree via links in mrtg.php (mpls links and uplink2 links are apparent)
 8. switch models piechart
@@ -41,7 +47,7 @@ Megacom MRTG OD:
 	Tree down - Ctrl+F12
 	Alt+Shift+F12 - Map tree up from current object
 	Alt+Ctrl+F12 - Map tree down from current object
-	F12 port diagnostic (client) - grafic in realtime, and grafics and F12 non port diagnosti (switch)
+	F12 port diagnostic (client) - grafic in realtime, and grafics and F12 non port diagnosti (switch with port list with their links)
 	INS - for ports (general: hint, snmpindex, link, style; description: type [free, client, service, link], zayavka-ip-speed-licevoi-name-address),
 	    for hardware (hint, style, type, subtype),
 	    location (tehuchet info contacts, names, loaction..)
@@ -57,7 +63,7 @@ New app features for Megacom:
 2. Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
 3. To allow html table in cells add tr, td, tbody and table tags to allowed tags?
 4. Links instead of real jpegs
-5. Object view MAP.
+5. Slava develop: MAP, telnet/snmp platform
 6. TREE:
     Tree element layout: style (for example to see what nodes are down by seeing them via red background)
     Tree wire name (arrow name) to mark fiber cooper radio..
@@ -68,9 +74,10 @@ New app features for Megacom:
 8. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 9. Change favicon -> tabels
 10. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
-11. nohup server and scheduler execution
+11. nohup server and scheduler start
 12. Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
 13. multi cell selecting - copy (excel table), delete (removes all selected objects) with new user event 'DELETE' for every removing object
+14. Do not reload (with loading.. message) the main view if it less than one second for a example
 
 Some systems emulation:
 1. Corp chat
@@ -107,6 +114,7 @@ Stages:
 
 -----------------------------------------------------------------
 - Application:
+  remove rule log and make rule actions: reject log, reject, accept log, accept, log only
   Second and all next queries for non Tree view types are queries in previous query tables
   regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)

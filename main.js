@@ -833,7 +833,8 @@ function FromController(json)
 	      break;
 	 case 'CALL':
 	      imgdesc.style.display = 'none';
-	      perfomance.push({ time: new Date(), process: 'User authorization: ' });
+	      if (perfomance[2] === undefined) perfomance.push({ time: new Date(), process: 'User authorization: ' });
+	       else perfomance = [{ time: new Date(), process: 'Start' }]; // Perfomance array already exists, so the view is called from handler, so start perfomance account without user auth
 	      displayMainError('Loading');
 	 case 'SIDEBAR':
 	 case 'New Database':
@@ -860,7 +861,15 @@ function FromController(json)
  if (input.error !== undefined)	displayMainError(input.error);
  if (input.alert)		warning(input.alert);
  if (input.count)		IncreaseUnreadMessages(input.count.odid, input.count.ovid);
- if (input.cmd === 'Table' || input.cmd === 'Tree') setTimeout(0, perfomance.push({ time: new Date(), process: 'Layout and rendering: ' }));
+ if (input.cmd === 'Table' || input.cmd === 'Tree')
+    {
+     setTimeout(0, perfomance.push({ time: new Date(), process: 'Layout and rendering: ' }));
+     if (ODid !== '' && (viewindex === -1 || viewhistory[viewindex].ODid !== ODid || viewhistory[viewindex].OVid !== OVid))
+	 {
+	  viewhistory[++viewindex] = {ODid: ODid, OVid: OVid};
+	  viewhistory.splice(viewindex + 1);
+	 }
+    }
 }
 
 function UploadDialog()
@@ -990,11 +999,6 @@ function CallController(data)
 	      perfomance = [{ time: new Date(), process: 'Start' }];
 	      break;
 	 case 'CALL':
-	      if (ODid !== '' && (viewindex === -1 || viewhistory[viewindex].ODid !== ODid || viewhistory[viewindex].OVid !== OVid))
-		 {
-		  viewhistory[++viewindex] = {ODid: ODid, OVid: OVid};
-	          viewhistory.splice(viewindex + 1);
-		 }
 	      perfomance = [{ time: new Date(), process: 'Start' }];
 	 case 'Database Configuration':
 	 case 'SIDEBAR':

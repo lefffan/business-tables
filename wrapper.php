@@ -19,30 +19,46 @@ function ProcessCHANGEevent($db, &$client, &$output, $currenteid)
 
 function ParseHandlerResult($db, &$output, &$client)
 {
- if (!isset($output[0])) return;
- $logmsg = "Element id$client[eId] handler for object id$client[oId] ";
- $result = json_decode($output[0], true);
-
+ // Parse handler output result due to output mode
  if (strpos($client['handlermode'], '+Debug') !== false)
     {
+     if (!isset($output[0])) $output[0] = '';
+     $result = json_decode($output[0], true);
      $alert = 'Handler output debug mode is on.';
      $alert .= "\n\n<b>1. Defined command line:</b>\n".$client['handlercmdline'];
      $alert .= "\n\n<b>2. Effective command line:</b>\n".$client['handlercmdlineeffective'];
-     $alert .= "\n\n<b>3. Output is in ".(gettype($result) === 'array' ? '' : 'non-')."JSON format:</b>\n";
-     $alert .= gettype($result) === 'array' ? substr($output[0], 0, ELEMENTDATAVALUEMAXCHAR) : substr(implode("\n", $output), 0, ELEMENTDATAVALUEMAXCHAR);
-     if (gettype($result) === 'array' && ($client['cmd'] === 'CONFIRM' || array_search($client['cmd'], GROUPEVENTS)) && $result['cmd'] !== 'SET' && $result['cmd'] !== 'RESET')
-	$alert .= "\n\n<span style=".'"'."color: red".'"'.">Note that handler should return only 'SET/RESET' commands in response to client 'CONFIRM' event..</span>";
+     $output = gettype($result) === 'array' ? substr($output[0], 0, ELEMENTDATAVALUEMAXCHAR) : substr(implode("\n", $output), 0, ELEMENTDATAVALUEMAXCHAR);
+     $alert .= $output ? "\n\n<b>3. Output data is in ".(gettype($result) === 'array' ? '' : 'non-')."JSON format:</b>\n$output" : "\n\n<b>3. No output data detected!</b>";
+
+     if (gettype($result) === 'array' && $result['cmd'] !== 'SET' && $result['cmd'] !== 'RESET')
+     if (array_search($client['cmd'], GROUPEVENTS) !== false)
+	{
+	 $alert .= "\n\n<span style=".'"'."color: red".'"'.">Warning: handler should return only 'SET/RESET' commands in response to client '$client[cmd]' event..</span>";
+	 LogMessage($db, $client, $alert);
+	 return;
+	}
+      else if ($client['cmd'] === 'CONFIRM')
+	{
+	 $alert .= "\n\n<span style=".'"'."color: red".'"'.">Warning: it is preferred to return only 'SET/RESET' commands in response to client '$client[cmd]'\n         event to avoid inconsistent element cell value.</span>";
+	}
+
      $output = ['cmd' => 'ALERT', 'data' => $alert];
-     if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $alert)) return;
     }
   else if (strpos($client['handlermode'], '+Dialog') !== false)
     {
+     if (!isset($output[0])) return;
+     $result = json_decode($output[0], true);
      $output = gettype($result) === 'array' ? $result : ['cmd' => 'ALERT', 'data' => implode("\n", $output)];
     }
   else
     {
+     if (!isset($output[0])) return;
+     $result = json_decode($output[0], true);
      $output = gettype($result) === 'array' ? $result : ['cmd' => 'SET', 'value' => implode("\n", $output)];
     }
+
+ // Init log message string
+ $logmsg = "Element id$client[eId] handler for object id$client[oId] ";
 
  // Incorrect handler response JSON
  if ((!isset($output['cmd']) || array_search($output['cmd'], HANDLEREVENTS) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
@@ -469,6 +485,7 @@ switch ($output[$currenteid]['cmd'])
 		      ParseHandlerResult($db, $output[$eid], $client);
 		      $output[$eid] += DEFAULTELEMENTPROPS;
 		     }
+	     $client['handlerevent'] = 'INIT';
 	     AddObject($db, $client, $output);
 	     break;
         case 'DELETE':
@@ -479,6 +496,7 @@ switch ($output[$currenteid]['cmd'])
 		      if (!GetCMD($db, $client)) continue; // No handler
 		      exec($client['handlercmdlineeffective']);
 		     }
+	     $client['handlerevent'] = 'DELETE';
 	     DeleteObject($db, $client, $output);
 	     break;
         case '':

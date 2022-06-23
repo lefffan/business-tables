@@ -4,30 +4,6 @@
 require_once 'core.php';
 require_once HANDLERDIR.'customizationjson.php';
 
-function CreateHandlerSection($i, $event, $modificatortext, $cmd)
-{
- global $newElement;
-
- $newElement['element'.strval($i)] = $newElement['element5'];
- $newElement['element'.strval($i)]['head'] = $modificatortext ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatortext" : "Set handler output mode and command line below for event <b>'$event'</b>";
- unset($newElement['element'.strval($i)]['help']);
-
- $newElement['element'.strval($i+1)] = $newElement['element8'];
- unset($newElement['element'.strval($i+1)]['head']);
- $newElement['element'.strval($i+1)]['data'] = $cmd;
- $newElement['element'.strval($i+1)]['event'] = $event;
- $newElement['element'.strval($i+1)]['modificators'] = '';
-
- if (!$modificatortext) return;
-
- $modificators = 0;
- if (strpos($modificatortext, 'CTRL') !== false) $modificators += 8;
- if (strpos($modificatortext, 'ALT') !== false) $modificators += 4;
- if (strpos($modificatortext, 'SHIFT') !== false) $modificators += 2;
- if (strpos($modificatortext, 'META') !== false) $modificators += 1;
- $newElement['element'.strval($i+1)]['modificators'] = strval($modificators);
-}
-
 try {
      //------------------------------------------Dropping old shit------------------------------------------
      $query = $db->prepare("drop database ".DATABASENAME."; create database ".DATABASENAME."; use ".DATABASENAME);
@@ -60,17 +36,24 @@ try {
      $userOD = ['title'  => 'Edit Object Database Structure', 'dialog' => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 860px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $userOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
-     $userOD['dialog']['View']['New view']['element1']['id'] = '2';
+     $userOD['dialog']['View']['New view']['element1']['id'] = '3';
 
      $newView['element1']['id'] = '1';
-     $newView['element1']['head'] = "View (id$1) name";
+     $newView['element1']['head'] = "View (id1) name";
      $newView['element1']['data'] = 'All users';
      $newView['element6']['data'] = ' *';
      $userOD['dialog']['View']['All users'] = $newView;
 
+     $newView['element1']['id'] = '2';
+     $newView['element1']['head'] = "View (id2) name";
+     $newView['element1']['data'] = '_history';
+     $newView['element4']['data'] = "WHERE id=':id'";
+     $newView['element6']['data'] = 'version,datetime,owner,*';
+     $userOD['dialog']['View']['_history'] = $newView;
+
      $newElement['element1']['id'] = '1';
      $newElement['element1']['data'] = 'User';
-     $newElement['element2']['data'] = "Double click the username to change the password and other user properties";
+     $newElement['element2']['data'] = "Double click the username to change the password and other properties";
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
      // INIT, F2, CONFIRMDIALOG..
@@ -179,7 +162,7 @@ try {
      initNewODDialogElements();
      $newElement['element1']['id'] = '6';
      $newElement['element1']['data'] = 'Customization';
-     $newElement['element2']['data'] = "Double click appropriate cell to change color, font, background and other properties for the specified user";
+     $newElement['element2']['data'] = "Double click 'Customize' to change color, font, background and other properties for the user";
      $newElement['element3']['data'] = 'unique';
      $newElement['element3']['readonly'] = '';
      // INIT, CONFIRMDIALOG..

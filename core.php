@@ -24,10 +24,11 @@ function AddNewHandlerInterfaceSection(&$elementprofile, &$newElement)
          {
           $eid = intval(substr($profile, 7)); // Calculate interface element id number
           if ($eid < 11 || !($eid % 2)) continue; // Then check it to be more than 10 and odd.
-	  if ($value['data']) continue;
+	  if (trim($value['data'])) continue;
 	  unset($elementprofile[$profile]);
 	  unset($elementprofile['element'.strval($eid - 1)]);
 	 }
+ if ($eid === 8) $eid = 9;
 
  // Then check new handler interface section to add
  if ($elementprofile['element8']['data'])
@@ -83,23 +84,21 @@ function adjustODProperties($db, $data, $ODid)
 	  // Fetching element id
 	  $eid = strval($value['element1']['id']);
 	  // Remove element from db and dialog props in case of empty name, description and all hanlders
-	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && count($value) < 8)
+	  if ($value['element1']['data'] === '' && $value['element2']['data'] === '' && count($value) < 8 && $value['element8']['data'] === '')
 	     {
-	      if ($key === 'New element')
+	      if ($key !== 'New element') // Existing element
 	         {
-		  unset($data['dialog']['Element'][$key]);
-		  continue;
-		 }
-	      $db->beginTransaction();
-	      $query = $db->prepare("ALTER TABLE `data_$ODid` DROP COLUMN eid$eid");
-	      $query->execute();
-	      if ($value['element3']['data'] === UNIQELEMENTTYPE)
-		 {
-		  $query = $db->prepare("ALTER TABLE `uniq_$ODid` DROP COLUMN eid$eid");
+		  $db->beginTransaction();
+		  $query = $db->prepare("ALTER TABLE `data_$ODid` DROP COLUMN eid$eid");
 		  $query->execute();
+		  if ($value['element3']['data'] === UNIQELEMENTTYPE)
+		     {
+		      $query = $db->prepare("ALTER TABLE `uniq_$ODid` DROP COLUMN eid$eid");
+		      $query->execute();
+		     }
+		  $db->commit();
 		 }
 	      unset($data['dialog']['Element'][$key]);		// Element name, description and handler file are empty? Remove element.
-	      $db->commit();
 	      continue;
 	     }
 	  // Limiting element title to ELEMENTDATAVALUEMAXCHAR as it is displayed as a regular element
@@ -234,11 +233,11 @@ function initNewODDialogElements()
 		    'element11' => ['type' => 'textarea', 'data' => '']
 		   ];
 
- $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'help' => "Rule profile name. It may be changed, but if renamed profile already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty profile name removes the rule."],
-		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => 'Rule message is a match case log message displayed on the client side dialog box.'],
-		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action agrees specified event action, while 'Reject' cancels it"],
-		    'element4' => ['type' => 'textarea', 'head' => 'Rule event list', 'data' => '', 'line' => ''],
-		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Any mouse/keyboard client side or object add/delete/change events are passed to the analyzer<br>to test on all rule profiles in alphabetical order until the match of both event and rule query is found. Rule query is a list of SQL query strings (one by line). Non-empty and non-zero<br>result of all query strings - match case, any empty, error or zero char '0' result - no match.<br>When a match is found, the action corresponding to the matching rule profile is performed, otherwise<br>default action 'accept' is applied."],
+ $newRule	 = ['element1' => ['type' => 'text', 'head' => 'Name', 'data' => '', 'help' => "Rule profile name. It may be changed, but if a new profile name already exists, changes are not applied.<br>So name 'New rule' cannot be set as it is used as an option to create new rules.<br>Empty profile name of existing rule removes it after dialog apply."],
+		    'element2' => ['type' => 'textarea', 'head' => 'Rule message', 'data' => '', 'line' => '', 'help' => "Rule message is a match case message displayed at client side dialog box and optionally saved in 'Logs' OD.<br>For non-empty messages only."],
+		    'element3' => ['type' => 'select-one', 'head' => 'Rule action', 'data' => '+Accept|Reject|', 'line' => '', 'help' => "'Accept' action agrees matched event below, 'Reject' action cancels it"],
+		    'element4' => ['type' => 'textarea', 'head' => 'Rule event list', 'data' => '', 'help' => "Event list, each on a new line and at the start.<br>Keyboard and mouse events may be combined with modifier keys CTRL, ALT, SHIFT and META separated by spaces.<br>Event line example 'KeyG CTRL' matches keyboard event for the key 'g' down together with CTRL."],
+		    'element5' => ['type' => 'textarea', 'head' => 'Rule query', 'data' => '', 'help' => "Every controller inbound event is passed to the rule analyzer to test on all rule profiles in alphabetical order<br>until the match for both event and query is found. Rule query is a list of SQL query strings (one by line).<br>Non-empty and non-zero result of all query strings - match case; any empty, error or zero char '0' result - no match.<br>When a match is found, the action corresponding to the matching rule profile is performed, no any match -<br>default action 'accept' is applied."],
 		    'element6' => ['type' => 'checkbox', 'data' => 'Log rule message|', 'line' => '', 'help' => '']
 		   ];
 }
@@ -1590,6 +1589,10 @@ function GetCMD($db, &$client)
 		    case 'data':		$add = DoubleQuote($client['data']); break;
 		    case 'user':		$add = DoubleQuote($client['auth']); break;
 		    case 'oid':			$add = DoubleQuote($client['oId']); break;
+		    case 'odid':		$add = DoubleQuote($client['ODid']); break;
+		    case 'ovid':		$add = DoubleQuote($client['OVid']); break;
+		    case 'od':			$add = DoubleQuote($client['OD']); break;
+		    case 'ov':			$add = DoubleQuote($client['OV']); break;
 		    case 'event':		$add = DoubleQuote($client['handlerevent']); break;
 		    case 'modificators':	$add = DoubleQuote($client['handlereventmodificators']); break;
 		    case 'title':		$add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
@@ -1605,6 +1608,30 @@ function GetCMD($db, &$client)
  // Fix modified command line and return true
  $client['handlercmdlineeffective'] = $newcmdline;
  return true;
+}
+
+function CreateHandlerSection($i, $event, $modificatortext, $cmd)
+{
+ global $newElement;
+
+ $newElement['element'.strval($i)] = $newElement['element5'];
+ $newElement['element'.strval($i)]['head'] = $modificatortext ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatortext" : "Set handler output mode and command line below for event <b>'$event'</b>";
+ unset($newElement['element'.strval($i)]['help']);
+
+ $newElement['element'.strval($i+1)] = $newElement['element8'];
+ unset($newElement['element'.strval($i+1)]['head']);
+ $newElement['element'.strval($i+1)]['data'] = $cmd;
+ $newElement['element'.strval($i+1)]['event'] = $event;
+ $newElement['element'.strval($i+1)]['modificators'] = '';
+
+ if (!$modificatortext) return;
+
+ $modificators = 0;
+ if (strpos($modificatortext, 'CTRL') !== false) $modificators += 8;
+ if (strpos($modificatortext, 'ALT') !== false) $modificators += 4;
+ if (strpos($modificatortext, 'SHIFT') !== false) $modificators += 2;
+ if (strpos($modificatortext, 'META') !== false) $modificators += 1;
+ $newElement['element'.strval($i+1)]['modificators'] = strval($modificators);
 }
 
 function GetObjectSelection($objectSelection, $params, $user, $anyway = false)
