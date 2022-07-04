@@ -123,7 +123,7 @@ function mousedownEventHandler(event)
  // Dialog box is on? Process its mouse left button down
  if (box)
     {
-     if (target.classList.contains('title'))
+     if (IsTitle(target))
 	{
 	 drag.element = boxDiv;
 	 drag.dispx = event.clientX - boxDiv.offsetLeft;
@@ -391,6 +391,15 @@ function IsTableTemplateCell(element)
  while (ALLOWEDTAGNAMES.indexOf(element?.tagName) !== -1) element = element.parentNode;
  if (element.tagName === 'TD')
  if (element.classList.contains('datacell') || element.classList.contains('titlecell') || element.classList.contains('newobjectcell') || element.classList.contains('undefinedcell') || element.classList.contains('treeelement') || element.classList.contains('treeerror')) return element;
+}
+
+function IsTitle(element)
+{
+ while (element)
+       {
+	if (element.classList?.contains('title')) return true;
+	element = element.parentNode;
+       }
 }
 
 function BoxEventHandler(event)

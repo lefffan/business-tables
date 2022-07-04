@@ -51,6 +51,7 @@ let uiProfile = {
 		  "sidebar": { "target": ".sidebar", "border": "none;", "background-color": "rgb(16,91,160);", "border-radius": "5px;", "color": "#9FBDDF;", "width": "13%;", "height": "90%;", "left": "4%;", "top": "5%;", "scrollbar-color": "#1E559D #266AC4;", "scrollbar-width": "thin;", "box-shadow": "4px 4px 5px #222;" },
 		  "sidebar unwrap": { "target": ".unwrap", "font-size": "70%;", "padding": "3px 8px;", "content": "", "background-repeat": "no-repeat !important;", "background-position": "center;", "background-size": "70% 70%;", "background-image": `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 5L21 12M21 12L14 19M21 12L3 12' stroke='green' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");` },
 		  "sidebar wrap": { "target": ".wrap", "font-size": "70%;", "padding": "3px 8px;", "content": "", "background-repeat": "no-repeat !important;", "background-position": "center;", "background-size": "70% 70%;", "background-image": `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 14L12 21M12 21L19 14M12 21L12 3' stroke='green' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");` },
+		  "sidebar nowrap": { "target": ".nowrap", "font-size": "70%;", "padding": "3px 8px;", "content": "", "background-repeat": "no-repeat !important;", "background-position": "center;", "background-size": "70% 70%;", "background-image": `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 5L21 12M21 12L14 19M21 12L3 12' stroke='coral' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");` },
 		  "sidebar item active": { "target": ".itemactive", "background-color": "#4578BF;", "color": "#FFFFFF;", "font": "1.1em Lato, Helvetica;" },
 		  "sidebar item hover": { "target": ".sidebar tr:hover", "background-color": "#3568AF;", "cursor": "pointer;" },
 		  "sidebar object database": { "target": ".sidebar-od", "padding": "3px 5px 3px 0px;", "margin": "0px;", "color": "", "width": "100%;", "font": "1.1em Lato, Helvetica;"  },
@@ -58,7 +59,7 @@ let uiProfile = {
 		  "sidebar view changes count": { "target": ".changescount", "vertical-align": "super;", "padding": "2px 3px 2px 3px;", "color": "rgb(232,187,174);", "font": "0.6em Lato, Helvetica;", "background-color": "rgb(251,11,22);", "border-radius": "35%"},
 		  // Main field
 		  "main field": { "target": ".main", "border": "none;", "width": "76%;", "height": "90%;", "left": "18%;", "top": "5%;", "border-radius": "5px;", "background-color": "#EEE;", "scrollbar-color": "#CCCCCC #FFFFFF;", "box-shadow": "4px 4px 5px #111;" },
-		  "main field table": { "target": "table", "margin": "0px;" },
+		  "main field table": { "target": "table", "margin": "0 0 10px 0;" },
 		  "main field table title cell": { "target": ".titlecell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "#CCC;", "font": "", "text-align": "center" },
 		  "main field table newobject cell": { "target": ".newobjectcell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "rgb(232,255,232);", "font": "", "text-align": "center" },
 		  "main field table data cell": { "target": ".datacell", "padding": "10px;", "border": "1px solid #999;", "color": "black;", "background-color": "", "font": "12px/14px arial;", "text-align": "center" },
@@ -115,8 +116,8 @@ let uiProfile = {
 		  "dialog box input textarea": { "target": "textarea", "margin": "0px 10px 5px 10px;", "padding": "2px 5px;", "background-color": "#f3f3f3;", "border": "1px solid #777;", "outline": "", "color": "#57C;", "border-radius": "5%;", "font": ".9em Lato, Helvetica;", "width": "300px;" },
 		  // Tree
 		  "tree table": { "target": ".treetable", "border-spacing": "20px 0px;", "border-collapse": "separate;", "margin-top": "10px;", },
-		  "tree error element": { "target": ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "center;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "white-space": "" },
-		  "tree element": { "target": ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "white-space": "nowrap;", "object element value max chars": "60", "object element title max chars": "15", },
+		  "tree error element": { "target": ".treeerror", "background-color": "#eb8b9c;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "white-space": "nowrap;" },
+		  "tree element": { "target": ".treeelement", "background-color": "#ccc;", "border": "1px solid black;", "padding": "7px !important;", "border-radius": "5px;", "text-align": "left;", "box-shadow": "2px 2px 4px #888;", "font": "12px/14px arial;", "white-space": "nowrap;", "object element value max chars": "35", "object element title max chars": "15", },
 		  "tree arrow stock": { "target": ".treelinkstock", "flex-basis": "10px;", "box-sizing": "border-box;", "background-color": "rgb(17,101,176);", "border": "none;", "margin-left": "15px;", "margin-right": "15px;", "height": "60px;", },
 		  "tree arrow down": { "target": ".treelinkarrowdown", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "40px solid rgb(17,101,176);", "border-bottom": "0 solid transparent;", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
 		  "tree arrow up": { "target": ".treelinkarrowup", "flex-basis": "20px;", "box-sizing": "border-box;", "background-color": "transparent;", "border-top": "0 solid transparent;", "border-bottom": "40px solid rgb(17,101,176);", "border-left": "20px solid transparent;", "border-right": "20px solid transparent;", },
@@ -157,7 +158,7 @@ OD name will be 'Clients', OV name - 'Address book', OV template - 'table', OV o
 OV element layout - empty (default). See OD configuration help section.
 Additionally, first object element (Name) stores user password in a 'pass' JSON property.
 
-OV display will look like:
+OV default element layout will look like:
 +------+--------------+
 | Name | Phone number |
 +------+--------------+
@@ -233,7 +234,7 @@ type sets element JSON property 'value' uniqueness among all objects in OD - for
 OD 'Users' defined as an uniq type, so duplicated names are excluded.
 Next - event handlers. Handler is a command line script or binary called on specified event occur. Handlers are optional
 and defined for necessary events only. Events are occured on object processes ('INIT' event at object creation, 'CHANGE'
-at object element data change), keyboard/mouse element push/click ('DBLCLICK', 'KEYPRESS'..), event feedback ('CONFIRM',
+at object element data change), keyboard/mouse element push/click ('DOUBLECLICK', 'KEYPRESS'..), event feedback ('CONFIRM',
 'CONFIRMDIALOG'), scheduler events (SCHEDULE) and others. Keyboard and mouse events are combined with modifier keys CTRL, ALT,
 SHIFT and META, so you can bind different handlers for one event, but with various modifier keys. For all events (except
 SCHEDULE) handler command line is a first non-empty srting, for SCHEDULE - *nix like scheduler service (cron) crontab file
@@ -289,6 +290,7 @@ Here are some query examples:
    SELECT 1 FROM :odtable WHERE id=:oid and version=:postversion and JSON_UNQUOTE(JSON_EXTRACT(eid2, '$.value'))='Mary'
 3. SELECT COUNT(version)>2 FROM data_1 WHERE id=:oid
 4. SELECT owner!=':user' from :odtable where id=:oid and version=1
+5. DELETE FROM :odtable WHERE id=:oid and version <= :postversion-2
 
 First example query with reject action for 'KeyF2' event is called when the user presses F2 key and is true for the user root
 (who has initiated event by pressing F2) only. Therefore the rule cancels specified event handler call.
@@ -297,8 +299,11 @@ for a example, from Mary to John are applied.
 Third example with reject action for the 'CHANGE' event allows to change object only once. New object has one version
 (instance), after object is changed at the 1st time - it has two versions, so second change will have three versions and will
 be blocked, because of a true expression 'COUNT(version)>2' (3>2).
-Last example with reject action for the 'DELETE' event allows to remove self-created objects only via comparing created object
+Next example with reject action for the 'DELETE' event allows to remove self-created objects only via comparing created object
 (version=1) owner with the user the object is being deleted by.
+Last example removes older object versions and leave only last two. So for the CHANGE event this rule keeps only last two
+versions of any object allowing not to store unnecessary data and saving some disk space.
+
 
 When a match is found the rule message for the reject actions is displayed on the client side dialog box, for 'accept' actions -
 messages are displayed for INIT, DELETE, CHANGE events only. To remove the rule - set its name empty.
@@ -327,10 +332,10 @@ selection string 'WHERE lastversion=1 AND version!=0' is applied and result quer
 'SELECT .. FROM data_<OD id> WHERE lastversion=1 AND version!=0'
 
 This format together with object structure provides native and effective selection of object sets via powerful SQL
-capabilities! To make object selection process more flexible user can use some parameters in object selection string. These
+capabilities! To make object selection process more flexible some parameters may be used in object selection string. These
 parameters should start from colon char ':' and finish with space, single or double qoutes, backslash or another ':'. Parsed
-parameter name is set as a question (with chars '_' replaced with spaces) on client side dialog box at the object view call
-open. Parameter name :user is reserved and replaced with the username the specified view is called by.
+parameter name is set as a question (with chars '_' replaced with spaces) on client side dialog box at the object view call.
+Parameter name :user is reserved and replaced with the username the specified view is called by.
 
 Object selection string example for built-in 'Logs' object database:
 WHERE lastversion=1 AND version!=0 AND JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value')) regexp ':Select_log_string_to_search'
@@ -728,7 +733,8 @@ Available handler commands are:
  - 'UNLOADDIALOG'. Format: '{"cmd": "UNLOADDIALOG"}'. Similar to the 'DOWNLOADDIALOG', but with the option to delete attached
    files.
  - 'GALLERY'. Format: '{"cmd": "GALLERY"}'. The command makes the controller to call client side for the gallery mode to view
-   images (.jpg .png .gif .bmp) among element attached files.
+   images (.jpg .png .gif .bmp) among element attached files. Use left/right keys for image navigating and double click for
+   image size toggling from 'fit the screen' to auto.
 
 All handler commands except 'SET/RESET' are ignored for 'CHANGE', 'INIT' and 'SCHEDULE' events.
 Some handlers may take long time for a execution, so to avoid any script/binary freezing or everlasting runtime - user
@@ -752,9 +758,9 @@ current view.
 element2: { line: '', style: HELPHEADSTYLE, head: `
 Application has some regular php handlers to manage user database, customization and element data.
 Fisrt - user.php, see element #1 of 'User' database. The script creates users, changes their passwords, group membership and
-user permissions via dialog box on F2 or DBLCLICK element #1 event. Group membership is a list of the groups (one per
-line) the user is a member of. LINE FEED char is inserted at the end of the list automatically (if necessary) for the last
-line (last group name in the list) to be correct.
+user permissions via dialog box on element #1 double click. Group membership is a list of the groups (one per line) the user
+is a member of. LINE FEED char is inserted at the end of the list automatically (if necessary) for the last line (last group
+name in the list) to be correct.
 User permissions represent two lists (for the read and write permission). Each list is a colon divided combination
 (one by line) of database:view identificators. Omitted view id - restriction is applied for all views of specified database.
 Non digit chars at the end of the line are ignored and can be used as a comment for the specified id combination.

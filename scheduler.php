@@ -70,7 +70,7 @@ while (true)
 		   if (count($output))
 		      {
 		       $client = [];
-		       LogMessage($db, $client, "Failed to launch scheduler task (OD id $od[id], element id ".$element['element1']['id']." and cron line ".strval($line + 1)."): previous one is not completed yet!");
+		       LogMessage($db, $client, "Failed to launch scheduler task (OD id $od[id], element id ".$element['element1']['id']." and cron line ".strval($line + 1).": previous one is not completed yet!");
 		       continue;
 		      }
 		   // Execute current scheduler id loader with next args: <scheduler id> <OD id> <OV id> <eid> <crontab line>

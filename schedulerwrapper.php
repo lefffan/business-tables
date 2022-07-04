@@ -101,12 +101,11 @@ if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data'
     // Go through all objects
     foreach ($objects as $id => $row) if ($row['version'] !== '0' && $row['lastversion'] === '1')
 	    {
-	     if ($id === $lastindex) $queue = 1;
-	     if (!$wait && $count >= $queue) $timer = QueueWrapper($client, $queue, $timer);
-	     if ($id === $lastindex) $wait = true;
 	     $client['oId'] = $row['id'];
 	     ExecWrapper($client, $wait);
 	     $count ++;
+	     if ($id === $lastindex) $queue = 1;
+	     if (!$wait && $count >= $queue) $timer = QueueWrapper($client, $queue, $timer);
 	    }
    }
  else
@@ -122,11 +121,10 @@ if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data'
     // Go through all objects
     foreach ($client['objects'] as $id => $nothing)
 	    {
-	     if ($id === $lastindex) $queue = 1;
-	     if (!$wait && $count >= $queue) $timer = QueueWrapper($client, $queue, $timer);
-	     if ($id === $lastindex) $wait = true;
 	     $client['oId'] = $id;
 	     ExecWrapper($client, $wait);
 	     $count ++;
+	     if ($id === $lastindex) $queue = 1;
+	     if (!$wait && $count >= $queue) $timer = QueueWrapper($client, $queue, $timer);
 	    }
    }

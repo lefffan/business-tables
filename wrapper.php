@@ -64,7 +64,7 @@ function ParseHandlerResult($db, &$output, &$client)
  if ((!isset($output['cmd']) || array_search($output['cmd'], HANDLEREVENTS) === false) && !LogMessage($db, $client, $logmsg.'returned incorrect json!')) return;
 
  // Non SET handler command on client group event such as INIT, CHANGE..
- if ($output['cmd'] !== 'SET' && $output['cmd'] !== 'RESET')
+ if ($output['cmd'] !== 'SET' && $output['cmd'] !== 'RESET' && $output['cmd'] !== '')
  if (array_search($client['cmd'], GROUPEVENTS) !== false && !LogMessage($db, $client, $logmsg."shouldn't return '$output[cmd]' command on '$client[cmd]' event!")) return;
 
  // Parse handler output array
@@ -167,7 +167,7 @@ function WriteElement($db, &$client, &$output, $version)
  if ($output['cmd'] === 'RESET') $output += DEFAULTELEMENTPROPS;
 
  $query = $db->prepare("UPDATE `data_$client[ODid]` SET eid$client[eId]=:json WHERE id=$client[oId] AND version=$version");
- $query->execute([':json' => json_encode($output, JSON_UNESCAPED_UNICODE)]);
+ $query->execute([':json' => json_encode($output, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE)]);
  return true;
 }
 
@@ -460,6 +460,7 @@ switch ($output[$currenteid]['cmd'])
 			      unset($output['customization']);
 			     }
 			 }
+		      $query->CloseCursor();
 		      break;
 		     }
 		 }
@@ -508,4 +509,5 @@ if ($output != [])
    {
     $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
     $query->execute([':client' => json_encode($output + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+    $query->CloseCursor();
    }

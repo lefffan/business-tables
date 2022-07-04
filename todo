@@ -1,36 +1,35 @@
-- make new handlers for mrtg.php
-- _history for all
-- _.php UPDATE
-- decrease padding from setki
-
-
 New handler conception:
 +0. Queue tasks
 +1. New events conception for scheduler
 +2. New events conception for rules
 +3. Start event for keypres and dblclick
 +4. test task manager on key press event
-5. go through all doc and search F12 DBLCLICK and text.php
-6. make db make setki make mrtg
-
-Errors:
-1. style padding: 15px; null
-2. gallery vyvodit bolshuyu kartinku
-3. expanded list in OD edit structure is binded to lower textarea
-4. task manager header drag
++5. go through all doc and search F12 DBLCLICK and text.php
++6. make db make setki make mrtg
 
 Megacom implementation:
-1. new element mac to setki view
-2. new view nedodelki
-3. new element 'viewid' to make chats between two users
-4. add 10.5.. fake ip to setki vew
-5. point to point tree, and add seconf query in object selection to the help/doc
-6. OD setki new view: search by one ip, history
+1.
+    Поиск не только по ip, но и по location and hostname, поиск по клиентам
+    как будут правица узлы L1 (редактировать только через карточку)?
+    Славины свитчи внести 172.16..
+    левый берег правый - вкладки как в мртг
+    какие группы пользователей и какие им доступы
+    какие сделать названия линков для дерева для мплс даунлинк аплинк2-3..
+    чаты: курилка для всех
+	  Л1-Л2
+	  междусобойчик
+2. new OD nedodelki
+3. fake ip to setki vew :
+    192.168.108, 199, 184, /16
+    10.0.9. 10.1.9-22.0 10.53.0-3 10.224.. 10.102.103 
+    tel/video with mega/subprov startel fake
+4. point to point tree, and add second query in object selection to the help/doc
+5. switch models piechart
+6. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
 7. correct all mrtg host files to make correct megacom tree via links in mrtg.php (mpls links and uplink2 links are apparent)
-8. switch models piechart
-9. How could object selection calc objects with only one free port? Or expired orders/requests like in Helpdesk (versions date difference is more than three days?)
 
 Megacom MRTG OD:
+0. new element mac to setki view (plus add exBrightcom, Megacom and Starttel for OV) and new element nomer uzla,status(up,down) for mtrg (Megacom MRTG OD: punkt1)
 1. Elements
 	1-100 ports
 	101 hostname
@@ -59,25 +58,35 @@ Megacom MRTG OD:
 	one time in 1 minute for every host up and down with action specified 
 
 New app features for Megacom:
+0. Negative queue value (the scheduler sleep for) in msec on crontab line
 1. Automatic change view notification (analyze new object version match for every view of database and view element match element changed
 2. Any single line stores in OD without changes, any single line with Enter and then Backspace should be stored the way it is in the 1st case - but it is stored 1st case + '\n'
 3. To allow html table in cells add tr, td, tbody and table tags to allowed tags?
 4. Links instead of real jpegs
-5. Slava develop: MAP, telnet/snmp platform
+5. Slava develop: MAP, telnet, snmp platform
 6. TREE:
     Tree element layout: style (for example to see what nodes are down by seeing them via red background)
     Tree wire name (arrow name) to mark fiber cooper radio..
     element link hint (per element text line) to show full element value
     regexp search
     context menu expand/hide uplink and downlink subtree
+    loop element - show real looped object instead of read message
+    hint for link name
 7. Handler cmd line replacements - <oid> (plus point that oid can be retreived also <{"element":"id"}>) <date> <OD>, <OV>, <ODid>, <OVid> <attahced files path> parse in a handler command line
 8. Optimize x,y expressions: if x=n+1, then don't call eval, but plus 1 to n (in case of one of default layout, which x,y expressions are known)
 9. Change favicon -> tabels
 10. Table build and <tr> adding via timeout, so any quick view refresh sholdn't reload (shtoby stranica ne morgala) the page
 11. nohup server and scheduler start
-12. Instruct user how to remove unnesesary object versions (All OD objects history may be flushed via simple SQL query )
+12. Keep parameters in view history navigating
 13. multi cell selecting - copy (excel table), delete (removes all selected objects) with new user event 'DELETE' for every removing object
 14. Do not reload (with loading.. message) the main view if it less than one second for a example
+15. context menu description for tree view (object number, object selection parameteres..)
+16. Voting for Megacom
+17. Multipile select for _.php
+18. leave only last two versions delete from data_1 where id=:oid and version <= :postversion -2, odtable -> odid!
+19. point to point scheme must be one way, why its not?
+20. calling all hosts, then calling random 2 hosts - 'random 2 host' is opened then all hosts is opened instead
+21. warning as a start event 
 
 Some systems emulation:
 1. Corp chat
@@ -114,7 +123,9 @@ Stages:
 
 -----------------------------------------------------------------
 - Application:
-  remove rule log and make rule actions: reject log, reject, accept log, accept, log only
+  regexp search as start event emulates ctrl+shift+f at OV open
+  hiderow/hidecolumn - regexp feature with flag i for all cells in rows/columns match successful case
+  add rule action 'do nothing' (for log only goal and some db sql actions)
   Second and all next queries for non Tree view types are queries in previous query tables
   regexp search - range js instead of span highlighting
   Paste file or image to object element (or drag and drop to the corresponded cell)
@@ -165,6 +176,8 @@ Stages:
   Load whole main table to the browser memory, but display table div only for the portion of table to speed up table div display
   Smooth OD expanded to the view list
   Dialog boxes:
+    Expanded list in OD edit structure is binded to lower textarea
+    Footer key works in case of dragging textarea and then left button release on that footer key OK/cancel. That's wrong!
     dialog boxes on low resolution, exclude dialog to be out of the screen and adjust box size to fit the page,   Adaptivka after browser window size has changed dialog box has gone away
     when pushed button is pushed and mouse cursor is out of button - make button released
     show timer in dialog button text. Fix not only scrollLeft/Top, but current pad/profile
@@ -182,6 +195,7 @@ Stages:
   If last log message equals previous - don't log it, just increment previous log message counter
 
 - Handlers:
+  UPDATE handler command (in a addition to SET/RESET) that creates object version only in case of at least one user-defined element change
   EDIT controller cmd limits text lines number to edit https://toster.ru/q/355711     https://toster.ru/q/518758   http://qaru.site/questions/190792/limiting-number-of-characters-in-a-contenteditable-div
   Non local server (cloud) implemented handlers
   handler command to copy data to the buffer
@@ -202,3 +216,8 @@ Stages:
   No Emodzi symbols as an element text allowed - in this case db sql error occurs. Should i fix it?
   Task manager load avergage more than one or specified threshold? Mark it red color at taask manager title
 ------------------------------------------------------------------------------------------
+
+Y-combinator
+big amount of data with faaster and quick perfomance
+data is native
+data constructor

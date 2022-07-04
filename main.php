@@ -151,8 +151,16 @@ while (true)
 			  {
 			   foreach ($client['elementselection']['call'] as $key => $eid)
 				   if ($key[0] === ':') $client['params'][$key] = getElementProp($db, $client['ODid'], $client['data'], $eid, 'value');
-			   if (isset($client['elementselection']['call']['ODid'])) $client['ODid'] = $client['elementselection']['call']['ODid'];
-			   if (isset($client['elementselection']['call']['OVid'])) $client['OVid'] = $client['elementselection']['call']['OVid'];
+			   if (isset($client['elementselection']['call']['ODid']) || isset($client['elementselection']['call']['OD']))
+			      {
+			       if (isset($client['elementselection']['call']['ODid'])) $client['ODid'] = $client['elementselection']['call']['ODid']; else unset($client['ODid']);
+			       if (isset($client['elementselection']['call']['OD'])) $client['OD'] = $client['elementselection']['call']['OD']; else unset($client['OD']);
+			      }
+			   if (isset($client['elementselection']['call']['OVid']) || isset($client['elementselection']['call']['OV']))
+			      {
+			       if (isset($client['elementselection']['call']['OVid'])) $client['OVid'] = $client['elementselection']['call']['OVid']; else unset($client['OVid']);
+			       if (isset($client['elementselection']['call']['OV'])) $client['OV'] = $client['elementselection']['call']['OV']; else unset($client['OV']);
+			      }
 			   unset($client['elementselection']);
 			  }
 		  case 'SIDEBAR': // Client sidebar items wrap/unwrap event

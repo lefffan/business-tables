@@ -316,7 +316,7 @@ function AddObject($db, &$client, &$output)
       $query  = "id,version,owner";
       $params = [':id' => $newId, ':version' => '1', ':owner' => $client['auth']];
       $values = ':id,:version,:owner';
-      foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid], JSON_UNESCAPED_UNICODE)) !== false)
+      foreach ($client['allelements'] as $eid => $profile) if (isset($output[$eid]) && ($json = json_encode($output[$eid], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE)) !== false)
 	      {
 	       $query .= ',eid'.strval($eid);
 	       $params[':eid'.strval($eid)] = $json;
@@ -449,7 +449,7 @@ function ProcessRules($db, &$client, $preversion, $postversion)
 	  // Perform a rule query
 	  foreach (preg_split("/\n/", $querytext) as $querystring)
 		  {
-		   try { $query = $db->prepare($querystring); $query->execute(); }
+		   try { $query = $db->prepare($querystring); $query->execute(); $query->closeCursor(); }
 		   catch (PDOException $e) { return ['action' => 'Accept', 'message' => 'Rule error: '.$e->getMessage()]; }
 		   $result = $query->fetch(PDO::FETCH_NUM);
 		   if (!isset($result[0]) || !$result[0] || $result[0] === '0') continue 2;
@@ -699,7 +699,7 @@ function LogMessage($db, &$client, $log)
 
  AddObject($db, $_client, $output);
  $query = $db->prepare("INSERT INTO `$$` (client) VALUES (:client)");
- $query->execute([':client' => json_encode($output + $_client, JSON_HEX_APOS | JSON_HEX_QUOT)]);
+ $query->execute([':client' => json_encode($output + $_client, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_IGNORE)]);
 }
 
 function encode($payload, $type = 'text', $masked = false)
@@ -1259,8 +1259,11 @@ function CreateTree($db, &$client, $oid, &$data, $cmd)
 	     {
 	      if ($cmd === 'TREE')
 		  {
-		   $content[2]['value'] = "Loop from object id $oid to me [object id $uplinkoid]!";
+		   //$content[2]['value'] = "Loop from object id $oid to me [object id $uplinkoid]!";
 		   $data['link'][] = ['content' => $content, 'class' => 'treeerror'];
+		    $index = array_key_last($data['link']);
+		    if (isset($client['elementselection']['call'])) $data['link'][$index]['oid'] = $uplinkoid; // If call prop is set - place oid for tree element to retreive params after user call
+		    GetTreeElementContent($db, $client, $data['link'][$index]['content'], $uplinkoid);
 		  }
 	      continue;
 	     }
@@ -1496,7 +1499,7 @@ function ExecWrapper(&$client, $wait = false)
  $wait = $wait ? '' : ' &';
  $now = strval(strtotime("now"));
  // old version: exec(WRAPPERBINARY." '$client[uid]' ".strval(strtotime("now"))." '$client[ODid]' '$client[OVid]' '$client[oId]' '$client[eId]' '$client[cmd]' '$client[ip]' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null");
- exec(PHPBINARY.' '.APPDIR.WRAPPERCMD." '$client[ODid]' '$client[OVid]' '$client[eId]' '$client[cmdline]' '$client[oId]' '$client[cmd]' '$client[uid]' '$client[ip]' '$now' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT)."' >/dev/null$wait");
+ exec(PHPBINARY.' '.APPDIR.WRAPPERCMD." '$client[ODid]' '$client[OVid]' '$client[eId]' '$client[cmdline]' '$client[oId]' '$client[cmd]' '$client[uid]' '$client[ip]' '$now' '".json_encode($client, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_IGNORE)."' >/dev/null$wait");
 }
 
 function GetCMD($db, &$client)

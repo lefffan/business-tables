@@ -151,7 +151,7 @@ function drawSidebar(data)
 	  }
 
       // Draw wrap icon
-      if (ovlistHTML === '') sidebarHTML += '<tr><td class="emptywrap"></td>';  // Insert empty wrap icon
+      if (ovlistHTML === '') sidebarHTML += '<tr><td class="nowrap"></td>';  // Insert empty wrap icon
        else if (data[odid]['wrap'] === false) sidebarHTML += '<tr><td class="wrap">' + uiProfile['sidebar wrap']['content'] + '</td>'; // Insert wrap icon
         else sidebarHTML += '<tr><td class="unwrap">' + uiProfile['sidebar unwrap']['content'] + '</td>'; // Insert unwrap icon
 
@@ -238,7 +238,7 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
      cell.hint = arr.hint === undefined ? obj['eid' + eid + 'hint'] : arr.hint;
      if (obj['eid' + eid + 'link']) cell.noteclassindex += 2;
      if (obj.lastversion === '1' && obj.version != '0' && oidnum >= STARTOBJECTID && attached?.[oidnum]?.[eid]) cell.noteclassindex += 4;
-     cell.style += obj['eid' + eid + 'style']
+     if (obj['eid' + eid + 'style']) cell.style += obj['eid' + eid + 'style'];
     }
   else
     {
@@ -1669,7 +1669,7 @@ function styleUI()
  undefinedcellclass = isObjectEmpty(uiProfile["main field table undefined cell"], 'target') ? '' : ' class="undefinedcell"';
 
  // Output uiProfile array to te console to use it as a default customization configuration
- //lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
+ // lg("$uiProfile = json_decode('" + JSON.stringify(uiProfile).replace(/'/g, "\\'") + "', true);");
 }
 
 function ConfirmEditableContent(addobject)

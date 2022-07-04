@@ -32,11 +32,13 @@ try {
      $newProperties['element2']['data'] = 'Application users database';
      $newProperties['element6']['data'] = "+User/group list allowed to change 'Database' section|Disallowed list (allowed for others)|";
      $newProperties['element8']['data'] = "+User/group list allowed to change 'Element' section|Disallowed list (allowed for others)|";
-     $newProperties['element7']['data'] = $newProperties['element9']['data'] = 'root';
+     $newProperties['element10']['data'] = "+User/group list allowed to change 'View' section|Disallowed list (allowed for others)|";
+     $newProperties['element12']['data'] = "+User/group list allowed to change 'Rule' section|Disallowed list (allowed for others)|";
+     $newProperties['element7']['data'] = $newProperties['element9']['data'] = $newProperties['element11']['data'] = $newProperties['element13']['data'] = "root\nsoa\nam\nvsp\nkia\nkvv\n";
      $userOD = ['title'  => 'Edit Object Database Structure', 'dialog' => ['Database' => ['Properties' => $newProperties], 'Element' => ['New element' => $newElement], 'View' => ['New view' => $newView], 'Rule' => ['New rule' => $newRule]], 'buttons' => SAVECANCEL, 'flags'  => ['style' => 'width: 860px; height: 720px;', 'esc' => '', 'profilehead' => ['Element' => "Select element", 'View' => "Select view", 'Rule' => "Select rule"]]];
      $userOD['buttons']['SAVE']['call'] = 'Database Configuration';
      $userOD['dialog']['Element']['New element']['element1']['id'] = '7';
-     $userOD['dialog']['View']['New view']['element1']['id'] = '3';
+     $userOD['dialog']['View']['New view']['element1']['id'] = '4';
 
      $newView['element1']['id'] = '1';
      $newView['element1']['head'] = "View (id1) name";
@@ -51,9 +53,24 @@ try {
      $newView['element6']['data'] = 'version,datetime,owner,*';
      $userOD['dialog']['View']['_history'] = $newView;
 
+     $newView['element1']['id'] = '3';
+     $newView['element1']['head'] = "View (id3) name";
+     $newView['element1']['data'] = 'My account';
+     $newView['element4']['data'] = "WHERE lastversion=1 AND version!=0 AND JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))=':user'";
+     $newView['element6']['data'] = '*'."\n".'{"eid":"1", "oid":"1", "hint":"Double click the username to change the password"}';
+     $userOD['dialog']['View']['My account'] = $newView;
+
+     $newRule['element1']['data'] = 'write restrict';
+     $newRule['element2']['data'] = 'You can modify only your own account!';
+     $newRule['element3']['data'] = 'Accept|+Reject|';
+     $newRule['element4']['data'] = "INIT\nCHANGE";
+     $newRule['element5']['data'] = "SELECT 1 FROM :odtable WHERE id=:oid and version=:postversion and JSON_UNQUOTE(JSON_EXTRACT(eid1, '$.value'))!=':user' AND ':user'!='root'";
+     $userOD['dialog']['Rule']['write restrict'] = $newRule;
+
+
      $newElement['element1']['id'] = '1';
      $newElement['element1']['data'] = 'User';
-     $newElement['element2']['data'] = "Double click the username to change the password and other properties";
+     $newElement['element2']['data'] = '';
      $newElement['element3']['data'] = UNIQELEMENTTYPE;
      $newElement['element3']['readonly'] = '';
      // INIT, F2, CONFIRMDIALOG..
