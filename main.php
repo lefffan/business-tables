@@ -228,6 +228,7 @@ while (true)
 		       // For dialog, edit or empty (warning box message) commands search appropriate socket (the handler was called from) to write the command.
 		       case '':
 		       case 'EDIT':
+		       case 'NEWPAGE':
 		       case 'DIALOG':
 			    if (isset($socketarray[$hid]) && $clientsarray[$hid]['ODid'] === $handler['ODid'] && $clientsarray[$hid]['OVid'] === $handler['OVid'] && ($handler['ODid'] === '' || $clientsarray[$hid]['params'] === $handler['params']))
 			       fwrite($socketarray[$hid], encode(json_encode($handler)));

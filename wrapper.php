@@ -70,6 +70,11 @@ function ParseHandlerResult($db, &$output, &$client)
  // Parse handler output array
  switch ($output['cmd'])
 	{
+	 case 'NEWPAGE':
+	      ConvertToString($output, ['data']);
+	      cutKeys($output, ['cmd', 'data']);
+	      if (!isset($output['data']) || !($output['data'] = trim($output['data']))) $output = ['cmd' => ''];
+	      break;
 	 case 'EDIT':
 	      ConvertToString($output, ['data']);
 	      if (!isset($output['data'])) $output['data'] = getElementProp($db, $client['ODid'], $client['oId'], $client['eId'], 'value');
@@ -355,6 +360,7 @@ $currenteid = $client['eId'];
 switch ($output[$currenteid]['cmd'])
        {
         case 'DIALOG':
+        case 'NEWPAGE':
         case 'EDIT':
         case 'CALL':
         case '':

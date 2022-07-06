@@ -735,6 +735,8 @@ Available handler commands are:
  - 'GALLERY'. Format: '{"cmd": "GALLERY"}'. The command makes the controller to call client side for the gallery mode to view
    images (.jpg .png .gif .bmp) among element attached files. Use left/right keys for image navigating and double click for
    image size toggling from 'fit the screen' to auto.
+ - 'NEWPAGE'. Format: '{"cmd":"NEWPAGE", "data":"<url>"}'. The command makes client side to open new browser tab with
+   property "data" as an url. Omitted protocol in url - https is used for default.
 
 All handler commands except 'SET/RESET' are ignored for 'CHANGE', 'INIT' and 'SCHEDULE' events.
 Some handlers may take long time for a execution, so to avoid any script/binary freezing or everlasting runtime - user

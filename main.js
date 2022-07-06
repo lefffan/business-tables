@@ -212,6 +212,17 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
  // Create main table row if doesn't exist
  if (mainTable[arr.y] === undefined) mainTable[arr.y] = [];
 
+ // Get start event at OV open (except add/remove operations). Using last found.
+ const oidnum = +obj.id;
+ if (arr.event !== undefined && cmd === 'CALL')
+    {
+     cursor.oId = oidnum; // Event does exist, so get its name and its object/elemnt ids
+     cursor.eId = eid;
+     cursor.x = arr.x;
+     cursor.y = arr.y;
+     cursor.cmd = arr.event.trimStart();
+    }
+
  // Virtual cell
  if (!eid)
     {
@@ -226,7 +237,6 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
     }
 
  // Data cell
- const oidnum = +obj.id;
  mainTable[arr.y][arr.x] = { oId: oidnum, eId: eid, noteclassindex: 0, style: arr.style };
  const cell = mainTable[arr.y][arr.x];
 
@@ -266,16 +276,6 @@ function SetCell(arr, obj, eid, hiderow, hidecol, attached)
  // Calculate main table width and height
  mainTableWidth = Math.max(mainTableWidth, arr.x + 1);
  mainTableHeight = Math.max(mainTableHeight, arr.y + 1);
-
- // Get start event at OV open (except add/remove operations). Using last found.
- if (arr.event !== undefined && cmd === 'CALL')
-    {
-     cursor.oId = oidnum; // Event does exist, so get its name and its object/elemnt ids
-     cursor.eId = eid;
-     cursor.x = arr.x;
-     cursor.y = arr.y;
-     cursor.cmd = arr.event.trimStart();
-    }
 
  // Convert hint to html chars
  if (cell.hint) cell.hint = ToHTMLChars(cell.hint);
@@ -736,6 +736,12 @@ function FromController(json)
 
  switch (input.cmd)
 	{
+	 case 'NEWPAGE':
+	      let url = input.data;
+	      if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0 && url.indexOf('http:') !== 0) url = 'https://' + url;
+	      try { window.open(url); }
+	      catch {}
+	      break;
 	 case 'GALLERY':
 	      if (box || (cursor.td && cursor.td.contentEditable === EDITABLE) || OVtype !== 'Table') break;
 	      OVtype = 'Gallery';
