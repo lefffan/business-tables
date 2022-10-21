@@ -228,8 +228,9 @@ try {
 		      if (is_dir($dir = UPLOADDIR."$client[ODid]")) foreach (scandir($dir) as $oid) if ($oid !== '.' && $oid !== '..')
 			 {
 			  $output['attached'][$oid] = [];
-			  if (is_dir("$dir/$oid")) foreach (scandir("$dir/$oid") as $eid) if ($eid !== '.' && $eid !== '..')
-			     if (IsDirEmpty("$dir/$oid/$eid")) $output['attached'][$oid][$eid] = true;
+			  if (is_dir("$dir/$oid"))
+			     foreach (scandir("$dir/$oid") as $eid) if ($eid !== '.' && $eid !== '..')
+				     if (IsDirNotEmpty("$dir/$oid/$eid")) $output['attached'][$oid][$eid] = true;
 			 }
 		      break;
 		     }

@@ -87,16 +87,7 @@ if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data'
     $query = $db->prepare("SELECT id,version,lastversion FROM `data_$ODid` $client[objectselection]");
     $query->execute();
     $objects = $query->fetchAll(PDO::FETCH_ASSOC);
-
-    // Get real object last id
-    $length = count($objects);
-    for ($i = $length - 1; $i >= 0; $i--)
-	if ($objects[$i]['version'] !== '0' && $objects[$i]['lastversion'] === '1')
-	   {
-	    $lastindex = $i;
-	    break;
-	   }
-    if (!isset($lastindex)) exit;
+    $query->CloseCursor();
 
     // Go through all objects
     foreach ($objects as $id => $row) if ($row['version'] !== '0' && $row['lastversion'] === '1')
@@ -104,7 +95,6 @@ if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data'
 	     $client['oId'] = $row['id'];
 	     ExecWrapper($client, $wait);
 	     $count ++;
-	     if ($id === $lastindex) $queue = 1;
 	     if (!$wait && $count >= $queue) $timer = QueueWrapper($client, $queue, $timer);
 	    }
    }
@@ -115,16 +105,16 @@ if (($client['linknames'] = LinkNamesStringToArray(trim($view['element5']['data'
     if (!Check($db, GET_ELEMENTS, $client, $output)) exit;
     CreateTree($db, $client, 0, $tree, '');
 
-    // Get last object id
-    $lastindex = array_key_last($client['objects']);
-
     // Go through all objects
     foreach ($client['objects'] as $id => $nothing)
 	    {
 	     $client['oId'] = $id;
 	     ExecWrapper($client, $wait);
 	     $count ++;
-	     if ($id === $lastindex) $queue = 1;
 	     if (!$wait && $count >= $queue) $timer = QueueWrapper($client, $queue, $timer);
 	    }
    }
+
+// Wait last handler to finish to complete the scheduler task
+$queue = 1;
+QueueWrapper($client, $queue, $timer);

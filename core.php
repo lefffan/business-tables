@@ -214,7 +214,7 @@ function initNewODDialogElements()
  $newElement	 = ['element1' => ['type' => 'textarea', 'head' => 'Name', 'data' => '', 'id' => '1', 'help' => 'Element name is used as a default element header text on object view element header navigation.<br>To remove element - set name, description and all handlers empty.'],
 		    'element2' => ['type' => 'textarea', 'head' => 'Description', 'data' => '', 'line' => '', 'help' => 'Element description is displayed as a hint on object view element header navigation for default.<br>Describe here element usage and its possible values.'],
 		    'element3' => ['type' => 'checkbox', 'head' => 'Element type', 'data' => 'unique|', 'line' => '', 'help' => "Unique element type guarantees element value uniqueness among all objects.<br>Element type cannot be changed after element creation."],
-		    'element5' => ['type' => 'radio', 'head' => "<b>Add new handler:</b>\n\nHandler output mode", 'data' => '+Default|Dialog|Debug|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line string<br>as a client side alert text only. For all except INIT, CONFIRM and SCHEDULE - handler output<br>in responce on these client events in debug mode is saved to "Logs" Database.<br>Note that handler output for "DELETE" event is ignored in any mode and is not logged.'],
+		    'element5' => ['type' => 'radio', 'head' => "<b>Add new handler:</b>\n\nHandler output mode", 'data' => '+Default|Dialog|Debug|Detach|', 'help' => 'JSON format handler output is treated depending on "cmd" property.<br>In case of non JSON output - the data is automatically converted (default mode) to the "SET" handler command:<br>{"cmd": "SET", "value": "&lt;non JSON handler output&gt;"}<br>Dialog mode "does" the same, but non JSON handler output is displayed only as a text at client side alert box,<br>while debug mode displays all output data (JSON and non JSON) plus event info and command line string<br>as a client side alert text only. For all except INIT, CONFIRM and SCHEDULE - handler output<br>in responce on these client events in debug mode is saved to "Logs" Database.<br>Note that handler output for "DELETE" event is ignored in any mode and is not logged.'],
 		    'element6' => ['type' => 'select-one', 'head' => 'Client event', 'data' => '+'.$eventstring, 'help' => 'Choose event the handler is called on (via command line below).<br>For the mouse and keyboards events select Ctrl|Alt|Shift|Meta as an additional event occur options.<br>Note that some events (Ctrl+KeyA, Ctrl+KeyC, KeyF1 and others) are reserved for the service purposes<br>and do not cancel default client side (browser) behaviour, so may never occur.'],
 		    'element7' => ['type' => 'checkbox', 'hea' => '', 'data' => 'Ctrl|Alt|Shift|Meta'],
 		    'element8' => ['type' => 'textarea', 'head' => 'Handler command line', 'data' => '', 'help' => 'Input handler command line to add specified above event processing.<br>To remove already added event - set command line text area empty at appropriate event section.', 'line' => ''],
@@ -1459,7 +1459,7 @@ function GetElementTitle($eid, &$allelements)
  return $title;
 }
 
-function IsDirEmpty($dir)
+function IsDirNotEmpty($dir)
 {
  if (is_dir($dir)) foreach (scandir($dir) as $name) if ($name !== '.' && $name !== '..') return true;
  return false;
@@ -1586,24 +1586,35 @@ function GetCMD($db, &$client)
         if ($add === '>') continue;
 	if ($add === '<')
 	   {
-	    if (($j = strpos($cmdline, '>', $i + 1)) === false) continue;
+	    $double = 0;
+	    if ($cmdline[$i + 1] === '<') $double = 1;
+	    $i += $double;
+	    if (($j = strpos($cmdline, '>'.($double ? '>' : ''), $i + 1)) === false) continue;
+
 	    switch ($match = substr($cmdline, $i + 1, $j - $i - 1))
 		   {
-		    case 'data':		$add = DoubleQuote($client['data']); break;
-		    case 'user':		$add = DoubleQuote($client['auth']); break;
-		    case 'oid':			$add = DoubleQuote($client['oId']); break;
-		    case 'odid':		$add = DoubleQuote($client['ODid']); break;
-		    case 'ovid':		$add = DoubleQuote($client['OVid']); break;
-		    case 'od':			$add = DoubleQuote($client['OD']); break;
-		    case 'ov':			$add = DoubleQuote($client['OV']); break;
-		    case 'event':		$add = DoubleQuote($client['handlerevent']); break;
-		    case 'modificators':	$add = DoubleQuote($client['handlereventmodificators']); break;
-		    case 'title':		$add = DoubleQuote($client['allelements'][$client['eId']]['element1']['data']); break;
-		    case 'datetime':		$datetime = new DateTime(); $add = DoubleQuote($datetime->format('Y-m-d H:i:s')); break;
-		    default:			if (gettype($add = json_decode($match, true)) !== 'array') $add = DoubleQuote("<$match>"); // Quote pair angle brackets to avoid stdin/stdout
-						 else $add = DoubleQuote(GetElementProperty($db, $add, $client, 0));
+		    case 'data':		$add = QuoteArg($client['data'], $double); break;
+		    case 'user':		$add = QuoteArg($client['auth'], $double); break;
+		    case 'dir':			$add = QuoteArg(UPLOADDIR.$client['ODid'].'/'.$client['oId'].'/'.$client['eId'].'/', $double); break;
+		    case 'oid':			$add = QuoteArg($client['oId'], $double); break;
+		    case 'odid':		$add = QuoteArg($client['ODid'], $double); break;
+		    case 'ovid':		$add = QuoteArg($client['OVid'], $double); break;
+		    case 'od':			$add = QuoteArg($client['OD'], $double); break;
+		    case 'ov':			$add = QuoteArg($client['OV'], $double); break;
+		    case 'event':		$add = QuoteArg($client['handlerevent'], $double); break;
+		    case 'modificators':	$add = QuoteArg($client['handlereventmodificators'], $double); break;
+		    case 'title':		$add = QuoteArg($client['allelements'][$client['eId']]['element1']['data'], $double); break;
+		    case 'datetime':		$datetime = new DateTime(); $add = QuoteArg($datetime->format('Y-m-d H:i:s'), $double); break;
+		    default:			if (gettype($add = json_decode($match, true)) === 'array')
+						   {
+						    $add = QuoteArg(GetElementProperty($db, $add, $client, 0), $double);
+						   }
+						 else
+						   {
+						    $add = $double ? QuoteArg("<<$match>>", false) : QuoteArg("<$match>", false); // Quote pair single/double angle brackets to avoid stdin/stdout
+						   }
 		   }
-	    $i = $j;
+	    $i = $j + $double;
 	   }
        $newcmdline .= $add;
       }
@@ -1613,11 +1624,19 @@ function GetCMD($db, &$client)
  return true;
 }
 
-function CreateHandlerSection($i, $event, $modificatortext, $cmd)
+function QuoteArg($string, $double)
+{
+ if (!$double) return "'".str_replace("'", "'".'"'."'".'"'."'", $string)."'";
+ return $string;
+}
+
+function CreateHandlerSection($i, $event, $modificatortext, $cmd, $mode = NULL)
 {
  global $newElement;
 
  $newElement['element'.strval($i)] = $newElement['element5'];
+ if (isset($mode)) $newElement['element'.strval($i)]['data'] = $mode;
+
  $newElement['element'.strval($i)]['head'] = $modificatortext ? "Set handler output mode and command line below for event <b>'$event'</b> with next modifier keys down: $modificatortext" : "Set handler output mode and command line below for event <b>'$event'</b>";
  unset($newElement['element'.strval($i)]['help']);
 

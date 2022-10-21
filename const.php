@@ -62,7 +62,7 @@ const ARGRESULTLIMITNUM			= 256;
 const ARGVCLIENTINDEX			= 10;
 const CRONLINEFIELDS			= ['minutes', 'hours', 'mday', 'mon', 'wday', 'queue', 'vid', 'cmd'];
 const HANDLEREVENTS			= ['EDIT', 'ALERT', 'DIALOG', 'CALL', 'SET', 'RESET', 'UPLOADDIALOG', 'DOWNLOADDIALOG', 'UNLOADDIALOG', 'GALLERY', 'NEWPAGE', ''];
-const MINUSECONDSINTERVAL		= 10000; // 1 msec
+const MINUSECONDSINTERVAL		= 500000; // 500 msec
 const MAXUSECONDSINTERVAL		= 10000000; // 10 sec
 const QUEUEWRAPPERSMAX			= 1024;
 // 65-90 a-z 48-57 0-9 96-107 numpad0-9*+ 109-111 numpad-./ 186-192 ;=,->/` 219-222 [\]' 32space FF59; FF61= FF173- 226\ F1-F12 112-123 INS45 DEL46

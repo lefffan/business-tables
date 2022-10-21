@@ -12,8 +12,8 @@ $query = $db->prepare("DELETE FROM `$$$`");
 $query->execute();
 
 $context = stream_context_create();
-stream_context_set_option($context, 'ssl', 'local_cert', '/etc/letsencrypt/live/tabels.app/cert.pem');
-stream_context_set_option($context, 'ssl', 'local_pk', '/etc/letsencrypt/live/tabels.app/privkey.pem');
+stream_context_set_option($context, 'ssl', 'local_cert', '/etc/letsencrypt/live/mng.gcom.ru/cert.pem');
+stream_context_set_option($context, 'ssl', 'local_pk', '/etc/letsencrypt/live/mng.gcom.ru/privkey.pem');
 stream_context_set_option($context, 'ssl', 'passphrase', '');
 stream_context_set_option($context, 'ssl', 'verify_peer', false);
 stream_context_set_option($context, 'ssl', 'verify_peer_name', false);

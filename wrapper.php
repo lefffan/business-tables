@@ -30,10 +30,10 @@ function ParseHandlerResult($db, &$output, &$client)
      $output = gettype($result) === 'array' ? substr($output[0], 0, ELEMENTDATAVALUEMAXCHAR) : substr(implode("\n", $output), 0, ELEMENTDATAVALUEMAXCHAR);
      $alert .= $output ? "\n\n<b>3. Output data is in ".(gettype($result) === 'array' ? '' : 'non-')."JSON format:</b>\n$output" : "\n\n<b>3. No output data detected!</b>";
 
-     if (gettype($result) === 'array' && $result['cmd'] !== 'SET' && $result['cmd'] !== 'RESET')
      if (array_search($client['cmd'], GROUPEVENTS) !== false)
 	{
-	 $alert .= "\n\n<span style=".'"'."color: red".'"'.">Warning: handler should return only 'SET/RESET' commands in response to client '$client[cmd]' event..</span>";
+	 if (gettype($result) === 'array' && $result['cmd'] !== 'SET' && $result['cmd'] !== 'RESET' && $result['cmd'] !== '')
+	    $alert .= "\n\n<span style=".'"'."color: red".'"'.">Warning: handler should return only 'SET/RESET' commands or nothing in response to client '$client[cmd]' event..</span>";
 	 LogMessage($db, $client, $alert);
 	 return;
 	}
@@ -311,11 +311,6 @@ function CalcRegex($regex, &$output, $auth)
  return '/'.$regex.'/'.$flags;
 }
 
-function DoubleQuote($string)
-{
- return "'".str_replace("'", "'".'"'."'".'"'."'", $string)."'";
-}
-
 // Init variables
 $_client = $client = json_decode($_SERVER['argv'][ARGVCLIENTINDEX], true);
 $output = [];
@@ -328,7 +323,7 @@ if (!Check($db, GET_ELEMENTS | GET_VIEWS | CHECK_OID | CHECK_EID, $client, $outp
     if (isset($output['log'])) LogMessage($db, $client, $output['log']);
     $output = [$client['eId'] => ['cmd' => ''] + $output];
    }
-else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETE')
+ else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETE')
    {
     $output = [$client['eId'] => ['cmd' => $client['cmd']]];
    }
@@ -342,6 +337,11 @@ else if ($client['cmd'] === 'INIT' || $client['cmd'] === 'DELETE')
     // Check read/wrte permissions
     if (Check($db, CHECK_ACCESS, $client, $output))
        {
+	if (strpos($client['handlermode'], '+Detach') !== false)
+	   {
+	    exec($client['handlercmdlineeffective'].' &');
+	    exit;
+	   }
 	$output[$client['eId']] = [];
 	exec($client['handlercmdlineeffective'], $output[$client['eId']]);
 	if (!ParseHandlerResult($db, $output[$client['eId']], $client)) exit;
@@ -393,12 +393,22 @@ switch ($output[$currenteid]['cmd'])
 	     // Password property for Users OD element id 1 is set? Note it to logout appropriate user
 	     if ($client['ODid'] === '1' && $currenteid === '1' && isset($output[$currenteid]['password'])) $passchange = '';
 	     // Write all object data
+	     $version = NULL;
 	     try {
 	          $db->beginTransaction();
 		  // Block last object version row for update and calculate last version number
 	          $query = $db->prepare("SELECT version,mask FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
 	          $query->execute();
 	          $version = $query->fetchAll(PDO::FETCH_NUM);
+		 }
+	     catch (PDOException $e) {}
+	     try {
+		  if (!isset($version))
+		     {
+		      $query = $db->prepare("SELECT version,mask FROM `data_$client[ODid]` WHERE id=$client[oId] AND lastversion=1 AND version!=0 FOR UPDATE");
+		      $query->execute();
+		      $version = $query->fetchAll(PDO::FETCH_NUM);
+		     }
 		  // No rows found? Return an error
 	          if (!isset($version[0])) throw new Exception("Object id $client[oId] doesn't exist! Please refresh the View.");
 	          $mask = $version[0][1];

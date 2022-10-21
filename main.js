@@ -1004,11 +1004,15 @@ function CallController(data)
 	      object = { cmd: 'CALL' };
 	      perfomance = [{ time: new Date(), process: 'Start' }];
 	      break;
-	 case 'CALL':
-	      perfomance = [{ time: new Date(), process: 'Start' }];
+	 case 'LOGIN':
+	      user = OD = OV = ODid = OVid = OVtype = '';
+	      viewindex = -1;
+	      viewhistory = [];
+	      cursor = {};
 	 case 'Database Configuration':
 	 case 'SIDEBAR':
-	 case 'LOGIN':
+	 case 'CALL':
+	      if (cmd === 'CALL') perfomance = [{ time: new Date(), process: 'Start' }];
 	      object = { "cmd": cmd };
 	      if (data != undefined) object.data = data;
 	      break;

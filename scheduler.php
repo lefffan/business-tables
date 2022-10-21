@@ -62,15 +62,15 @@ while (true)
 		   // Check correctness of queue and view id cron fields
 		   if (!ctype_digit($cron[count(CRONLINEFIELDS) - 2]) || !ctype_digit($cron[count(CRONLINEFIELDS) - 3])) continue;
 		   $queue = max(1, intval($cron[count(CRONLINEFIELDS) - 3]));
-		   $queue = min($queue, QUEUEWRAPPERSMAX);
+		   $queue = strval(min($queue, QUEUEWRAPPERSMAX));
 		   // Current scheduler id loader does already exist? Continue
 		   $output = [];
-		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'].' '.$line.' '.$cron[count(CRONLINEFIELDS) - 3].' '.strval($queue);
+		   $schedulerwrapperargs = SCHEDULERID.' '.$od['id'].' '.$cron[count(CRONLINEFIELDS) - 2].' '.$element['element1']['id'].' '.$line.' '.$queue;
 		   exec(SEARCHPROCESSCMD." '".$schedulerwrapperargs."'", $output);
 		   if (count($output))
 		      {
 		       $client = [];
-		       LogMessage($db, $client, "Failed to launch scheduler task (OD id $od[id], element id ".$element['element1']['id']." and cron line ".strval($line + 1).": previous one is not completed yet!");
+		       LogMessage($db, $client, "Failed to launch scheduler task (OD id $od[id], element id ".$element['element1']['id'].", cron line ".strval($line + 1).": previous one is not completed yet!");
 		       continue;
 		      }
 		   // Execute current scheduler id loader with next args: <scheduler id> <OD id> <OV id> <eid> <crontab line>

@@ -10,7 +10,7 @@ const GREYITEM = '<div class="contextmenuItems greyContextMenuItem">';
 const ACTIVEITEM = '<div class="contextmenuItems">';
 const BASECONTEXT = ACTIVEITEM + 'Task Manager</div>' + ACTIVEITEM + 'Help</div>';
 const CONTEXTITEMUSERNAMEMAXCHAR = 12;
-const SOCKETADDR = 'wss://tabels.app:7889';
+const SOCKETADDR = 'wss://mng.gcom.ru:7889';
 const EFFECTHELP = "effect appearance. Possible values:<br>'fade', 'grow', 'slideleft', 'slideright', 'slideup', 'slidedown', 'fall', 'rise' and 'none'.<br>Undefined or empty value - 'none' effect is used (no effect)."
 const NOTARGETUIPROFILEPROPS = ['Editable content apply input key combination', 'target', 'effect' , 'filter', 'Force to use next user customization (empty or non-existent user - option is ignored)', 'mouseover hint timer in msec', 'object element value max chars', 'object element title max chars'];
 const HTMLSPECIALCHARS = ['&amp;', '&lt;', '&gt;', '<br>', '&nbsp;'];
@@ -303,7 +303,6 @@ Next example with reject action for the 'DELETE' event allows to remove self-cre
 (version=1) owner with the user the object is being deleted by.
 Last example removes older object versions and leave only last two. So for the CHANGE event this rule keeps only last two
 versions of any object allowing not to store unnecessary data and saving some disk space.
-
 
 When a match is found the rule message for the reject actions is displayed on the client side dialog box, for 'accept' actions -
 messages are displayed for INIT, DELETE, CHANGE events only. To remove the rule - set its name empty.
@@ -684,7 +683,10 @@ one moment - angle brackets quoted arguments are parsed to be replaced by the ne
     All properties of <JSON> argument are optional, so any JSON (even empty <{}>) is treated as a correct one. Thus, empty
     (or with unknown properties) JSON will be replaced by the current object element value.
  - <oid> is replaced by the object id the event was initiated on. The same as JSON arg  <{"element":"id"}>.
-
+ - <modificators> is replaced by the logical-OR result of pressed Ctrl(8), Alt(4), Shift(2) and Meta(1) modificator key values
+   from keyboard/mouse user events. No modificator key pressed - zero value is used.
+ - <dir> is replaced by the current element directory the handler can read/write saved files.
+ - <od>, <ov>, <odid>, <ovid> are replaced by the database name, view name, database id and view id respectively.
 Not listed above argument cases (<user>, <event>, <title>..) remain untouched and qouted to be treated as a single command
 line argument. Non-paired angle brackets are truncated in a result command line to avoid stdin/stdout redirections.
 
@@ -697,8 +699,9 @@ format is automatically converted to the 'SET' command to be set as an element v
 {"cmd": "SET", "value": "<non-JSON handler output>"}. This is a default handler output mode behaviour. In dialog mode
 handler output is displayed only as a text at client side alert box, while in debug mode all JSON and non JSON output data
 (plus event info and command line string) is displayed as a client side alert text only with one exception - for INIT,
-CHANGE and SCHEDULE - output is saved to "Logs" Database instead.
-Handler output for "DELETE" event is ignored and not logged in any mode.
+CHANGE and SCHEDULE - output is saved to "Logs" Database instead. Detach mode ignores handler output data, therefore
+controller just runs the handler and doesn't wait its data to process.
+Also handler output for "DELETE" event is ignored and not logged in any mode.
 
 Available handler commands are:
  - 'EDIT'. Format: '{"cmd": "EDIT", "data": "<some text>"}'. The command makes the client side table cell content be editable.
